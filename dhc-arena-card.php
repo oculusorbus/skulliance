@@ -137,14 +137,26 @@ if ($run > 0) {
 	}
 
 	/*
-	 * WHICH BOSSES THIS PLAYER PUT DOWN. dhc_boss_day records who landed
-	 * the last hit, per boss per wave, so no new column is needed -- and
-	 * dimming a boss somebody else finished would be claiming their kill.
+	 * WHICH BOSSES WERE DOWN WHEN THIS RUN ENDED -- not which ones this
+	 * player killed.
+	 *
+	 * THE CARD IS A PICTURE OF A FIGHT, so a boss is grey if it was on the
+	 * floor by the end of it, whoever put it there. The first version
+	 * filtered on killed_by with no time bound at all, which was wrong in
+	 * both directions: a boss this player had dropped in an EARLIER run
+	 * came out grey on every later card, and a boss somebody else had
+	 * dropped came out standing in a fight where it was not.
+	 *
+	 * killed_at is the only honest test. No killed_by: who landed the last
+	 * hit is a different question, and it is the one the post's TEXT
+	 * answers from this run's own killedKeys.
 	 */
 	$downed = array();
-	$kr = $conn->query("SELECT boss_key FROM dhc_boss_day
-	                     WHERE day = '$day' AND wave = $wave
-	                       AND killed_at IS NOT NULL AND killed_by = $uid");
+	$kr = $conn->query("SELECT d.boss_key FROM dhc_boss_day d
+	                    INNER JOIN dhc_boss_runs r ON r.id = $run
+	                     WHERE d.day = '$day' AND d.wave = $wave
+	                       AND d.killed_at IS NOT NULL
+	                       AND d.killed_at <= COALESCE(r.ended_at, NOW())");
 	if ($kr) while ($k = $kr->fetch_assoc()) $downed[$k['boss_key']] = true;
 
 	foreach (dhcb_bosses() as $bz) {

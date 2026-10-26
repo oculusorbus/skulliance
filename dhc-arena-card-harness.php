@@ -481,10 +481,23 @@ echo "\nand a boss run gets the same card, from the same endpoint\n";
 	ok(strpos($src, '!$isBoss && function_exists(\'imageflip\')') === false,
 	   'the bosses are exempt from the mirror again, so they face away from the Crew '
 	 . 'attacking them');
-	/* KILLS ARE ATTRIBUTED, not assumed: dimming a boss somebody else
-	   finished would be claiming their kill. */
-	ok(strpos($src, 'killed_at IS NOT NULL AND killed_by = $uid') !== false,
-	   'the card dims bosses without checking who dropped them');
+	/*
+	 * A BOSS IS GREY IF IT WAS DOWN WHEN THE RUN ENDED, whoever put it
+	 * there -- the card is a picture of a FIGHT, not a credit.
+	 *
+	 * It filtered on killed_by with no time bound, which was wrong both
+	 * ways: a boss this player dropped in an earlier run came out grey on
+	 * every later card, and a boss somebody else dropped came out standing
+	 * in a fight where it was already on the floor. Who landed the last
+	 * hit is the question the post's TEXT answers, from this run's own
+	 * killedKeys.
+	 */
+	ok(strpos($src, 'd.killed_at <= COALESCE(r.ended_at, NOW())') !== false,
+	   'the card does not bound the kills to this run, so an earlier kill greys a boss in '
+	 . 'a fight where it was still standing');
+	ok(strpos($src, 'AND d.killed_by') === false,
+	   'the card is back to filtering on who landed the hit, so a boss somebody else '
+	 . 'dropped renders as standing in a fight where it was already down');
 	/* Nothing may print before the JPEG, and the boss library is the one
 	   include that happens after the buffered block at the top. */
 	$at = strpos($src, "require_once __DIR__ . '/dhcbosses-lib.php';");
