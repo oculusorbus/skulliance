@@ -249,9 +249,22 @@
 			}
 		}
 
-		/* Project logo, or the name set big if there is no logo yet. Its
-		   box sits on the stack below, so a tall logo grows upward. */
-		var logoBottom = 1180 + s.logoY;
+		/*
+		 * THE LOGO MOVES ALONE, AND THE STACK DOES NOT FOLLOW IT.
+		 *
+		 * logoBottom was `1180 + s.logoY` and the stack below started at
+		 * `logoBottom + 72`, so the one slider labelled "Logo up/down"
+		 * moved the logo AND every line under it. Nudging a logo down by a
+		 * hundred pushed the url off the bottom of the flyer, which makes
+		 * the control useless for the one thing it is for.
+		 *
+		 * STACK_TOP is the fixed hook everything below hangs from; logoY
+		 * now only displaces the logo. A tall logo still grows UPWARD from
+		 * its own bottom edge -- that part was right, and it is why
+		 * logoScale can be swept without the text shifting.
+		 */
+		var STACK_TOP = 1180;
+		var logoBottom = STACK_TOP + s.logoY;
 		if (imgs.logo) {
 			var maxW = 960 * s.logoScale, maxH = 420 * s.logoScale;
 			var lsc = Math.min(maxW / imgs.logo.width, maxH / imgs.logo.height);
@@ -268,8 +281,9 @@
 		}
 
 		/* The stack. Positions are from the DRKL flyer, the tightest of the
-		   three; the others only differ in how tall the logo is. */
-		var y = logoBottom + 72;
+		   three; the others only differ in how tall the logo is.
+		   FROM STACK_TOP, NOT logoBottom -- see the note above. */
+		var y = STACK_TOP + 72;
 		ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
 
 		ctx.fillStyle = s.colHighlight;
