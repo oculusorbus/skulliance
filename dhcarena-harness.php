@@ -1339,3 +1339,37 @@ foreach (array('.n', '.m', '.odds', '.nemrec', '.paidtag') as $child) {
 
 echo ($ar_fail ? "\n$ar_fail rival-row check(s) FAILED\n" : "the odds line up on every row: ok\n");
 if ($cs_fail || $fs_fail || $ar_fail) exit(1);
+
+/* ---------------------------------------------------------------- *
+ * NO PHP LEAKS INTO THE PAGE AS TEXT
+ * ---------------------------------------------------------------- *
+ * A refactor replaced a `foreach` line in the Crews feed and left the
+ * block that followed it -- a comment and five assignments -- stranded
+ * OUTSIDE any <?php tag. The live page printed its own source into the
+ * feed and then threw "Undefined variable" for every one of them.
+ *
+ * php -l CANNOT SEE THIS: the file is still valid PHP and the orphaned
+ * code is just HTML to the parser. So the test is on the OUTPUT shape --
+ * strip every <?php ... ?> span and what is left must look like markup.
+ */
+$pl_fail = 0;
+function pl_ok($c, $what) { global $pl_fail; if (!$c) { $pl_fail++; echo "  FAIL  $what\n"; } }
+$pg2    = file_get_contents(__DIR__ . '/dhcarena.php');
+$bodyAt = strpos($pg2, '<div class="arena-wrap">');
+pl_ok($bodyAt !== false, 'the page body could not be located');
+if ($bodyAt !== false) {
+	$body = substr($pg2, $bodyAt);
+	pl_ok(substr_count($body, '<?php') === substr_count($body, '?>'),
+	   'the body has ' . substr_count($body, '<?php') . ' opening PHP tags and '
+	 . substr_count($body, '?>') . ' closing ones, so a block is stranded and will print');
+	$html = preg_replace('~<\?php.*?\?>~s', '', $body);
+	/* script and style carry their own $ and comment syntax, and neither is PHP. */
+	$html = preg_replace('~(?s)<script\b.*?</script>~', '', $html);
+	$html = preg_replace('~(?s)<style\b.*?</style>~', '', $html);
+	pl_ok(preg_match('~\$[a-zA-Z_]\w*\s*=\s~', $html, $lm) === 0,
+	   'a PHP assignment sits outside a PHP tag, so the page prints its own source: '
+	 . (isset($lm[0]) ? trim($lm[0]) : ''));
+	pl_ok(strpos($html, '<?php') === false,
+	   'an unclosed <?php survives the strip, so the rest of the page is inside it');
+}
+echo ($pl_fail ? "\n$pl_fail source-leak check(s) FAILED\n" : "the page never prints its own source: ok\n");

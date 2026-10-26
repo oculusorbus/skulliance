@@ -2419,6 +2419,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
             &middot; wave <?php echo (int)$wv; ?> had fallen</span>
         </div>
       <?php endif; $prevWave = $wv; ?>
+      <?php
         /*
          * A RUN IN PROGRESS IS NOT A WIPE, and the first version said it was.
          *

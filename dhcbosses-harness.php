@@ -820,6 +820,38 @@ ok(strpos($ARE, '.arena-wrap .a-rf:not(.fell){border-color:var(--teal)') !== fal
    'a surviving Fighter has no lit edge, so the rare good outcome does not read in a wall '
  . 'of grey');
 /*
+ * NO PHP LEAKS INTO THE PAGE AS TEXT.
+ *
+ * Adding the wave divider replaced the `foreach` line and left the block
+ * that followed it -- a comment and five assignments -- stranded OUTSIDE
+ * any <?php tag. The page printed its own source into the feed and then
+ * threw "Undefined variable" for every one of them, on a live page.
+ *
+ * php -l CANNOT SEE THIS. The file is still perfectly valid PHP; the
+ * orphaned code is just HTML as far as the parser is concerned. So the
+ * check is on the OUTPUT shape: strip every <?php ... ?> span from the
+ * feed and whatever is left must look like markup, with no variables and
+ * no comment syntax in it.
+ */
+$feedA2 = strpos($ARE, '<div class="a-feed">');
+$feedB2 = strpos($ARE, '<?php endif; ?>', $feedA2);
+ok($feedA2 !== false && $feedB2 !== false, 'the feed block could not be located');
+if ($feedA2 !== false && $feedB2 !== false) {
+	$block = substr($ARE, $feedA2, $feedB2 - $feedA2);
+	ok(substr_count($block, '<?php') === substr_count($block, '?>'),
+	   'the feed has ' . substr_count($block, '<?php') . ' opening PHP tags and '
+	 . substr_count($block, '?>') . ' closing ones, so something is stranded');
+	$html = preg_replace('~<\?php.*?\?>~s', '', $block);
+	ok(strpos($html, '/*') === false && strpos($html, '*/') === false,
+	   'a PHP comment is outside a PHP tag in the feed, so the page prints its own source');
+	ok(preg_match('~\$[a-zA-Z_]\w*\s*=~', $html) === 0,
+	   'a PHP assignment is outside a PHP tag in the feed, so the page prints its own '
+	 . 'source and then warns about every variable in it');
+	ok(preg_match('~\$rn\[~', $html) === 0,
+	   'a $rn[...] read is outside a PHP tag in the feed');
+}
+
+/*
  * A LINE WHERE THE CREW FELL. The feed is the week, newest first, so it
  * runs straight through the moment a crew went down -- and without a mark
  * there the greyed Fighters above and below the boundary look like one
