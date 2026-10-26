@@ -1937,6 +1937,23 @@ function dhcb_announce($conn, $b, $dealt, $killedKeys) {
 		 */
 		$wiped    = !empty($kname) && !empty($prog['cleared'])
 		          || (!empty($kname) && $prog['wave'] > $fellWave);
+		/*
+		 * AND THE THIRD STATE: THE CREW FELL WHILE THIS ONE WAS OUT THERE.
+		 *
+		 * $wiped is deliberately narrow -- it means THIS Crew finished them
+		 * -- so an assisting run fell through to the else, which prints the
+		 * percentage of $prog. $prog is the wave that stood up in this same
+		 * request, so the post read "Crew at 0% down" about a crew that had
+		 * just been defeated: the single most misleading thing either
+		 * surface could say, and the owner caught it. Damage commits per
+		 * move now, so a run ENDS when the crew falls under it, which makes
+		 * this the common case rather than a rare one.
+		 *
+		 * waveProg is the crew this run actually fought, read in
+		 * dhcb_finish() before the announcement.
+		 */
+		$mineProg = isset($b['waveProg']) ? $b['waveProg'] : null;
+		$assist   = !$wiped && $mineProg && !empty($mineProg['cleared']);
 		$title = $wiped
 			? '☠️ DHC Bosses — wave ' . $fellWave . ' is down'
 			: ($kname
@@ -1951,10 +1968,21 @@ function dhcb_announce($conn, $b, $dealt, $killedKeys) {
 			       . 'They are getting back up angrier — **wave ' . $prog['wave'] . '** is '
 			       . 'standing now.' . "\n"
 			       . implode(' · ', $bars);
+		} elseif ($assist) {
+			$desc .= 'Wave **' . $fellWave . '** was **DEFEATED** while this Crew was still '
+			       . 'out there. Every point it landed counts.' . "\n\n"
+			       . 'They are getting back up angrier — **wave ' . $prog['wave'] . '** is '
+			       . 'standing now.' . "\n"
+			       . implode(' · ', $bars);
 		} else {
 			$desc .= 'Wave **' . $prog['wave'] . '**' . "\n"
-			       . implode(' · ', $bars) . "\n"
-			       . 'Crew at **' . round(100 * $prog['pct']) . '%** down.';
+			       . implode(' · ', $bars);
+			/* NO NOUGHT. A crew whose damage rounds away is described as
+			   standing, not as "0% defeated" -- the per-boss bars above
+			   already carry everything a zero could have said. */
+			$pc = dhcb_pct_standing($prog['pct']);
+			$desc .= "\n" . ($pc > 0 ? 'Crew **' . $pc . '%** defeated.'
+			                         : 'The crew is still standing.');
 		}
 
 		/*
@@ -2065,10 +2093,21 @@ function dhcb_announce_day($conn, $day, $prog, $table, $paid, $traits = 0) {
 		$tl = isset($label[$table]) ? $label[$table] : $table;
 		$title = $cleared ? '🏆 DHC Bosses — the crew is down'
 		                  : '🌒 DHC Bosses — the day closes';
+		/* THE PERCENTAGE BELONGS TO THE CREW STILL STANDING, and by Thursday
+		   that may be the third one of the week -- so a week that dropped two
+		   crews and left the replacement untouched read "the crew took 0%
+		   damage and held", which describes the opposite of what happened.
+		   The crews already down are named before the survivor is. */
+		$fell = isset($prog['downed']) ? (int)$prog['downed'] - ($cleared ? 1 : 0) : 0;
+		$pc   = dhcb_pct_standing($prog['pct']);
 		$desc  = ($cleared
 				? 'All three went down. Everybody who took part rolls on the **best** table.'
-				: 'The crew took **' . round(100 * $prog['pct']) . '%** damage and held. '
-				  . 'Everybody who took part rolls on the **' . $tl . '** table.')
+				: (($fell > 0
+					? 'The week **DEFEATED ' . $fell . ' crew' . ($fell === 1 ? '' : 's')
+					  . '**, and the one that replaced them '
+					  . ($pc > 0 ? 'took **' . $pc . '%** damage and held. ' : 'held. ')
+					: 'The crew took **' . $pc . '%** damage and held. ')
+				  . 'Everybody who took part rolls on the **' . $tl . '** table.'))
 			. "\n\n" . number_format((int)$paid) . ' '
 			. ((int)$paid === 1 ? 'player' : 'players') . ' paid '
 			. number_format((int)$traits) . ' traits between them · '
@@ -2097,6 +2136,26 @@ function dhcb_announce_day($conn, $day, $prog, $table, $paid, $traits = 0) {
  * no X handles, so @-tagging one hands a stranger the notification. Same
  * rule dhca_start() documents for the Arena share.
  */
+/**
+ * The percentage a crew that is STILL STANDING is reported at.
+ *
+ * BOTH ENDS OF THE SCALE ARE LIES ABOUT A CREW THAT IS UP, and both were
+ * being printed. A run whose damage rounded away posted "0% down", which
+ * reads as a crew nobody has touched -- the owner's catch. The other end
+ * arrived with the fix: 99.9% rounds to a hundred, so the sentence came out
+ * "the DHC Boss Crew is 100% defeated and still standing", which contradicts
+ * itself inside eight words.
+ *
+ * So a standing crew is never nought and never a hundred. Nought comes back
+ * as nought for the caller to put into words, because the honest thing to
+ * say there is not a number.
+ */
+function dhcb_pct_standing($pct) {
+	$n = (int)round(100 * (float)$pct);
+	if ($n >= 100) return 99;
+	return $n > 0 ? $n : 0;
+}
+
 function dhcb_share_text($dealt, $killedNames, $prog) {
 	/*
 	 * SAY "DOWN", NEVER "AT". progress.pct is damage DEALT, so "they are at
@@ -2112,17 +2171,36 @@ function dhcb_share_text($dealt, $killedNames, $prog) {
 	 * Fighter Crew did it, and say THE DHC Boss Crew is the thing falling.
 	 * Full sentences, both actors named, nothing to infer.
 	 */
-	$down = isset($prog['pct']) ? round(100 * $prog['pct']) : 0;
+	/*
+	 * AND A PERCENTAGE ONLY DESCRIBES A CREW THAT IS STILL STANDING.
+	 *
+	 * "The DHC Boss Crew is now 0% down" was the owner's catch, and it is
+	 * the worst reading of the three: it says the crew took nothing, when
+	 * the two ways to reach it are a crew that was just DEFEATED (the
+	 * percentage belonging to the untouched wave behind it) and a run
+	 * whose damage rounded away against a six-figure bar. A defeated crew
+	 * is named as defeated and no number is offered; a standing crew that
+	 * rounds to nought is said to be standing, also without one. A nought
+	 * on a post is never worth the ambiguity it buys.
+	 *
+	 * BOSSES GO DOWN, THE CREW IS DEFEATED. Keeping the two verbs apart is
+	 * what lets "X-K4T is down" and "the crew is 60% defeated" sit in the
+	 * same sentence without the reader having to work out which is which.
+	 */
+	$down = dhcb_pct_standing(isset($prog['pct']) ? $prog['pct'] : 0);
 	$mine = 'My DHC Fighter Crew inflicted ' . number_format((int)$dealt) . ' damage.';
 	if (!empty($prog['cleared'])) {
-		return $mine . ' The DHC Boss Crew is DOWN.';
+		return $mine . ' The DHC Boss Crew has been DEFEATED.';
 	}
 	if ($killedNames) {
 		return $mine . ' ' . implode(' and ', $killedNames)
 		     . (count($killedNames) === 1 ? ' is' : ' are') . ' down, and the DHC Boss Crew '
-		     . 'is now ' . $down . '% down.';
+		     . 'is ' . $down . '% defeated.';
 	}
-	return $mine . ' The DHC Boss Crew is now ' . $down . '% down but still standing.';
+	if ($down <= 0) {
+		return $mine . ' The DHC Boss Crew is still standing.';
+	}
+	return $mine . ' The DHC Boss Crew is ' . $down . '% defeated and still standing.';
 }
 
 /** The button, using the platform's own share helper. */

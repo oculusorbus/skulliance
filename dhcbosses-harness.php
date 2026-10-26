@@ -25,12 +25,29 @@ function ok($cond, $what) {
 	$fail++; echo "  FAIL  $what\n"; return false;
 }
 
+/*
+ * THE POST IS CAPTURED, NOT SENT, AND THAT IS WHY IT CAN BE READ.
+ *
+ * dhcb_webhooks_loaded() returns the moment function_exists('discordmsg') is
+ * true, so defining it here means webhooks.php is never reached and every
+ * announcement in this file lands in $GLOBALS['HB_POSTS'] instead of in the
+ * server. Without it the wording below could only be checked by grepping the
+ * source -- and a check that reads source text passes on code whose OUTPUT is
+ * wrong, which is exactly how "0% down" shipped.
+ */
+$GLOBALS['HB_POSTS'] = array();
+function discordmsg($title, $desc, $img = '', $a = null, $b = null, $c = null, $d = null) {
+	$GLOBALS['HB_POSTS'][] = array('title' => (string)$title, 'desc' => (string)$desc);
+	return true;
+}
 require_once __DIR__ . '/harness-strip.php';
 require_once __DIR__ . '/dhcbosses-lib.php';
 $LIB = harness_strip_comments(file_get_contents(__DIR__ . '/dhcbosses-lib.php'));
 /* The Arena page, which is also the Bosses page -- read once, here, because
    both the wave checks and the interface checks below work on it. */
 $ARE = file_get_contents(__DIR__ . '/dhcarena.php');
+/* The turn endpoint, which decides what the end card is told. */
+$ACT = file_get_contents(__DIR__ . '/ajax/dhcbosses-action.php');
 
 /* ---------------------------------------------------------------- *
  * IT IS AN OVERRIDE, NOT A SECOND ARENA
@@ -310,6 +327,7 @@ class HBConn {
 	public $health = array();     // boss_key => health, now
 	public $maxHealth = array();  // boss_key => health at spawn (defaults to now)
 	public $state = array();      // run_id => the saved battle JSON
+	public $wave = 1;             // the wave these health rows belong to
 	public $runOutcome = 0;
 	public $log = array();
 	public $insert_id = 1;
@@ -359,10 +377,23 @@ class HBConn {
 			$rows = array();
 			foreach ($this->health as $k => $h) {
 				$mx = isset($this->maxHealth[$k]) ? (int)$this->maxHealth[$k] : max(1, (int)$h);
-				$rows[] = array('boss_key'=>$k, 'wave'=>1, 'max_health'=>$mx,
+				$rows[] = array('boss_key'=>$k, 'wave'=>$this->wave, 'max_health'=>$mx,
 				                'health'=>(int)$h, 'killed_at'=>null, 'killed_by'=>0);
 			}
 			return new HBRes($rows);
+		}
+		/* What an announcement reads on its way past: who the player is, and
+		   which wave is standing (dhcb_spawn's one-query "is it still up"). */
+		/* The week key, which MySQL computes because the two clocks on this
+		   host disagree -- so even a stub has to answer it. */
+		if (stripos($q, 'SELECT ') === 0 && stripos($q, ' AS w') !== false
+		    && stripos($q, 'FROM') === false)
+			return new HBRes(array(array('w' => '2026-10-25')));
+		if (stripos($q, 'SELECT username, discord_id, avatar FROM users') === 0)
+			return new HBRes(array(array('username'=>'tester', 'discord_id'=>'', 'avatar'=>'')));
+		if (stripos($q, 'SELECT wave, COUNT(*)') === 0) {
+			$hp = 0; foreach ($this->health as $h) $hp += max(0, (int)$h);
+			return new HBRes(array(array('wave'=>$this->wave, 'n'=>count($this->health), 'hp'=>$hp)));
 		}
 		if (stripos($q, 'UPDATE dhc_boss_day SET health =') === 0) {
 			preg_match('~SET health = (-?\d+)~', $q, $hm);
@@ -678,7 +709,7 @@ echo "\nthe post says what the run did, in the right direction\n";
  * gets the direction backwards is worse than one with no number in it.
  */
 $sh = dhcb_share_text(1850, array(), array('pct'=>0.42, 'cleared'=>false));
-ok(strpos($sh, '42% down') !== false, 'the share does not say which way the number runs: ' . $sh);
+ok(strpos($sh, '42% defeated') !== false, 'the share does not say which way the number runs: ' . $sh);
 ok(strpos($sh, 'at 42%') === false, 'the share still reads as 42% health left: ' . $sh);
 /* It must not claim a kill it did not get, and must claim one it did. */
 ok(stripos(dhcb_share_text(100, array(), array('pct'=>0.1,'cleared'=>false)), 'dropped') === false,
@@ -1303,8 +1334,8 @@ echo "\nthe X post says whose damage it was and what is falling\n";
  * named, in full sentences. The owner's rewrite, verbatim.
  */
 $sh = dhcb_share_text(4800, array(), array('pct' => 0.62, 'cleared' => false));
-ok($sh === 'My DHC Fighter Crew inflicted 4,800 damage. The DHC Boss Crew is now 62% down '
-         . 'but still standing.',
+ok($sh === 'My DHC Fighter Crew inflicted 4,800 damage. The DHC Boss Crew is 62% defeated '
+         . 'and still standing.',
    'the ordinary post is not the agreed wording: ' . $sh);
 /* Both actors named in EVERY variant, not just the common one. */
 foreach (array(
@@ -1332,12 +1363,236 @@ ok(strpos(dhcb_share_text(1, array('CIP-666','X-K4T'), array('pct'=>0.5)), 'X-K4
    'two kills read as singular');
 /* AND IT NEVER SAYS "AT". progress.pct is damage DEALT, so "they are at
    42%" reads as 42% health LEFT and means the opposite. */
+/* EVERY VARIANT, not just the one without kills -- the kill line carries its
+   own percentage and a mutation that flipped only that one went uncaught. */
 foreach (array(0.0, 0.42, 1.0) as $pc) {
-	$t = dhcb_share_text(100, array(), array('pct'=>$pc, 'cleared'=>($pc >= 1.0)));
-	ok(strpos($t, 'is at ') === false && strpos($t, 'are at ') === false,
-	   'the post says the crew is "at" a percentage, which reads as health remaining and '
-	 . 'means the opposite of what it counts: ' . $t);
+	foreach (array(array(), array('X-K4T'), array('CIP-666','X-K4T')) as $kn) {
+		$t = dhcb_share_text(100, $kn, array('pct'=>$pc, 'cleared'=>($pc >= 1.0)));
+		ok(strpos($t, 'is at ') === false && strpos($t, 'are at ') === false,
+		   'the post says the crew is "at" a percentage, which reads as health remaining and '
+		 . 'means the opposite of what it counts: ' . $t);
+	}
 }
+/* And the kill line says which way ITS number runs, in the same word the
+   rest of the post uses. */
+/*
+ * AND THE END CARD RUNS THE SAME WAY, because the share button is on it.
+ * It read "they are at 94%" -- health REMAINING -- directly above a post
+ * saying "6% defeated", which is damage DEALT. Two numbers for the same
+ * thing, a click apart, pointing opposite ways.
+ */
+ok(strpos($ARE, "' The crew is ' + beat + '% defeated and still standing.'") !== false
+   && strpos($ARE, 'var beat = Math.min(99, Math.round(100 * pr.pct));') !== false,
+   'the end card reports health remaining while the share under it reports damage dealt');
+ok(strpos($ARE, "Math.round(100 * (1 - pr.pct))") === false,
+   'the end card still inverts the percentage, so it disagrees with every other surface');
+ok(strpos($ARE, "beat > 0 ?") !== false,
+   'the end card prints a nought percentage, which is the thing the post refuses to do');
+/*
+ * AND IT DOES NOT CONGRATULATE A CREW FOR SOMEBODY ELSE'S KILL. Damage
+ * commits per move now, so a run ENDS when the crew falls under it -- the
+ * common ending once a crew is close. Reaching the clear card from there
+ * would hand this Crew a kill another player landed.
+ */
+ok(strpos($ACT, "\$out['assist'] = !\$killed && !empty(\$b['waveProg']['cleared']);") !== false,
+   'the endpoint never tells the page the crew fell to somebody else, so the end card '
+ . 'cannot tell a clear from an assist');
+$asAt = strpos($ARE, 'if (dropped && res.assist) {');
+$drAt = strpos($ARE, '} else if (dropped) {');
+ok($asAt !== false && $drAt !== false && $asAt < $drAt,
+   'the end card has no assist branch before the clear branch, so a Crew that was merely '
+ . 'present when the crew fell is told it finished them');
+/* STRIPPED, because the branch's own comment explains that it must not say
+   "that is the crew down" -- so the check matched the explanation and
+   reported a passing branch as broken. Same trap, caught by the same tool
+   the rest of this file uses. */
+$asBlock = ($asAt !== false && $drAt !== false)
+	? harness_strip_comments(substr($ARE, $asAt, $drAt - $asAt)) : '';
+ok(strpos($asBlock, 'that is the crew down') === false
+   && strpos($asBlock, 'Another Crew landed the last blow') !== false,
+   'the assist card claims the clear instead of naming who got there first');
+
+ok(strpos(dhcb_share_text(100, array('X-K4T'), array('pct'=>0.5, 'cleared'=>false)),
+          '50% defeated') !== false,
+   'the kill line does not say which way its percentage runs: '
+ . dhcb_share_text(100, array('X-K4T'), array('pct'=>0.5, 'cleared'=>false)));
+
+/*
+ * A NOUGHT NEVER REACHES A POST, ON EITHER SURFACE.
+ *
+ * "The DHC Boss Crew is now 0% down" was the owner's catch. It reads as a
+ * crew that took no damage at all, and the two ways to produce it both mean
+ * something else: a crew that was just DEFEATED, whose percentage belongs to
+ * the untouched wave standing behind it, and a run whose damage rounded away
+ * against a six-figure bar. The first is the worst thing either surface can
+ * say -- it reports the biggest event of the week as nothing happening.
+ */
+foreach (array(
+	array('a defeated crew',            array('pct'=>0.0,    'cleared'=>true)),
+	array('a defeated crew at full pct', array('pct'=>1.0,   'cleared'=>true)),
+	array('damage that rounds away',    array('pct'=>0.0003, 'cleared'=>false)),
+	array('a crew barely touched',      array('pct'=>0.004,  'cleared'=>false)),
+) as $cse) {
+	$t = dhcb_share_text(2100, array(), $cse[1]);
+	/* \b0% AND NOT strpos: "100% defeated" contains "0%", and a check that
+	   cannot tell the two apart fails on the one post that is most right. */
+	ok(preg_match('~\\b0%~', $t) === 0,
+	   'the share posts a nought percentage for ' . $cse[0] . ': ' . $t);
+}
+ok(strpos(dhcb_share_text(2100, array(), array('pct'=>0.0, 'cleared'=>true)), 'DEFEATED') !== false,
+   'a share for a crew that has been defeated does not say so: '
+ . dhcb_share_text(2100, array(), array('pct'=>0.0, 'cleared'=>true)));
+ok(strpos(dhcb_share_text(2100, array(), array('pct'=>0.0, 'cleared'=>true)), 'standing') === false,
+   'a share calls a defeated crew still standing');
+/* And a crew that IS standing still says so, with no number it cannot support. */
+$t0 = dhcb_share_text(300, array(), array('pct'=>0.0003, 'cleared'=>false));
+ok(strpos($t0, 'still standing') !== false && strpos($t0, '%') === false,
+   'a run whose damage rounds away offers a percentage anyway: ' . $t0);
+/*
+ * AND NEITHER END OF THE SCALE BELONGS TO A STANDING CREW.
+ *
+ * Holding the nought off introduced the other one: 99.9% rounds up, so the
+ * post read "the DHC Boss Crew is 100% defeated and still standing", which
+ * contradicts itself inside eight words. dhcb_pct_standing() is the one
+ * home for the rule and every surface goes through it.
+ */
+ok(dhcb_pct_standing(0.999) === 99 && dhcb_pct_standing(0.9999) === 99,
+   'a crew on a sliver is reported as 100% defeated while it is still standing');
+ok(dhcb_pct_standing(1.0) === 99, 'a standing crew can be reported at a flat hundred');
+ok(dhcb_pct_standing(0.0004) === 0, 'damage that rounds away is given a number anyway');
+ok(dhcb_pct_standing(0.615) === 62, 'the ordinary case stopped rounding: '
+                                  . dhcb_pct_standing(0.615));
+$edge = dhcb_share_text(9000, array(), array('pct'=>0.999, 'cleared'=>false));
+ok(strpos($edge, '99% defeated') !== false && strpos($edge, '100%') === false,
+   'the post calls a standing crew 100% defeated: ' . $edge);
+/* The 100% case is the one a naive "contains 0%" check gets wrong, so the
+   CLEARED post is asserted the other way round: it must say so in words. */
+ok(strpos(dhcb_share_text(9000, array(), array('pct'=>1.0, 'cleared'=>true)), 'DEFEATED') !== false,
+   'a defeated crew is not named as defeated');
+ok(strpos($ARE, 'Math.min(99, Math.round(100 * pr.pct))') !== false,
+   'the end card can print 100% beside "still standing", which the post cannot');
+
+/*
+ * AND THE DISCORD POST, EXECUTED RATHER THAN GREPPED.
+ *
+ * The same nought reached Discord by a different route: $wiped is narrow on
+ * purpose (it means THIS Crew finished them), so an assisting run fell
+ * through to the branch that prints the standing wave's percentage -- and
+ * the standing wave is the one that stood up in the same request. With
+ * damage committing per move a run now ENDS when the crew falls under it,
+ * which makes that the common case rather than a rare one.
+ */
+function hb_post($conn, $b, $dealt, $killedKeys) {
+	$GLOBALS['HB_POSTS'] = array();
+	dhcb_announce($conn, $b, $dealt, $killedKeys);
+	return $GLOBALS['HB_POSTS'] ? $GLOBALS['HB_POSTS'][0] : array('title'=>'', 'desc'=>'');
+}
+/** A finished boss battle, as dhcb_announce() reads one. */
+function hb_announce_battle($waveProg, $wave = 1) {
+	return array(
+		'mine' => array(array('name'=>'A','ko'=>true), array('name'=>'B','ko'=>true),
+		                array('name'=>'C','ko'=>false)),
+		'foes' => array(), 'waveProg' => $waveProg,
+		'meta' => array('attacker'=>1, 'run_id'=>9, 'day'=>'2026-10-25', 'wave'=>$wave),
+	);
+}
+$ca = new HBConn();
+/* The crew this run fought is gone and wave 2 is standing, untouched --
+   exactly the state the request is in microseconds after somebody else
+   landed the last blow. */
+$ca->wave = 2;
+$ca->health = $ca->maxHealth = array('d34thbrngr'=>9000, 'cip-666'=>9000, 'x-k4t'=>9000);
+$fellProg = array('pct'=>1.0, 'cleared'=>true, 'wave'=>1, 'downed'=>1,
+                  'max'=>9000, 'left'=>0, 'dealt'=>9000, 'dead'=>3, 'total'=>3);
+$post = hb_post($ca, hb_announce_battle($fellProg, 1), 2100, array());
+ok(preg_match('~\\b0%~', $post['desc']) === 0,
+   'the Discord post says the crew is 0% down when it had just been defeated: ' . $post['desc']);
+ok(stripos($post['desc'], 'DEFEATED') !== false,
+   'the post never says the crew this Crew fought went down: ' . $post['desc']);
+ok(strpos($post['desc'], 'still out there') !== false,
+   'the post claims the clear for a Crew that only assisted, or does not place it at all: '
+ . $post['desc']);
+/* An ordinary run against a standing crew still gets its percentage. */
+$cb = new HBConn();
+$cb->wave = 1;
+$cb->health = array('d34thbrngr'=>4000, 'cip-666'=>4000, 'x-k4t'=>4000);
+$cb->maxHealth = array('d34thbrngr'=>9000, 'cip-666'=>9000, 'x-k4t'=>9000);
+$standProg = array('pct'=>0.555, 'cleared'=>false, 'wave'=>1, 'downed'=>0,
+                   'max'=>27000, 'left'=>12000, 'dealt'=>15000, 'dead'=>0, 'total'=>3);
+$post2 = hb_post($cb, hb_announce_battle($standProg, 1), 900, array());
+ok(strpos($post2['desc'], '56%') !== false,
+   'an ordinary run lost the percentage that describes the crew: ' . $post2['desc']);
+ok(stripos($post2['desc'], 'still out there') === false,
+   'an ordinary run is reported as an assist: ' . $post2['desc']);
+/* And a crew nobody has dented yet is described, not numbered. */
+$cc2 = new HBConn();
+$cc2->wave = 1;
+$cc2->health = $cc2->maxHealth = array('d34thbrngr'=>9000, 'cip-666'=>9000, 'x-k4t'=>9000);
+$freshProg = array('pct'=>0.0008, 'cleared'=>false, 'wave'=>1, 'downed'=>0,
+                   'max'=>27000, 'left'=>26978, 'dealt'=>22, 'dead'=>0, 'total'=>3);
+$post3 = hb_post($cc2, hb_announce_battle($freshProg, 1), 22, array());
+/* THE POST HAS TO NAME BOTH WAVES: the one that fell, and the one standing
+   in its place. Naming only one is how it came to describe a defeated crew
+   with its replacement's numbers. */
+ok(strpos($post['desc'], 'Wave **1** was') !== false
+   && strpos($post['desc'], '**wave 2** is standing now') !== false,
+   'the assist post does not separate the crew that fell from the one standing: ' . $post['desc']);
+/* HB_SHOW=1 php dhcbosses-harness.php prints these three posts, for reading
+   the copy rather than asserting on it. */
+if (getenv('HB_SHOW')) {
+	foreach (array('assist'=>$post, 'ordinary'=>$post2, 'fresh'=>$post3) as $lbl => $pp)
+		echo "\n--- $lbl ---\n" . $pp['title'] . "\n" . $pp['desc'] . "\n";
+}
+ok(preg_match('~\\b0%~', $post3['desc']) === 0,
+   'the post offers a nought percentage for a crew barely touched: ' . $post3['desc']);
+/* And the other end: a crew on a sliver is not a hundred per cent defeated
+   while it is still standing, on Discord either. */
+$cd2 = new HBConn();
+$cd2->wave = 1;
+$cd2->health    = array('d34thbrngr'=>4, 'cip-666'=>4, 'x-k4t'=>4);
+$cd2->maxHealth = array('d34thbrngr'=>9000, 'cip-666'=>9000, 'x-k4t'=>9000);
+$edgeProg = array('pct'=>0.9995, 'cleared'=>false, 'wave'=>1, 'downed'=>0,
+                  'max'=>27000, 'left'=>12, 'dealt'=>26988, 'dead'=>0, 'total'=>3);
+$post4 = hb_post($cd2, hb_announce_battle($edgeProg, 1), 4000, array());
+ok(strpos($post4['desc'], '99%') !== false && strpos($post4['desc'], '100%') === false,
+   'the post calls a standing crew 100% defeated: ' . $post4['desc']);
+
+/*
+ * AND THE WEEK-CLOSE POST HAS THE SAME TRAP ONE SIZE UP.
+ *
+ * Its percentage is read off the crew STILL STANDING, which by Thursday may
+ * be the third of the week -- so a week that defeated two crews and left
+ * the replacement untouched posted "the crew took 0% damage and held",
+ * reporting the best week the community had ever had as nothing happening.
+ */
+$GLOBALS['HB_POSTS'] = array();
+dhcb_announce_day(new HBConn(), '2026-10-25',
+	array('pct'=>0.0, 'cleared'=>false, 'wave'=>3, 'downed'=>2,
+	      'max'=>9000, 'left'=>9000, 'dealt'=>0, 'dead'=>0, 'total'=>3),
+	'placement_1', 6, 31);
+$wk = $GLOBALS['HB_POSTS'] ? $GLOBALS['HB_POSTS'][0]['desc'] : '';
+ok(preg_match('~\b0%~', $wk) === 0,
+   'the week closes on "0% damage" after a week that dropped two crews: ' . $wk);
+ok(strpos($wk, 'DEFEATED 2 crews') !== false,
+   'the week-close post does not name the crews the week put down: ' . $wk);
+/* A week that dropped nothing still reports what the one crew took. */
+$GLOBALS['HB_POSTS'] = array();
+dhcb_announce_day(new HBConn(), '2026-10-25',
+	array('pct'=>0.37, 'cleared'=>false, 'wave'=>1, 'downed'=>0,
+	      'max'=>9000, 'left'=>5670, 'dealt'=>3330, 'dead'=>0, 'total'=>3),
+	'placement_10', 4, 18);
+$wk2 = $GLOBALS['HB_POSTS'] ? $GLOBALS['HB_POSTS'][0]['desc'] : '';
+ok(strpos($wk2, '37%') !== false && stripos($wk2, 'DEFEATED') === false,
+   'a week that dropped nothing either loses its number or claims a clear: ' . $wk2);
+/* And a week that ended one hit short is not reported as a clear. */
+$GLOBALS['HB_POSTS'] = array();
+dhcb_announce_day(new HBConn(), '2026-10-25',
+	array('pct'=>0.9996, 'cleared'=>false, 'wave'=>1, 'downed'=>0,
+	      'max'=>27000, 'left'=>11, 'dealt'=>26989, 'dead'=>2, 'total'=>3),
+	'placement_3', 9, 44);
+$wk3 = $GLOBALS['HB_POSTS'] ? $GLOBALS['HB_POSTS'][0]['desc'] : '';
+ok(strpos($wk3, '99%') !== false && strpos($wk3, '100%') === false,
+   'the week closes calling a crew that held 100% damaged: ' . $wk3);
 
 /* ---------------------------------------------------------------- *
  * THE POST DESCRIBES THIS RUN, NOT THE WEEK AROUND IT

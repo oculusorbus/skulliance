@@ -3984,7 +3984,21 @@ function showEnd(res){
           + 'cannot be taken back.';
       if (pr.wave > 1) sub += ' They are getting back up angrier: wave ' + pr.wave + '.';
     } else if (pr) {
-      sub += ' They are at ' + Math.round(100 * (1 - pr.pct)) + '% and still standing.';
+      /*
+       * ONE DIRECTION FOR ONE QUANTITY, because the share button is on this
+       * card. This said "they are at 94%" -- health REMAINING -- while the
+       * post it sits above said "6% defeated", which is damage DEALT: two
+       * numbers for the same thing, a click apart, running opposite ways.
+       * Damage dealt is the one the whole feature counts in, so it wins,
+       * and a figure that rounds to nought is given as words rather than
+       * as a nought, for the same reason the post does not print one.
+       */
+      /* Never 100 either: 99.9% rounds up and "100% defeated and still
+         standing" contradicts itself. dhcb_pct_standing() is the same rule
+         on the server, for the post this card sits above. */
+      var beat = Math.min(99, Math.round(100 * pr.pct));
+      sub += beat > 0 ? ' The crew is ' + beat + '% defeated and still standing.'
+                      : ' The crew is still standing.';
       sub += ' Everyone who takes part is paid when the week closes.';
     }
   }
