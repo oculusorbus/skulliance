@@ -1529,6 +1529,14 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   text-transform:uppercase;color:var(--dim);background:var(--panel2);
   border-bottom:1px solid var(--line);font-weight:600}
 .arena-wrap .a-feed .body{padding:4px 12px 10px}
+/* The moment a crew fell, drawn across the feed. A rule either side of a
+   short label, in the ochre the round strip uses, so it reads as an event
+   in the week rather than as another run. */
+.arena-wrap .a-wavebreak{display:flex;align-items:center;gap:10px;margin:4px 0;
+  font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ochre)}
+.arena-wrap .a-wavebreak:before,.arena-wrap .a-wavebreak:after{content:'';flex:1 1 auto;
+  height:1px;background:linear-gradient(90deg,transparent,rgba(0,200,160,.45),transparent)}
+.arena-wrap .a-wavebreak span{flex:0 0 auto;white-space:nowrap}
 .arena-wrap .a-run{display:flex;align-items:center;gap:14px;padding:8px 0;
   border-bottom:1px solid var(--line)}
 .arena-wrap .a-run:last-child{border-bottom:0}
@@ -1538,7 +1546,14 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-av{width:24px;height:24px;border-radius:50%;object-fit:cover;flex:0 0 auto;
   border:1px solid var(--line)}
 /* The Crew. Fixed squares so every row lines up whatever the art is. */
-.arena-wrap .a-runcrew{display:flex;gap:4px;flex:0 0 auto}
+/* ALWAYS THREE WIDE. A Crew is three Fighters, so the cell is pinned to
+   three regardless of what the run did -- otherwise a row with a kill on
+   it is wider than its neighbours and every column after it loses its
+   line. 3 x 38 + 2 x 4 of gap. */
+.arena-wrap .a-runcrew{display:flex;gap:4px;flex:0 0 122px}
+/* The result: whatever was dropped, then the words. Pushed right as one
+   block so the outcome text still lands on the same edge every row. */
+.arena-wrap .a-runres{display:flex;align-items:center;gap:8px;margin-left:auto}
 /* A STACK, not one picture: the layers sit on top of each other inside the
    tile, which is why it is positioned and they are absolute. */
 .arena-wrap .a-rf{position:relative;display:block;width:38px;height:38px;border-radius:3px;
@@ -1575,17 +1590,21 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-runnum b{display:block;font-size:13px;color:#e8eaed;font-weight:600;
   font-variant-numeric:tabular-nums}
 .arena-wrap .a-runnum span{font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
-.arena-wrap .a-runout{margin-left:auto;font-size:9px;letter-spacing:.11em;text-transform:uppercase;
+.arena-wrap .a-runout{font-size:9px;letter-spacing:.11em;text-transform:uppercase;
   color:var(--dim);white-space:nowrap}
 .arena-wrap .a-runout.ok{color:var(--teal)}
 /* Still being played: the same amber the admin report uses for "running",
    so the two surfaces describe the same state in the same colour. */
 .arena-wrap .a-runout.live{color:var(--ochre)}
 .arena-wrap .a-runout.kill{color:var(--warn);font-weight:600}
+/* Fought, landed nothing, still counts. Not the grey of a wipe and not
+   the teal of a survivor -- its own thing, because it is. */
+.arena-wrap .a-runout.clamped{color:#8fa8b8;border-bottom:1px dotted rgba(143,168,184,.5);
+  cursor:help}
 /* The boss a Crew dropped: set apart from the Crew by a gap and a warm
    edge, so three Fighters and their kill do not read as four Fighters.
    Not clickable -- a boss has no Fighter panel to open. */
-.arena-wrap .a-rf.a-rkill{margin-left:8px;border-color:rgba(255,92,60,.5);cursor:default}
+.arena-wrap .a-rf.a-rkill{border-color:rgba(255,92,60,.5);cursor:default}
 .arena-wrap .a-rf.a-rkill:hover{border-color:rgba(255,92,60,.5)}
 /* An unresolved Crew: three empty slots so the row keeps its shape. */
 .arena-wrap .a-rf.pending{border-style:dashed;cursor:default;opacity:.5}
@@ -1596,7 +1615,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   .arena-wrap .a-run{flex-wrap:wrap;gap:8px 10px}
   .arena-wrap .a-runwho{flex:1 1 100%}
   .arena-wrap .a-runnum{flex:0 0 auto;text-align:left}
-  .arena-wrap .a-runout{margin-left:0}
+  .arena-wrap .a-runres{margin-left:0}
 }
 .arena-wrap #arenaBattle{display:none;margin-top:12px}
 .arena-wrap #arenaBattle.on{display:block}
@@ -2375,7 +2394,31 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   <div class="a-feed">
     <h2>Crews sent this week</h2>
     <div class="body">
+      <?php
+        /*
+         * A LINE WHERE THE CREW FELL.
+         *
+         * The feed is the week, newest first, so it runs straight through
+         * the moment a crew went down and the next one stood up -- and
+         * without a mark there, the greyed Fighters above and below the
+         * boundary look like the same fight. The runs carry the wave they
+         * were fought against, so the break is wherever that number
+         * changes on the way down the list.
+         *
+         * It is drawn as the EVENT, not as a label on the rows beneath it:
+         * reading downward you pass the point where wave N stood up, which
+         * is also the point where wave N-1 died.
+         */
+        $prevWave = null;
+      ?>
       <?php foreach ($dhcb_feed as $rn):
+        $wv = max(1, (int)$rn['wave']);
+        if ($prevWave !== null && $wv < $prevWave): ?>
+        <div class="a-wavebreak">
+          <span>Wave <?php echo (int)$prevWave; ?> stood up
+            &middot; wave <?php echo (int)$wv; ?> had fallen</span>
+        </div>
+      <?php endif; $prevWave = $wv; ?>
         /*
          * A RUN IN PROGRESS IS NOT A WIPE, and the first version said it was.
          *
@@ -2394,6 +2437,19 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         $live  = ((int)$rn['outcome'] === 0);
         $fell  = 0; foreach ($rn['fighters'] as $f) if (!empty($f['fell'])) $fell++;
         $stood = count($rn['fighters']) - $fell;
+        /*
+         * BEATEN TO IT. A finished run that landed nothing after a real
+         * fight did not play badly -- the crew died to somebody else while
+         * it was still out there, and the clamp took the lot. The row read
+         * "0 damage, 20 rounds, Crew wiped", which is the shape of a
+         * disaster rather than of bad luck, and the first person it
+         * happened to had to ask.
+         *
+         * The round still banks its trait and the average ignores it; this
+         * is the part that says so on screen.
+         */
+        $clamped = (!$live && (int)$rn['dealt'] === 0
+                    && (int)$rn['rounds'] >= (int)DHCB_MIN_ROUNDS);
         $av = ($rn['discord_id'] && $rn['avatar']) ? avatar_url($rn['discord_id'], $rn['avatar']) : '';
         $who = ($rn['username'] !== null && $rn['username'] !== '') ? $rn['username'] : 'Unknown';
       ?>
@@ -2440,16 +2496,6 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
             <?php endforeach; ?>
           </button>
           <?php endforeach; ?>
-          <?php /* THE BOSS THIS CREW DROPPED, after the Crew that dropped it
-                   and greyed like them, because it fell too. The gap keeps
-                   it from reading as a fourth Fighter. */ ?>
-          <?php foreach ($rn['kills'] as $kb): ?>
-            <span class="a-rf fell a-rkill" title="<?php
-              echo htmlspecialchars($kb['name'] . ' — dropped by this Crew'); ?>">
-              <img loading="lazy" alt="" src="<?php echo htmlspecialchars($kb['art']); ?>"
-                   onerror="this.remove()">
-            </span>
-          <?php endforeach; ?>
         </div>
         <?php /* A DASH, NOT A ZERO, while it is still being played. Damage
                  and rounds are written at the end, so a nought there is not
@@ -2460,6 +2506,25 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         <?php /* The outcome a player cares about is not win or lose -- almost
                  every run is a wipe and still pays. What is worth saying is
                  whether anybody walked away, and whether anything went down. */ ?>
+        <?php /*
+               * THE KILL SITS WITH THE OUTCOME, not with the Crew.
+               *
+               * It was tacked onto the end of the Fighters, which made a
+               * row with kills physically wider and shoved damage, rounds
+               * and the result right by one or two tiles -- every column
+               * in the feed lost its line. It is also the wrong place for
+               * it: a boss you dropped is a RESULT, not a member of your
+               * Crew. Beside the words that describe the result, with the
+               * Crew cell pinned to three, both problems go.
+               */ ?>
+        <div class="a-runres">
+        <?php foreach ($rn['kills'] as $kb): ?>
+          <span class="a-rf fell a-rkill" title="<?php
+            echo htmlspecialchars($kb['name'] . ' — dropped by this Crew'); ?>">
+            <img loading="lazy" alt="" src="<?php echo htmlspecialchars($kb['art']); ?>"
+                 onerror="this.remove()">
+          </span>
+        <?php endforeach; ?>
         <?php if ($live): ?>
           <div class="a-runout live">Still out there</div>
         <?php elseif (!empty($rn['kills'])): ?>
@@ -2476,10 +2541,15 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                    possible if the ledger was edited by hand. Say the true
                    thing rather than name the wrong boss. */ ?>
           <div class="a-runout kill">Took one down</div>
+        <?php elseif ($clamped): ?>
+          <div class="a-runout clamped" title="The boss crew fell to somebody else while this
+            Crew was still out there, so none of its damage landed. The round still counts
+            toward the cache, and it does not count against the ladder average.">Beaten to it</div>
         <?php else: ?>
           <div class="a-runout<?php echo $stood > 0 ? ' ok' : ''; ?>"><?php
             echo $stood > 0 ? $stood . ' walked away' : 'Crew wiped'; ?></div>
         <?php endif; ?>
+        </div>
       </div>
       <?php endforeach; ?>
     </div>

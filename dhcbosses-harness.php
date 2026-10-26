@@ -819,6 +819,31 @@ ok(!empty($om) && (int)$om[1] >= 60,
 ok(strpos($ARE, '.arena-wrap .a-rf:not(.fell){border-color:var(--teal)') !== false,
    'a surviving Fighter has no lit edge, so the rare good outcome does not read in a wall '
  . 'of grey');
+/*
+ * A LINE WHERE THE CREW FELL. The feed is the week, newest first, so it
+ * runs straight through the moment a crew went down -- and without a mark
+ * there the greyed Fighters above and below the boundary look like one
+ * long fight.
+ */
+ok(strpos($ARE, 'class="a-wavebreak"') !== false,
+   'nothing marks where a wave ended, so the week reads as one undifferentiated list');
+ok(strpos($ARE, '$prevWave !== null && $wv < $prevWave') !== false,
+   'the break is not driven by the wave each run was fought against');
+/*
+ * AND A CLAMPED RUN SAYS WHAT HAPPENED TO IT.
+ *
+ * "0 damage, 20 rounds, Crew wiped" is the shape of a disaster, and this
+ * was bad luck: the crew fell to somebody else while that Crew was still
+ * out there. The first person it happened to had to ask.
+ */
+ok(strpos($ARE, "\$clamped = (!\$live && (int)\$rn['dealt'] === 0") !== false
+   && strpos($ARE, "(int)\$rn['rounds'] >= (int)DHCB_MIN_ROUNDS)") !== false,
+   'a run the clamp ate is not distinguished, so it reads as a run that failed');
+ok(strpos($ARE, 'Beaten to it') !== false,
+   'a clamped run has no wording of its own');
+ok(strpos($ARE, 'does not count against the ladder average') !== false,
+   'nothing tells the player the round still counted, which is the thing they will ask');
+
 /* AND THE OUTCOME IS WORDED FOR THIS GAME. Win/lose is meaningless when
    almost every run is a paying wipe; what is worth saying is whether
    anybody came back. */
@@ -862,10 +887,27 @@ ok(strpos($ARE, "elseif (!empty(\$rn['kills'])):") !== false,
    'the feed does not name the boss a Crew dropped');
 ok(strpos($ARE, 'class="a-rf fell a-rkill"') !== false,
    'the boss a Crew dropped is not shown, or is not greyed -- it fell too');
-/* NOT A FOURTH FIGHTER. It sits apart and does not open a Fighter panel. */
-ok(strpos($ARE, '.arena-wrap .a-rf.a-rkill{margin-left:8px') !== false,
-   'the dropped boss sits flush against the Crew and reads as a fourth Fighter');
-ok(strpos($ARE, 'a-rkill{margin-left:8px;border-color:rgba(255,92,60,.5);cursor:default}') !== false,
+/*
+ * NOT A FOURTH FIGHTER, AND NOT IN THE PLAYER'S HALF OF THE ROW.
+ *
+ * It was tacked onto the end of the Crew, which made a row with a kill
+ * physically wider and shoved damage, rounds and the result right by a
+ * tile or two -- every column in the feed lost its line. It is also the
+ * wrong place for it: a boss you dropped is a RESULT, not a member of
+ * your Crew. It lives with the outcome words on the right now, and the
+ * Crew cell is pinned to three so the columns cannot move.
+ */
+ok(strpos($ARE, '.arena-wrap .a-runcrew{display:flex;gap:4px;flex:0 0 122px}') !== false,
+   'the Crew cell is not pinned to three Fighters, so a row with a kill on it is wider '
+ . 'than its neighbours and every column after it loses its line');
+$crewCell = substr($ARE, strpos($ARE, 'class="a-runcrew"'),
+                   strpos($ARE, 'class="a-runnum"') - strpos($ARE, 'class="a-runcrew"'));
+ok(strpos($crewCell, 'a-rkill') === false,
+   'the dropped boss is back inside the Crew cell, which is what pushed the columns out');
+ok(strpos($ARE, 'class="a-runres"') !== false
+   && strpos($ARE, '.arena-wrap .a-runres{display:flex;align-items:center;gap:8px;margin-left:auto}') !== false,
+   'the result block is gone, so the kill and the outcome no longer land on one right edge');
+ok(strpos($ARE, 'a-rkill{border-color:rgba(255,92,60,.5);cursor:default}') !== false,
    'the dropped boss looks clickable, and a boss has no Fighter panel to open');
 /* THE NUMBERS TOO. A nought before the run resolves is the absence of a
    result, not a result, and printing it says the Crew achieved nothing. */
