@@ -16494,6 +16494,17 @@ function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false) {
 	$lb_rows = array(); $description = ""; $fireworks = false;
 	$leaderboardCounter = 0; $counter = 0; $last_score = null;
 	foreach ($rows as $row) {
+		/*
+		 * UNRANKED ROWS ARE NOT ON THIS BOARD AND ARE NEVER PAID.
+		 *
+		 * dhcb_ladder() returns everybody who turned up now, because the
+		 * game's own panel tells a player how many Crews short they are
+		 * rather than leaving them invisible. This board is the prize, so
+		 * the minimum still decides who is on it -- and this skip is the
+		 * only thing standing between that change and paying CARBON to
+		 * somebody who sent one Crew.
+		 */
+		if (isset($row['ranked']) && !$row['ranked']) continue;
 		$counter++;
 		$score = (int)$row['per'];
 		$leaderboardCounter++;

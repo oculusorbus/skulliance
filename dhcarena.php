@@ -1516,6 +1516,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-lad tbody tr:hover{background:rgba(0,200,160,.05)}
 .arena-wrap .a-lad .r{opacity:.65;font-variant-numeric:tabular-nums}
 .arena-wrap .a-lad .me{color:var(--ochre)}
+/* NOT YET ON THE BOARD. Dimmed rather than hidden, with the shortfall in
+   the Crews column, so somebody one Crew short can see exactly that
+   instead of wondering why they are missing. */
+.arena-wrap .a-lad .unranked{opacity:.5}
+.arena-wrap .a-lad .unranked em{font-style:normal;color:var(--ochre);font-size:10px}
+.arena-wrap .a-lad .unranked.me{opacity:.75;color:var(--ochre)}
 .arena-wrap .a-lad .me .r{opacity:1}
 /* ---- the week's Crews, a full-width row under the panels ---- */
 .arena-wrap .a-feed{margin-top:14px;border:1px solid var(--line);border-radius:3px;overflow:hidden}
@@ -2300,11 +2306,14 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                     'Nobody has finished a Crew against them yet this week. Be first.'); ?>
         </div>
         <p class="a-sub" style="margin:0">Ranked on <b>damage per Fighter fielded</b>, so a
-           deep Crew list is an advantage and not a win on its own. A minimum of
-           <?php echo (int)DHCB_LADDER_MIN_RUNS; ?> finished Crews puts you on the board, and
-           <b><?php echo number_format(DHCB_CARBON); ?> CARBON</b> is split down it when the
-           week closes — first place takes the largest share, and each rank below takes
-           the pool divided by its own position.</p>
+           deep Crew list is an advantage and not a win on its own. A Crew that landed
+           nothing because the boss crew fell while it was still out there does not count
+           against that average. A minimum of
+           <?php echo (int)DHCB_LADDER_MIN_RUNS; ?> finished Crews puts you in the running,
+           and anybody short of it is listed underneath with how many they need. The pool of
+           <b><?php echo number_format(DHCB_CARBON); ?> CARBON</b> is split down the ranked
+           part when the week closes — first place takes the largest share, and each rank
+           below takes the pool divided by its own position.</p>
       </div>
     </div>
     <?php endif; ?>

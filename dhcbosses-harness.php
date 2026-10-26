@@ -416,13 +416,22 @@ ok(strpos($settle, 'DHCB_MIN_DEALT') !== false,
 echo "\nthe monthly board ranks on efficiency, not on roster size\n";
 $lad = substr($LIB, strpos($LIB, 'function dhcb_ladder'));
 $lad = substr($lad, 0, strpos($lad, "\nfunction "));
-ok(strpos($lad, 'SUM(r.dealt) / SUM(r.crew_size)') !== false,
+/* DAMAGE OVER FIGHTERS, not raw damage. The denominator narrowed to the
+   Fighters that actually landed something -- see the clamp note below --
+   but it is still a per-Fighter average and never a volume total. */
+ok(preg_match('~ORDER BY .*SUM\(r\.dealt\) / ~s', $lad) === 1
+   && strpos($lad, 'r.crew_size ELSE 0 END)') !== false,
    'the board orders on raw damage, which is mostly a measure of roster size -- and the '
- . 'harmonic payout weights rank 1 at twice rank 2, so it would compound every month');
+ . 'harmonic payout weights rank 1 at twice rank 2, so it would compound every week');
 ok(strpos($lad, 'crew_size') !== false && strpos($lad, 'COUNT(*) AS runs') !== false,
    'the volume columns are gone; they are displayed but must not rank');
-ok(strpos($lad, 'HAVING runs >=') !== false,
-   'a single lucky run can top the board');
+/* A SINGLE LUCKY RUN STILL CANNOT TOP IT. The minimum moved from a HAVING
+   to a rank-and-pay rule so that everybody who turned up is visible, but
+   it still decides who can hold a position and who gets paid. */
+ok(strpos($lad, 'ORDER BY (runs >= $min) DESC') !== false,
+   'a single lucky run can be sorted above a qualified player');
+ok(strpos($lad, "'ranked'=>((int)\$x['runs'] >= \$min)") !== false,
+   'nothing marks a row as below the minimum, so a single run reads as a real position');
 
 /* ---------------------------------------------------------------- *
  * THE COOLDOWN IS NOT THE ARENA'S
@@ -635,6 +644,83 @@ $flat = dhca_new_battle($mine, array(array(), array(), array()),
 ok($probe['mine'][0]['maxHp'] > $flat['mine'][0]['maxHp'],
    'the Crew is no healthier on real ground than it was on no ground, so the frail penalty '
  . 'is still being applied');
+
+/* ---------------------------------------------------------------- *
+ * A RUN THE CLAMP ATE STILL COUNTS, AND THE BOARD SHOWS EVERYBODY
+ * ---------------------------------------------------------------- */
+echo "\nbeing unlucky does not cost a player their round\n";
+/*
+ * OBSERVED ON THE FIRST CLEAR. Damage is capped at the health left on the
+ * shared bar, which is right while two people race a live boss. But when
+ * the crew DIES mid-run, everybody still out there commits against empty
+ * bars and records a flat zero -- one player went twenty rounds and banked
+ * nothing.
+ *
+ * That zero cost three separate things, and the third is the worst:
+ *   the round's cache slot;
+ *   the week's trait for that round;
+ *   LADDER POSITION, because the average is damage over Fighters FIELDED,
+ *   so a clamped run added three to the denominator and nothing to the
+ *   numerator. Bad luck actively lowered their rank.
+ */
+ok(defined('DHCB_MIN_ROUNDS') && DHCB_MIN_ROUNDS > 1,
+   'there is no rounds-based participation rule, so a run the clamp ate banks nothing');
+ok(DHCB_MIN_ROUNDS >= 3,
+   'the rounds minimum is low enough to reach by forfeiting, which makes the cache '
+ . 'farmable without fighting');
+/* Both places a slot is decided use the same rule, or the slot a player
+   sees and the trait they are paid disagree. */
+ok(substr_count($LIB, 'OR rounds >= ') >= 3,
+   'the damage-or-rounds rule is not applied everywhere a slot is decided ('
+ . substr_count($LIB, 'OR rounds >= ') . ' of 3)');
+ok(strpos($LIB, "\$p['rounds_max'] < DHCB_MIN_ROUNDS") !== false,
+   'the settle still pays on damage alone, so a clamped run gets no trait');
+/*
+ * AND THE AVERAGE ONLY DIVIDES BY FIGHTERS THAT LANDED SOMETHING.
+ */
+ok(strpos($LIB, 'SUM(CASE WHEN r.dealt > 0 THEN r.crew_size ELSE 0 END) AS scoring') !== false,
+   'the ladder divides by every Fighter fielded, so a run the clamp ate lowers the '
+ . 'player\'s own average');
+ok(strpos($LIB, "\$sc = max(1, (int)\$x['scoring']);") !== false
+   && strpos($LIB, "'per'=>(int)round((int)\$x['dealt'] / \$sc)") !== false,
+   'the per-Fighter figure is not taken from the scoring Fighters');
+
+/*
+ * EVERYBODY WHO TURNED UP IS ON THE BOARD; the minimum decides RANK.
+ *
+ * It was a HAVING, so a player with two finished Crews was simply absent --
+ * and early in a week that is everybody. Round four of the first week and
+ * the board had one name on it, which reads as a dead feature rather than
+ * as a board filling up.
+ */
+ok(strpos($LIB, 'HAVING fighters > 0') !== false
+   && strpos($LIB, 'HAVING runs >= $min') === false,
+   'the ladder still hides anybody short of the minimum, so an early week looks empty');
+ok(strpos($LIB, "'ranked'=>((int)\$x['runs'] >= \$min)") !== false
+   && strpos($LIB, "'needs'=>max(0, \$min - (int)\$x['runs'])") !== false,
+   'the rows do not say who is ranked or how many Crews short they are');
+ok(strpos($LIB, 'ORDER BY (runs >= $min) DESC') !== false,
+   'the unranked are not sorted below the ranked, so the board interleaves them');
+/*
+ * AND THE PAYOUT NEVER SEES THEM. This skip is the only thing standing
+ * between showing everybody and paying CARBON to somebody who sent one
+ * Crew.
+ */
+$DBS = file_get_contents(__DIR__ . '/db.php');
+$cfn2 = substr($DBS, strpos($DBS, 'function checkDHCBossesLeaderboard'));
+$cfn2 = substr($cfn2, 0, strpos($cfn2, "\n}\n") + 3);
+ok(strpos($cfn2, "if (isset(\$row['ranked']) && !\$row['ranked']) continue;") !== false,
+   'the CARBON payout walks every row dhcb_ladder() returns, which now includes players '
+ . 'short of the minimum -- it would pay somebody who sent one Crew');
+$skipAt = strpos($cfn2, "!\$row['ranked']");
+$payAt  = strpos($cfn2, 'updateBalance(');
+ok($skipAt !== false && $payAt !== false && $skipAt < $payAt,
+   'the unranked skip comes after the payout, so it does not prevent anything');
+/* The panel marks them rather than dropping them. */
+ok(strpos($LIB, "\$unranked = isset(\$l['ranked']) && !\$l['ranked'];") !== false,
+   'the rendered board does not distinguish the unranked');
+ok(strpos($ARE, '.arena-wrap .a-lad .unranked{opacity:.5}') !== false,
+   'the unranked rows are not dimmed, so they read as ranked positions');
 
 /* ---------------------------------------------------------------- *
  * THE WEEK'S CREWS, DRAWN
@@ -864,6 +950,49 @@ foreach (array(0.0, 0.42, 1.0) as $pc) {
 	   'the post says the crew is "at" a percentage, which reads as health remaining and '
 	 . 'means the opposite of what it counts: ' . $t);
 }
+
+/* ---------------------------------------------------------------- *
+ * THE POST DESCRIBES THIS RUN, NOT THE WEEK AROUND IT
+ * ---------------------------------------------------------------- */
+echo "\nthe announcement says what this Crew did and nothing else\n";
+/*
+ * THREE THINGS WRONG IN TWO POSTS FROM THE FIRST CLEAR, all of them the
+ * same mistake: reading the world instead of the run.
+ *
+ * ONE. "They are getting back up angrier -- wave 1 is standing now."
+ * dhcb_state($conn, $day) with an explicit day SKIPS dhcb_spawn(), and the
+ * announcement runs microseconds after the kill that emptied the crew. So
+ * it read the wave it had just finished and named the dead crew as the one
+ * standing.
+ */
+$ann = substr($LIB, strpos($LIB, 'function dhcb_announce('));
+$ann = substr($ann, 0, strpos($ann, 'function dhcb_announce_day('));
+ok(strpos($ann, '$state = dhcb_state($conn);') !== false,
+   'the announcement passes an explicit day to dhcb_state(), which skips the respawn, so '
+ . 'it names the crew that just died as the one standing');
+ok(strpos($ann, '$state = dhcb_state($conn, $day);') === false,
+   'the announcement still reads a fixed day and will report a stale wave');
+/*
+ * TWO. A player whose Crew was wiped for nothing got a post headed "wave 1
+ * is down", claiming a clear they had no part in, two minutes after the
+ * player who actually did it. $wiped asked whether the WAVE had moved on,
+ * which is true for every run still out there when somebody else finished
+ * it.
+ */
+ok(strpos($ann, '$wiped    = !empty($kname) && !empty($prog[\'cleared\'])') !== false,
+   'the clear headline does not require this run to have killed something, so every run '
+ . 'still out there claims somebody else\'s clear');
+/*
+ * THREE. "0 damage dealt" and then "OrbiTall! landed the most of them:
+ * 1,388" three lines below it. mine[]['dealt'] is damage to this run's
+ * SNAPSHOT; the shared bar clamps what actually lands. Two numbers from
+ * either side of the clamp, contradicting each other in one embed.
+ */
+ok(strpos($ann, '$bestD = ($swing > 0) ? (int)round((int)$dealt * $bestD / $swing) : 0;') !== false,
+   'the hero figure is unscaled snapshot damage, so it can exceed -- or contradict -- the '
+ . 'run\'s own committed total');
+ok(strpos($ann, "elseif ((int)\$dealt === 0)") !== false,
+   'a fully clamped run still credits a Fighter with damage the bar never took');
 
 /* ---------------------------------------------------------------- *
  * EVERY ANNOUNCEMENT CARRIES A PICTURE

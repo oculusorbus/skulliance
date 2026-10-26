@@ -801,7 +801,9 @@ function dhcb_cache_days($conn, $user_id, $week = null) {
 	                      FROM dhc_boss_runs
 	                     WHERE user_id = " . (int)$user_id . "
 	                       AND day = '" . $conn->real_escape_string($week) . "'
-	                       AND outcome <> 0 AND dealt >= " . (int)DHCB_MIN_DEALT);
+	                       AND outcome <> 0
+	                       AND (dealt >= " . (int)DHCB_MIN_DEALT
+	                     . " OR rounds >= " . (int)DHCB_MIN_ROUNDS . ")");
 	if (!$r || !($x = $r->fetch_assoc())) return 0;
 	return min((int)DHCB_CACHE_MAX, (int)$x['n']);
 }
@@ -1200,6 +1202,26 @@ function dhcb_sweep_stale($conn, $user_id) {
 
 /** A run has to be a real attempt to qualify for the day's trait. */
 if (!defined('DHCB_MIN_DEALT'))      define('DHCB_MIN_DEALT', 150);
+/*
+ * A RUN THE CLAMP ATE IS STILL A RUN.
+ *
+ * Damage is capped at the health actually left on the shared bar, which is
+ * right while two people are racing a live boss -- between them they cannot
+ * remove more than was there. But when the crew DIES mid-run, everyone
+ * still out there commits against empty bars and records a flat zero.
+ *
+ * Observed on the first clear: a player went twenty rounds and banked
+ * nothing. Zero cost them three separate things -- the round's cache slot,
+ * the week's trait for that round, and, worst of the three, ladder
+ * position, because the average is damage over Fighters FIELDED and a
+ * clamped run adds three to the denominator and nothing to the numerator.
+ * Being unlucky made their rank worse.
+ *
+ * So participation is damage OR a real fight. Five rounds cannot be reached
+ * by forfeiting, and anything shorter than that which mattered has already
+ * cleared DHCB_MIN_DEALT on damage alone.
+ */
+if (!defined('DHCB_MIN_ROUNDS')) define('DHCB_MIN_ROUNDS', 5);
 /* Qualifying floor for the weekly board. Three is one full day, so a single
    lucky run cannot top it and two days of play always qualifies. It was 5
    against a MONTH of runs, which over a week would have excluded most of
@@ -1265,9 +1287,13 @@ function dhcb_participants($conn, $day) {
 	   dhcb_cache_days(). Counted here in the same pass so the settle does
 	   not ask once per player. */
 	$min = (int)DHCB_MIN_DEALT;
+	/* A run the clamp ate still counts -- damage OR a real fight. See
+	   DHCB_MIN_ROUNDS; the same rule the cache grid uses, so the slot a
+	   player can see and the trait they are paid cannot disagree. */
+	$mr  = (int)DHCB_MIN_ROUNDS;
 	$r = @$conn->query("SELECT user_id, SUM(dealt) AS dealt, COUNT(*) AS runs,
-	                           SUM(crew_size) AS fighters,
-	                           COUNT(DISTINCT CASE WHEN dealt >= $min
+	                           SUM(crew_size) AS fighters, MAX(rounds) AS rounds_max,
+	                           COUNT(DISTINCT CASE WHEN dealt >= $min OR rounds >= $mr
 	                                 THEN " . skl_week_day_sql('started_at') . " END) AS days
 	                      FROM dhc_boss_runs
 	                     WHERE day = '$esc' AND outcome <> 0
@@ -1277,6 +1303,7 @@ function dhcb_participants($conn, $day) {
 		$out[(int)$x['user_id']] = array(
 			'user_id'=>(int)$x['user_id'], 'dealt'=>(int)$x['dealt'],
 			'runs'=>(int)$x['runs'], 'fighters'=>(int)$x['fighters'],
+			'rounds_max'=>(int)$x['rounds_max'],
 			'days'=>min((int)DHCB_CACHE_MAX, (int)$x['days']));
 	}
 	return $out;
@@ -1306,7 +1333,9 @@ function dhcb_settle($conn, $day = null, $announce = true) {
 
 	$paid = 0; $traits = 0; $who = array();
 	foreach (dhcb_participants($conn, $day) as $uid => $p) {
-		if ($p['dealt'] < DHCB_MIN_DEALT) continue;
+		/* Damage OR a real fight -- see DHCB_MIN_ROUNDS. A run the clamp
+		   ate still turned up, and the cache is a record of turning up. */
+		if ($p['dealt'] < DHCB_MIN_DEALT && $p['rounds_max'] < DHCB_MIN_ROUNDS) continue;
 		/*
 		 * ONE TRAIT PER DAY THEY TURNED UP, capped. The cache rewards
 		 * coming back rather than grinding: with three runs a day there is
@@ -1356,7 +1385,9 @@ function dhcb_cache_slots($conn, $user_id, $week = null) {
 	                      FROM dhc_boss_runs
 	                     WHERE user_id = $uid
 	                       AND day = '" . $conn->real_escape_string($week) . "'
-	                       AND outcome <> 0 AND dealt >= " . (int)DHCB_MIN_DEALT);
+	                       AND outcome <> 0
+	                       AND (dealt >= " . (int)DHCB_MIN_DEALT
+	                     . " OR rounds >= " . (int)DHCB_MIN_ROUNDS . ")");
 	if ($r) while ($x = $r->fetch_assoc()) $done[(int)$x['d']] = true;
 
 	$now = dhcb_week_day($conn);
@@ -1404,28 +1435,55 @@ function dhcb_ladder($conn, $week = null, $limit = 25) {
 	$esc = $conn->real_escape_string($week);
 	$lim = max(1, (int)$limit);
 	$min = max(1, (int)DHCB_LADDER_MIN_RUNS);
+	/*
+	 * EVERYBODY WHO TURNED UP IS ON THE BOARD; the minimum decides RANK,
+	 * not visibility. It was a HAVING, so a player with two finished Crews
+	 * was simply absent -- and early in a week that is everybody. Round
+	 * four of the first week and the board had one name on it, which reads
+	 * as a dead feature rather than as a board filling up.
+	 *
+	 * AND THE DENOMINATOR ONLY COUNTS FIGHTERS THAT LANDED SOMETHING. The
+	 * average is damage over Fighters fielded, and a run the clamp ate --
+	 * everyone still out there when the crew dies commits against empty
+	 * bars -- added three to the bottom and nothing to the top, so bad
+	 * luck lowered your own rank. The totals are still reported, because
+	 * Crews and Fighters sent are worth seeing even though they decide
+	 * nothing.
+	 */
 	$sql = "SELECT r.user_id, u.username, u.discord_id, u.avatar,
 	               SUM(r.dealt) AS dealt, COUNT(*) AS runs,
-	               SUM(r.crew_size) AS fighters, SUM(r.killed) AS kills
+	               SUM(r.crew_size) AS fighters, SUM(r.killed) AS kills,
+	               SUM(CASE WHEN r.dealt > 0 THEN r.crew_size ELSE 0 END) AS scoring
 	          FROM dhc_boss_runs r
 	          INNER JOIN users u ON u.id = r.user_id
 	         WHERE r.day = '$esc' AND r.outcome <> 0
 	         GROUP BY r.user_id
-	        HAVING runs >= $min AND fighters > 0
-	         ORDER BY (SUM(r.dealt) / SUM(r.crew_size)) DESC, dealt DESC
+	        HAVING fighters > 0
+	         ORDER BY (runs >= $min) DESC,
+	                  (SUM(r.dealt) / GREATEST(1, SUM(CASE WHEN r.dealt > 0
+	                                                  THEN r.crew_size ELSE 0 END))) DESC,
+	                  dealt DESC
 	         LIMIT $lim";
 	$res = @$conn->query($sql);
 	$out = array();
 	if (!$res) return $out;
 	while ($x = $res->fetch_assoc()) {
 		$f = max(1, (int)$x['fighters']);
+		/* Only Fighters from runs that landed damage divide the total -- a
+		   run the clamp ate must not drag the average down. */
+		$sc = max(1, (int)$x['scoring']);
 		$out[] = array(
 			'user_id'=>(int)$x['user_id'],
 			'name'=>($x['username'] !== '' ? $x['username'] : 'Unknown'),
 			'discord_id'=>$x['discord_id'], 'avatar'=>$x['avatar'],
 			'dealt'=>(int)$x['dealt'], 'runs'=>(int)$x['runs'],
 			'fighters'=>$f, 'kills'=>(int)$x['kills'],
-			'per'=>(int)round((int)$x['dealt'] / $f),
+			'per'=>(int)round((int)$x['dealt'] / $sc),
+			/* Ranked, or how many Crews short. The payout walks only the
+			   ranked rows; the rest are on the board to be told what they
+			   need, not to be paid. */
+			'ranked'=>((int)$x['runs'] >= $min),
+			'needs'=>max(0, $min - (int)$x['runs']),
 		);
 	}
 	return $out;
@@ -1453,18 +1511,35 @@ function dhcb_ladder_html($rows, $user_id, $guest, $empty) {
 	$h = '<table class="a-lad"><thead><tr><th>#</th><th>'
 	   . ($guest ? 'Player' : 'Staker')
 	   . '</th><th>Per fighter</th><th>Damage</th><th>Crews</th></tr></thead><tbody>';
+	/*
+	 * THE UNRANKED SIT UNDER THE BOARD, not off it.
+	 *
+	 * The minimum decides who is PAID, and dhcb_ladder() now returns
+	 * everybody who turned up so the page can say "one more Crew" instead
+	 * of leaving somebody invisible. They get no position number and the
+	 * row says what they need.
+	 */
+	$pos = 0;
 	foreach ($rows as $i => $l) {
+		$unranked = isset($l['ranked']) && !$l['ranked'];
+		if (!$unranked) $pos++;
 		$me = ((int)$l['user_id'] === (int)$user_id) ? ' class="me"' : '';
+		if ($unranked) $me = ' class="unranked' . ($me !== '' ? ' me' : '') . '"';
 		/* The Fighter count rides the Crews cell rather than taking a sixth
 		   column: the panel is 450px and six columns of figures in it is a
 		   table nobody reads. Crews is the number a player is counting. */
 		$h .= '<tr' . $me . '>'
-		    . '<td class="r">' . ($i + 1) . '</td>'
+		    . '<td class="r">' . ($unranked ? '&ndash;' : $pos) . '</td>'
 		    . '<td>' . htmlspecialchars($l['name']) . '</td>'
 		    . '<td class="r">' . number_format($l['per']) . '</td>'
 		    . '<td class="r">' . number_format($l['dealt']) . '</td>'
 		    . '<td class="r" title="' . (int)$l['fighters'] . ' Fighters fielded">'
-		    . (int)$l['runs'] . '</td>'
+		    . (int)$l['runs']
+		    . ($unranked
+		        ? ' <em title="A minimum of ' . (int)DHCB_LADDER_MIN_RUNS . ' finished Crews '
+		          . 'puts you on the board">+' . (int)$l['needs'] . '</em>'
+		        : '')
+		    . '</td>'
 		    . '</tr>';
 	}
 	return $h . '</tbody></table>';
@@ -1574,7 +1649,18 @@ function dhcb_announce($conn, $b, $dealt, $killedKeys) {
 		$uid   = (int)$b['meta']['attacker'];
 		$me    = dhcb_identity($conn, $uid);
 		$day   = isset($b['meta']['day']) ? $b['meta']['day'] : dhcb_week($conn);
-		$state = dhcb_state($conn, $day);
+		/*
+		 * NO $day, SO THE NEXT WAVE IS STOOD UP FIRST.
+		 *
+		 * dhcb_state($conn, $day) with an explicit day SKIPS dhcb_spawn(),
+		 * and this runs microseconds after the kill that emptied the crew.
+		 * So the post read the wave it had just finished and announced
+		 * "they are getting back up angrier -- wave 1 is standing now",
+		 * naming the crew that had died rather than the one that replaced
+		 * it. The day is the current week anyway; letting dhcb_state()
+		 * resolve it is what makes the respawn happen before the read.
+		 */
+		$state = dhcb_state($conn);
 		$prog  = dhcb_progress($state);
 
 		$bars = array();
@@ -1597,7 +1683,21 @@ function dhcb_announce($conn, $b, $dealt, $killedKeys) {
 		 * Discord should know their week just got better.
 		 */
 		$fellWave = isset($b['meta']['wave']) ? max(1, (int)$b['meta']['wave']) : 1;
-		$wiped    = !empty($prog['cleared']) || $prog['wave'] > $fellWave;
+		/*
+		 * DID *THIS* RUN DROP THE CREW, not "is the crew down".
+		 *
+		 * This asked whether the wave had moved on, which is true for
+		 * EVERY run still out there when somebody else finished it -- so a
+		 * player whose Crew was wiped for nothing got a post headed "wave
+		 * 1 is down" claiming a clear they had no part in, two minutes
+		 * after the player who actually did it.
+		 *
+		 * $killedKeys is this run's own kills, counted under the row lock
+		 * and only when the bar still had health. The crew went down to
+		 * THIS Crew when this run killed something and nothing is left.
+		 */
+		$wiped    = !empty($kname) && !empty($prog['cleared'])
+		          || (!empty($kname) && $prog['wave'] > $fellWave);
 		$title = $wiped
 			? '☠️ DHC Bosses — wave ' . $fellWave . ' is down'
 			: ($kname
@@ -1641,11 +1741,26 @@ function dhcb_announce($conn, $b, $dealt, $killedKeys) {
 		 */
 		$img = ''; $didIt = '';
 		if ($wiped) {
-			$bestI = -1; $bestD = -1;
+			/*
+			 * THE FIGHTER'S SHARE OF WHAT LANDED, not what it swung.
+			 *
+			 * mine[]['dealt'] is damage dealt to this run's SNAPSHOT, and
+			 * the shared bar clamps what actually lands. A post read "0
+			 * damage dealt" and then "OrbiTall! landed the most of them:
+			 * 1,388" three lines below it -- two numbers from either side
+			 * of the clamp, contradicting each other in the same embed.
+			 *
+			 * Scaled by the run's committed total, so the figures sum to
+			 * what the bar actually lost and a fully clamped run claims
+			 * nothing at all.
+			 */
+			$bestI = -1; $bestD = -1; $swing = 0;
+			foreach ($b['mine'] as $f) $swing += isset($f['dealt']) ? (int)$f['dealt'] : 0;
 			foreach ($b['mine'] as $i => $f) {
 				$d = isset($f['dealt']) ? (int)$f['dealt'] : 0;
 				if ($d > $bestD) { $bestD = $d; $bestI = $i; }
 			}
+			$bestD = ($swing > 0) ? (int)round((int)$dealt * $bestD / $swing) : 0;
 			$fid = ($bestI >= 0 && isset($b['meta']['mineIds'][$bestI]))
 			     ? (int)$b['meta']['mineIds'][$bestI] : 0;
 			if ($fid > 0) {
@@ -1654,9 +1769,15 @@ function dhcb_announce($conn, $b, $dealt, $killedKeys) {
 				if ($q && ($sr = $q->fetch_assoc()) && (int)$sr['serial'] > 0)
 					$img = 'https://skulliance.io/staking/dhc-card.php?serial=' . (int)$sr['serial'];
 			}
+			/* Nothing landed means nothing to name. A clamped run says what
+			   it did -- fought and lost the race -- rather than crediting a
+			   Fighter with damage the bar never took. */
 			if ($bestI >= 0 && $bestD > 0)
 				$didIt = '**' . $b['mine'][$bestI]['name'] . '** landed the most of them: '
 				       . number_format($bestD) . '.';
+			elseif ((int)$dealt === 0)
+				$didIt = 'The crew was already down when this Crew got there, so none of '
+				       . 'it landed. The round still counts.';
 		}
 		if ($img === '' && $kname) {
 			$kb = dhcb_boss($killed[0]);

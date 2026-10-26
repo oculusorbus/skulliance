@@ -142,6 +142,10 @@ deliver, so a perfect week always clears it.
 
 ## The weekly ladder
 
+Everybody who sends a Crew appears. The minimum decides who can hold a **position** and who is paid, not who is listed, so if you are a Crew or two short the board tells you how many rather than leaving you off it.
+
+A Crew that landed nothing because the boss crew fell while it was still out there does not count against your average, and the round still banks its trait. You turned up; the clamp is not your fault.
+
 Ranked on **damage per Fighter deployed**, not on total damage. Sending more
 Fighters is not the same as fighting well, and a player with five good
 Fighters should be able to top it. Total damage, Crews sent and Fighters sent
