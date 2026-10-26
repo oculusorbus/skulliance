@@ -503,35 +503,43 @@ echo "\nand a boss run gets the same card, from the same endpoint\n";
 	 * these coefficients and not an HSL spin: that shifts brightness and
 	 * the card would not match the page beside it.
 	 */
-	ok(strpos($src, 'function dac_hue($im, $deg)') !== false,
+	/* The matrix moved to lib/hue-rotate.php when the Discord embed needed
+	   it too, and the degrees to dhcb_wave_hue() so the CSS, the card and
+	   the embed cannot drift. The card calls both rather than carrying
+	   either. */
+	ok(strpos($src, "require_once __DIR__ . '/lib/hue-rotate.php';") !== false,
 	   'the card cannot rotate hue, so every wave posts in wave 1 colours');
+	ok(strpos($src, '0.213 + $c * 0.787') === false,
+	   'the card carries its own copy of the hue matrix again');
 	ok(strpos($src, "'wave' => \$wave") !== false,
 	   'the wave is not carried onto the boss tiles, so the card cannot know which '
 	 . 'colourway to draw');
-	ok(strpos($src, "(int)\$fs[\$n]['wave'] - 1) * 72") !== false,
-	   'the card does not step the hue in even fifths, so it disagrees with the page');
+	ok(strpos($src, "skl_hue_rotate(\$tile, dhcb_wave_hue((int)\$fs[\$n]['wave']))") !== false,
+	   'the card does not take its rotation from dhcb_wave_hue(), so it can disagree with '
+	 . 'the page and the Discord embed about what wave 3 looks like');
 	/* AND THE CALL IS REACHABLE. Checking the arithmetic is present passes
 	   with the whole block behind if(false) -- the strings survive, the
 	   rotation does not. */
-	ok(strpos($src, "if (\$isBoss && !empty(\$fs[\$n]['wave']) && (int)\$fs[\$n]['wave'] > 1) {") !== false,
+	ok(strpos($src, "if (\$isBoss && !empty(\$fs[\$n]['wave'])) {") !== false,
 	   'the hue is not applied under its real guard, so it may never run');
 	/* EXECUTED against the spec's own numbers rather than read. A
 	   transcription slip in one coefficient would still look like a hue
 	   rotation and be the wrong one. */
 	/* This file has no brace_extract(); lift it here rather than add a
 	   second helper nobody else uses. */
-	$hfA = strpos($src, 'function dac_hue($im, $deg)');
+	$src2 = file_get_contents(__DIR__ . '/lib/hue-rotate.php');
+	$hfA = strpos($src2, 'function skl_hue_rotate($im, $deg)');
 	$hf  = '';
 	if ($hfA !== false) {
 		$d = 0;
-		for ($j = strpos($src, '{', $hfA); $j < strlen($src); $j++) {
-			if ($src[$j] === '{') $d++;
-			elseif ($src[$j] === '}') { $d--; if (!$d) { $hf = substr($src, $hfA, $j - $hfA + 1); break; } }
+		for ($j = strpos($src2, '{', $hfA); $j < strlen($src2); $j++) {
+			if ($src2[$j] === '{') $d++;
+			elseif ($src2[$j] === '}') { $d--; if (!$d) { $hf = substr($src2, $hfA, $j - $hfA + 1); break; } }
 		}
 	}
-	ok($hf !== '', 'dac_hue() could not be lifted');
+	ok($hf !== '', 'skl_hue_rotate() could not be lifted from lib/hue-rotate.php');
 	if ($hf !== '' && function_exists('imagecreatetruecolor')) {
-		eval(str_replace('function dac_hue(', 'function dac_hue_t(', $hf));
+		eval(str_replace('function skl_hue_rotate(', 'function dac_hue_t(', $hf));
 		/* Pure red through 120 degrees is pure green in this matrix's
 		   luminance-preserving form -- the channels rotate but the
 		   brightness does not jump. Checked as a direction rather than an
@@ -595,7 +603,7 @@ echo "\nand a boss run gets the same card, from the same endpoint\n";
 	}
 	/* THE GREY FOR A DOWNED BOSS STILL WINS. The page stacks them that way
 	   too: a boss somebody dropped is grey whatever wave it belonged to. */
-	$hueAt  = strpos($src, 'dac_hue($tile');
+	$hueAt  = strpos($src, 'skl_hue_rotate($tile');
 	$greyAt = strpos($src, 'IMG_FILTER_GRAYSCALE');
 	ok($hueAt !== false && $greyAt !== false && $hueAt < $greyAt,
 	   'the hue is applied after the dimming, so a dropped boss comes out coloured');

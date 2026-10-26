@@ -1576,6 +1576,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    so the two surfaces describe the same state in the same colour. */
 .arena-wrap .a-runout.live{color:var(--ochre)}
 .arena-wrap .a-runout.kill{color:var(--warn);font-weight:600}
+/* The boss a Crew dropped: set apart from the Crew by a gap and a warm
+   edge, so three Fighters and their kill do not read as four Fighters.
+   Not clickable -- a boss has no Fighter panel to open. */
+.arena-wrap .a-rf.a-rkill{margin-left:8px;border-color:rgba(255,92,60,.5);cursor:default}
+.arena-wrap .a-rf.a-rkill:hover{border-color:rgba(255,92,60,.5)}
 /* An unresolved Crew: three empty slots so the row keeps its shape. */
 .arena-wrap .a-rf.pending{border-style:dashed;cursor:default;opacity:.5}
 .arena-wrap .a-rf.pending:hover{border-color:var(--line)}
@@ -2426,6 +2431,16 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
             <?php endforeach; ?>
           </button>
           <?php endforeach; ?>
+          <?php /* THE BOSS THIS CREW DROPPED, after the Crew that dropped it
+                   and greyed like them, because it fell too. The gap keeps
+                   it from reading as a fourth Fighter. */ ?>
+          <?php foreach ($rn['kills'] as $kb): ?>
+            <span class="a-rf fell a-rkill" title="<?php
+              echo htmlspecialchars($kb['name'] . ' — dropped by this Crew'); ?>">
+              <img loading="lazy" alt="" src="<?php echo htmlspecialchars($kb['art']); ?>"
+                   onerror="this.remove()">
+            </span>
+          <?php endforeach; ?>
         </div>
         <?php /* A DASH, NOT A ZERO, while it is still being played. Damage
                  and rounds are written at the end, so a nought there is not
@@ -2438,7 +2453,19 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                  whether anybody walked away, and whether anything went down. */ ?>
         <?php if ($live): ?>
           <div class="a-runout live">Still out there</div>
+        <?php elseif (!empty($rn['kills'])): ?>
+          <?php /* NAMED, because "took one down" leaves the reader asking
+                   which -- and which one it was is the whole story of the
+                   run. The boss travels with its own picture, greyed the
+                   same way a fallen Fighter is, because that is exactly
+                   what it now is. */ ?>
+          <div class="a-runout kill">Took <?php
+            echo htmlspecialchars(implode(' and ', array_map(function ($k) { return $k['name']; },
+              $rn['kills']))); ?> down</div>
         <?php elseif (!empty($rn['killed'])): ?>
+          <?php /* killed is set but no boss resolved to this run's window --
+                   possible if the ledger was edited by hand. Say the true
+                   thing rather than name the wrong boss. */ ?>
           <div class="a-runout kill">Took one down</div>
         <?php else: ?>
           <div class="a-runout<?php echo $stood > 0 ? ' ok' : ''; ?>"><?php

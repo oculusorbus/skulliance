@@ -111,6 +111,7 @@ if ($run > 0) {
 	   of the JPEG header is a corrupt image the crawler caches for a week. */
 	ob_start();
 	require_once __DIR__ . '/dhcbosses-lib.php';
+	require_once __DIR__ . '/lib/hue-rotate.php';
 	ob_end_clean();
 	$rr = $conn->query("SELECT user_id, day, wave FROM dhc_boss_runs
 	                     WHERE id = $run AND outcome <> 0 LIMIT 1");
@@ -232,47 +233,10 @@ function dac_art($f, $dir) {
 	return is_file($abs) ? @imagecreatefrompng($abs) : null;
 }
 
-/**
- * CSS hue-rotate(), in GD.
- *
- * The bosses get back up each wave in a different colourway, and the page
- * does that with filter:hue-rotate() in even fifths -- 72 degrees a wave.
- * A shared card drawn from the flat art would post a wave 3 crew in wave 1
- * colours, which is a picture of a crew nobody fought.
- *
- * GD has no hue filter, so this is the matrix from the Filter Effects spec
- * that the browser itself uses. It is luminance preserving, which is why it
- * is these coefficients and not a naive HSL spin: the latter shifts
- * perceived brightness and the three bosses would not match the page.
- *
- * Applied to the TILE after resampling, not to the 500px source: 180x310 is
- * a sixth of the pixels, and the result is cached to disk per run anyway.
- */
-function dac_hue($im, $deg) {
-	$deg = fmod($deg, 360.0);
-	if ($deg == 0.0) return;
-	$c = cos(deg2rad($deg)); $s = sin(deg2rad($deg));
-	$m = array(
-		0.213 + $c * 0.787 - $s * 0.213, 0.715 - $c * 0.715 - $s * 0.715, 0.072 - $c * 0.072 + $s * 0.928,
-		0.213 - $c * 0.213 + $s * 0.143, 0.715 + $c * 0.285 + $s * 0.140, 0.072 - $c * 0.072 - $s * 0.283,
-		0.213 - $c * 0.213 - $s * 0.787, 0.715 - $c * 0.715 + $s * 0.715, 0.072 + $c * 0.928 + $s * 0.072,
-	);
-	$w = imagesx($im); $h = imagesy($im);
-	for ($y = 0; $y < $h; $y++) {
-		for ($x = 0; $x < $w; $x++) {
-			$p = imagecolorat($im, $x, $y);
-			$r = ($p >> 16) & 0xFF; $g = ($p >> 8) & 0xFF; $bl = $p & 0xFF;
-			$nr = (int)round($m[0]*$r + $m[1]*$g + $m[2]*$bl);
-			$ng = (int)round($m[3]*$r + $m[4]*$g + $m[5]*$bl);
-			$nb = (int)round($m[6]*$r + $m[7]*$g + $m[8]*$bl);
-			if ($nr < 0) $nr = 0; elseif ($nr > 255) $nr = 255;
-			if ($ng < 0) $ng = 0; elseif ($ng > 255) $ng = 255;
-			if ($nb < 0) $nb = 0; elseif ($nb > 255) $nb = 255;
-			imagesetpixel($im, $x, $y, ($nr << 16) | ($ng << 8) | $nb);
-		}
-	}
-}
-
+/* The rotation and the series both live elsewhere now: the matrix in
+   lib/hue-rotate.php because a Discord embed needs it too, and the degrees
+   in dhcb_wave_hue() because the CSS, the card and the embed all have to
+   agree on what wave 3 looks like. */
 $card = imagecreatetruecolor(DAC_W, DAC_H);
 imagefilledrectangle($card, 0, 0, DAC_W, DAC_H, imagecolorallocate($card, 7, 17, 29));
 
@@ -401,8 +365,8 @@ foreach (array('mine' => true, 'foes' => false) as $side => $isLeft) {
 		/* THE WAVE'S COLOURWAY, same even fifths the page uses. Before the
 		   dimming below, so a boss this run dropped still greys out over the
 		   top of it -- the page stacks them in that order too. */
-		if ($isBoss && !empty($fs[$n]['wave']) && (int)$fs[$n]['wave'] > 1) {
-			dac_hue($tile, ((int)$fs[$n]['wave'] - 1) * 72);
+		if ($isBoss && !empty($fs[$n]['wave'])) {
+			skl_hue_rotate($tile, dhcb_wave_hue((int)$fs[$n]['wave']));
 		}
 
 		/*

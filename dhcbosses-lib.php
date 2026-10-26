@@ -342,6 +342,28 @@ function dhcb_runs_per_day($conn) {
 	return 0.0;
 }
 
+/**
+ * The hue rotation, in degrees, for a wave's colourway.
+ *
+ * ONE SOURCE FOR THE SERIES. It is rendered in four places -- the panel's
+ * CSS, the battle board's CSS, the X share card and the Discord embed --
+ * and the last two are drawn in PHP because the picture has to leave the
+ * browser. Two of them disagreeing would post a crew in a colour nobody
+ * fought it in, which is the whole reason the colourway exists.
+ *
+ * EVEN FIFTHS, WALKED IN ONE DIRECTION, so the series reads as a sequence
+ * rather than five unrelated colours. Wave 1 is deliberately 0: it is the
+ * baseline the rest are read against, and a rotation on it would just be a
+ * rotation. Past wave 5 it wraps rather than running out of colours.
+ *
+ * dhc-arena-card-harness.php checks the CSS literals in dhcarena.php
+ * against this function, so the browser and the server cannot drift.
+ */
+function dhcb_wave_hue($wave) {
+	$w = max(1, (int)$wave);
+	return (($w - 1) % 5) * 72;
+}
+
 function dhcb_wave_pow($wave) {
 	return pow((float)DHCB_WAVE_POW, max(1, (int)$wave) - 1);
 }
@@ -1483,8 +1505,36 @@ function dhcb_runs_report($conn, $day = null, $limit = 200) {
 			? $x['name'] : (function_exists('dhcf_default_name') ? dhcf_default_name($x['serial']) : ('#' . $x['serial']));
 		$byRun[(int)$x['run_id']][] = $x;
 	}
+	/*
+	 * WHICH BOSS A RUN PUT DOWN, which the run row cannot say on its own:
+	 * dhc_boss_runs.killed is a 0/1 flag. dhc_boss_day records who landed
+	 * the last hit and WHEN, so the boss a run dropped is the one whose
+	 * killed_at falls inside that run's own window. Exact, and no new
+	 * column -- attributing by user alone would credit every run that
+	 * player made this week with every boss they ever finished.
+	 */
+	$kills = array();
+	$kq = @$conn->query("SELECT r.id AS run_id, d.boss_key
+	                       FROM dhc_boss_runs r
+	                       INNER JOIN dhc_boss_day d
+	                               ON d.day = r.day AND d.wave = r.wave
+	                              AND d.killed_by = r.user_id
+	                              AND d.killed_at IS NOT NULL
+	                              AND d.killed_at >= r.started_at
+	                              AND d.killed_at <= COALESCE(r.ended_at, NOW())
+	                      WHERE r.id IN (" . implode(',', $ids) . ")");
+	if ($kq) while ($x = $kq->fetch_assoc()) {
+		$bz = dhcb_boss($x['boss_key']);
+		$kills[(int)$x['run_id']][] = array(
+			'key'  => $x['boss_key'],
+			'name' => $bz ? $bz['name'] : strtoupper($x['boss_key']),
+			'art'  => dhcb_art($x['boss_key']),
+		);
+	}
+
 	foreach ($rows as $i => $r) {
 		$rows[$i]['fighters'] = isset($byRun[(int)$r['id']]) ? $byRun[(int)$r['id']] : array();
+		$rows[$i]['kills']    = isset($kills[(int)$r['id']])  ? $kills[(int)$r['id']]  : array();
 	}
 	return $rows;
 }
@@ -1610,7 +1660,11 @@ function dhcb_announce($conn, $b, $dealt, $killedKeys) {
 		}
 		if ($img === '' && $kname) {
 			$kb = dhcb_boss($killed[0]);
-			if ($kb) $img = 'https://skulliance.io/staking/' . dhcb_art($kb['key']);
+			/* THROUGH THE ENDPOINT, NOT THE FLAT FILE. Discord takes a URL
+			   and cannot apply a filter, so a kill in wave 3 was posting
+			   wave 1 art -- a picture of a crew nobody fought. */
+			if ($kb) $img = 'https://skulliance.io/staking/dhc-boss-art.php?boss='
+			              . rawurlencode($kb['key']) . '&wave=' . $fellWave;
 		}
 		if ($img === '') {
 			$hitI = null; $hitD = -1;
@@ -1619,7 +1673,8 @@ function dhcb_announce($conn, $b, $dealt, $killedKeys) {
 				if ($d > $hitD && !empty($f['bossKey'])) { $hitD = $d; $hitI = $f; }
 			}
 			if ($hitI) {
-				$img = 'https://skulliance.io/staking/' . dhcb_art($hitI['bossKey']);
+				$img = 'https://skulliance.io/staking/dhc-boss-art.php?boss='
+				     . rawurlencode($hitI['bossKey']) . '&wave=' . $fellWave;
 				$hb  = dhcb_boss($hitI['bossKey']);
 				if ($hb && $hitD > 0)
 					$didIt = '**' . $hb['name'] . '** did the most of it back: '

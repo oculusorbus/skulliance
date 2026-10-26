@@ -755,6 +755,32 @@ ok(strpos($ARE, 'Still out there') !== false,
 ok(strpos($ARE, 'Took one down') !== false,
    'a run that dropped a boss reads the same as one that did not, and that is the biggest '
  . 'thing a run can do');
+/*
+ * AND IT NAMES WHICH, WITH THE BODY.
+ *
+ * "Took one down" leaves the reader asking which, and which one it was is
+ * the story of that run. dhc_boss_runs.killed is only a 0/1 flag, so the
+ * boss comes from dhc_boss_day: the one whose killed_at falls inside this
+ * run's own window. Attributing by user alone would credit every run that
+ * player made all week with every boss they ever finished.
+ */
+ok(strpos($LIB, 'AND d.killed_at >= r.started_at') !== false
+   && strpos($LIB, 'AND d.killed_at <= COALESCE(r.ended_at, NOW())') !== false,
+   'the kill is not attributed to the run that made it, so one player\'s kill would be '
+ . 'claimed by every run they sent this week');
+ok(strpos($LIB, 'AND d.killed_by = r.user_id') !== false,
+   'the kill is not attributed to the player who landed it');
+ok(strpos($LIB, "\$rows[\$i]['kills']") !== false,
+   'the report does not carry the kills, so the feed has nothing to name');
+ok(strpos($ARE, "elseif (!empty(\$rn['kills'])):") !== false,
+   'the feed does not name the boss a Crew dropped');
+ok(strpos($ARE, 'class="a-rf fell a-rkill"') !== false,
+   'the boss a Crew dropped is not shown, or is not greyed -- it fell too');
+/* NOT A FOURTH FIGHTER. It sits apart and does not open a Fighter panel. */
+ok(strpos($ARE, '.arena-wrap .a-rf.a-rkill{margin-left:8px') !== false,
+   'the dropped boss sits flush against the Crew and reads as a fourth Fighter');
+ok(strpos($ARE, 'a-rkill{margin-left:8px;border-color:rgba(255,92,60,.5);cursor:default}') !== false,
+   'the dropped boss looks clickable, and a boss has no Fighter panel to open');
 /* THE NUMBERS TOO. A nought before the run resolves is the absence of a
    result, not a result, and printing it says the Crew achieved nothing. */
 ok(preg_match("~\\\$live \\? '&mdash;' : number_format\\(\\(int\\)\\\$rn\\['dealt'\\]\\)~", $ARE) === 1,
@@ -1214,6 +1240,42 @@ foreach ($waveRules as $hit) {
 	 . 'it: filter:' . trim($hit[2]));
 }
 /*
+ * THE BROWSER AND THE SERVER AGREE ON WHAT WAVE 3 LOOKS LIKE.
+ *
+ * The colourway is rendered in four places and two of them are PHP, because
+ * the picture has to leave the browser for the X card and the Discord
+ * embed. dhcb_wave_hue() is the one source; the CSS literals are checked
+ * against it here, so a hand-edited degree in a stylesheet cannot silently
+ * post a crew in a colour nobody fought it in.
+ */
+ok(dhcb_wave_hue(1) === 0,
+   'wave 1 is rotated, and it is the baseline every other wave is read against');
+ok(dhcb_wave_hue(6) === dhcb_wave_hue(1),
+   'the colourway does not wrap, so a sixth wave would have no colour at all');
+ok(is_file(__DIR__ . '/lib/hue-rotate.php'),
+   'lib/hue-rotate.php is gone, so the rotation is inlined somewhere again');
+foreach (array('dhc-arena-card.php', 'dhc-boss-art.php') as $hf2) {
+	$fs2 = file_get_contents(__DIR__ . '/' . $hf2);
+	ok(strpos($fs2, "require_once __DIR__ . '/lib/hue-rotate.php';") !== false,
+	   $hf2 . ' does not use the shared rotation');
+	ok(strpos($fs2, '0.213 + $c * 0.787') === false,
+	   $hf2 . ' carries its own copy of the hue matrix');
+}
+$EP = file_get_contents(__DIR__ . '/dhc-boss-art.php');
+ok(strpos($EP, "foreach (dhcb_bosses() as \$bz) if (\$bz['key'] === \$key)") !== false,
+   'dhc-boss-art.php does not validate the boss key against the roster, and that key '
+ . 'becomes a path');
+ok(strpos($EP, 'if ($deg === 0) dba_send($src);') !== false,
+   'the endpoint recomputes wave 1, which is the unrotated original');
+ok(strpos($EP, 'imagesavealpha($im, true);') !== false,
+   'the endpoint drops the alpha, so every rotated boss gets a black box behind it');
+ok(strpos($EP, '@rename($tmp, $cache)') !== false,
+   'the endpoint writes its cache non-atomically');
+ok(substr_count($LIB, 'dhc-boss-art.php?boss=') === 2,
+   'the Discord embed does not route both of its boss images through the endpoint, so a '
+ . 'kill in wave 3 can still post wave 1 colours');
+
+/*
  * FOUR DISTINCT ROTATIONS, AND THE PANEL AND THE BOARD AGREE ON EACH.
  *
  * Two failures in one check. If two waves share a rotation they are the same
@@ -1229,6 +1291,13 @@ foreach ($byWave as $w => $list) {
 	ok(count(array_unique($list)) === 1,
 	   'wave ' . $w . ' is one colour on the panel and another on the board: '
 	 . implode(' vs ', array_unique($list)));
+}
+/* AND EACH MATCHES dhcb_wave_hue(), so the stylesheet cannot drift from
+   the renderer that has to reproduce it outside the browser. */
+foreach ($byWave as $wv2 => $list2) {
+	ok((int)$list2[0] === dhcb_wave_hue((int)$wv2),
+	   'the CSS rotates wave ' . $wv2 . ' by ' . $list2[0] . ' degrees and dhcb_wave_hue() '
+	 . 'says ' . dhcb_wave_hue((int)$wv2) . ', so the page and the share card disagree');
 }
 $one = array_map(function ($l) { return $l[0]; }, $byWave);
 ok(count(array_unique($one)) === count($one),
