@@ -928,6 +928,33 @@ ok(strpos($ARE, 'Beaten to it') !== false,
    'a clamped run has no wording of its own');
 ok(strpos($ARE, 'does not count against the ladder average') !== false,
    'nothing tells the player the round still counted, which is the thing they will ask');
+/*
+ * AND THAT EXPLANATION HAS TO BE REACHABLE.
+ *
+ * It was a title= attribute under a dotted underline with cursor:help --
+ * a promise the attribute cannot keep. title fires on no tap, on no
+ * click, and on a desktop only after a second of holding still, so the
+ * first person to try it reported the control as broken. A <details>
+ * opens on a click, on Enter and on a phone, before any script runs.
+ */
+ok(strpos($ARE, 'title="The boss crew fell') === false,
+   'the clamp explanation is back in a title= attribute, which never opens on a tap or a click');
+$tipAt = strpos($ARE, 'class="a-runout clamped a-tip"');
+ok($tipAt !== false && strpos($ARE, '<summary>Beaten to it</summary>', $tipAt) === $tipAt + 31,
+   'the clamp label is not a summary, so there is nothing for a click to open');
+/* The disclosure has to LOOK like the label it replaced: no triangle, and
+   the dotted underline on the summary rather than on a <details> box that
+   would draw a rule under the opened note. */
+ok(strpos($ARE, '.arena-wrap details.a-tip > summary::-webkit-details-marker{display:none}') !== false,
+   'the tip keeps the default disclosure triangle, which the outcome column never had');
+ok(strpos($ARE, '.arena-wrap details.a-tip > summary{list-style:none;cursor:pointer;display:inline-block;') !== false
+   && strpos($ARE, 'border-bottom:1px dotted rgba(143,168,184,.5)}') !== false,
+   'the dotted underline is not on the summary, so the closed label loses the hint that it opens');
+/* AND THE NOTE HAS TO READ AS PROSE. .a-runout is 9px uppercase with .11em
+   of tracking; four lines of sentence in that is unreadable, so the body
+   drops every one of those rules rather than inheriting them. */
+ok(preg_match('~\.arena-wrap \.a-tipbody\{[^}]*letter-spacing:0;text-transform:none~', $ARE) === 1,
+   'the tip body inherits the label uppercase and tracking, so the sentence is unreadable');
 
 /* AND THE OUTCOME IS WORDED FOR THIS GAME. Win/lose is meaningless when
    almost every run is a paying wipe; what is worth saying is whether

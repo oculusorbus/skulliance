@@ -1684,8 +1684,40 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-runout.kill{color:var(--warn);font-weight:600}
 /* Fought, landed nothing, still counts. Not the grey of a wipe and not
    the teal of a survivor -- its own thing, because it is. */
-.arena-wrap .a-runout.clamped{color:#8fa8b8;border-bottom:1px dotted rgba(143,168,184,.5);
-  cursor:help}
+.arena-wrap .a-runout.clamped{color:#8fa8b8}
+/*
+ * A TIP THAT OPENS, because a title= attribute does not.
+ *
+ * This was a div carrying the explanation in title=, underlined dotted
+ * with cursor:help. That promises something the attribute cannot keep:
+ * it never fires on a tap, it never fires on a click, and on a desktop
+ * it costs a second of holding still -- so the row reads as a control
+ * that is broken. Same <details> as the panel notes above: it opens on a
+ * click, on Enter, and on a phone, it works before any script runs, and
+ * find-in-page opens it to show a match.
+ *
+ * IT GROWS THE ROW rather than floating over it. An absolute panel would
+ * be clipped by .a-feed's overflow:hidden on the last row of the feed,
+ * which is exactly the row most likely to hold one.
+ */
+.arena-wrap details.a-tip{white-space:normal;text-align:right}
+.arena-wrap details.a-tip > summary{list-style:none;cursor:pointer;display:inline-block;
+  white-space:nowrap;border-bottom:1px dotted rgba(143,168,184,.5)}
+.arena-wrap details.a-tip > summary::-webkit-details-marker{display:none}
+.arena-wrap details.a-tip > summary:hover{color:var(--ochre);border-bottom-color:var(--ochre)}
+.arena-wrap details.a-tip[open] > summary{color:var(--ochre);border-bottom-color:var(--ochre)}
+.arena-wrap details.a-tip > summary:focus-visible{outline:2px solid var(--ochre);outline-offset:2px}
+/* The note is prose, so it drops every one of the label's display rules:
+   the uppercase, the tracking, the 9px and the right alignment. */
+.arena-wrap .a-tipbody{width:260px;max-width:100%;margin:6px 0 0;text-align:left;
+  font-size:10.5px;letter-spacing:0;text-transform:none;line-height:1.55;
+  color:var(--dim);border-left:2px solid rgba(143,168,184,.35);padding-left:8px}
+/* An open row is twice as tall, and centring it floats the label up level
+   with the row above while this row's own name sits below it. Top-align
+   while it is open: the name, the figures and the label all stay on one
+   line and the note hangs under them. Progressive -- a browser without
+   :has() just gets the centred version, which is what it is now. */
+.arena-wrap .a-run:has(details.a-tip[open]){align-items:flex-start}
 /* The boss a Crew dropped: set apart from the Crew by a gap and a warm
    edge, so three Fighters and their kill do not read as four Fighters.
    Not clickable -- a boss has no Fighter panel to open. */
@@ -2639,9 +2671,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                    thing rather than name the wrong boss. */ ?>
           <div class="a-runout kill">Took one down</div>
         <?php elseif ($clamped): ?>
-          <div class="a-runout clamped" title="The boss crew fell to somebody else while this
-            Crew was still out there, so none of its damage landed. The round still counts
-            toward the cache, and it does not count against the ladder average.">Beaten to it</div>
+          <details class="a-runout clamped a-tip"><summary>Beaten to it</summary>
+            <p class="a-tipbody">The boss crew fell to somebody else while this Crew was
+            still out there, so none of its damage landed. The round still counts toward
+            the cache, and it does not count against the ladder average.</p>
+          </details>
         <?php else: ?>
           <div class="a-runout<?php echo $stood > 0 ? ' ok' : ''; ?>"><?php
             echo $stood > 0 ? $stood . ' walked away' : 'Crew wiped'; ?></div>
