@@ -888,7 +888,11 @@ function admin_tabs() {
 		   cross three unrelated tools to get from one to the other. */
 		'dhcbosses'   => array('admin-dhcbosses.php',   'DHC Bosses'),
 		'digest'      => array('admin-digest.php',      'Daily Digest'),
+		/* Flyers and Outreach are one job in two halves -- the image, and
+		   the words that go with it into the same Discord post -- so they
+		   sit together and each page links the other. */
 		'flyers'      => array('admin-flyers.php',      'Flyers'),
+		'outreach'    => array('admin-outreach.php',    'Outreach'),
 		'nudges'      => array('admin-nudges.php',      'Nudges'),
 		'lapsed'      => array('admin-lapsed.php',      'Lapsed'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),

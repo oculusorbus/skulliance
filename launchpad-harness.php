@@ -52,12 +52,22 @@ $lp   = file_get_contents($root . '/launchpad.php');
  * Every tile points at a file that exists.
  * ---------------------------------------------------------------- */
 echo "every launchpad tile points at a real file\n";
-$at  = strpos($lp, '$lp_sections = array(');
-ok($at !== false, '$lp_sections is gone from launchpad.php');
-$end = strpos($lp, "\n);", $at);
+/*
+ * THE CATALOGUE MOVED, AND THAT IS WHY THIS NO LONGER CARVES IT OUT OF THE
+ * PAGE. admin-outreach.php reads the same list to tell a partner community
+ * what is on the platform now, so it lives in lib/launchpad-catalogue.php
+ * and both files require it -- the same arrangement admin_tabs() has, for
+ * the same reason. REQUIRED rather than eval'd out of the source: the file
+ * carries the array and nothing else, so there is nothing to carve.
+ */
 $lp_sections = null;
-eval(substr($lp, $at, $end - $at + 3));
-ok(is_array($lp_sections), '$lp_sections did not evaluate');
+require $root . '/lib/launchpad-catalogue.php';
+ok(is_array($lp_sections), 'lib/launchpad-catalogue.php did not produce $lp_sections');
+ok(strpos($lp, 'lib/launchpad-catalogue.php') !== false,
+   'launchpad.php does not read the shared catalogue, so the page and this check are '
+ . 'looking at different lists');
+ok(strpos($lp, '$lp_sections = array(') === false,
+   'launchpad.php has its own copy of the catalogue again');
 
 $tiles = 0;
 foreach ($lp_sections as $name => $sec) {

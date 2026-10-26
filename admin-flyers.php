@@ -361,6 +361,19 @@ admin_chrome('flyers');
 		draw();
 	});
 
+	/* ARRIVING FROM THE OUTREACH TAB with ?project=N: the two tools are one
+	   job in two halves and the project is already chosen, so asking for it
+	   twice is just a way to pick the wrong one on the second go. Fires the
+	   handler above rather than repeating what it does. */
+	(function () {
+		var m = /[?&]project=(\d+)/.exec(window.location.search);
+		if (!m) return;
+		var sel = $('project');
+		if (!sel) return;
+		sel.value = m[1];
+		if (sel.value === m[1]) sel.dispatchEvent(new Event('change'));
+	}());
+
 	$('download').addEventListener('click', function () {
 		var name = ($('name').value || $('ticker').value || 'flyer').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'flyer';
 		/*
