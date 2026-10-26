@@ -1430,6 +1430,44 @@ if (!defined('DHCB_MIN_ROUNDS')) define('DHCB_MIN_ROUNDS', 5);
    the board. */
 if (!defined('DHCB_LADDER_MIN_RUNS'))define('DHCB_LADDER_MIN_RUNS', 3);
 /*
+ * WHAT A ROUND BANKS ONCE THE WEEK HAS PUT A CREW DOWN.
+ *
+ * THE PROBLEM THIS ANSWERS. dhcb_tier_table() returns the BEST table the
+ * moment the first crew falls, and placement_1 is the platform ceiling --
+ * the same table first place on every weekly board gets. So the QUALITY
+ * ladder is fully spent at wave 2 and the back half of a strong week has
+ * nothing left to chase. Nothing breaks and there is no exploit (a round
+ * still banks a trait and still feeds the ladder), but the pull goes.
+ *
+ * SO THE LEVER IS QUANTITY, NOT RARITY. A tier above placement_1 would
+ * break a ceiling eight other games share, and the trait config is explicit
+ * that guaranteeing mythics on a clearable boss would mint more in a
+ * fortnight than exist. A round fought against wave 2 banks two traits,
+ * wave 3 banks three, and that is where it stops.
+ *
+ * CAPPED AT THREE, AND THE CAP IS DOING REAL WORK. Later waves are budgeted
+ * against the DAYS LEFT and floored at DHCB_WAVE_MIN_DAY, so they get
+ * cheaper as the week runs out -- a simulation of the live turnout curve
+ * puts the standing wave at 1 1 1 1 1 2 4 across the seven rounds, with two
+ * crews falling inside the last round alone. Uncapped, the final round
+ * would pay four times the first five for a wave that cost 0.6 days to
+ * drop: that rewards the calendar, not the achievement. Three also matches
+ * the Arena's three-drops-a-day ceiling, so neither game out-mints the
+ * other.
+ *
+ * MEASURED BEFORE SHIPPING, on the live ladder's own shape: 18.4 traits a
+ * week across the community becomes 26.3, which is 1.43x and about half a
+ * mythic a week. The harness carries that curve as a case.
+ */
+if (!defined('DHCB_WAVE_TRAITS_MAX')) define('DHCB_WAVE_TRAITS_MAX', 3);
+
+/** What one attended round banks, against the wave that was standing for it. */
+function dhcb_round_traits($wave) {
+	$w = (int)$wave;
+	if ($w < 1) $w = 1;
+	return min((int)DHCB_WAVE_TRAITS_MAX, $w);
+}
+/*
  * 50,000 A WEEK, which is where Crypt Crawl and Skull Racer sit -- the
  * flagship weekly rate rather than the 25,000 Skull Swap and Gauntlets pay.
  * Roughly 217,000 a month, just under DHC Arena's 250,000, which is the
@@ -1506,7 +1544,43 @@ function dhcb_participants($conn, $day) {
 			'user_id'=>(int)$x['user_id'], 'dealt'=>(int)$x['dealt'],
 			'runs'=>(int)$x['runs'], 'fighters'=>(int)$x['fighters'],
 			'rounds_max'=>(int)$x['rounds_max'],
-			'days'=>min((int)DHCB_CACHE_MAX, (int)$x['days']));
+			'days'=>min((int)DHCB_CACHE_MAX, (int)$x['days']),
+			/* Filled by the second read below. A player with no qualifying
+			   round banks nothing, which is the same answer `days` gives. */
+			'traits'=>0);
+	}
+
+	/*
+	 * WHAT EACH ROUND IS WORTH, WHICH ONLY THE RUNS THEMSELVES KNOW.
+	 *
+	 * A round banks dhcb_round_traits() of the wave that was standing while
+	 * it was played, and the wave moves DURING a week -- so the count above
+	 * cannot answer it. dhc_boss_runs.wave is written at dhcb_start() for
+	 * exactly this kind of question: a run records the crew it fought.
+	 *
+	 * MAX(wave) WITHIN A ROUND, because a wave can fall mid-round and the
+	 * player who was there for both fought the later one. Grouped by round
+	 * first and summed per player second, so a player who sent three Crews
+	 * in one round still banks that round once.
+	 *
+	 * A SECOND READ RATHER THAN A CLEVERER FIRST ONE. The totals above are
+	 * over EVERY finished run and this is over qualifying ROUNDS; folding
+	 * two different populations into one GROUP BY is how the ladder query
+	 * broke. This runs once a week, on an indexed column.
+	 */
+	$cap = (int)DHCB_WAVE_TRAITS_MAX;
+	$tq  = @$conn->query(
+		"SELECT user_id, SUM(t) AS traits FROM (
+		   SELECT user_id, " . skl_week_day_sql('started_at') . " AS d,
+		          LEAST($cap, GREATEST(1, MAX(wave))) AS t
+		     FROM dhc_boss_runs
+		    WHERE day = '$esc' AND outcome <> 0
+		      AND (dealt >= $min OR rounds >= $mr)
+		    GROUP BY user_id, " . skl_week_day_sql('started_at') . "
+		 ) r GROUP BY user_id");
+	if ($tq) while ($x = $tq->fetch_assoc()) {
+		$uid = (int)$x['user_id'];
+		if (isset($out[$uid])) $out[$uid]['traits'] = max(0, (int)$x['traits']);
 	}
 	return $out;
 }
@@ -1539,12 +1613,22 @@ function dhcb_settle($conn, $day = null, $announce = true) {
 		   ate still turned up, and the cache is a record of turning up. */
 		if ($p['dealt'] < DHCB_MIN_DEALT && $p['rounds_max'] < DHCB_MIN_ROUNDS) continue;
 		/*
-		 * ONE TRAIT PER DAY THEY TURNED UP, capped. The cache rewards
-		 * coming back rather than grinding: with three runs a day there is
-		 * no way to fill it in one sitting, so a full cache is seven
-		 * separate visits and a player who misses Wednesday collects six.
+		 * ONE TRAIT PER ROUND THEY TURNED UP, AND MORE ONCE THE WEEK HAS
+		 * PUT A CREW DOWN -- see DHCB_WAVE_TRAITS_MAX.
+		 *
+		 * The cache still rewards coming back rather than grinding: the
+		 * multiplier is per ROUND, so three Crews in one sitting bank that
+		 * round once however many waves have fallen, and the only route to
+		 * a full week is still seven separate visits.
+		 *
+		 * `days` is the fallback, not the rule. It is what this paid before
+		 * waves had a value, and it answers for a run written before the
+		 * `wave` column carried one -- never a silent nought, which on the
+		 * payout path would quietly stop paying somebody.
 		 */
-		$slots = max(1, min((int)DHCB_CACHE_MAX, (int)$p['days']));
+		$slots = max(1, (int)$p['traits'] > 0
+			? (int)$p['traits']
+			: min((int)DHCB_CACHE_MAX, (int)$p['days']));
 		$ok = @$conn->query(sprintf(
 			"INSERT INTO dhc_boss_payouts (day, user_id, tier_table, dealt, slots, paid_at)
 			 VALUES ('%s', %d, '%s', %d, %d, NOW())",
@@ -1582,16 +1666,25 @@ function dhcb_cache_slots($conn, $user_id, $week = null) {
 	if ($week === null) $week = dhcb_week($conn);
 	$uid  = (int)$user_id;
 	$done = array();
-	/* Blocks of the week, not calendar dates -- see skl_week_day_sql(). */
-	$r = @$conn->query("SELECT DISTINCT " . skl_week_day_sql('started_at') . " AS d
+	/* Blocks of the week, not calendar dates -- see skl_week_day_sql().
+	   The wave comes back with them because a slot is no longer worth one
+	   trait flat: a round fought after a crew fell banks more, and a box
+	   that does not say so is a box the player cannot read. Same MAX(wave)
+	   per round as the settle, so the grid and the payout cannot disagree. */
+	$r = @$conn->query("SELECT " . skl_week_day_sql('started_at') . " AS d,
+	                           GREATEST(1, MAX(wave)) AS w
 	                      FROM dhc_boss_runs
 	                     WHERE user_id = $uid
 	                       AND day = '" . $conn->real_escape_string($week) . "'
 	                       AND outcome <> 0
 	                       AND (dealt >= " . (int)DHCB_MIN_DEALT
-	                     . " OR rounds >= " . (int)DHCB_MIN_ROUNDS . ")");
-	if ($r) while ($x = $r->fetch_assoc()) $done[(int)$x['d']] = true;
+	                     . " OR rounds >= " . (int)DHCB_MIN_ROUNDS . ")
+	                     GROUP BY " . skl_week_day_sql('started_at'));
+	if ($r) while ($x = $r->fetch_assoc()) $done[(int)$x['d']] = (int)$x['w'];
 
+	/* What a round played RIGHT NOW would bank, for the slots not yet
+	   earned. One read of the standing wave, not one per slot. */
+	$nowWave = dhcb_wave($conn, $week);
 	$now = dhcb_week_day($conn);
 	$out = array();
 	for ($i = 0; $i < 7; $i++) {
@@ -1605,7 +1698,13 @@ function dhcb_cache_slots($conn, $user_id, $week = null) {
 		 * eight hours for everybody and wrong by more for anyone outside
 		 * Central time. "Day 3" is true in every timezone.
 		 */
-		$out[] = array('index' => $i, 'label' => (string)($i + 1), 'state' => $st);
+		/* A past round is worth what it WAS worth; a round still to come is
+		   worth what the crew standing now would pay, which is the whole
+		   reason to show it. A missed one is worth nothing and says so. */
+		$worth = ($st === 'filled') ? dhcb_round_traits($done[$i])
+		       : (($st === 'missed') ? 0 : dhcb_round_traits($nowWave));
+		$out[] = array('index' => $i, 'label' => (string)($i + 1), 'state' => $st,
+		               'traits' => $worth);
 	}
 	return $out;
 }
@@ -1961,16 +2060,24 @@ function dhcb_announce($conn, $b, $dealt, $killedKeys) {
 				: '🩸 DHC Bosses — ' . number_format((int)$dealt) . ' damage');
 		$desc  = '**' . $me['name'] . '** sent ' . implode(', ', $crew) . "\n"
 		       . number_format((int)$dealt) . ' damage dealt' . "\n\n";
+		/* WHAT A ROUND BANKS FROM HERE. The best table locked on the FIRST
+		   crew of the week, so every wave after it adds nothing to the
+		   odds -- what it adds is count, and a post that only says "best
+		   table, locked in" reads as nothing new to anyone who was here
+		   for the last one. */
+		$rt   = dhcb_round_traits($prog['wave']);
+		$more = $rt > 1 ? "\n\n" . 'Every round you send a Crew now banks **' . $rt
+		                . ' traits** instead of one.' : '';
 		if ($wiped) {
 			$desc .= 'That is **' . $prog['downed'] . ' crew'
 			       . ($prog['downed'] === 1 ? '' : 's') . ' dropped this week**, and the '
-			       . 'best trait table is locked in for everyone who takes part.' . "\n\n"
+			       . 'best trait table is locked in for everyone who takes part.' . $more . "\n\n"
 			       . 'They are getting back up angrier — **wave ' . $prog['wave'] . '** is '
 			       . 'standing now.' . "\n"
 			       . implode(' · ', $bars);
 		} elseif ($assist) {
 			$desc .= 'Wave **' . $fellWave . '** was **DEFEATED** while this Crew was still '
-			       . 'out there. Every point it landed counts.' . "\n\n"
+			       . 'out there. Every point it landed counts.' . $more . "\n\n"
 			       . 'They are getting back up angrier — **wave ' . $prog['wave'] . '** is '
 			       . 'standing now.' . "\n"
 			       . implode(' · ', $bars);

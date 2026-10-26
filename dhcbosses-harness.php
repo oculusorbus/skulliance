@@ -328,6 +328,10 @@ class HBConn {
 	public $maxHealth = array();  // boss_key => health at spawn (defaults to now)
 	public $state = array();      // run_id => the saved battle JSON
 	public $wave = 1;             // the wave these health rows belong to
+	public $runs = array();       // array('d'=>round index, 'wave'=>int) -- the ledger
+	public $who = 7;              // whose runs they are
+	public $awards = 0;           // traits dhcf_award() was asked for
+	public $weekDay = 3;          // which round of the week it is now
 	public $runOutcome = 0;
 	public $log = array();
 	public $insert_id = 1;
@@ -335,6 +339,38 @@ class HBConn {
 	public function begin_transaction() { $this->log[] = 'BEGIN'; return true; }
 	public function commit()   { $this->log[] = 'COMMIT'; return true; }
 	public function rollback() { $this->log[] = 'ROLLBACK'; return true; }
+	/**
+	 * Group a run ledger the way a query asked for it.
+	 *
+	 * ROUNDS ONLY WHEN THE QUERY SAYS ROUNDS. The grouping key is taken
+	 * from the GROUP BY clause -- the week-day expression groups by round,
+	 * anything else (an id, say) groups by run -- and the aggregate from
+	 * whether the select asks for MAX(wave) or MIN(wave). Without that the
+	 * stub answers what the harness author meant rather than what the code
+	 * actually wrote, which is the whole failure mode it exists to catch:
+	 * mutating the GROUP BY to `id` went straight through the first cut.
+	 */
+	public function roll($q, $keyCol, $valCol) {
+		/* NO GROUP BY AT ALL IS PER ROW, which is what the database would
+		   do. Reading the tail from a stripos() that returned false takes
+		   the WHOLE query, and the week-day expression is in the SELECT
+		   too -- so dropping the GROUP BY entirely looked like grouping by
+		   round and the mutation walked straight through. */
+		$at      = stripos($q, 'GROUP BY');
+		$byRound = ($at !== false)
+		        && stripos(substr($q, $at), 'TIMESTAMPDIFF') !== false;
+		$lowest  = stripos($q, 'MIN(wave)') !== false;
+		$by = array(); $src = array();
+		foreach ($this->runs as $i => $rr) {
+			$k = $byRound ? (int)$rr['d'] : $i;        // per round, or per run
+			$w = max(1, (int)$rr['wave']);
+			$src[$k] = (int)$rr['d'];
+			$by[$k] = isset($by[$k]) ? ($lowest ? min($by[$k], $w) : max($by[$k], $w)) : $w;
+		}
+		$rows = array();
+		foreach ($by as $k => $w) $rows[] = array($keyCol => $src[$k], $valCol => $w);
+		return $rows;
+	}
 	public function query($sql) {
 		/*
 		 * THE RUN STATE IS HANDLED BEFORE THE WHITESPACE IS COLLAPSED. The
@@ -384,6 +420,64 @@ class HBConn {
 		}
 		/* What an announcement reads on its way past: who the player is, and
 		   which wave is standing (dhcb_spawn's one-query "is it still up"). */
+		/*
+		 * THE CACHE GRID'S OWN READ, THROUGH roll() LIKE THE OTHER ONE.
+		 *
+		 * Executed rather than pattern-matched: whether three Crews in one
+		 * round fill one box or three is a question about the RESULT, and the
+		 * check that used to ask it only looked for the word DISTINCT -- which
+		 * a correct GROUP BY rewrite does not contain.
+		 *
+		 * This branch spent a while answering with its own hand-rolled
+		 * grouping, which meant it grouped by round whatever the query said
+		 * and a mutated GROUP BY sailed through. roll() reads the grouping key
+		 * and the aggregate off the query text, so the stub answers what the
+		 * code asked for rather than what the harness author meant.
+		 */
+		if (stripos($q, 'FROM dhc_boss_runs') !== false && stripos($q, ' AS w') !== false
+		    && stripos($q, 'GROUP BY') !== false) {
+			return new HBRes($this->roll($q, 'd', 'w'));
+		}
+		/* dhcb_participants' per-round traits read: the same roll(), so a
+		   GROUP BY or an aggregate changed here is seen too. */
+		if (stripos($q, 'SELECT user_id, SUM(t) AS traits') === 0) {
+			$per = $this->roll($q, 'd', 'w');
+			/* THE CAP IS THE QUERY'S JOB, NOT THE STUB'S. Applying it here
+			   unconditionally meant deleting LEAST() from the SQL changed
+			   nothing and the mutation went through -- the stub was quietly
+			   doing the work it was supposed to be checking. */
+			/* The WEEK-DAY expression opens with LEAST(6, GREATEST(0, ...,
+			   so a bare search for LEAST( is true of every one of these
+			   queries and the mutation that deleted the real cap walked
+			   through. Match the cap itself. */
+			$capped = preg_match('~LEAST\\(\\s*\\d+\\s*,\\s*GREATEST\\(1,\\s*M(?:AX|IN)\\(wave\\)~', $q) === 1;
+			$cap = (int)DHCB_WAVE_TRAITS_MAX;
+			$t = 0;
+			foreach ($per as $r) {
+				$v = max(1, (int)$r['w']);
+				$t += $capped ? min($cap, $v) : $v;
+			}
+			return new HBRes(array(array('user_id' => $this->who, 'traits' => $t)));
+		}
+		/* And its totals read, over every finished run. */
+		if (stripos($q, 'SELECT user_id, SUM(dealt) AS dealt') === 0) {
+			$days = array(); $dealt = 0; $rmax = 0;
+			foreach ($this->runs as $rr) {
+				$days[(int)$rr['d']] = true;
+				$dealt += isset($rr['dealt']) ? (int)$rr['dealt'] : 500;
+				$rmax = max($rmax, isset($rr['rounds']) ? (int)$rr['rounds'] : 12);
+			}
+			return new HBRes(array(array(
+				'user_id'=>$this->who, 'dealt'=>$dealt, 'runs'=>count($this->runs),
+				'fighters'=>3 * count($this->runs), 'rounds_max'=>$rmax,
+				'days'=>count($days))));
+		}
+		/* Which round of the week it is now. */
+		if (stripos($q, ' AS d') !== false && stripos($q, 'FROM') === false)
+			return new HBRes(array(array('d' => $this->weekDay)));
+		/* The standing wave, for what a round played now would be worth. */
+		if (stripos($q, 'SELECT MAX(wave)') === 0)
+			return new HBRes(array(array('w' => $this->wave)));
 		/* The week key, which MySQL computes because the two clocks on this
 		   host disagree -- so even a stub has to answer it. */
 		if (stripos($q, 'SELECT ') === 0 && stripos($q, ' AS w') !== false
@@ -401,6 +495,17 @@ class HBConn {
 			if ($hm && $km) $this->health[$km[1]] = (int)$hm[1];
 			return true;
 		}
+		/*
+		 * AN UNMATCHED SELECT COMES BACK EMPTY, NOT `true`.
+		 *
+		 * A real mysqli hands a SELECT a result object, so a stub that
+		 * answers `true` sends the caller somewhere no connection can: the
+		 * settle reaches dhcf_award(), which reaches dhcf_count_owned(),
+		 * which calls fetch_assoc() on it and takes the whole harness down
+		 * mid-file. An empty set is what a SELECT matching nothing really
+		 * returns, and every caller already handles it.
+		 */
+		if (stripos($q, 'SELECT') === 0) return new HBRes(array());
 		return true;                    // every other write is fire-and-forget here
 	}
 }
@@ -460,6 +565,143 @@ $b3 = hb_battle(array('d34thbrngr'=>1000), array('d34thbrngr'=>500));
 dhcb_finish($c2, $b3);
 ok($c2->health['d34thbrngr'] === 1000,
    'a run that was already settled committed its damage a second time');
+
+/* ---------------------------------------------------------------- *
+ * A ROUND IS WORTH MORE ONCE THE WEEK HAS PUT A CREW DOWN
+ * ---------------------------------------------------------------- */
+echo "\nthe later waves pay in quantity, because they cannot pay in rarity\n";
+/*
+ * WHY THIS EXISTS. dhcb_tier_table() returns placement_1 the moment the
+ * first crew falls, and placement_1 is the platform ceiling -- the same
+ * table first place on every weekly board gets. So from wave 2 onward the
+ * QUALITY ladder is spent and the back half of a strong week had nothing
+ * left to chase. The lever had to be quantity: a tier above placement_1
+ * would break a ceiling eight games share, and DHCF_TIERS is explicit that
+ * guaranteeing mythics on a clearable boss would mint more in a fortnight
+ * than exist.
+ */
+ok(dhcf_table_rank('placement_1') === 3,
+   'placement_1 is no longer the top table, so the premise of the whole wave multiplier '
+ . 'is wrong and rarity could escalate instead');
+$ranks = array();
+foreach (array('run','placement_10','placement_3','placement_1') as $t) $ranks[] = dhcf_table_rank($t);
+ok(max($ranks) === dhcf_table_rank('placement_1'),
+   'some table outranks placement_1, so the best table is not actually the best');
+ok(dhcb_tier_table(array('downed'=>1, 'pct'=>0.0, 'cleared'=>false)) === 'placement_1',
+   'one crew down no longer locks the best table, which is what makes quantity the only '
+ . 'lever left');
+
+/* THE MULTIPLIER ITSELF. One per round at wave 1, the wave number after
+   that, and a hard stop -- later waves are budgeted against the DAYS LEFT
+   and floored at DHCB_WAVE_MIN_DAY, so they get cheaper as the week runs
+   out and an uncapped multiplier would pay most for the cheapest crew. */
+ok(dhcb_round_traits(1) === 1, 'an ordinary round no longer banks exactly one trait');
+ok(dhcb_round_traits(2) === 2 && dhcb_round_traits(3) === 3,
+   'the wave does not drive the count, so dropping a crew buys nothing');
+ok(dhcb_round_traits(4) === (int)DHCB_WAVE_TRAITS_MAX
+   && dhcb_round_traits(40) === (int)DHCB_WAVE_TRAITS_MAX,
+   'the multiplier is uncapped: the last round of the week would pay most for the wave '
+ . 'that cost least to drop');
+ok(dhcb_round_traits(0) === 1 && dhcb_round_traits(-3) === 1,
+   'a missing or broken wave pays nought traits, which on the payout path stops paying '
+ . 'somebody with no error');
+/* AND IT NEVER OUT-MINTS THE ARENA, which caps at three drops a day. */
+ok((int)DHCB_WAVE_TRAITS_MAX <= 3,
+   'a boss round can bank more traits than a whole day of the Arena pays');
+/*
+ * AND THE WEEK'S TRAITS HAVE TO SURVIVE dhcf_award(), WHICH THEY DID NOT.
+ *
+ * 'dhcbosses' was never registered in DHCF_GAMES, so dhcf_cap() fell
+ * through to DHCF_DAILY_CAP -- three a day. The settle is WEEKLY and hands
+ * over every trait the week earned in one loop on one day, so a player who
+ * turned up all seven rounds was awarded three and silently refused four:
+ * dhcf_award() returns null on the cap and nothing checks the return.
+ * dhc_boss_payouts recorded seven and three arrived.
+ *
+ * Cap 0 like Drop Ship, because the bound here is structural -- the settle
+ * is the only thing that awards from this source, it runs once a week on a
+ * cron, and what it pays is rounds ATTENDED times the multiplier, which no
+ * amount of grinding inside a day can move.
+ */
+ok(dhcf_cap('dhcbosses') === 0,
+   'the boss settle is capped at ' . dhcf_cap('dhcbosses') . ' traits a day, so a week '
+ . 'worth more than that silently loses the rest -- the ledger records them and the '
+ . 'player never gets them');
+ok(isset($GLOBALS['DHCF_GAMES']['dhcbosses']),
+   'DHC Bosses is not in the trait registry, so "Where traits drop" does not list the '
+ . 'game and dhcf_cap() falls through to the daily default');
+ok(empty($GLOBALS['DHCF_GAMES']['dhcbosses']['unlisted']),
+   'DHC Bosses pays traits but is hidden from the list of games that pay traits');
+ok(7 * (int)DHCB_WAVE_TRAITS_MAX > dhcf_cap('dhcbosses') || dhcf_cap('dhcbosses') === 0,
+   'a full week banks more traits than one day may award, which is the bug above');
+
+/*
+ * AND THE SETTLE ACTUALLY PAYS IT, run end to end.
+ *
+ * Every check above this is about a number. This is about whether the
+ * number reaches dhcf_award(), which is the only part a player feels --
+ * and the mutation that made dhcb_settle() ignore $p['traits'] and fall
+ * back to the old day count went straight through all of them.
+ */
+$sc = new HBConn();
+$sc->who   = 7;
+$sc->wave  = 3;
+$sc->health = $sc->maxHealth = array('d34thbrngr'=>0, 'cip-666'=>0, 'x-k4t'=>0);
+/* Five rounds: two at wave 1, one at wave 2, two at wave 3. Round 0 has
+   three Crews in it, which must still count once. */
+/*
+ * THE FIXTURE IS BUILT TO SEPARATE THE THREE WAYS THIS CAN BE WRONG, and
+ * the first cut of it separated none of them -- every round held one wave
+ * and the top wave equalled the cap, so MIN read the same as MAX and
+ * dropping LEAST() changed nothing. Mutations proved it.
+ *
+ *   round 0: three Crews, all wave 1  -> one round, worth 1
+ *   round 1: wave 1 then wave 2       -> MAX, so worth 2, not 1
+ *   round 2: wave 2                   -> worth 2
+ *   round 3: wave 5                   -> ABOVE the cap, so worth 3, not 5
+ *   round 4: wave 3                   -> worth 3
+ */
+$sc->runs = array(
+	array('d'=>0,'wave'=>1), array('d'=>0,'wave'=>1), array('d'=>0,'wave'=>1),
+	array('d'=>1,'wave'=>1), array('d'=>1,'wave'=>2),
+	array('d'=>2,'wave'=>2),
+	array('d'=>3,'wave'=>5),
+	array('d'=>4,'wave'=>3),
+);
+$GLOBALS['HB_POSTS'] = array();
+$res = dhcb_settle($sc, '2026-10-25', false);
+/* 1 + 2 + 2 + 3 + 3 */
+ok($res['traits'] === 11,
+   'the settle paid ' . $res['traits'] . ' traits for a week of 1,2,2,5-capped-to-3,3; expected 11');
+ok($res['paid'] === 1, 'the settle paid ' . $res['paid'] . ' players, expected 1');
+ok($res['table'] === 'placement_1',
+   'a week that downed two crews did not pay the best table: ' . $res['table']);
+/* THE SAME LEDGER WITH NO CREW EVER DOWN pays one per round and no more --
+   the multiplier must not leak into an ordinary week. */
+$sf = new HBConn();
+$sf->who = 7; $sf->wave = 1;
+$sf->health = $sf->maxHealth = array('d34thbrngr'=>9000, 'cip-666'=>9000, 'x-k4t'=>9000);
+$sf->runs = array(array('d'=>0,'wave'=>1), array('d'=>0,'wave'=>1),
+                  array('d'=>1,'wave'=>1), array('d'=>2,'wave'=>1),
+                  array('d'=>3,'wave'=>1), array('d'=>4,'wave'=>1));
+$flat = dhcb_settle($sf, '2026-10-25', false);
+ok($flat['traits'] === 5,
+   'an ordinary week paid ' . $flat['traits'] . ' for five rounds attended, expected 5');
+/* AND A RUN LEDGER WITH NO WAVE ON IT STILL PAYS. Rows written before the
+   column carried a value must fall back to the round count, never to a
+   silent nought on the payout path. */
+$sz = new HBConn();
+$sz->who = 7; $sz->wave = 1;
+$sz->health = $sz->maxHealth = array('d34thbrngr'=>9000, 'cip-666'=>9000, 'x-k4t'=>9000);
+$sz->runs = array(array('d'=>0,'wave'=>0), array('d'=>1,'wave'=>0), array('d'=>2,'wave'=>0));
+$zero = dhcb_settle($sz, '2026-10-25', false);
+ok($zero['traits'] === 3,
+   'a ledger with no wave recorded paid ' . $zero['traits'] . ' traits for three rounds');
+
+/* And the per-player ceiling, which is what a reader will check by hand:
+   seven rounds at the cap. */
+ok(7 * (int)DHCB_WAVE_TRAITS_MAX <= 21,
+   'a perfect week can bank more than the Arena pays in a perfect week');
 
 /* ---------------------------------------------------------------- *
  * NOBODY FIGHTS A CORPSE: THE COMMIT IS PER MOVE
@@ -1750,6 +1992,54 @@ ok($rpdReal < count($ladderShape) * DHCB_DAILY_RUNS * 0.5,
    sprintf('the live ladder models as %.1f Crews a day against an allowance of %d, so this '
 	 . 'case is not actually skewed and proves nothing', $rpdReal,
 	 count($ladderShape) * DHCB_DAILY_RUNS));
+/*
+ * WHAT IT COSTS, ON THE LIVE TURNOUT CURVE, SIMULATED THROUGH THE SHIPPED
+ * BUDGET -- not estimated. Last time a number here was assumed rather than
+ * measured the crew came out 3.8x too big with every check green.
+ *
+ * The week is walked day by day: the community deals runs-per-day x
+ * damage-per-run, a wave that runs out stands the next one up budgeted
+ * against the days remaining, and the wave standing on each round is what
+ * that round pays.
+ */
+function hb_week_waves($rpd, $players, $fighters) {
+	$c = hb_conn($players, $fighters, 0, 0, $rpd);
+	$wave = 1; $hp = dhcb_crew_budget($c, 7, 1); $out = array();
+	for ($d = 0; $d < 7; $d++) {
+		$out[] = $wave;
+		$hp -= $rpd * hb_per_run($wave);
+		$guard = 0;
+		while ($hp <= 0 && $guard++ < 20) {
+			$wave++;
+			$hp += dhcb_crew_budget($c, max(0.5, 7 - ($d + 1)), $wave);
+		}
+	}
+	return $out;
+}
+$waves = hb_week_waves($rpdReal, count($ladderShape), count($ladderShape) * 9);
+printf("  week on the live curve: waves %s\n", implode(' ', $waves));
+ok(max($waves) > 1,
+   'the simulated week never drops a crew, so this whole section is measuring nothing');
+/* Attendance is the same conversion the budget uses: the share of a
+   player's six daily Arena battles they actually use. */
+$was = 0; $now = 0;
+foreach ($ladderShape as $n) {
+	$share = min(1.0, ($n / 25) / 6);
+	foreach ($waves as $w) { $was += $share; $now += $share * dhcb_round_traits($w); }
+}
+printf("  traits a week, community-wide: %.1f -> %.1f (%.2fx)\n", $was, $now, $now / max(0.01, $was));
+ok($now > $was, 'the multiplier changes nothing on the real curve, so it is not worth the code');
+/*
+ * THE CEILING THAT MATTERS. Every one of these rolls on placement_1 once a
+ * crew is down (8% mythic against 0.5% on the base table), so the thing to
+ * hold down is the MULTIPLE, not the absolute. Two times is the judgement:
+ * it is a real reason to come back for the back half of the week and it is
+ * nowhere near a supply event.
+ */
+ok($now / max(0.01, $was) <= 2.0,
+   sprintf('the wave multiplier more than doubles trait supply on the live curve '
+	 . '(%.1f -> %.1f); every one of those rolls on the best table', $was, $now));
+
 $hpReal  = hb_budget(10, 90, 7, 1, 0, 0, $rpdReal);
 $dayReal = $rpdReal * hb_per_run();
 ok($hpReal / $dayReal <= 6.0,
@@ -2490,16 +2780,75 @@ ok(strpos($today, 'skl_week_day_sql') !== false,
  . 'every Thursday');
 ok(strpos($today, 'CURDATE()') === false, 'the allowance still resets at midnight');
 
+/*
+ * THE CACHE GRID, EXECUTED.
+ *
+ * This asked whether the word DISTINCT appeared in dhcb_cache_slots(). It
+ * does not any more -- the read groups by round so it can also return the
+ * wave -- and the check failed on code that is correct, which is the other
+ * half of what a source grep gets wrong. What matters is the RESULT: three
+ * Crews in one round fill ONE box, and the box is worth the highest wave
+ * that round was fought against.
+ */
+$cs = new HBConn();
+$cs->wave = 1; $cs->weekDay = 3;
+/* ROUND 2'S WAVES DESCEND ON PURPOSE (3 then 2). Ascending, grouping per
+   RUN instead of per round still leaves the right number in the last row
+   written, so dropping the GROUP BY looked correct. Descending, only a real
+   MAX over the round survives. */
+$cs->runs = array(array('d'=>0,'wave'=>1), array('d'=>0,'wave'=>1), array('d'=>0,'wave'=>1),
+                  array('d'=>1,'wave'=>1), array('d'=>2,'wave'=>3), array('d'=>2,'wave'=>2));
+$grid = dhcb_cache_slots($cs, 7, '2026-10-25');
+ok(count($grid) === (int)DHCB_CACHE_MAX, 'the grid is not a week wide: ' . count($grid));
+$fill = 0; foreach ($grid as $g) if ($g['state'] === 'filled') $fill++;
+ok($fill === 3, 'three Crews in one round filled more than one box: ' . $fill . ' filled');
+ok($grid[0]['traits'] === 1, 'a wave 1 round is not worth one: ' . $grid[0]['traits']);
+ok($grid[2]['traits'] === 3,
+   'a round that saw the wave rise banks the wave it STARTED on, not the one it reached: '
+ . $grid[2]['traits']);
+/* A missed round is worth nothing and a future one is worth what the crew
+   standing now would pay -- which is the reason to show it at all. */
+ok($grid[3]['state'] === 'today' && $grid[3]['traits'] === 1,
+   'the open round does not carry what it would pay right now');
+$cs->wave = 4;
+$grid2 = dhcb_cache_slots($cs, 7, '2026-10-25');
+ok($grid2[6]['traits'] === (int)DHCB_WAVE_TRAITS_MAX,
+   'a round still to come is priced off wave 1 rather than the crew actually standing: '
+ . $grid2[6]['traits']);
+ok($grid2[2]['traits'] === 3,
+   'a round already banked was repriced by a later wave: ' . $grid2[2]['traits']);
+/* NUMBERED, NOT NAMED. A block runs 4pm to 4pm and straddles two calendar
+   dates, so "Friday" is wrong by eight hours for everybody and wrong by more
+   outside Central time. Read off the grid rather than off the source. */
+$labels = array(); foreach ($grid as $g) $labels[] = $g['label'];
+ok($labels === array('1','2','3','4','5','6','7'),
+   'the slots are labelled by weekday name, which is wrong by eight hours under a 4pm '
+ . 'boundary and wrong by more outside Central time: ' . implode(',', $labels));
+/*
+ * AND THE GRID QUALIFIES A ROUND THE SAME WAY THE PAYOUT DOES. This one
+ * stays a source check because the bar lives in SQL a stub cannot run --
+ * but it compares the two clauses to EACH OTHER rather than asserting a
+ * string, so the failure it catches is the two drifting apart: a box a
+ * player can see filled, against a trait they are never paid.
+ */
 $slots = substr($LIB, strpos($LIB, 'function dhcb_cache_slots'));
 $slots = substr($slots, 0, strpos($slots, "\nfunction "));
-ok(strpos($slots, 'DISTINCT ') !== false && strpos($slots, 'skl_week_day_sql') !== false,
-   'the cache counts runs rather than blocks of the week, so three Crews in one sitting '
- . 'would fill three slots');
-ok(strpos($slots, "'label' => (string)(\$i + 1)") !== false,
-   'the slots are labelled by weekday name, which is wrong by eight hours under a 4pm '
- . 'boundary and wrong by more outside Central time');
-ok(strpos($slots, 'dealt >= ') !== false,
-   'a run that dealt nothing fills a cache slot');
+$parts = substr($LIB, strpos($LIB, 'function dhcb_participants'));
+$parts = substr($parts, 0, strpos($parts, "\nfunction "));
+$bar = function ($src) {
+	/* The two spell it differently -- one inlines the constants, the other
+	   binds them to $min and $mr first -- so the rule is checked as four
+	   properties rather than as one string: both constants present, damage
+	   tested, rounds tested, and the two joined by OR and not AND. */
+	return strpos($src, 'DHCB_MIN_DEALT') !== false
+	    && strpos($src, 'DHCB_MIN_ROUNDS') !== false
+	    && preg_match('~dealt\\s*>=~', $src) === 1
+	    && preg_match('~OR rounds\\s*>=~', $src) === 1;
+};
+ok($bar($slots), 'a run that dealt nothing fills a cache slot');
+ok($bar($parts),
+   'the settle no longer uses the same qualifying bar as the grid, so a box can fill '
+ . 'without paying a trait');
 
 $days = substr($LIB, strpos($LIB, 'function dhcb_cache_days'));
 $days = substr($days, 0, strpos($days, "\nfunction "));

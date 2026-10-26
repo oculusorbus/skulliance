@@ -76,10 +76,22 @@ drawn rather than listed, and a Fighter who fell is greyed while a survivor
 keeps its colour and a lit edge. Almost every run is a wipe, so the survivor is
 the thing worth looking for.
 
-## The cache: one trait for every day you turn up
+## The cache: a trait for every round you turn up
 
-Every **round** you send a Crew that does real damage banks **one trait**, up to
-seven. Miss a round and you finish the week with six.
+Every **round** you send a Crew that does real damage banks **one trait**. Miss a
+round and you finish the week one short.
+
+**Rounds are worth more once the week has put a crew down.** A round fought while
+wave 1 is standing banks one trait, wave 2 banks two, wave 3 banks three, and that
+is where it stops. The multiplier is per **round**, not per Crew, so three Crews in
+one sitting still bank that round once and the only way to a full week is still
+turning up seven times.
+
+That is deliberate, and it is the only thing later waves add. The trait **table**
+is already at its best the moment the first crew falls, and there is nothing above
+it anywhere on the platform, so what dropping a second and third crew buys the
+community is **more rolls**, not better ones. The boxes on the page carry their own
+multiplier so you can see what a round is worth before you spend it.
 
 A round is **24 hours from 4pm CT**, the same boundary the week turns on — not a
 calendar day. The page carries a live countdown to the next one, so you never have
@@ -126,6 +138,12 @@ push.
 
 Because the reward rises continuously with damage, there is never a moment
 when stopping is worth more than carrying on.
+
+**The best table is the ceiling, and dropping one crew reaches it.** It is the
+same table first place on every weekly board here gets, and nothing outranks it.
+That is why the second and third crews of a week pay in **quantity** instead:
+once the odds cannot improve, what is left to give is more rolls. See the cache
+above.
 
 ## Your Fighters rest separately
 

@@ -93,6 +93,13 @@ if ($do === 'move') {
 		   everything it landed is banked -- but it did not land the last
 		   blow either, and the end card must not congratulate it for one. */
 		$out['assist'] = !$killed && !empty($b['waveProg']['cleared']);
+		/* WHAT A ROUND IS WORTH NOW. The end card is where a player learns
+		   a crew went down, so it is where they should learn what that
+		   bought them -- the best table was already locked by the FIRST
+		   clear, and from here on what a later wave adds is traits per
+		   round. Server-side, from the same function the settle pays by. */
+		$out['roundTraits'] = dhcb_round_traits(
+			isset($out['progress']['wave']) ? (int)$out['progress']['wave'] : 1);
 		/* THE CREW THIS RUN FOUGHT, not the one standing after it. A clear
 		   stands the next wave up in this same request, so the live bars
 		   describe an untouched crew at nought per cent. */

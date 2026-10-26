@@ -1342,8 +1342,13 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 /* ---- the trait cache ---- */
 .arena-wrap .a-cache{display:flex;gap:4px;margin:0 0 6px}
 .arena-wrap .a-slot{flex:1 1 0;min-width:0;text-align:center}
-.arena-wrap .a-slot i{display:block;height:26px;border-radius:4px;
-  border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03)}
+.arena-wrap .a-slot i{display:flex;align-items:center;justify-content:center;height:26px;
+  border-radius:4px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03)}
+/* The multiplier, inside the box rather than beside it: a second row of
+   labels under a seven-box grid is wider than the grid at phone width. */
+.arena-wrap .a-slot i em{font-style:normal;font-size:10px;font-weight:700;
+  letter-spacing:.02em;color:var(--ink);opacity:.85}
+.arena-wrap .a-slot.today i em,.arena-wrap .a-slot.open i em{color:var(--ochre);opacity:1}
 .arena-wrap .a-slot span{display:block;font-size:8px;letter-spacing:.05em;text-transform:uppercase;
   color:var(--dim);margin-top:3px}
 .arena-wrap .a-slot.filled i{background:var(--teal);border-color:var(--teal);
@@ -2250,8 +2255,10 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
            everyone who takes part rolls for when the week closes get better the further the
            crew falls, and dropping all three unlocks the best table.</p>
         <p class="a-sub" style="margin:0 0 10px"><b><?php echo DHCB_DAILY_RUNS; ?> Crews every
-           24 hours</b>, and every round you send one banks another trait. Seven rounds,
-           seven traits.
+           24 hours</b>, and every round you send one banks a trait. <b>Rounds get worth more
+           as the week puts crews down</b>: one while wave 1 is standing, two against wave 2,
+           three against wave 3 and up. The multiplier is per round, not per Crew, so it is
+           still coming back that fills the cache.
            <?php /* "A DAY" IS NOT TRUE AND IT READ AS A BUG. The round turns at 4pm CT with
                     the week, so somebody who sent three Crews at 2pm and came back at half
                     past four was told they had sent none "today" -- and reported the page
@@ -2281,8 +2288,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         <p class="a-sub" style="margin:0 0 10px">You already dropped
            <?php echo $dp['downed'] === 1 ? 'a crew' : (int)$dp['downed'] . ' crews'; ?>
            this week, so <b>the best trait table is locked in</b> for everyone who takes
-           part — nothing below can take it back. They get back up angrier each time:
-           what is left is the ladder, and your cache.</p>
+           part — nothing below can take it back. That is the top table on the platform and
+           there is nothing above it, so what the later waves add is <b>quantity</b>: a round
+           fought now banks <b><?php echo dhcb_round_traits($wv); ?></b><?php
+           echo dhcb_round_traits($wv) === 1 ? ' trait' : ' traits'; ?> instead of one,
+           up to <?php echo (int)DHCB_WAVE_TRAITS_MAX; ?> at wave
+           <?php echo (int)DHCB_WAVE_TRAITS_MAX; ?>. They get back up angrier each time.</p>
         </details>
         <?php endif; ?>
 
@@ -2302,22 +2313,33 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <?php endforeach; ?>
         </div>
 
-        <?php if ($dhcb_slots): $filled = 0;
-          foreach ($dhcb_slots as $sl) if ($sl['state'] === 'filled') $filled++; ?>
+        <?php if ($dhcb_slots): $filled = 0; $banked = 0; $nowWorth = 1;
+          foreach ($dhcb_slots as $sl) {
+            if ($sl['state'] === 'filled') { $filled++; $banked += (int)$sl['traits']; }
+            if ($sl['state'] === 'today') $nowWorth = max(1, (int)$sl['traits']);
+          } ?>
         <?php /* THE CACHE, AS SEVEN BOXES RATHER THAN A NUMBER.
                  A count going up is information; Wednesday sitting visibly
                  empty is a reason to open the game on Wednesday. One slot
                  per day you turn up with a real run, and with three Crews a
                  day there is no way to fill it in one sitting -- the only
                  route to seven is coming back seven times. */ ?>
+        <?php /* A BOX CARRIES ITS OWN VALUE NOW. A round fought after the
+                 week has put a crew down banks more than one, so a row of
+                 identical boxes would be lying about four of them. The
+                 multiplier is drawn only where it is not one, because x1 on
+                 every box in an ordinary week is noise. */ ?>
         <div class="a-cache">
-          <?php foreach ($dhcb_slots as $sl): ?>
+          <?php foreach ($dhcb_slots as $sl): $w = (int)$sl['traits']; ?>
           <div class="a-slot <?php echo $sl['state']; ?>"
                title="<?php echo 'Round ' . htmlspecialchars($sl['label']) . ' of 7 — ' . (
-                 $sl['state'] === 'filled' ? 'banked'
-                 : ($sl['state'] === 'today' ? 'now, still open'
-                 : ($sl['state'] === 'missed' ? 'missed' : 'still to come'))); ?>">
-            <i></i><span><?php echo htmlspecialchars($sl['label']); ?></span>
+                 $sl['state'] === 'filled' ? 'banked ' . $w . ($w === 1 ? ' trait' : ' traits')
+                 : ($sl['state'] === 'today' ? 'now, still open · worth ' . $w
+                 : ($sl['state'] === 'missed' ? 'missed'
+                 : 'still to come · worth ' . $w . ' at the wave standing now'))); ?>">
+            <i><?php if ($w > 1 && $sl['state'] !== 'missed'): ?><em>&times;<?php
+              echo $w; ?></em><?php endif; ?></i>
+            <span><?php echo htmlspecialchars($sl['label']); ?></span>
           </div>
           <?php endforeach; ?>
         </div>
@@ -2340,10 +2362,15 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <span class="a-rclk">Next round in <b id="aRoundLeft"
             data-left="<?php echo (int)$dhcb_left; ?>"><?php echo dhca_hms($dhcb_left); ?></b></span>
         </div>
+        <?php /* THE COUNT IS TRAITS, NOT BOXES. They were the same number
+                 until a round could be worth more than one, and "5 of 7"
+                 beside a grid showing 8 banked is the kind of disagreement
+                 that gets reported as a payout bug. */ ?>
         <div class="a-bsum a-cachenote">
-          <b><?php echo (int)$filled; ?></b> of <?php echo count($dhcb_slots); ?> traits banked
+          <b><?php echo (int)$banked; ?></b> trait<?php echo $banked === 1 ? '' : 's'; ?> banked
+          · <?php echo (int)$filled; ?> of <?php echo count($dhcb_slots); ?> rounds
           <?php if ($filled < count($dhcb_slots)): ?>
-            · one more for every round you send a Crew
+            · this round is worth <b><?php echo (int)$nowWorth; ?></b>
           <?php else: ?>
             · a full week
           <?php endif; ?>
@@ -3927,6 +3954,23 @@ function shareLink(won, standing){
   el.href = 'https://x.com/intent/post?text=' + encodeURIComponent(body + tail)
           + '&url=' + encodeURIComponent(url);
 }
+/*
+ * WHAT A ROUND BANKS FROM HERE, said on the card that announces a clear.
+ *
+ * The best trait table locks on the FIRST crew the week puts down and
+ * placement_1 is the platform ceiling, so every wave after that one adds
+ * nothing to the odds. What it adds is COUNT, and a player who is not told
+ * that reads waves 3 and 4 as a victory lap worth no more than wave 2.
+ *
+ * Server-built (dhcb_round_traits), because the settle pays by that same
+ * function and a card that computed its own multiplier would eventually
+ * disagree with the payout.
+ */
+function roundWorth(res){
+  var n = res && res.roundTraits ? +res.roundTraits : 1;
+  if (!(n > 1)) return '';
+  return ' Every round you send a Crew now banks ' + n + ' traits instead of one.';
+}
 function showEnd(res){
   var won = res.over === 'mine';
   var card = $('endcard');
@@ -3997,6 +4041,7 @@ function showEnd(res){
           + 'Your ' + dealt.toLocaleString() + ' damage is already on the board '
           + 'and it counts in full — the round, the cache slot and the ladder.';
       if (pr.wave > 1) sub += ' They are getting back up angrier: wave ' + pr.wave + '.';
+      sub += roundWorth(res);
     } else if (dropped) {
       $('ecTitle').textContent = 'The crew is down';
       card.className = 'endcard win';
@@ -4005,6 +4050,7 @@ function showEnd(res){
           + 'The best trait table is locked in for everyone who takes part, and it '
           + 'cannot be taken back.';
       if (pr.wave > 1) sub += ' They are getting back up angrier: wave ' + pr.wave + '.';
+      sub += roundWorth(res);
     } else if (pr) {
       /*
        * ONE DIRECTION FOR ONE QUANTITY, because the share button is on this

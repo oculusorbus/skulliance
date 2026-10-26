@@ -1057,6 +1057,36 @@ $GLOBALS['DHCF_GAMES'] = array(
 	 * any category at all, which is the right shape for a prize you only get
 	 * by being top of the board.
 	 */
+	/*
+	 * DHC BOSSES, AND IT WAS PAYING THREE OF SEVEN.
+	 *
+	 * It awarded with source 'dhcbosses' and was never registered here, so
+	 * dhcf_cap() fell through to DHCF_DAILY_CAP -- three a day. The boss
+	 * settle is WEEKLY: it hands a player every trait the week earned them
+	 * in one loop, on one day, at week close. A player who turned up all
+	 * seven rounds was awarded three traits and silently refused the other
+	 * four, because dhcf_award() returns null on the cap and nothing checks
+	 * the return. dhc_boss_payouts recorded seven, the Discord post
+	 * announced seven, and three arrived.
+	 *
+	 * CAP 0, LIKE DROP SHIP, BECAUSE THE BOUND IS STRUCTURAL. A daily
+	 * ceiling is for a source a player can farm by playing more, and this
+	 * is not one: the settle is the only thing that awards from it, it runs
+	 * once a week on a cron, and what it pays is already bounded by rounds
+	 * ATTENDED times the wave multiplier -- a number no amount of grinding
+	 * in a day can move, since three Crews in one round still bank that
+	 * round once. Capping it daily does not limit anything; it just loses
+	 * traits that were already earned.
+	 *
+	 * LISTED, because it is a real game and "Where traits drop" is the
+	 * canonical answer to where a trait comes from. Being absent from it
+	 * was the second half of the same omission.
+	 */
+	'dhcbosses'      => array('label' => 'DHC Bosses', 'x_tag' => '@skulliance', 'url' => 'dhcbosses.php',
+	                          'category' => 'wildcard', 'trigger' => 'send a Crew in any round of the week',
+	                          'base' => 'run',
+	                          'cap' => 0,
+	                          'limit_note' => 'paid when the week closes'),
 	/* THE ONE LISTED ROW of the four. "in any theme" is doing real work: the
 	   other three are unlisted (see below), so this line is the only place a
 	   player is told that Oculus Lounge, Filthy Mermaid and Dread City pay
