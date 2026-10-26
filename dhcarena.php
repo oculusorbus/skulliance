@@ -1551,9 +1551,13 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    it is wider than its neighbours and every column after it loses its
    line. 3 x 38 + 2 x 4 of gap. */
 .arena-wrap .a-runcrew{display:flex;gap:4px;flex:0 0 122px}
-/* The result: whatever was dropped, then the words. Pushed right as one
-   block so the outcome text still lands on the same edge every row. */
-.arena-wrap .a-runres{display:flex;align-items:center;gap:8px;margin-left:auto}
+/* The result: the words, then whatever was dropped, hard right. Pushed
+   right as one block, with the bodies in a reserved slot three wide, so
+   the sentence ends on one column and the pictures start on another --
+   left of the words they floated with the sentence length and no two
+   rows agreed. */
+.arena-wrap .a-runres{display:flex;align-items:center;gap:10px;margin-left:auto}
+.arena-wrap .a-runkills{display:flex;gap:4px;flex:0 0 122px;justify-content:flex-end}
 /* A STACK, not one picture: the layers sit on top of each other inside the
    tile, which is why it is positioned and they are absolute. */
 .arena-wrap .a-rf{position:relative;display:block;width:38px;height:38px;border-radius:3px;
@@ -1616,6 +1620,8 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   .arena-wrap .a-runwho{flex:1 1 100%}
   .arena-wrap .a-runnum{flex:0 0 auto;text-align:left}
   .arena-wrap .a-runres{margin-left:0}
+  /* No reserved slot on a phone -- 122px of nothing is most of the row. */
+  .arena-wrap .a-runkills{flex:0 0 auto}
 }
 .arena-wrap #arenaBattle{display:none;margin-top:12px}
 .arena-wrap #arenaBattle.on{display:block}
@@ -2519,13 +2525,6 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                * Crew cell pinned to three, both problems go.
                */ ?>
         <div class="a-runres">
-        <?php foreach ($rn['kills'] as $kb): ?>
-          <span class="a-rf fell a-rkill" title="<?php
-            echo htmlspecialchars($kb['name'] . ' — dropped by this Crew'); ?>">
-            <img loading="lazy" alt="" src="<?php echo htmlspecialchars($kb['art']); ?>"
-                 onerror="this.remove()">
-          </span>
-        <?php endforeach; ?>
         <?php if ($live): ?>
           <div class="a-runout live">Still out there</div>
         <?php elseif (!empty($rn['kills'])): ?>
@@ -2550,6 +2549,21 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <div class="a-runout<?php echo $stood > 0 ? ' ok' : ''; ?>"><?php
             echo $stood > 0 ? $stood . ' walked away' : 'Crew wiped'; ?></div>
         <?php endif; ?>
+        <?php /* THE BODIES LAST, AND HARD RIGHT. They were left of the
+                 words, so they floated to wherever the sentence happened
+                 to end and no two rows lined up. The slot is reserved at
+                 three wide whether or not a run filled it, which is what
+                 puts both the text and the pictures on columns of their
+                 own. */ ?>
+        <div class="a-runkills">
+        <?php foreach ($rn['kills'] as $kb): ?>
+          <span class="a-rf fell a-rkill" title="<?php
+            echo htmlspecialchars($kb['name'] . ' — dropped by this Crew'); ?>">
+            <img loading="lazy" alt="" src="<?php echo htmlspecialchars($kb['art']); ?>"
+                 onerror="this.remove()">
+          </span>
+        <?php endforeach; ?>
+        </div>
         </div>
       </div>
       <?php endforeach; ?>

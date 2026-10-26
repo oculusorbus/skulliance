@@ -937,8 +937,20 @@ $crewCell = substr($ARE, strpos($ARE, 'class="a-runcrew"'),
 ok(strpos($crewCell, 'a-rkill') === false,
    'the dropped boss is back inside the Crew cell, which is what pushed the columns out');
 ok(strpos($ARE, 'class="a-runres"') !== false
-   && strpos($ARE, '.arena-wrap .a-runres{display:flex;align-items:center;gap:8px;margin-left:auto}') !== false,
+   && strpos($ARE, '.arena-wrap .a-runres{display:flex;align-items:center;gap:10px;margin-left:auto}') !== false,
    'the result block is gone, so the kill and the outcome no longer land on one right edge');
+/* THE BODIES ARE LAST AND IN A RESERVED SLOT. Left of the words they
+   floated to wherever the sentence happened to end and no two rows lined
+   up; the slot is three wide whether or not a run filled it, so the text
+   ends on one column and the pictures start on another. */
+ok(strpos($ARE, '.arena-wrap .a-runkills{display:flex;gap:4px;flex:0 0 122px;justify-content:flex-end}') !== false,
+   'the dropped bosses have no reserved slot, so they float with the length of the '
+ . 'outcome sentence and no two rows line up');
+$resAt = strpos($ARE, 'class="a-runres"');
+$outAt = strpos($ARE, 'class="a-runout live"', $resAt);
+$kilAt = strpos($ARE, 'class="a-runkills"', $resAt);
+ok($outAt !== false && $kilAt !== false && $outAt < $kilAt,
+   'the dropped bosses are drawn before the outcome text, so they are not hard right');
 ok(strpos($ARE, 'a-rkill{border-color:rgba(255,92,60,.5);cursor:default}') !== false,
    'the dropped boss looks clickable, and a boss has no Fighter panel to open');
 /* THE NUMBERS TOO. A nought before the run resolves is the absence of a
