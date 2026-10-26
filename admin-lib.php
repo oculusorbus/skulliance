@@ -868,8 +868,11 @@ function admin_require() {
 function admin_tabs() {
 	/* Ordered the way the work runs: a chain holds projects, a project holds
 	   collections, collections feed missions, and Monstrocity sits on top of
-	   all of it with its bosses behind it. The three one-off tools go last.
-	   This array IS the tab order -- there is no separate sort. */
+	   all of it with its bosses behind it -- and the DHC boss crew beside
+	   those, since the two boss tabs belong together. The one-off tools go
+	   last. This array IS the tab order -- there is no separate sort, and it
+	   is also the ORDER OF THE DROPDOWN in header.php, which reads the same
+	   list. */
 	return array(
 		'blockchains' => array('admin-blockchains.php', 'Chains'),
 		'projects'    => array('admin-projects.php',    'Projects'),
@@ -877,13 +880,16 @@ function admin_tabs() {
 		'missions'    => array('admin-missions.php',    'Missions'),
 		'monstrocity' => array('admin-monstrocity.php', 'Monstrocity'),
 		'bosses'      => array('admin-monstrocity-boss.php', 'Bosses'),
+		/* 'bosses' above is the MONSTROCITY boss editor and predates this; the
+		   DHC boss crew is a different game and a read-only report, so it gets
+		   its own key rather than crowding that one. NEXT TO IT, though, and
+		   the owner's call: the two tabs are the only two about bosses, and
+		   with Daily Digest, Flyers and Nudges between them the eye had to
+		   cross three unrelated tools to get from one to the other. */
+		'dhcbosses'   => array('admin-dhcbosses.php',   'DHC Bosses'),
 		'digest'      => array('admin-digest.php',      'Daily Digest'),
 		'flyers'      => array('admin-flyers.php',      'Flyers'),
 		'nudges'      => array('admin-nudges.php',      'Nudges'),
-		/* 'bosses' above is the MONSTROCITY boss editor and predates this; the
-		   DHC boss crew is a different game and a read-only report, so it gets
-		   its own key rather than crowding that one. */
-		'dhcbosses'   => array('admin-dhcbosses.php',   'DHC Bosses'),
 		'lapsed'      => array('admin-lapsed.php',      'Lapsed'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);

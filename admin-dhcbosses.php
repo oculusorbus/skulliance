@@ -91,6 +91,38 @@ admin_chrome('dhcbosses');
   border:1px solid rgba(255,255,255,.12); text-decoration:none; }
 .ab-days a + a { border-left:0; }
 .ab-days a.on { color:#06222b; background:#00c8a0; border-color:#00c8a0; }
+/* The colourway reference. Folded by default and that is load-bearing: a
+   browser does not fetch images inside a display:none subtree, so fifteen
+   500px renders cost nothing until somebody actually opens it. */
+.ab-hues { margin:26px 0 0; border-top:1px solid rgba(255,255,255,.08); padding-top:14px; }
+.ab-hues > summary { cursor:pointer; list-style:none; display:inline-flex; align-items:center;
+  gap:8px; font-size:.78rem; letter-spacing:.09em; text-transform:uppercase; color:#8fa8b8; }
+.ab-hues > summary::-webkit-details-marker { display:none; }
+.ab-hues > summary:before { content:'+'; font-size:1rem; line-height:1; width:12px;
+  text-align:center; opacity:.8; }
+.ab-hues[open] > summary:before { content:'\2212'; }
+.ab-hues > summary:hover { color:#00c8a0; }
+.ab-hw { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 16px; margin:18px 0 8px;
+  padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,.07); }
+.ab-hw h4 { margin:0; font-size:.8rem; color:#e8eaed; font-weight:600; }
+.ab-hw.now h4:after { content:' · standing now'; color:#00c8a0; font-weight:normal;
+  font-size:.72rem; letter-spacing:.06em; }
+.ab-hw span { font-size:.7rem; color:#5f7d90; font-variant-numeric:tabular-nums; }
+.ab-hw span b { color:#8fa8b8; font-weight:600; }
+.ab-hr { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.ab-hr figure { margin:0; }
+/* The source is square and width:100% + height:auto keeps it square, so no
+   aspect-ratio box is needed -- the width/height attributes on the tag
+   already reserve the space before the render arrives. */
+.ab-hr img { width:100%; height:auto; display:block; border-radius:6px;
+  background:#0d2030; }
+.ab-hr figcaption { font-size:.66rem; letter-spacing:.07em; text-transform:uppercase;
+  color:#5f7d90; text-align:center; margin-top:4px; }
+.ab-note { font-size:.76rem; color:#8fa8b8; line-height:1.6; margin:16px 0 0;
+  border-left:2px solid rgba(255,255,255,.14); padding-left:12px; }
+.ab-note b { color:#e8eaed; }
+.ab-note.flag { border-left-color:#d69e2e; }
+@media (max-width:620px){ .ab-hr { grid-template-columns:repeat(3,minmax(84px,1fr)); } }
 </style>
 
 <?php if (!$ab_state): ?>
@@ -204,6 +236,84 @@ admin_chrome('dhcbosses');
   </tbody>
 </table>
 <?php endif; ?>
+
+<?php
+/*
+ * THE COLOURWAY REFERENCE.
+ *
+ * WHY IT IS HERE AND NOT IN A DOC. The crew gets back up in a new hue every
+ * time it falls, and the only way to know what wave 4 looks like used to be
+ * to wait for a week strong enough to produce one. This is the whole series
+ * on demand, from the SAME endpoint the game, Discord and the X card use --
+ * so it is not a mock-up of the colourways, it IS them, and a broken render
+ * shows up here before a player finds it in a post.
+ *
+ * EVERY NUMBER IS CALLED, NOT TYPED. The hue, the power multiplier, the
+ * traits a round banks and the table it rolls on all come from the functions
+ * that decide them, so this page cannot drift from the game the way a
+ * written reference would.
+ *
+ * FOLDED, AND THAT IS LOAD-BEARING. Fifteen 500px renders is several
+ * megabytes; a browser fetches none of them while the <details> is shut,
+ * because the subtree is display:none. The report above it stays the fast
+ * thing this page is for.
+ */
+/*
+ * HOW LONG THE SERIES IS, ASKED RATHER THAN TYPED. A literal 5 here is one
+ * edit to dhcb_wave_hue() away from a reference page that shows four of six
+ * colourways and a footnote that is wrong about where it wraps. Walk the
+ * function until it returns to where it started.
+ */
+$ab_hue_waves = 1;
+for ($w = 2; $w <= 64; $w++) {
+	if (dhcb_wave_hue($w) === dhcb_wave_hue(1)) { $ab_hue_waves = $w - 1; break; }
+	$ab_hue_waves = $w;
+}
+$ab_now_wave  = $ab_prog ? max(1, (int)$ab_prog['wave']) : 1;
+?>
+<details class="ab-hues">
+  <summary>Wave colourways &mdash; all <?php echo $ab_hue_waves; ?>, as the renderer draws them</summary>
+  <?php for ($w = 1; $w <= $ab_hue_waves; $w++):
+    $tbl = dhcb_tier_table(array('downed' => $w - 1, 'pct' => 0.0, 'cleared' => false));
+    $tr  = dhcb_round_traits($w); ?>
+  <div class="ab-hw<?php echo $w === $ab_now_wave ? ' now' : ''; ?>">
+    <h4>Wave <?php echo $w; ?></h4>
+    <span>hue <b><?php echo (int)dhcb_wave_hue($w); ?>&deg;</b></span>
+    <span>power <b>&times;<?php echo number_format(dhcb_wave_pow($w), 3); ?></b></span>
+    <span>banks <b><?php echo $tr; ?></b> trait<?php echo $tr === 1 ? '' : 's'; ?> a round</span>
+    <span>rolls on <b><?php echo htmlspecialchars($ab_labels[$tbl]); ?></b></span>
+    <span>mythic <b><?php echo DHCF_TIERS[$tbl]['mythic']; ?>%</b></span>
+  </div>
+  <div class="ab-hr">
+    <?php foreach (dhcb_bosses() as $bz): ?>
+    <figure>
+      <?php /* Relative, like every link on this platform: the login cookie
+               is host-only, so an absolute one drops the session for anyone
+               on the other hostname. */ ?>
+      <img loading="lazy" width="500" height="500" alt=""
+           src="dhc-boss-art.php?boss=<?php echo urlencode($bz['key']); ?>&amp;wave=<?php echo $w; ?>"
+           onerror="this.closest('figure').style.opacity=.3">
+      <figcaption><?php echo htmlspecialchars($bz['name']); ?></figcaption>
+    </figure>
+    <?php endforeach; ?>
+  </div>
+  <?php endfor; ?>
+
+  <p class="ab-note">
+    Hue only &mdash; even fifths of <b>72&deg;</b>, wave 1 ungraded. No tint and no overlay: a
+    luminance-preserving rotation, the same matrix the browser's own <code>hue-rotate()</code>
+    applies, so the art keeps its weight instead of reading as a filter laid over it.
+    Rendered by <b>dhc-boss-art.php</b> and cached on the server against the source file's
+    mtime, so replacing a boss picture retires every rotated copy of it.
+  </p>
+  <p class="ab-note flag">
+    <b>The series wraps at <?php echo $ab_hue_waves; ?>.</b> Wave <?php echo $ab_hue_waves + 1; ?>
+    is pixel-identical to wave 1 &mdash; the renders hash the same &mdash; but its power
+    multiplier is <b>&times;<?php echo number_format(dhcb_wave_pow($ab_hue_waves + 1), 3); ?></b>
+    against wave 1's &times;1.000. A crew that looks like the one the week opened on hits more
+    than twice as hard, and nothing on the art says so.
+  </p>
+</details>
 
 <?php /* admin_chrome() opens two divs and every admin page closes them the
          same way; there is no closer function. */ ?>

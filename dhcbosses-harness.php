@@ -2643,6 +2643,88 @@ echo "\nthe owner can see every Crew that went in\n";
 $ADM = harness_strip_comments(file_get_contents(__DIR__ . '/admin-dhcbosses.php'));
 ok(strpos($ADM, 'admin_require()') !== false, 'the report is not behind the admin gate');
 ok(strpos($ADM, 'dhcb_runs_report(') !== false, 'the report does not list the runs');
+
+/*
+ * THE COLOURWAY REFERENCE, which is the only place the whole wave series can
+ * be seen without waiting for a week strong enough to produce one.
+ *
+ * THE RENDERS COME FROM THE RENDERER. Flat art under a CSS filter would look
+ * right on this page and prove nothing about the pictures Discord and the X
+ * card actually get -- which is the entire question the page exists to
+ * answer, and the surface where a broken rotation would otherwise be found
+ * by a player.
+ */
+ok(strpos($ADM, 'src="dhc-boss-art.php?boss=') !== false,
+   'the reference draws flat art, so it cannot show what Discord and the X card get');
+/* A CSS DECLARATION, not the word. The note on the page explains that the
+   server matrix is the one the browser's own hue-rotate() applies, and a
+   bare search for the term failed on that sentence -- the same prose-instead
+   -of-code trap, pointing the other way. */
+ok(preg_match('~filter\s*:[^;}]*hue-rotate~i', $ADM) !== 1,
+   'the reference applies its own CSS filter instead of showing the real render');
+/* RELATIVE, like every link here: the login cookie is host-only and an
+   absolute one drops the session for anyone on the other hostname. */
+ok(strpos($ADM, 'src="https://') === false && strpos($ADM, "src='https://") === false,
+   'an absolute image URL on an admin page, which drops the session across hostnames');
+/*
+ * FOLDED, AND THAT IS LOAD-BEARING RATHER THAN TIDY. Fifteen 500px renders
+ * is several megabytes. A browser fetches none of them while the <details>
+ * is shut, because the subtree is display:none -- the same property the
+ * Crews feed's "Show all" relies on. Opened by default, this page stops
+ * being the fast operational report it is for.
+ */
+$hueAt = strpos($ADM, '<details class="ab-hues">');
+$imgAt = strpos($ADM, 'src="dhc-boss-art.php?boss=');
+ok($hueAt !== false && $imgAt !== false && $hueAt < $imgAt,
+   'the fifteen renders are not inside the folded block, so every admin visit downloads '
+ . 'several megabytes of boss art to show a report that does not use it');
+ok(strpos($ADM, '<details class="ab-hues" open') === false,
+   'the colourway block is open by default, which loads every render on arrival');
+/*
+ * AND EVERY FIGURE ON IT IS CALLED, NOT TYPED. A reference page that
+ * restates the numbers is a second source of truth, and the second one is
+ * the one that goes stale -- silently, because nothing errors.
+ */
+/* SCOPED TO THE BLOCK. Every one of these functions is also used elsewhere
+   on this page -- dhcb_tier_table() for the live summary, dhcb_wave_hue() by
+   the derivation above -- so a whole-file search for the NAME passes while
+   the figures on display are typed in by hand. Three mutations proved
+   exactly that. */
+$hueBlk = ($hueAt !== false)
+	? substr($ADM, $hueAt, strpos($ADM, '</details>', $hueAt) - $hueAt) : '';
+ok($hueBlk !== '', 'the colourway block could not be located');
+foreach (array('dhcb_wave_hue(', 'dhcb_wave_pow(', 'dhcb_round_traits(', 'dhcb_tier_table(')
+         as $fn)
+	ok(strpos($hueBlk, $fn) !== false,
+	   'the reference hard-codes what ' . rtrim($fn, '(') . '() decides, so it can drift '
+	 . 'from the game with nothing to catch it');
+/* AND ON THE STRIP ITSELF. dhcb_wave_pow() also appears in the wrap warning
+   at the foot of the block, so its mere presence there says nothing about
+   the figure printed beside each wave -- which a mutation typed in by hand
+   without tripping anything. */
+ok(preg_match('~power <b>&times;<\?php echo number_format\(dhcb_wave_pow\(\$w\)~', $hueBlk) === 1,
+   'the power multiplier on the wave strip is typed rather than read from dhcb_wave_pow()');
+ok(preg_match('~hue <b><\?php echo \(int\)dhcb_wave_hue\(\$w\)~', $hueBlk) === 1,
+   'the hue on the wave strip is typed rather than read from dhcb_wave_hue()');
+ok(preg_match('~\$ab_hue_waves\s*=\s*[2-9]\d*\s*;~', $ADM) !== 1,
+   'the length of the hue series is a literal, so one edit to dhcb_wave_hue() leaves the '
+ . 'page showing the wrong number of colourways and a footnote that is wrong about the wrap');
+ok(strpos($ADM, 'dhcb_wave_hue($w) === dhcb_wave_hue(1)') !== false,
+   'the series length is not derived by walking dhcb_wave_hue() back to its start');
+/* The derivation has to actually produce the cycle, or it is decoration. */
+$cyc = 1;
+for ($w = 2; $w <= 64; $w++) {
+	if (dhcb_wave_hue($w) === dhcb_wave_hue(1)) { $cyc = $w - 1; break; }
+	$cyc = $w;
+}
+ok($cyc === 5, 'the hue series is ' . $cyc . ' long, not 5 -- check the reference page and '
+             . 'the Skull Paper still say so');
+ok(dhcb_wave_hue($cyc + 1) === dhcb_wave_hue(1),
+   'the series does not wrap where the page says it does');
+/* AND THE WRAP IS FLAGGED, because the art repeats and the threat does not. */
+ok(strpos($ADM, 'dhcb_wave_pow($ab_hue_waves + 1)') !== false,
+   'nothing on the page says that the wave after the wrap looks identical to wave 1 and '
+ . 'hits twice as hard');
 /*
  * EVERY DEFAULT DATE IN THIS FEATURE IS A THURSDAY.
  *

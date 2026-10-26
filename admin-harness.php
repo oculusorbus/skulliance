@@ -424,6 +424,24 @@ ok(count($ALL_ADMIN) >= 8,
 
 $tabsNow = admin_tabs();
 /*
+ * THE TWO BOSS TABS SIT TOGETHER, and this is the owner's call rather than
+ * a tidying one: they are the only two tabs about bosses, and with Daily
+ * Digest, Flyers and Nudges between them the eye had to cross three
+ * unrelated tools to get from one to the other.
+ *
+ * ADJACENCY, NOT AN INDEX. Asserting "dhcbosses is seventh" breaks the day
+ * anything is inserted above it and says nothing about what actually
+ * matters, which is that the two are neighbours. The array IS the order for
+ * BOTH the tab strip and header.php's dropdown, so one check covers both.
+ */
+$tabKeys = array_keys($tabsNow);
+$bAt = array_search('bosses', $tabKeys, true);
+$dAt = array_search('dhcbosses', $tabKeys, true);
+ok($bAt !== false && $dAt !== false, 'a boss tab is missing from admin_tabs()');
+ok($bAt !== false && $dAt !== false && $dAt === $bAt + 1,
+   'DHC Bosses no longer sits next to Bosses: ' . implode(' / ', array_slice($tabKeys,
+     max(0, (int)$bAt), 5)));
+/*
  * TWO KINDS OF ADMIN FILE, AND ONLY ONE OF THEM DRAWS ANYTHING.
  *
  * admin-guild-refresh.php takes a POST, does one thing and redirects.
