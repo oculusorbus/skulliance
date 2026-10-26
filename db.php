@@ -16486,6 +16486,14 @@ function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false) {
 		    ? $wx['w'] : date('Y-m-d', strtotime('-7 days', strtotime(skl_week_key())));
 	}
 	$rows = dhcb_ladder($conn, $wk, 100);
+	/* false is a broken read, not a quiet week -- and on the REWARDS path
+	   the difference matters enormously: settling against a board that
+	   failed to load would pay nobody and report a clean run. */
+	if ($rows === false) {
+		echo "<p>The board could not be read.</p>";
+		if ($rewards) error_log('checkDHCBossesLeaderboard: ladder query failed, nothing paid');
+		return;
+	}
 	if (!$rows) {
 		echo "<p>No Crews have been sent at the Bosses" . ($rewards ? " that week" : " yet") . ".</p>";
 		return;

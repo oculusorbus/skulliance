@@ -428,7 +428,7 @@ ok(strpos($lad, 'crew_size') !== false && strpos($lad, 'COUNT(*) AS runs') !== f
 /* A SINGLE LUCKY RUN STILL CANNOT TOP IT. The minimum moved from a HAVING
    to a rank-and-pay rule so that everybody who turned up is visible, but
    it still decides who can hold a position and who gets paid. */
-ok(strpos($lad, 'ORDER BY (runs >= $min) DESC') !== false,
+ok(strpos($lad, 'ORDER BY (COUNT(*) >= $min) DESC') !== false,
    'a single lucky run can be sorted above a qualified player');
 ok(strpos($lad, "'ranked'=>((int)\$x['runs'] >= \$min)") !== false,
    'nothing marks a row as below the minimum, so a single run reads as a real position');
@@ -693,13 +693,37 @@ ok(strpos($LIB, "\$sc = max(1, (int)\$x['scoring']);") !== false
  * the board had one name on it, which reads as a dead feature rather than
  * as a board filling up.
  */
-ok(strpos($LIB, 'HAVING fighters > 0') !== false
+/*
+ * AGGREGATES, NOT SELECT ALIASES, in HAVING and ORDER BY. The board read
+ * `HAVING fighters > 0` and `ORDER BY (runs >= 3) DESC`, using names from
+ * the SELECT inside expressions -- MySQL is far less willing to resolve
+ * an alias there than standing alone, the query failed, and the ladder
+ * went blank while the feed underneath it listed a dozen finished Crews
+ * from the same week and the same table.
+ */
+ok(preg_match('~HAVING\s+[a-z_]+\s*>~i', $lad) === 0,
+   'the ladder uses a SELECT alias in HAVING, which is what blanked the board');
+ok(preg_match('~ORDER BY \((?!COUNT|SUM)~', $lad) === 0,
+   'the ladder uses a SELECT alias inside an ORDER BY expression');
+ok(strpos($LIB, 'HAVING SUM(r.crew_size) > 0') !== false
    && strpos($LIB, 'HAVING runs >= $min') === false,
    'the ladder still hides anybody short of the minimum, so an early week looks empty');
+/* A BROKEN READ IS NOT AN EMPTY WEEK. Both returned array(), so a failed
+   query printed "nobody has finished a Crew against them yet" over a week
+   people had been playing all evening. */
+ok(strpos($LIB, 'if (!$res) return false;') !== false,
+   'a failed ladder query still returns an empty array, so it is indistinguishable from '
+ . 'a quiet week');
+ok(strpos($LIB, 'if ($rows === false) {') !== false,
+   'the renderer does not distinguish a broken read from an empty one');
+$DBS2 = file_get_contents(__DIR__ . '/db.php');
+ok(strpos($DBS2, "if (\$rows === false) {") !== false,
+   'the payout path treats a failed board read as an empty week, which would settle a '
+ . 'week by paying nobody and reporting a clean run');
 ok(strpos($LIB, "'ranked'=>((int)\$x['runs'] >= \$min)") !== false
    && strpos($LIB, "'needs'=>max(0, \$min - (int)\$x['runs'])") !== false,
    'the rows do not say who is ranked or how many Crews short they are');
-ok(strpos($LIB, 'ORDER BY (runs >= $min) DESC') !== false,
+ok(strpos($LIB, 'ORDER BY (COUNT(*) >= $min) DESC') !== false,
    'the unranked are not sorted below the ranked, so the board interleaves them');
 /*
  * AND THE PAYOUT NEVER SEES THEM. This skip is the only thing standing

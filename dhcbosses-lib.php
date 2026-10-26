@@ -1458,15 +1458,31 @@ function dhcb_ladder($conn, $week = null, $limit = 25) {
 	          INNER JOIN users u ON u.id = r.user_id
 	         WHERE r.day = '$esc' AND r.outcome <> 0
 	         GROUP BY r.user_id
-	        HAVING fighters > 0
-	         ORDER BY (runs >= $min) DESC,
+	        HAVING SUM(r.crew_size) > 0
+	         ORDER BY (COUNT(*) >= $min) DESC,
 	                  (SUM(r.dealt) / GREATEST(1, SUM(CASE WHEN r.dealt > 0
 	                                                  THEN r.crew_size ELSE 0 END))) DESC,
-	                  dealt DESC
+	                  SUM(r.dealt) DESC
 	         LIMIT $lim";
+	/*
+	 * AGGREGATES, NOT SELECT ALIASES, in HAVING and ORDER BY.
+	 *
+	 * This read `HAVING fighters > 0` and `ORDER BY (runs >= 3) DESC`,
+	 * using names defined in the SELECT inside expressions. MySQL accepts
+	 * an alias standing alone there and is far less willing inside an
+	 * expression, so the whole query failed and the board went blank --
+	 * while the feed directly underneath it, reading the same week from
+	 * the same table, listed a dozen finished Crews.
+	 *
+	 * AND A FAILED QUERY NO LONGER LOOKS LIKE AN EMPTY WEEK. It returned
+	 * array() either way, so "nobody has finished a Crew against them yet"
+	 * was printed over a week somebody had spent all evening on. false is
+	 * a broken read; array() is a quiet week; they are not the same thing
+	 * and the page says so.
+	 */
 	$res = @$conn->query($sql);
+	if (!$res) return false;
 	$out = array();
-	if (!$res) return $out;
 	while ($x = $res->fetch_assoc()) {
 		$f = max(1, (int)$x['fighters']);
 		/* Only Fighters from runs that landed damage divide the total -- a
@@ -1507,6 +1523,13 @@ function dhcb_ladder($conn, $week = null, $limit = 25) {
  * board that only showed the award metric would hide the effort entirely.
  */
 function dhcb_ladder_html($rows, $user_id, $guest, $empty) {
+	/* A BROKEN READ IS NOT AN EMPTY WEEK. dhcb_ladder() returns false when
+	   the query failed, and saying "nobody has played" over a week people
+	   have been playing all evening is worse than saying nothing. */
+	if ($rows === false) {
+		return '<p class="a-sub" style="margin:0">The board could not be read just now. '
+		     . 'Nothing is lost -- every Crew is recorded. Try again in a moment.</p>';
+	}
 	if (!$rows) return '<p class="a-sub" style="margin:0">' . htmlspecialchars($empty) . '</p>';
 	$h = '<table class="a-lad"><thead><tr><th>#</th><th>'
 	   . ($guest ? 'Player' : 'Staker')

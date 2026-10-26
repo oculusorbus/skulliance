@@ -1075,6 +1075,21 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   .arena-wrap .a-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%}
   .arena-wrap .a-stat{padding:6px 8px}
   .arena-wrap .a-stat b{font-size:15px}
+  /*
+   * A LABEL WRAPS RATHER THAN RUNNING INTO ITS NEIGHBOUR.
+   *
+   * The cells are minmax(0,1fr) and the label was white-space:nowrap, so
+   * anything longer than a quarter of a phone simply overflowed and drew
+   * on top of the next tile -- "CREWS THIS ROUTRAITS BANKED". The Arena's
+   * own four labels are short enough that it never showed; the Bosses
+   * page has longer ones and it showed immediately.
+   *
+   * Wrapping rather than clipping, because a label that disappears is as
+   * bad as one that overlaps, and the tiles are a grid row so a taller
+   * one simply makes the row taller.
+   */
+  .arena-wrap .a-stat span{white-space:normal;letter-spacing:.06em;line-height:1.2;
+    overflow-wrap:anywhere}
 }
 /* The live-match box. Lives under the rival list and is empty most of the
    time, so it is hidden rather than styled to look deliberate when idle. */
@@ -1707,7 +1722,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <div class="a-stat"><b><?php echo count($crew); ?></b><span>Fighters</span></div>
       <div class="a-stat"><b><?php echo count($available); ?></b><span>Rested</span></div>
       <div class="a-stat"><b><?php echo max(0, DHCB_DAILY_RUNS - $dhcb_runs); ?>/<?php
-        echo DHCB_DAILY_RUNS; ?></b><span>Crews this round</span></div>
+        echo DHCB_DAILY_RUNS; ?></b><span>Crews left</span></div>
       <div class="a-stat"><b><?php echo (int)$dhcb_days; ?>/<?php
         echo DHCB_CACHE_MAX; ?></b><span>Traits banked</span></div>
       <?php elseif ($dhca_guest): ?>
