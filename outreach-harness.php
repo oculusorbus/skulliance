@@ -231,6 +231,50 @@ ok(mb_strlen($body) < 2000,
 echo "  measured: " . mb_strlen($body) . " characters with all " . count($games)
    . " games listed\n";
 
+/* ---------------------------------------------------------------- *
+ * THE PICKER WORKS BEFORE A PROJECT IS PICKED
+ * ---------------------------------------------------------------- */
+echo "\nthe project picker works in the only state it is ever used in\n";
+/*
+ * THE BUG THIS REPLACED, AND IT SHIPPED. The select's change handler lived
+ * in the page's one <script>, which sits inside the `else` that needs a
+ * project -- so the control that CHOOSES a project only worked once one
+ * had already been chosen. Picking the first one did nothing at all.
+ *
+ * I had previewed the page with a project forced in and checked the source
+ * for the strings I expected. Neither touches the empty page, which is the
+ * one every visit starts on.
+ *
+ * A FORM CANNOT BE LEFT DEAD BY WHERE A SCRIPT SITS, so the control is a
+ * real GET form and the script only removes the button it makes redundant.
+ */
+$formAt   = strpos($OUT, '<form class="adm-form" method="get" action="admin-outreach.php"');
+$branchAt = strpos($OUT, '<?php if (!$out_p):');
+ok($formAt !== false, 'the project picker is not a form, so it needs script to do anything');
+ok($branchAt !== false, 'the empty-state branch could not be found');
+ok($formAt !== false && $branchAt !== false && $formAt < $branchAt,
+   'the project picker renders inside the branch that already has a project, so the '
+ . 'control that chooses one only works once one is chosen');
+/* A control with no name submits nothing, and the page would reload to itself. */
+ok(strpos($OUT, '<select name="project" id="ou-project">') !== false,
+   'the select has no name attribute, so submitting the form sends no project');
+/* The wiring script has to be outside that branch too. */
+$wireAt = strpos($OUT, "s.addEventListener('change', function () { f.submit(); });");
+ok($wireAt !== false && $wireAt < $branchAt,
+   'the script that submits on change is inside the branch that needs a project');
+/* NO SCRIPT, STILL USABLE. The button is the fallback and the script is
+   what hides it, not the other way round. */
+ok(strpos($OUT, '<button type="submit" class="adm-btn" id="ou-go">') !== false,
+   'there is no submit button, so the picker is dead without JavaScript');
+ok(strpos($OUT, 'if (g) g.hidden = true;') !== false,
+   'the button is hidden in markup rather than by the script, so a no-JS visit has no '
+ . 'way to submit');
+/* AND IT MUST NOT NAVIGATE TWICE. The old handler assigned window.location
+   on the same event the form now submits on. */
+ok(substr_count($OUT, "window.location = 'admin-outreach.php?project='") === 0,
+   'the old location-assigning handler is still present alongside the form, so one pick '
+ . 'navigates twice');
+
 /* AND THE TWO TOOLS CHAIN. They are one job in two halves -- the words
    and the image for the same Discord post -- so the project carries from
    one to the other rather than being picked twice. */

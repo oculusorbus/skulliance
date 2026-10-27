@@ -95,10 +95,23 @@ admin_chrome('outreach');
   with that community&rsquo;s real numbers in it. Nothing is sent &mdash; copy it, read it, paste it.
   Pair it with the flyer from the <a href="admin-flyers.php">Flyers</a> tab.</p>
 
+<?php /*
+ * A REAL GET FORM, NOT A SELECT WIRED UP BY SCRIPT.
+ *
+ * It was a bare <select> whose change handler lived in the page's one
+ * <script> -- which sits inside the `else` below, so it only existed once
+ * a project had ALREADY been chosen. Picking the first one did nothing at
+ * all, which is the only state the control is ever used in. Reported
+ * immediately, and fairly.
+ *
+ * A form navigates on its own, so the control cannot be left dead by where
+ * a script happens to sit. The script below only removes the button,
+ * because with it the select submits itself.
+ */ ?>
 <div class="adm-card">
-  <div class="adm-form">
+  <form class="adm-form" method="get" action="admin-outreach.php" id="ou-form">
     <label>Project
-      <select id="ou-project">
+      <select name="project" id="ou-project">
         <option value="0">&mdash; pick a project &mdash;</option>
         <?php foreach ($OUT_PROJECTS as $id => $p): ?>
         <option value="<?php echo (int)$id; ?>"<?php echo $id === $out_id ? ' selected' : ''; ?>><?php
@@ -106,8 +119,20 @@ admin_chrome('outreach');
         <?php endforeach; ?>
       </select>
       <small>Reloads: the figures below are read from the database for this project.</small></label>
-  </div>
+    <button type="submit" class="adm-btn" id="ou-go">Read the numbers</button>
+  </form>
 </div>
+<script>
+/* ALWAYS RENDERED, unlike the one at the foot of this page. */
+(function () {
+	var f = document.getElementById('ou-form'),
+	    s = document.getElementById('ou-project'),
+	    g = document.getElementById('ou-go');
+	if (!f || !s) return;
+	if (g) g.hidden = true;
+	s.addEventListener('change', function () { f.submit(); });
+}());
+</script>
 
 <?php if (!$out_p): ?>
   <p class="adm-note">Pick a project to read its numbers.</p>
@@ -222,9 +247,8 @@ admin_chrome('outreach');
 		             + (n > LIMIT ? ' — ' + (n - LIMIT) + ' over' : '');
 	}
 
-	$('ou-project').addEventListener('change', function () {
-		window.location = 'admin-outreach.php?project=' + encodeURIComponent(this.value);
-	});
+	/* The project control is a form and wires itself, above -- see the note
+	   there. Doing it again here would navigate twice. */
 	/* REBUILT ON A TOGGLE, RECOUNTED ON A TYPE. Rebuilding while somebody
 	   is editing the box would throw their edit away mid-sentence. */
 	$('ou-games').addEventListener('change', function () { paint(true); });
