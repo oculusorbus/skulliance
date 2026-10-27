@@ -275,6 +275,59 @@ ok(substr_count($OUT, "window.location = 'admin-outreach.php?project='") === 0,
    'the old location-assigning handler is still present alongside the form, so one pick '
  . 'navigates twice');
 
+/* ---------------------------------------------------------------- *
+ * WHAT IS MENTIONED STARTS ON, AND STAYS PUT
+ * ---------------------------------------------------------------- */
+echo "\nthe game list starts fully ticked and survives a project change\n";
+/*
+ * ALL OF THEM BY DEFAULT. The whole Play list is about 1,430 characters
+ * against Discord's 2,000, so there was never a budget reason to ship a
+ * subset -- and taking a game OUT is a decision the operator can see the
+ * cost of, where putting one back means first noticing it is missing.
+ */
+ok(strpos($OUT, "echo \$i < 6 ? ' checked' : ''") === false,
+   'the game list still ticks only the first few by default');
+ok(preg_match('~<input type="checkbox" data-g="[^"]*"\s*\n?\s*data-n="[^"]*" checked>~', $OUT) === 1,
+   'the checkboxes are not all checked in the markup');
+
+/*
+ * AND THE CHOICE SURVIVES, because changing project is a full page load.
+ * Two things about HOW it is stored are load-bearing, and both are the
+ * kind of thing that fails silently a month later:
+ *
+ *   KEYED ON THE NAME. data-g is a position in a catalogue that gains and
+ *   loses entries; keyed on that, adding one game shifts every stored
+ *   choice onto a different game.
+ *
+ *   THE UNTICKED SET IS WHAT IS SAVED, not the ticked one. Everything is
+ *   on by default, so a game added tomorrow is on for everybody. Store
+ *   the ticked set instead and every future game is silently missing from
+ *   every post, because it was absent from a list written before it
+ *   existed -- the post would quietly omit the newest thing on the
+ *   platform, which is the thing most worth mentioning.
+ */
+ok(strpos($OUT, "data-n=\"<?php echo htmlspecialchars(\$g['name'], ENT_QUOTES); ?>\"") !== false,
+   'the checkbox carries no name, so a saved selection can only be keyed on position');
+ok(strpos($OUT, "c.getAttribute('data-n')") !== false
+   && strpos($OUT, "off.push(c.getAttribute('data-g'))") === false,
+   'the saved selection is keyed on catalogue position, so adding a game moves every '
+ . 'stored choice onto a different one');
+ok(strpos($OUT, 'if (!c.checked) off.push(') !== false,
+   'the TICKED set is saved rather than the unticked one, so a game added later is '
+ . 'missing from every post and nobody notices');
+ok(strpos($OUT, 'localStorage.setItem(SKIP') !== false
+   && strpos($OUT, 'localStorage.getItem(SKIP') !== false,
+   'the selection is not stored, so it resets on every project change');
+/* localStorage THROWS in a private window or with site data blocked, and
+   an admin tool must not go down over a remembered checkbox. */
+ok(substr_count($OUT, 'catch (e)') >= 2,
+   'a localStorage access is unguarded, so a private window takes the page down');
+ok(strpos($OUT, "JSON.parse(localStorage.getItem(SKIP) || '[]') || []") !== false,
+   'a missing or corrupt stored value is not defended, so one bad write breaks the list');
+/* AND SAVING HAPPENS ON THE CHANGE, beside the redraw. */
+ok(strpos($OUT, "addEventListener('change', function () { saveSkip(); paint(true); })") !== false,
+   'the selection is redrawn but never saved, so it is lost on the next project change');
+
 /* AND THE TWO TOOLS CHAIN. They are one job in two halves -- the words
    and the image for the same Discord post -- so the project carries from
    one to the other rather than being picked twice. */

@@ -169,12 +169,20 @@ admin_chrome('outreach');
     <div class="adm-card">
       <h3>Mention</h3>
       <div class="ou-pick" id="ou-games">
-        <?php /* Ticked by default: the four DHC surfaces plus the first few
-                 of the rest. The whole Play list will not fit in 2,000
-                 characters and the counter says so as you tick. */ ?>
+        <?php /* ALL OF THEM, BY DEFAULT. The whole Play list comes to about
+                 1,430 characters against Discord's 2,000, so there is no
+                 budget reason to start with a subset -- and taking one out
+                 is a decision the operator can see the cost of, where
+                 putting one back means first noticing it is missing.
+
+                 data-n IS THE NAME, AND IT IS WHAT THE SAVED SELECTION IS
+                 KEYED ON. data-g is a position in the catalogue, and the
+                 catalogue gains and loses entries -- key the save on that
+                 and adding one game silently shifts every stored choice
+                 onto a different game. */ ?>
         <?php foreach ($OUT_GAMES as $i => $g): ?>
-        <label><input type="checkbox" data-g="<?php echo (int)$i; ?>"<?php
-          echo $i < 6 ? ' checked' : ''; ?>>
+        <label><input type="checkbox" data-g="<?php echo (int)$i; ?>"
+          data-n="<?php echo htmlspecialchars($g['name'], ENT_QUOTES); ?>" checked>
           <span><b><?php echo htmlspecialchars($g['emoji'] . ' ' . $g['name']); ?></b>
           <small><?php echo htmlspecialchars($g['blurb']); ?></small></span></label>
         <?php endforeach; ?>
@@ -251,7 +259,44 @@ admin_chrome('outreach');
 	   there. Doing it again here would navigate twice. */
 	/* REBUILT ON A TOGGLE, RECOUNTED ON A TYPE. Rebuilding while somebody
 	   is editing the box would throw their edit away mid-sentence. */
-	$('ou-games').addEventListener('change', function () { paint(true); });
+	/*
+	 * THE SELECTION SURVIVES A PROJECT CHANGE, which is a full page load.
+	 *
+	 * WHAT IS STORED IS THE UNTICKED SET, not the ticked one. Everything
+	 * is on by default, so the short list is the exceptions -- and a game
+	 * added to the catalogue tomorrow is then ticked for everybody rather
+	 * than silently missing from every post because it was absent from a
+	 * saved list written before it existed. That is the failure that would
+	 * never be noticed: the post simply omits the newest thing, which is
+	 * the thing most worth mentioning.
+	 *
+	 * BY NAME, NOT POSITION, for the same reason.
+	 *
+	 * localStorage is per-browser and can throw outright -- private
+	 * windows, blocked site data -- so every access is wrapped and the
+	 * page works untouched when it fails. Nothing here is worth an error.
+	 */
+	var SKIP = 'skl-outreach-unticked';
+	function readSkip() {
+		try { return JSON.parse(localStorage.getItem(SKIP) || '[]') || []; }
+		catch (e) { return []; }
+	}
+	function saveSkip() {
+		var off = [];
+		$('ou-games').querySelectorAll('input[type=checkbox]').forEach(function (c) {
+			if (!c.checked) off.push(c.getAttribute('data-n'));
+		});
+		try { localStorage.setItem(SKIP, JSON.stringify(off)); } catch (e) {}
+	}
+	(function () {
+		var off = readSkip();
+		if (!off.length) return;
+		$('ou-games').querySelectorAll('input[type=checkbox]').forEach(function (c) {
+			if (off.indexOf(c.getAttribute('data-n')) !== -1) c.checked = false;
+		});
+	}());
+
+	$('ou-games').addEventListener('change', function () { saveSkip(); paint(true); });
 	$('ou-open').addEventListener('input', function () { paint(true); });
 	$('ou-close').addEventListener('input', function () { paint(true); });
 	$('ou-text').addEventListener('input', function () { paint(false); });
