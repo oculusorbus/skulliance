@@ -34,6 +34,11 @@
  */
 
 require_once __DIR__ . '/lib/ipfs-gateways.php';
+/* The document the parse below keeps instead of discarding. Depends on
+   nothing -- no db.php, no session -- so the harness can load this file
+   standalone exactly as it did before. */
+require_once __DIR__ . '/lib/nft-metadata-lib.php';
+
 
 if (!defined('POLYGON_CHAIN_ID')) define('POLYGON_CHAIN_ID', 4);
 
@@ -487,7 +492,11 @@ function poly_metadata_urls($uri, $preferred = '') {
  * it. See poly_fallback_name().
  */
 function poly_parse_metadata($body) {
-	$none = array('name' => '', 'image' => '');
+	/* 'doc' on EVERY return, including the failures. A key that is only
+	   sometimes there is an undefined-index notice at the call site, and
+	   db.php has display_errors on. Empty means "nothing readable", which
+	   is what nft_metadata_store() refuses to stamp. */
+	$none = array('name' => '', 'image' => '', 'doc' => array());
 	if (!is_string($body) || $body === '') return $none;
 	$j = json_decode($body, true);
 	if (!is_array($j)) return $none;
@@ -495,7 +504,8 @@ function poly_parse_metadata($body) {
 	$img = '';
 	foreach (array('image', 'image_url', 'imageUrl') as $k)
 		if (isset($j[$k]) && trim((string)$j[$k]) !== '') { $img = trim((string)$j[$k]); break; }
-	return array('name' => $name, 'image' => poly_storable_image($img));
+	return array('name' => $name, 'image' => poly_storable_image($img),
+	             'doc'  => nft_metadata_clean($j));
 }
 
 /** What a token is called when its document could not be read. Generic,
@@ -794,11 +804,39 @@ function verifyNFTsPolygon($conn, $addresses, $collections, $asset_ids,
 		while ($r && $row = $r->fetch_assoc()) $repair[$row['asset_id']] = 1;
 	}
 
+	/*
+	 * ROWS THAT HAVE NO DOCUMENT YET.
+	 *
+	 * SEPARATE FROM $repair ON PURPOSE. `fix` means "this row is broken,
+	 * rewrite its name and image", and a row that merely predates the
+	 * metadata column is not broken -- folding it into $repair would
+	 * rewrite a perfectly good name and image for every NFT on the chain.
+	 * This set only turns `need` on, so the document is FETCHED and
+	 * nothing else about the row is touched.
+	 *
+	 * This is also the only way the already-staked NFTs on this chain ever
+	 * get a document: metadata is fetched for NEW assets only, so without
+	 * it they would stay blank forever. The standalone backfill cannot
+	 * help here -- the metadata URI lives on chain, not in the database.
+	 *
+	 * A failed read (the column does not exist yet) leaves the set empty
+	 * and changes nothing, which is the right behaviour before the
+	 * migration in nft-metadata-schema.md has been run.
+	 */
+	$needmeta = array();
+	if (is_object($conn)) {
+		$r = @$conn->query("SELECT asset_id FROM nfts
+		                     WHERE blockchain_id = POLYGON_CHAIN_ID
+		                       AND metadata_at IS NULL
+		                     LIMIT 500");
+		while ($r && $row = $r->fetch_assoc()) $needmeta[$row['asset_id']] = 1;
+	}
+
 	$queue = array();
 	foreach ($held as $h) {
 		$aid = poly_asset_id($h['contract'], $h['token_id']);
 		$queue[] = array('h' => $h, 'asset_id' => $aid,
-		                 'need' => !isset($known[$aid]) || isset($repair[$aid]),
+		                 'need' => !isset($known[$aid]) || isset($repair[$aid]) || isset($needmeta[$aid]),
 		                 'fix'  => isset($repair[$aid]));
 	}
 
@@ -818,13 +856,14 @@ function verifyNFTsPolygon($conn, $addresses, $collections, $asset_ids,
 		$resolved = poly_resolve_many($per, $fetch,
 			isset($opt['fetch_many']) ? $opt['fetch_many'] : null, $deadline, $gateway);
 		foreach ($by_index as $i => $tid)
-			$metas[$i] = isset($resolved[$i]) ? $resolved[$i] : array('name' => '', 'image' => '');
+			$metas[$i] = isset($resolved[$i]) ? $resolved[$i]
+			: array('name' => '', 'image' => '', 'doc' => array());
 	}
 
 	$wrote = 0; $repaired = 0;
 	foreach ($queue as $i => $q) {
 		$h    = $q['h'];
-		$meta = isset($metas[$i]) ? $metas[$i] : array('name' => '', 'image' => '');
+		$meta = isset($metas[$i]) ? $metas[$i] : array('name' => '', 'image' => '', 'doc' => array());
 		/* The real token id lives here and nowhere else in this loop. */
 		if ($meta['name'] === '') $meta['name'] = poly_fallback_name($h['token_id']);
 
@@ -847,6 +886,15 @@ function verifyNFTsPolygon($conn, $addresses, $collections, $asset_ids,
 			   zeroes it the same night. See processNFT()'s header. */
 			POLYGON_CHAIN_ID
 		);
+		/*
+		 * KEEP THE DOCUMENT. The parse above already decoded the whole thing
+		 * and kept two fields; the rest was dropped. Costs no request.
+		 * AFTER processNFT(), because that is what creates the row -- an
+		 * UPDATE issued first matches nothing and reports it in no way.
+		 */
+		if (!empty($meta['doc']) && is_object($conn))
+			nft_metadata_store($conn, $q['asset_id'], $meta['doc']);
+
 		if (is_array($payload)) {
 			$asset_ids  = $payload['asset_ids'];
 			$nft_owners = $payload['nft_owners'];

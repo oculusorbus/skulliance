@@ -67,6 +67,11 @@ if (!defined('XRPL_FETCH_CONCURRENCY')) define('XRPL_FETCH_CONCURRENCY', 12);
  * that redirect to subdomain form are fine because CURLOPT_FOLLOWLOCATION is
  * set.
  */
+/* The document the parse below keeps instead of discarding. Depends on
+   nothing -- no db.php, no session -- so the harness can load this file
+   standalone exactly as it did before. */
+require_once __DIR__ . '/lib/nft-metadata-lib.php';
+
 function xrpl_gateways() {
 	return array(
 		'https://gateway.pinata.cloud/ipfs/',
@@ -197,7 +202,10 @@ function xrpl_resolve_metadata($nft, $gateway, $fetch) {
  * two copies of this parsing would drift.
  */
 function xrpl_parse_metadata($nft, $body) {
-	$fallback = array('name' => 'XRPL #' . $nft['serial'], 'image' => '', 'collection' => '');
+	/* 'doc' on EVERY return, including the failures -- see the same note in
+	   poly_parse_metadata(). */
+	$fallback = array('name' => 'XRPL #' . $nft['serial'], 'image' => '', 'collection' => '',
+	                  'doc' => array());
 	if (!is_string($body) || $body === '') return $fallback;
 
 	$meta = json_decode($body, true);
@@ -205,7 +213,7 @@ function xrpl_parse_metadata($nft, $body) {
 		/* Not JSON. Plenty of collections point the URI straight at the image,
 		   in which case the URI itself is the picture and there is no name. */
 		return array('name' => $fallback['name'], 'image' => xrpl_storable_image($nft['uri']),
-		             'collection' => '');
+		             'collection' => '', 'doc' => array());
 	}
 	$name = '';
 	foreach (array('name', 'title') as $k) {
@@ -243,6 +251,7 @@ function xrpl_parse_metadata($nft, $body) {
 		'name'       => $name !== '' ? $name : $fallback['name'],
 		'image'      => xrpl_storable_image($img),
 		'collection' => $coll,
+		'doc'        => nft_metadata_clean($meta),
 	);
 }
 
@@ -796,6 +805,34 @@ function verifyNFTsXRPL($conn, $addresses, $collections, $asset_ids,
 		while ($r && $row = $r->fetch_assoc()) $repair[$row['asset_id']] = 1;
 	}
 
+	/*
+	 * ROWS THAT HAVE NO DOCUMENT YET.
+	 *
+	 * SEPARATE FROM $repair ON PURPOSE. `fix` means "this row is broken,
+	 * rewrite its name and image", and a row that merely predates the
+	 * metadata column is not broken -- folding it into $repair would
+	 * rewrite a perfectly good name and image for every NFT on the chain.
+	 * This set only turns `need` on, so the document is FETCHED and
+	 * nothing else about the row is touched.
+	 *
+	 * This is also the only way the already-staked NFTs on this chain ever
+	 * get a document: metadata is fetched for NEW assets only, so without
+	 * it they would stay blank forever. The standalone backfill cannot
+	 * help here -- the metadata URI lives on chain, not in the database.
+	 *
+	 * A failed read (the column does not exist yet) leaves the set empty
+	 * and changes nothing, which is the right behaviour before the
+	 * migration in nft-metadata-schema.md has been run.
+	 */
+	$needmeta = array();
+	if (is_object($conn)) {
+		$r = @$conn->query("SELECT asset_id FROM nfts
+		                     WHERE blockchain_id = XRPL_CHAIN_ID
+		                       AND metadata_at IS NULL
+		                     LIMIT 500");
+		while ($r && $row = $r->fetch_assoc()) $needmeta[$row['asset_id']] = 1;
+	}
+
 	$queue = array();
 	foreach ($held as $address => $list) {
 		foreach ($list as $nft) {
@@ -804,7 +841,7 @@ function verifyNFTsXRPL($conn, $addresses, $collections, $asset_ids,
 				'nft'     => $nft,
 				'address' => $address,
 				/* Fetch the document only if it will be used for something. */
-				'need'    => !isset($known[$nft['id']]) || isset($repair[$nft['id']]),
+				'need'    => !isset($known[$nft['id']]) || isset($repair[$nft['id']]) || isset($needmeta[$nft['id']]),
 				'fix'     => isset($repair[$nft['id']]),
 			);
 		}
@@ -845,6 +882,9 @@ function verifyNFTsXRPL($conn, $addresses, $collections, $asset_ids,
 				   zeroes it the same night. See processNFT()'s header. */
 				XRPL_CHAIN_ID
 			);
+			if (!empty($meta['doc']) && is_object($conn))
+				nft_metadata_store($conn, $nft['id'], $meta['doc']);
+
 			if (is_array($payload)) {
 				$asset_ids  = $payload['asset_ids'];
 				$nft_owners = $payload['nft_owners'];

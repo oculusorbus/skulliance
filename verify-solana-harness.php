@@ -276,6 +276,31 @@ ok(sol_metadata_urls('https://omenati.com/a.json', 'https://my.gateway/ipfs/')
 echo "\nreading a metadata document\n";
 $asset = array('name' => 'OMEN #1998', 'uri' => 'https://omenati.com/art/01998.json',
                'collection' => 'C', 'owner' => 'O', 'id' => 'A');
+/*
+ * THE DOCUMENT SURVIVES THE PARSE, ON EVERY RETURN PATH.
+ *
+ * sol_parse_metadata() kept name and image and dropped everything else --
+ * every trait of every Solana NFT, already decoded, thrown away. The 'doc'
+ * key has to be present on the FAILURE returns too: a key that is only
+ * sometimes there is an undefined-index notice at the call site, and db.php
+ * has display_errors on.
+ */
+$withTraits = sol_parse_metadata($asset, json_encode(array(
+	'name' => 'x', 'image' => 'ipfs://bafyX',
+	'attributes' => array(array('trait_type' => 'Body', 'value' => 'Armor')))));
+ok(array_key_exists('doc', $withTraits), 'the parse drops the document entirely');
+ok(!empty($withTraits['doc']['attributes']), 'the traits did not survive the parse: '
+   . json_encode($withTraits['doc']));
+ok(array_key_exists('doc', sol_parse_metadata($asset, '')),
+   'an unreadable document returns no doc key at all, which is a notice at the call site');
+ok(sol_parse_metadata($asset, '')['doc'] === array(),
+   'an unreadable document produces a non-empty doc, which would be stored and stamped');
+ok(array_key_exists('doc', sol_parse_metadata($asset, 'not json')),
+   'a non-JSON body returns no doc key');
+/* AND THE PICTURE IS NOT STORED TWICE -- nfts.ipfs is derived from it. */
+ok(!isset($withTraits['doc']['image']),
+   'the image is kept in the document as well as in nfts.ipfs');
+
 $m = sol_parse_metadata($asset, json_encode(array('name' => 'WRONG', 'image' => 'https://omenati.com/art/01998.jpg')));
 ok($m['image'] === 'https://omenati.com/art/01998.jpg', 'the image was not read');
 /* The chain is the authority on the name. A document that disagrees, or

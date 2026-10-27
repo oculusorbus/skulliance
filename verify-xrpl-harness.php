@@ -88,6 +88,25 @@ $anim = array('id'=>'D','serial'=>9,'uri'=>'ipfs://cidD','policy'=>'r:1','issuer
 $xls24 = '{"schema":"ipfs://s","nftType":"art.v0","name":"Animated",'
        . '"image":"","animation":"ipfs://QmVK7rC6GCatxbEsrePzT1tKkQZS6qkbNh9CYqR9hvb2r7",'
        . '"video":"","audio":"","3d_model":""}';
+/*
+ * THE DOCUMENT SURVIVES THE PARSE, ON EVERY RETURN PATH -- see the same
+ * note in verify-solana-harness.php. A 'doc' key missing from the failure
+ * returns is an undefined-index notice at the call site.
+ */
+$docm = xrpl_parse_metadata($anim, json_encode(array(
+	'name' => 'x', 'image' => 'ipfs://bafyX', 'Type' => 'Orc', 'Weapon' => 'Axe')));
+ok(array_key_exists('doc', $docm), 'the parse drops the document entirely');
+ok(isset($docm['doc']['Type']) && $docm['doc']['Type'] === 'Orc',
+   'the traits did not survive the parse: ' . json_encode($docm['doc']));
+ok(array_key_exists('doc', xrpl_parse_metadata($anim, '')),
+   'an unreadable document returns no doc key at all');
+ok(xrpl_parse_metadata($anim, '')['doc'] === array(),
+   'an unreadable document produces a non-empty doc, which would be stored and stamped');
+ok(array_key_exists('doc', xrpl_parse_metadata($anim, 'not json')),
+   'a non-JSON body returns no doc key');
+ok(!isset($docm['doc']['image']),
+   'the image is kept in the document as well as in nfts.ipfs');
+
 $m = xrpl_parse_metadata($anim, $xls24);
 ok($m['name'] === 'Animated', 'an XLS-24 document still yields its name');
 ok(strpos($m['image'], 'QmVK7rC6GC') !== false,

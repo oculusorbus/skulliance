@@ -3,6 +3,11 @@ include_once 'db.php';
 include_once 'message.php';
 include_once 'webhooks.php';
 require_once 'Bech32.php';
+/* AT THE TOP, not beside its first use further down. The crawl calls
+   nft_metadata_store() from inside a function body, so a require further
+   down the file happens to work -- right up until something calls that
+   function earlier. */
+require_once __DIR__ . '/lib/nft-metadata-lib.php';
 
 use CardanoPhp\Bech32\Bech32;
 
@@ -737,6 +742,28 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 										$asset_ids = $payload["asset_ids"];
 										$nft_owners = $payload["nft_owners"];
 									} // End if
+
+									/*
+									 * KEEP THE DOCUMENT. Koios' asset_info already returned the
+									 * full CIP-25 / CIP-68 metadata for EVERY asset in this
+									 * wallet -- it is what the name and image above were read
+									 * out of -- and every trait in it was being dropped.
+									 *
+									 * HERE RATHER THAN INSIDE processNFTMetadata(), for two
+									 * reasons. That function is only reached for assets being
+									 * CREATED, so metadata would never refresh for the ones
+									 * already staked -- and CIP-68 metadata is mutable on
+									 * chain. And it runs after the branch above, so the row is
+									 * guaranteed to exist: an UPDATE issued before createNFT()
+									 * matches nothing and says so in no way at all.
+									 *
+									 * Costs no request and cannot fail the run: a document
+									 * that is missing or unreadable writes nothing and leaves
+									 * metadata_at NULL, which is exactly what the backfill
+									 * looks for.
+									 */
+									nft_metadata_store($conn, $tokenresponsedata->fingerprint,
+									                   nft_metadata_from_koios($tokenresponsedata));
 								}
 							} // End foreach
 						}else{

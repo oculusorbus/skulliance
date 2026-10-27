@@ -214,7 +214,16 @@ class PRes {
 }
 class PConn {
 	public $blank = array();      // asset_ids with no image, for the repair path
+	public $metadata = array();   // asset_id => the stored document
+	/* A REAL CONNECTION CAN ESCAPE. Without this the stub was not modelling
+	   mysqli, and the first caller to need it took the whole pass down. */
+	function real_escape_string($s) { return addslashes((string)$s); }
 	function query($sql) {
+		if (stripos(ltrim($sql), 'UPDATE nfts SET metadata') === 0) {
+			if (preg_match("~metadata = '(.*)', metadata_at = NOW\(\) WHERE asset_id = '([^']*)'~s", $sql, $m))
+				$this->metadata[stripslashes($m[2])] = stripslashes($m[1]);
+			return true;
+		}
 		if (strpos($sql, 'SHOW COLUMNS') !== false)
 			return new PRes(array(array('Field' => 'asset_id',   'Type' => 'varchar(64)'),
 			                      array('Field' => 'asset_name', 'Type' => 'varchar(64)')));
@@ -682,6 +691,27 @@ ok(!empty($gm[1]) && $gm[1] === ipfs_gateways()[0],
    'IPFS_FALLBACK_GATEWAY is ' . (isset($gm[1]) ? $gm[1] : '?')
  . ' but the gateway list now leads with ' . ipfs_gateways()[0]
  . ' -- an uncached image goes to the one nobody measured');
+
+/*
+ * THE DOCUMENT SURVIVES THE PARSE, ON EVERY RETURN PATH.
+ *
+ * poly_parse_metadata() kept name and image and dropped everything else.
+ * The 'doc' key has to be on the FAILURE returns too: a key that is only
+ * sometimes there is an undefined-index notice at the call site, and db.php
+ * has display_errors on.
+ */
+echo "\nthe trait document survives the parse\n";
+$pdoc = poly_parse_metadata(json_encode(array(
+	'name' => 'x', 'image' => 'ipfs://bafyX',
+	'attributes' => array(array('trait_type' => 'Face', 'value' => 'Wise')))));
+ok(array_key_exists('doc', $pdoc), 'the parse drops the document entirely');
+ok(!empty($pdoc['doc']['attributes']),
+   'the attributes array did not survive: ' . json_encode($pdoc['doc']));
+ok(array_key_exists('doc', poly_parse_metadata('')), 'an empty body returns no doc key');
+ok(poly_parse_metadata('')['doc'] === array(),
+   'an empty body produces a non-empty doc, which would be stored and stamped as read');
+ok(array_key_exists('doc', poly_parse_metadata('not json')), 'a non-JSON body returns no doc key');
+ok(!isset($pdoc['doc']['image']), 'the image is kept in the document as well as in nfts.ipfs');
 
 echo "\n";
 if ($fail) { echo "$fail check(s) FAILED\n"; exit(1); }

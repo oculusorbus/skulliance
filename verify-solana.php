@@ -40,6 +40,11 @@
  */
 
 require_once __DIR__ . '/lib/ipfs-gateways.php';
+/* The document the parse below keeps instead of discarding. Depends on
+   nothing -- no db.php, no session -- so the harness can load this file
+   standalone exactly as it did before. */
+require_once __DIR__ . '/lib/nft-metadata-lib.php';
+
 
 if (!defined('SOLANA_CHAIN_ID')) define('SOLANA_CHAIN_ID', 3);
 
@@ -383,7 +388,9 @@ function sol_metadata_urls($uri, $preferred = '') {
  * path to undo those rows later; this cannot produce a wrong name at all.
  */
 function sol_parse_metadata($asset, $body) {
-	$out = array('name' => $asset['name'], 'image' => '');
+	/* 'doc' on EVERY return, including the failures -- see the same note in
+	   poly_parse_metadata(). */
+	$out = array('name' => $asset['name'], 'image' => '', 'doc' => array());
 	if (!is_string($body) || $body === '') return $out;
 	$meta = json_decode($body, true);
 	if (!is_array($meta)) {
@@ -403,6 +410,7 @@ function sol_parse_metadata($asset, $body) {
 		$img = $meta['properties']['files'][0]['uri'];
 
 	$out['image'] = sol_storable_image($img);
+	$out['doc']   = nft_metadata_clean($meta);
 	return $out;
 }
 
@@ -481,7 +489,7 @@ function sol_fetch_many($urls, $fetch, $fetch_many = null) {
 function sol_resolve_many($assets, $fetch, $fetch_many = null, $deadline = 0, $gateway = '') {
 	$out = array(); $cands = array(); $most = 0;
 	foreach ($assets as $i => $a) {
-		$out[$i] = array('name' => $a['name'], 'image' => '');
+		$out[$i] = array('name' => $a['name'], 'image' => '', 'doc' => array());
 		$c = sol_metadata_urls($a['uri'], $gateway);
 		if ($c) { $cands[$i] = $c; $most = max($most, count($c)); }
 	}
@@ -736,6 +744,34 @@ function verifyNFTsSolana($conn, $addresses, $collections, $asset_ids,
 		while ($r && $row = $r->fetch_assoc()) $repair[$row['asset_id']] = 1;
 	}
 
+	/*
+	 * ROWS THAT HAVE NO DOCUMENT YET.
+	 *
+	 * SEPARATE FROM $repair ON PURPOSE. `fix` means "this row is broken,
+	 * rewrite its name and image", and a row that merely predates the
+	 * metadata column is not broken -- folding it into $repair would
+	 * rewrite a perfectly good name and image for every NFT on the chain.
+	 * This set only turns `need` on, so the document is FETCHED and
+	 * nothing else about the row is touched.
+	 *
+	 * This is also the only way the already-staked NFTs on this chain ever
+	 * get a document: metadata is fetched for NEW assets only, so without
+	 * it they would stay blank forever. The standalone backfill cannot
+	 * help here -- the metadata URI lives on chain, not in the database.
+	 *
+	 * A failed read (the column does not exist yet) leaves the set empty
+	 * and changes nothing, which is the right behaviour before the
+	 * migration in nft-metadata-schema.md has been run.
+	 */
+	$needmeta = array();
+	if (is_object($conn)) {
+		$r = @$conn->query("SELECT asset_id FROM nfts
+		                     WHERE blockchain_id = SOLANA_CHAIN_ID
+		                       AND metadata_at IS NULL
+		                     LIMIT 500");
+		while ($r && $row = $r->fetch_assoc()) $needmeta[$row['asset_id']] = 1;
+	}
+
 	$queue = array();
 	foreach ($held as $address => $list) {
 		foreach ($list as $a) {
@@ -743,7 +779,7 @@ function verifyNFTsSolana($conn, $addresses, $collections, $asset_ids,
 			$queue[] = array(
 				'asset'   => $a,
 				'address' => $address,
-				'need'    => !isset($known[$a['id']]) || isset($repair[$a['id']]),
+				'need'    => !isset($known[$a['id']]) || isset($repair[$a['id']]) || isset($needmeta[$a['id']]),
 				'fix'     => isset($repair[$a['id']]),
 			);
 		}
@@ -760,7 +796,7 @@ function verifyNFTsSolana($conn, $addresses, $collections, $asset_ids,
 	$wrote = 0; $repaired = 0;
 	foreach ($queue as $i => $q) {
 		$a = $q['asset']; $address = $q['address'];
-		$meta = isset($metas[$i]) ? $metas[$i] : array('name' => $a['name'], 'image' => '');
+		$meta = isset($metas[$i]) ? $metas[$i] : array('name' => $a['name'], 'image' => '', 'doc' => array());
 
 		/* A repair: the row exists, so processNFT() below only touches
 		   ownership. Write the recovered image here, and only if this attempt
@@ -785,6 +821,15 @@ function verifyNFTsSolana($conn, $addresses, $collections, $asset_ids,
 			   zeroes it the same night. See processNFT()'s header. */
 			SOLANA_CHAIN_ID
 		);
+		/*
+		 * KEEP THE DOCUMENT. The parse above already decoded the whole thing
+		 * and kept two fields; the rest was dropped. Costs no request.
+		 * AFTER processNFT(), because that is what creates the row -- an
+		 * UPDATE issued first matches nothing and reports it in no way.
+		 */
+		if (!empty($meta['doc']) && is_object($conn))
+			nft_metadata_store($conn, $a['id'], $meta['doc']);
+
 		if (is_array($payload)) {
 			$asset_ids  = $payload['asset_ids'];
 			$nft_owners = $payload['nft_owners'];
