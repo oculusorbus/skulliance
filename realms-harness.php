@@ -498,6 +498,41 @@ ok(strpos($flex, 'body:has(#quick-menu[style*="block"])::after') === false,
    'the body::after masking strip is back; it exists only to hide the gap under a '
  . 'lifted bar, and the bar is not lifted any more');
 /*
+ * ONE SAFE-AREA VALUE, IN THREE PLACES, AND NO SHAVE OFF ANY OF THEM.
+ *
+ * flexbox.css carried `padding-top: max(env(safe-area-inset-top) - 15px, 0)`
+ * on body in standalone, to make page headers "sit just below the burger".
+ * It could never have done that: #burger-icon is position:fixed at
+ * top: env(safe-area-inset-top), so taking padding OFF body moves content
+ * TOWARD the burger. Every pixel shaved made the overlap it was meant to
+ * cure slightly worse, which is why it had been retuned by feel twice.
+ *
+ * It also broke a fix written against the honest value. .rl-nav cancels
+ * body's padding with margin-top: calc(-1 * env(safe-area-inset-top)) so
+ * that its resting position is its pinned position -- against `inset - 15px`
+ * that overshot by 15px and pulled the bar under the status bar.
+ *
+ * MEASURED with a real iPhone inset standing in for env(): the nav sat at
+ * y=32 against a status bar ending at 47. It lands on 47 now.
+ */
+ok(!preg_match('/@media\s*\(display-mode:\s*standalone\)\s*\{\s*body\s*\{[^}]*padding-top/s', $flex),
+   'flexbox.css shaves the safe-area inset off body in standalone again -- that puts page '
+ . 'content under the status bar, and it moves content TOWARD the fixed burger rather '
+ . 'than away from it');
+ok(preg_match('/body \{[^}]*padding-top:\s*env\(safe-area-inset-top/s', $flex) === 1,
+   'body no longer pays the honest safe-area inset, so content renders under the clock '
+ . 'in an installed PWA');
+/* THE CANCELLATION HAS TO BE EXACT. .rl-nav's negative margin is written to
+   undo body's padding precisely; any mismatch is the clipping above. */
+ok(preg_match('/\.rl-nav\s*\{[^}]*margin:\s*calc\(-1 \* env\(safe-area-inset-top/s', $src) === 1,
+   'the sticky nav no longer cancels body padding with the full inset, so its resting '
+ . 'position and its pinned position differ by whatever the difference is');
+/* And the burger, which is the third place the same number appears. */
+ok(preg_match('/#burger-icon\s*\{[^}]*top:\s*env\(safe-area-inset-top/s', $flex) === 1,
+   'the burger is no longer pinned to the safe-area inset, so it and the content below '
+ . 'it are measured from different origins');
+
+/*
  * A MODAL SITS INSIDE THE SAFE AREA, AND ONLY A PWA EVER NOTICED.
  *
  * header.php sets viewport-fit=cover, so in an installed PWA the viewport
