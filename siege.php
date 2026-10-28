@@ -131,11 +131,66 @@ include 'header.php';
 .sg-key .k-spoke{width:14px;height:0;border-top:2px solid rgba(0,200,160,.6)}
 .sg-key .k-sat{width:9px;height:9px;border-radius:50%;
   background:#0a1929;border:1.5px solid rgba(0,200,160,.6)}
+.sg-key .k-gone{width:9px;height:9px;border-radius:50%;
+  background:#0a1929;border:1.5px dashed rgba(122,158,176,.7)}
 .sg-note{font-size:10.5px;color:var(--dim);margin:10px 0 0;line-height:1.6;max-width:none}
 .sg-empty{padding:28px 16px;text-align:center;color:var(--dim);font-size:12.5px;
   background:#050c14;border:1px solid var(--line);border-radius:4px}
 .sg-stats{display:flex;flex-wrap:wrap;gap:4px 18px;margin:0 0 10px;font-size:11px;color:var(--dim)}
 .sg-stats b{color:var(--bone);font-weight:600}
+
+/* ---- hover: isolate one attacker ----------------------------------------
+   Every line runs to the same centre, so "who is connected" is not a
+   question here the way it is on the Arena map -- what a hover answers is
+   "which of these is mine", which on a busy week is the only way to pick
+   one attacker out of twenty. The march runs INWARD, the direction the
+   damage went. */
+.sg-cluster,.sg-map line{transition:opacity .12s ease}
+.sg-dim{opacity:.18}
+@keyframes sg-march{to{stroke-dashoffset:-16}}
+.sg-march{stroke-dasharray:6 10;animation:sg-march .7s linear infinite}
+@media (prefers-reduced-motion:reduce){
+  /* The dash still marks the line; it simply does not travel. */
+  .sg-march{animation:none}
+}
+.sg-cluster{cursor:pointer}
+.sg-sat{cursor:pointer}
+
+/* ---- the player panel ---------------------------------------------------- */
+.sg-veil{position:fixed;inset:0;z-index:9996;background:rgba(3,8,14,.88);
+  display:flex;align-items:flex-start;justify-content:center;overflow:auto;
+  padding:calc(env(safe-area-inset-top,0px) + 5vh) 16px calc(env(safe-area-inset-bottom,0px) + 20px)}
+.sg-veil[hidden]{display:none!important}
+.sg-sheet{position:relative;width:min(620px,100%);background:var(--panel);
+  border:1px solid var(--line);border-radius:5px;padding:18px 20px 22px}
+.sg-x{position:absolute;top:6px;right:9px;background:none;border:0;color:var(--dim);
+  font-size:25px;line-height:1;cursor:pointer;padding:4px 8px}
+.sg-x:hover{color:var(--bone)}
+.sg-phead{display:flex;align-items:center;gap:12px;margin:0 0 14px}
+.sg-phead .av{width:46px;height:46px;border-radius:50%;object-fit:cover;flex:0 0 46px}
+.sg-phead h2{margin:0;font-size:16px;font-family:"Archivo Black",Impact,sans-serif;font-weight:400}
+.sg-phead .sub{margin:2px 0 0;font-size:11px;color:var(--dim)}
+.sg-pstats{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0 0 14px;font-size:11.5px}
+.sg-pstats dt{color:var(--dim)}
+.sg-pstats dd{margin:0;color:var(--bone)}
+.sg-psect{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:0 0 8px}
+.sg-pcrew{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+.sg-pcrew button,.sg-pcrew span.gone{display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:#07111d;border:1px solid var(--line);border-radius:3px;padding:7px 5px;
+  color:var(--bone);font:inherit;font-size:10px;text-align:center}
+.sg-pcrew button{cursor:pointer}
+.sg-pcrew button:hover{border-color:var(--ochre)}
+/* A disassembled Fighter is not clickable and must not look it. */
+.sg-pcrew span.gone{opacity:.55;border-style:dashed}
+.sg-pcrew b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.sg-pcrew i{font-style:normal;color:var(--dim);font-size:9px}
+/* SQUARE, the way the Collection frames a Fighter. The map clips to a disc
+   because a marker has to read at twenty pixels; a panel opened to look at
+   one properly should not crop its corners. */
+.sg-pcrew .art{position:relative;display:block;width:100%;aspect-ratio:1;background:#050c14;
+  border-radius:2px;overflow:hidden}
+.sg-pcrew .art img{position:absolute;left:0;width:100%;height:100%;object-fit:contain}
+.sg-pcrew .art.empty{background:repeating-linear-gradient(45deg,#07111d,#07111d 4px,#0a1929 4px,#0a1929 8px)}
 </style>
 
 <div class="row" id="row1">
@@ -185,7 +240,10 @@ include 'header.php';
       <span><i class="k-kill"></i> who landed the last blow</span>
       <span><i class="k-spoke"></i> a player, thickness by damage</span>
       <span><i class="k-sat"></i> a Fighter, sized by damage dealt</span>
+      <span><i class="k-gone"></i> a Fighter since disassembled</span>
     </p>
+    <p class="sg-note">Hover a player to isolate their line. Click one to open their
+       week; click a Fighter to open it in the Collection's panel.</p>
 
     <?php
       /*
@@ -209,11 +267,37 @@ include 'header.php';
       <?php endif; ?>
     </p>
   <?php endif; ?>
+
+  <?php /* The player panel. Built by siege.js from the data already on the
+           page -- every number in it is in window.SIEGE_DATA, so there is
+           nothing to fetch. The Fighter panel below is a different thing
+           entirely: that one is the Collection's, included whole. */ ?>
+  <div id="sg-veil" class="sg-veil" role="dialog" aria-modal="true" aria-labelledby="sg-pname" hidden>
+    <div class="sg-sheet">
+      <button type="button" class="sg-x" id="sg-close" aria-label="Close">&times;</button>
+      <div id="sg-body"></div>
+    </div>
+  </div>
   </div>
  </div>
 </div>
 
 <?php if ($sg_n): ?>
+<?php
+  /*
+   * THE FIGHTER PANEL, INCLUDED NOT REBUILT. The same dhc-fighter-modal.php
+   * the Collection, the roster and the Rivalries map open, fed by the same
+   * ajax/dhc-fighter.php payload keyed on serial. A second panel saying
+   * nearly the same things is how two surfaces come to disagree about what
+   * a Fighter is -- the proven ranks live in that file and nothing here
+   * needs to know about them.
+   *
+   * $dhcm_deeplink stays false: dhcgallery.php owns the ?fighter= URL, and
+   * two pages rewriting the address for the same panel would fight.
+   */
+  $dhcm_user = $sg_user; $dhcm_base = $sg_base; $dhcm_deeplink = false;
+  include __DIR__ . '/dhc-fighter-modal.php';
+?>
 <script>
   window.SIEGE_DATA = <?php echo json_encode($sglay, JSON_UNESCAPED_SLASHES); ?>;
   /* DHCF_ONE_ARM_SPLIT, the same constant the Collection and the assembler

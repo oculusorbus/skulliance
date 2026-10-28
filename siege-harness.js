@@ -123,7 +123,10 @@ ok(expectKills > 0, `the fixture has last blows to mark (${expectKills})`);
 ok(marks.length === expectKills, `one mark per last blow (${marks.length} of ${expectKills})`);
 
 /* The Fighters, from the shared kit. */
-const sats = all(A.svg, e => e.getAttribute('class') === 'sg-sat');
+/* CLASS-CONTAINS, not equality: a disassembled Fighter carries
+   'sg-sat sg-sat-gone' and an equality test silently stopped counting it. */
+const hasCls = (e, c) => ((e.getAttribute('class') || '').split(/[ ]+/).indexOf(c) > -1);
+const sats = all(A.svg, e => hasCls(e, 'sg-sat'));
 let expectSats = 0;
 Object.keys(L.week.nodes).forEach(id => {
   expectSats += Math.min(10, (L.week.nodes[id].fighters || []).length);
@@ -199,7 +202,11 @@ function outside(svg, w, h) {
       const size = parseFloat(e.getAttribute('font-size')) || 10;
       const tw = (e.textContent || '').length * size * 0.58;
       const x0 = anchor === 'start' ? x : (anchor === 'end' ? x - tw : x - tw / 2);
-      if (x0 < -0.5 || x0 + tw > w + 0.5 || y - size > h + 0.5 || y < -0.5)
+      /* THE BASELINE, not the top of the glyphs. `y - size > h` only fires
+         once the whole line is below the canvas, so a caption hanging a few
+         pixels off the bottom edge read as inside -- which is precisely the
+         overflow the centre measurement exists to prevent. */
+      if (x0 < -0.5 || x0 + tw > w + 0.5 || y > h + 0.5 || y - size < -0.5)
         bad.push(`text "${e.textContent}" at ${x},${y}`);
     }
   });
@@ -222,7 +229,73 @@ const coreG = all(B.svg, e => e.getAttribute('class') === 'sg-core')[0];
 const bars = coreG ? coreG.children.filter(e => e.tagName === 'rect') : [];
 ok(bars.length === L.wide.byWeek.length,
    `one bar per week instead (${bars.length} of ${L.wide.byWeek.length})`);
-ok(outside(B.svg, bW, bH).length === 0, 'and keeps its ink inside the canvas');
+const outB = outside(B.svg, bW, bH);
+ok(outB.length === 0, 'and keeps its ink inside the canvas: ' + outB.slice(0, 4).join(' | '));
+/*
+ * AND THE CREW IS STILL IN THE MIDDLE. The first wide view drew only bars,
+ * so every spoke on the map pointed at a bar chart with no bosses in it --
+ * reported on the first 4-week view opened. The three bosses are static, so
+ * there is no reason thirteen weeks cannot show the thing they were spent
+ * attacking.
+ */
+/* SCOPED TO THE CENTRE GROUP. A bare image sweep also catches every trait
+   layer of every Fighter portrait -- two per Fighter in this fixture -- so
+   it counted fourteen and passed with the crew deleted. */
+const bCore = all(B.svg, e => e.getAttribute('class') === 'sg-core')[0];
+const bImgs = bCore ? all(bCore, e => e.tagName === 'image') : [];
+ok(bImgs.length === (L.wide.crew || []).length,
+   `the boss crew is drawn in a multi-week window (${bImgs.length} of `
+   + `${(L.wide.crew || []).length})`);
+/* The caption names the WINDOW, not just the weeks that had runs in them --
+   "1 week" under a 4-week button reads as contradicting the button. */
+const caps = all(B.svg, e => e.tagName === 'text' && /played/.test(e.textContent || ''));
+ok(caps.length === 1 && caps[0].textContent.indexOf(String(L.wide.weeks)) === 0,
+   'the caption leads with the window: "' + (caps[0] ? caps[0].textContent : '') + '"');
+
+console.log('\n-- the interactions exist --');
+/*
+ * FOUR THINGS THE ARENA MAP HAS AND THIS ONE SHIPPED WITHOUT, all reported
+ * in a row because the gap was systematic rather than four oversights: the
+ * drawing was built and the interaction layer was not. These assert the
+ * hooks are present -- a listener cannot be fired through this stub, but a
+ * missing class or a missing data attribute is exactly how they went absent
+ * the first time.
+ */
+const sLines = all(A.svg, e => e.getAttribute('class') === 'sg-line');
+ok(sLines.length === Object.keys(L.week.nodes).length,
+   `every spoke is addressable for hover (${sLines.length})`);
+ok(sLines.every(l => l.getAttribute('data-id')), 'and carries whose line it is');
+ok(clusters.every(c => c.getAttribute('data-id')), 'every cluster carries its player id');
+/* A disassembled Fighter is drawn -- its damage is real and stays in the
+   player's total -- but it must not offer a click that cannot resolve. */
+const gone = [];
+Object.keys(L.week.nodes).forEach(id => {
+  (L.week.nodes[id].fighters || []).forEach(f => { if (f.gone) gone.push(f); });
+});
+ok(gone.length > 0, 'the fixture has a disassembled Fighter in it, so the rest is not vacuous');
+ok(gone.every(f => f.name === 'Disassembled' && f.serial === 0),
+   'a disassembled Fighter is labelled as one rather than falling back to DHC2F000');
+/* Drawn, and drawn differently -- an ordinary empty disc reads as a broken
+   image, which is how this was found. */
+const goneEls = all(A.svg, e => hasCls(e, 'sg-sat-gone'));
+ok(goneEls.length === gone.length,
+   `a disassembled Fighter is marked on the map (${goneEls.length} of ${gone.length})`);
+ok(goneEls.every(g => !g.getAttribute('data-serial')
+                   || g.getAttribute('data-serial') === '0'),
+   'a disassembled Fighter offers a click that cannot resolve');
+
+console.log('\n-- one player, wide window: the centre is the widest ink --');
+/*
+ * With several players the ring surrounds the centre and their own ink
+ * encloses it, so a centre that is never measured still lands inside the
+ * canvas. One player puts the whole middle outside that ink -- this is the
+ * only shape in which the centre measurement can be shown to matter.
+ */
+const WS = draw(L.wideSolo, 0);
+const wsW = parseFloat(WS.svg.getAttribute('width')), wsH = parseFloat(WS.svg.getAttribute('height'));
+const wsOut = outside(WS.svg, wsW, wsH);
+ok(wsOut.length === 0,
+   'a one-player wide window clips its own centre: ' + wsOut.slice(0, 4).join(' | '));
 
 console.log('\n-- one player on their own --');
 /* The degenerate case every ring layout gets wrong: with N = 1 there is no

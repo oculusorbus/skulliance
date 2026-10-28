@@ -101,6 +101,12 @@ function sg_week() {
 		array('fighter_id'=>12,'user_id'=>1,'serial'=>102,'name'=>'','traits'=>'{"torso":"t2"}','dealt'=>7000,'runs'=>7,'fell'=>1),
 		array('fighter_id'=>21,'user_id'=>2,'serial'=>201,'name'=>'Marge','traits'=>'{"torso":"t3"}','dealt'=>9499,'runs'=>5,'fell'=>0),
 		array('fighter_id'=>31,'user_id'=>3,'serial'=>301,'name'=>null,'traits'=>'bad json','dealt'=>5630,'runs'=>3,'fell'=>3),
+		/* DISASSEMBLED. dhcf_delete_fighter() really deletes the row, so the
+		   LEFT JOIN returns a run with no Fighter behind it -- serial and
+		   name and traits all NULL. Left alone it fell through to
+		   dhcf_default_name(0) = "DHC2F000", a Fighter number that cannot
+		   exist, printed next to real damage. */
+		array('fighter_id'=>99,'user_id'=>2,'serial'=>null,'name'=>null,'traits'=>null,'dealt'=>1200,'runs'=>2,'fell'=>1),
 	);
 	return $c;
 }
@@ -149,6 +155,18 @@ ok(isset($s['fighters'][3][0]) && $s['fighters'][3][0]['traits'] === array(),
    'a Fighter whose traits will not decode was dropped rather than drawn blank');
 ok($s['fighters'][1][0]['name'] === 'Big Dog' && $s['fighters'][1][1]['name'] !== '',
    'an unnamed Fighter has no display name');
+/* THE DISASSEMBLED ONE. Its damage is real and stays in the player's total,
+   so it is still drawn -- but it must say what it is rather than inventing
+   a serial. */
+$dis = null;
+foreach ($s['fighters'][2] as $f) if (!empty($f['gone'])) $dis = $f;
+ok($dis !== null, 'a run whose Fighter has been disassembled vanished from the map');
+if ($dis) {
+	ok($dis['name'] === 'Disassembled',
+	   'a disassembled Fighter is named "' . $dis['name'] . '", which looks like a real one');
+	ok((int)$dis['serial'] === 0, 'a disassembled Fighter claims serial ' . $dis['serial']);
+	ok($dis['dealt'] === 1200, 'its damage was dropped from the total: ' . $dis['dealt']);
+}
 
 echo "\n-- waves are the centre, never a per-player rank --\n";
 /*
@@ -186,6 +204,38 @@ echo "\n-- the shells are the waves, and they stay apart --\n";
 ok(count($lay['shells']) === 6, 'six shells for six waves, got ' . count($lay['shells']));
 $rs = array(); foreach ($lay['shells'] as $sh) $rs[] = $sh['r'];
 ok($lay['shells'][0]['wave'] === 1, 'wave 1 is not the outermost shell');
+/*
+ * IN WAVE ORDER, OUTERMOST FIRST -- the check that was missing, and the
+ * fixture already had the case that breaks it.
+ *
+ * Wave health is NOT monotonic: the live wave stands at full health (7,126
+ * here) while the cheap late waves it followed are already down (1,374).
+ * Sizing each ring on its OWN health and sorting by radius therefore drew a
+ * real week as 1, 2, 6, 3, 4, 5 -- and the numbers up the top of the map
+ * read as nonsense, which is how the owner found it. "Reading inward is
+ * reading forward through the week" is the premise of the whole centre and
+ * the spoke lengths depend on it.
+ */
+$order = array(); foreach ($lay['shells'] as $sh) $order[] = (int)$sh['wave'];
+ok($order === array(1, 2, 3, 4, 5, 6),
+   'the shells are not in wave order outermost-first: ' . implode(',', $order));
+/* And the fixture must actually contain the inversion, or this proves
+   nothing: a week whose waves happen to shrink monotonically passes under
+   either rule. */
+$own = array(); foreach ($lay['shells'] as $sh) $own[] = (int)$sh['max'];
+$mono = true; for ($i = 1; $i < count($own); $i++) if ($own[$i] > $own[$i - 1]) $mono = false;
+ok(!$mono, 'the fixture has no fatter-later wave, so the ordering rule is untested: '
+   . implode(',', $own));
+/* The band between two rings is the wave, so its area is that wave's
+   health. Checked on the outer bands, where the legibility floor has not
+   had to touch the radii. */
+$a1 = $lay['shells'][0]['r'] ** 2 - $lay['shells'][1]['r'] ** 2;
+$a2 = $lay['shells'][1]['r'] ** 2 - $lay['shells'][2]['r'] ** 2;
+$h1 = (int)$lay['shells'][0]['max'];
+$h2 = (int)$lay['shells'][1]['max'];
+ok(abs(($a1 / $a2) - ($h1 / $h2)) < 0.25 * ($h1 / $h2),
+   sprintf('the band areas are not proportional to the waves: %.2f vs %.2f',
+           $a1 / $a2, $h1 / $h2));
 $desc = true; for ($i = 1; $i < count($rs); $i++) if ($rs[$i] >= $rs[$i-1]) $desc = false;
 ok($desc, 'the shells do not shrink inward: ' . implode(' > ', $rs));
 $tight = 0; for ($i = 1; $i < count($rs); $i++) if ($rs[$i-1] - $rs[$i] < 9) $tight++;
@@ -265,7 +315,19 @@ if ($dump !== null) {
 	if (!is_dir($dump)) mkdir($dump, 0777, true);
 	$ff = function ($s) { return $s; };
 	$one  = dhcb_siege(sg_week(), 1, '2026-10-22');
-	$four = dhcb_siege(sg_week(), 4, '2026-10-22');
+	/*
+	 * THE WIDE CASE NEEDS SEVERAL WEEKS IN IT. With one week of rows the bar
+	 * row is a single stub that fits inside the core disc whatever the
+	 * renderer does, so the ink check on the wide view passed with the
+	 * measurement deleted. Thirteen weeks makes the row genuinely wider and
+	 * taller than the disc, which is the case that has to hold.
+	 */
+	$cw = sg_week();
+	foreach (array('2026-07-30','2026-08-27','2026-09-10','2026-09-24','2026-10-08','2026-10-15') as $k)
+		$cw->days[] = array('day'=>$k,'wave'=>3,'boss_key'=>'d34thbrngr',
+		                    'max_health'=>18000,'health'=>0,
+		                    'killed_at'=>'2026-08-01 10:00:00','killed_by'=>1);
+	$four = dhcb_siege($cw, 13, '2026-10-22');
 	/* Layers stand in for art the harness box does not have: the shape is
 	   what siege.js consumes, and a missing PNG is the normal case on a dev
 	   checkout anyway. */
@@ -281,6 +343,16 @@ if ($dump !== null) {
 	file_put_contents(rtrim($dump, '/') . '/layouts.json', json_encode(array(
 		'week'  => dhcb_siege_layout($one),
 		'wide'  => dhcb_siege_layout($four),
+		/*
+		 * A WIDE WINDOW WITH ONE PLAYER. With several players the ring
+		 * surrounds the centre and the clusters' own ink encloses it, so a
+		 * centre that is never measured still lands inside the canvas and the
+		 * check cannot fail. One player puts the whole middle outside the ink
+		 * the clusters produce, which is the case the measurement exists for.
+		 */
+		'wideSolo' => dhcb_siege_layout(dhcb_siege((function () use ($cw) {
+			$c = $cw; $c->players = array($c->players[0]); return $c;
+		})(), 13, '2026-10-22')),
 		'solo'  => dhcb_siege_layout(dhcb_siege((function () {
 			$c = sg_week();
 			$c->players = array($c->players[0]);

@@ -2001,13 +2001,30 @@ function dhcb_siege($conn, $weeks = 1, $week = null) {
 		$uid = (int)$x['user_id'];
 		if (!isset($out['players'][$uid])) continue;
 		$traits = json_decode((string)$x['traits'], true);
+		/*
+		 * DISASSEMBLY IS A REAL DELETE -- dhcf_delete_fighter() removes the
+		 * dhc_fighters row, deliberately, because dhc_trait_drops keeps the
+		 * history. So the LEFT JOIN above returns a run with no Fighter
+		 * behind it, and that is a NORMAL state, not a failure.
+		 *
+		 * SAID, NOT GUESSED AT. Left alone it fell through to serial 0 and
+		 * dhcf_default_name(0) answered "DHC2F000" -- a Fighter number that
+		 * cannot exist, printed next to real damage, with an empty disc
+		 * where the art should be. A plausible wrong answer is worse than
+		 * an empty one. The damage it dealt is real and stays in the
+		 * player's total, so the portrait stays too; it is just labelled as
+		 * what it is.
+		 */
+		$gone = ($x['serial'] === null);
 		$out['fighters'][$uid][] = array(
 			'id'      => (int)$x['fighter_id'],
-			'serial'  => (int)$x['serial'],
-			'name'    => ($x['name'] !== null && $x['name'] !== '')
-			             ? (string)$x['name']
-			             : (function_exists('dhcf_default_name')
-			                ? dhcf_default_name((int)$x['serial']) : '#' . (int)$x['serial']),
+			'serial'  => $gone ? 0 : (int)$x['serial'],
+			'gone'    => $gone,
+			'name'    => $gone ? 'Disassembled'
+			             : (($x['name'] !== null && $x['name'] !== '')
+			                ? (string)$x['name']
+			                : (function_exists('dhcf_default_name')
+			                   ? dhcf_default_name((int)$x['serial']) : '#' . (int)$x['serial'])),
 			'traits'  => is_array($traits) ? $traits : array(),
 			'dealt'   => (int)$x['dealt'],
 			'runs'    => (int)$x['runs'],
@@ -2086,12 +2103,43 @@ function dhcb_siege_layout($s, $rmin = 16, $rmax = 46, $shellMax = 120, $shellMi
 	$shells = array();
 	$gap    = (float)$step;
 	if ($s['weeks'] === 1 && $s['waves']) {
-		$fattest = 0;
-		foreach ($s['waves'] as $w) $fattest = max($fattest, (int)$w['max']);
-		foreach ($s['waves'] as $w) {
+		/*
+		 * CUMULATIVE HEALTH, NOT THE WAVE'S OWN, AND THAT IS THE WHOLE
+		 * ORDERING.
+		 *
+		 * The first version sized each ring on its own max_health and then
+		 * sorted by radius so they would nest. Wave health is NOT monotonic
+		 * -- the live wave stands at full health while the late ones it
+		 * followed were cheap and are already down -- so a real week came
+		 * out drawn 1, 2, 6, 3, 4, 5 and the numbers up the top read as
+		 * nonsense. Reported by the owner. The premise of the whole centre
+		 * is that reading inward is reading FORWARD through the week, and
+		 * the spoke lengths depend on it, so that was not cosmetic.
+		 *
+		 * Ring i is sqrt of the health of wave i AND EVERY WAVE AFTER IT.
+		 * That sum strictly shrinks, so wave order is monotonic by
+		 * construction and cannot be sorted wrong. It is also the better
+		 * encoding: r^2 difference between consecutive rings is exactly that
+		 * wave's own health, so the BAND between two rings has an area
+		 * proportional to the wave -- and area is what the eye reads on a
+		 * circle, which is the same principle dhca_rivalry_layout() argues
+		 * for on the player discs.
+		 *
+		 * The live wave is therefore always innermost, which the renderer
+		 * relies on: the boss portraits are drawn inside it, and under the
+		 * old size ordering they could land on top of the rings nested
+		 * within.
+		 */
+		$waves = $s['waves'];
+		usort($waves, function ($a, $b) { return $a['wave'] <=> $b['wave']; });
+		$cum = array();
+		$run = 0;
+		for ($i = count($waves) - 1; $i >= 0; $i--) { $run += (int)$waves[$i]['max']; $cum[$i] = $run; }
+		$total = $run;
+		foreach ($waves as $i => $w) {
 			$sh = $w;
-			$sh['r'] = $fattest > 0
-				? (int)round($shellMin + ($shellMax - $shellMin) * sqrt($w['max'] / $fattest))
+			$sh['r'] = $total > 0
+				? (int)round($shellMin + ($shellMax - $shellMin) * sqrt($cum[$i] / $total))
 				: $shellMax;
 			$shells[] = $sh;
 		}
@@ -2111,7 +2159,9 @@ function dhcb_siege_layout($s, $rmin = 16, $rmax = 46, $shellMax = 120, $shellMi
 		 * nothing and a harness could not tell which was load-bearing.
 		 * Mutation found it. One pass, one rule.
 		 */
-		usort($shells, function ($a, $b) { return $b['r'] <=> $a['r']; });
+		/* NO RE-SORT. They are already in wave order and the cumulative rule
+		   guarantees the radii descend with it; sorting by radius again is
+		   what produced 1, 2, 6, 3, 4, 5 in the first place. */
 		$floor = 10.0;
 		$n     = count($shells);
 		$gap   = $n > 1 ? min((float)$step, max(0.5, ($shells[0]['r'] - $floor) / ($n - 1)))
@@ -2142,7 +2192,22 @@ function dhcb_siege_layout($s, $rmin = 16, $rmax = 46, $shellMax = 120, $shellMi
 	}
 	ksort($byWeek);
 
-	return array('nodes' => $nodes, 'shells' => $shells, 'shellGap' => $gap,
+	/*
+	 * THE CREW ITSELF, ALWAYS, whatever the window.
+	 *
+	 * The wider views had no bosses in the middle at all -- the shells are a
+	 * single week's structure, the portraits were drawn inside the live
+	 * shell, and with no shells there was nothing but a bar chart. Every
+	 * spoke on the map then pointed at nothing, which is not a picture of a
+	 * siege. The three bosses are static (dhcb_bosses()), so there is no
+	 * reason the centre of a 13-week view cannot be the thing all 13 weeks
+	 * were spent attacking.
+	 */
+	$crew = array();
+	foreach (dhcb_bosses() as $b)
+		$crew[] = array('key' => $b['key'], 'name' => $b['name'], 'art' => dhcb_art($b['key']));
+
+	return array('nodes' => $nodes, 'shells' => $shells, 'shellGap' => $gap, 'crew' => $crew,
 	             'weeks' => $s['weeks'], 'week' => $s['week'], 'from' => $s['from'],
 	             'byWeek' => array_values($byWeek),
 	             'dealt' => $s['dealt'], 'runs' => $s['runs'], 'downed' => $s['downed'],

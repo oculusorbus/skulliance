@@ -175,11 +175,12 @@ It has **its own tab** in the DHC strip, next to Rivalries. The boss crew sits
 in the middle and everyone who sent a Crew at it is ringed around the outside,
 with the Fighters they fielded drawn as portraits.
 
-**The rings in the middle are this week's waves.** Each one is sized by the
-health that wave was actually given, which makes the picture the real shape of
-the week rather than decoration: wave 1 is the big outer ring because it stands
-for most of the week, and every later wave shrinks inward exactly as fast as it
-gets cheaper to drop — see **They get back up** above on how a wave is budgeted
+**The rings in the middle are this week's waves**, wave 1 outermost and the one
+still standing at the centre with the bosses inside it. The **band between two
+rings** is a wave, and its area is the health that wave was given — which makes
+the picture the real shape of the week rather than decoration: wave 1 owns the
+huge outer band because it stands for most of the week, and every later band is
+thinner exactly as fast as that wave gets cheaper to drop — see **They get back up** above on how a wave is budgeted
 against the days that are left. The crew still standing is the solid ring with
 the portraits inside it; the waves already down are dashed.
 
@@ -191,6 +192,17 @@ the portraits inside it; the waves already down are dashed.
 | A longer line | They were here earlier — it reaches as far in as the waves they fought |
 | An amber line and ring | They landed a last blow on a boss |
 | An amber dot on a ring | Which boss, and on which wave |
+| A dashed, faded portrait | A Fighter that has since been disassembled |
+
+**Hover a player to isolate their line**; everything else fades and theirs starts
+marching inward, the direction the damage went. **Click a player** to open their
+week — Crews sent, rounds turned up, waves fought, and every Fighter they
+fielded. **Click a Fighter** to open it in the same panel the Collection uses.
+
+**A Fighter you have disassembled still appears**, dashed and unnamed. Taking one
+apart deletes it, but the damage it dealt that week was real and stays in your
+total, so the portrait stays too rather than quietly going missing and leaving
+the picture disagreeing with the number.
 
 **A line's length is when you turned up, not how well you did.** A player's line
 reaches inward as far as the earliest wave they fought, so somebody who was
@@ -210,9 +222,9 @@ Both figures are on every label.
 **Three windows: this week, 4 weeks and 13 weeks.** They are whole weeks rather
 than rolling days, because a boss crew belongs to exactly one week and the week
 turns at 4pm Thursday — a rolling seven days would straddle that and show damage
-against a crew that no longer exists. Over more than one week the middle shows
-how deep each week got instead of one week's waves, since wave numbers restart
-every Thursday.
+against a crew that no longer exists. Over more than one week the middle shows the boss
+crew with a bar for each week under it — how deep that week got — instead of one
+week's waves, since wave numbers restart every Thursday.
 
 The map is **public**, like the Collection and Rivalries: every name and avatar
 on it is already on the weekly ladder.
