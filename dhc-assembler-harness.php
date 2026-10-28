@@ -352,5 +352,55 @@ foreach (array('neckfill', 'torso-noarms', 'companion-front') as $notASlot) {
 	   "$notASlot is in the rarity table; it is derived art, not a trait");
 }
 
+/* ---------- 5. a comic cover is offered in Effects 2 only ------------------- */
+/*
+ * READ OFF THE RENDERED PAGE, NOT OFF THE SOURCE ARRAY. The picker draws
+ * from `var TRAITS = {...}`, so parsing that out of the captured output
+ * tests the filter that actually runs. A check that re-read the PHP array
+ * would have agreed with the bug.
+ *
+ * THE BUG THIS CATCHES SHIPPED. dhc-assembler.php kept its own list of
+ * three covers while DHCF_COVER_EFFECTS grew to four -- dhc-layerorder-
+ * harness.php checks that constant against the art on disk, and nothing
+ * checked this one. So DHC2 Comic Cover #4 was offered in Effects 1, the
+ * lower slot, where a second effect draws on top of a full-frame cover.
+ * That is the single combination the Effects-2-only rule exists to make
+ * impossible, and it was reachable for exactly one of the four covers.
+ */
+if (preg_match('/var TRAITS = (\{.*?\});\s*$/m', $out, $tm3)) {
+	$TR = json_decode($tm3[1], true);
+	$slugs = function ($key) use ($TR) {
+		$o = array();
+		foreach (isset($TR[$key]) ? $TR[$key] : array() as $t)
+			if (isset($t['slug'])) $o[] = $t['slug'];
+		return $o;
+	};
+	$e1 = $slugs('effects1'); $e2 = $slugs('effects2');
+	/* Not vacuous: if the art is absent both lists are empty and every
+	   assertion below passes for the wrong reason. */
+	ok(count($e1) > 0 && count($e2) > 0,
+	   'the rendered page offers no effects at all, so the cover checks below prove nothing');
+	$covers = DHCF_COVER_EFFECTS;
+	ok(count($covers) >= 4,
+	   'DHCF_COVER_EFFECTS lists only ' . count($covers) . ' covers; the art folder has four');
+	$inLower = array_values(array_intersect($covers, $e1));
+	ok(!$inLower,
+	   'a comic cover is selectable in Effects 1, where a second effect can be drawn over '
+	 . 'a full-frame cover: ' . implode(', ', $inLower));
+	$missing = array_values(array_diff($covers, $e2));
+	ok(!$missing,
+	   'a comic cover is not offered in Effects 2 either, so it cannot be used at all: '
+	 . implode(', ', $missing));
+	/* And the filter must take exactly the covers out, not a slot's worth of
+	   effects -- the two lists come from one art folder. */
+	ok(array_values(array_diff($e2, $e1)) === array_values($covers),
+	   'Effects 2 differs from Effects 1 by something other than the covers: '
+	 . implode(', ', array_diff($e2, $e1)) . ' vs ' . implode(', ', $covers));
+	printf("covers: %d, Effects 1 offers %d effects, Effects 2 offers %d\n",
+	       count($covers), count($e1), count($e2));
+} else {
+	echo "covers: SKIPPED (no TRAITS block in the rendered page)\n";
+}
+
 echo "\n".($fail ? "FAILED: $fail check(s)\n" : "all assembler checks passed\n");
 exit($fail ? 1 : 0);

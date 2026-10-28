@@ -129,9 +129,14 @@ $dhc_weapon_front = array(
 //
 // Enforced by leaving them out of the Effects 1 list entirely rather than by a
 // rule in the renderer. A trait that is never offered cannot be combined wrongly.
-$dhc_comic_covers = array(
-	'dhc2-comic-cover-1', 'dhc2-comic-cover-2', 'dhc2-comic-cover-3',
-);
+//
+// DHCF_COVER_EFFECTS, NOT A SECOND LIST. This was its own array of three, and
+// it drifted: cover 4 shipped, dhc-layerorder-harness.php's disk check made
+// sure the config constant grew to four, and this copy stayed at three -- so
+// the fourth cover was offered in Effects 1 and could be drawn under a second
+// effect, which is the one thing the rule exists to prevent. There is one
+// list of what a cover is, and it is the one the draw order already reads.
+$dhc_comic_covers = DHCF_COVER_EFFECTS;
 
 // Display names come from trait-index.json when it is uploaded alongside the
 // art; otherwise they are derived from the slug, so the page still reads well

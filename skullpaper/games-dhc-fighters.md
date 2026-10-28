@@ -662,6 +662,10 @@ letting you build something that renders wrongly. Some of what it handles:
   face. The **comic covers** are full-frame treatments — masthead, price box,
   barcode — and the character deliberately breaks out of them: head, headgear,
   weapon and arms all draw over the frame.
+- **A comic cover is offered in Effects 2 only**, which is why you will not find
+  one in the Effects 1 tab. Effects 2 is the upper of the two effects slots and
+  holds one trait, so a cover can never have another effect drawn on top of it
+  and you can never wear two covers at once. All four covers follow this rule.
 - **There is a black block behind every torso's neckline.** Not every head
   reaches the edge of the socket it sits in, and the gap left over is a hole in
   the character's own outline — so the background showed through it and the
