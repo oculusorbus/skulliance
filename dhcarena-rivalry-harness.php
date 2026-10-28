@@ -237,6 +237,39 @@ ok(count($items) >= 5, 'the strip lists at least five entries (' . count($items)
 ok(isset($items['rivalries']), 'Rivalries is one of them');
 ok($items['rivalries'] === 'rivalries.php', 'and points at the right page');
 /*
+ * THE BURGER COMES DOWN TO THE STRIP, AND ONLY ON THESE PAGES.
+ *
+ * #burger-icon is fixed at top: env(safe-area-inset-top); the strip is the
+ * first thing inside a page wrapper that pads itself 14px, so without a
+ * correction the burger floats above the strip's centre in a PWA.
+ *
+ * flexbox.css used to make this line up by accident, by shaving 15px off
+ * body's padding in standalone -- which bought the alignment at the price
+ * of putting every page's first element under the status bar. The shave is
+ * gone; this is the same correction applied to the one element that
+ * actually needed to move.
+ *
+ * MEASURED at a 390px viewport with a real inset standing in for env():
+ * burger centre 81, strip row centre 82. Before it was 14px out.
+ *
+ * TWO IDS, because flexbox.css sets the base with `#burger-menu
+ * #burger-icon` -- a single-id selector here loses on specificity and the
+ * rule silently does nothing.
+ */
+ok(preg_match('/#burger-menu\s+#burger-icon\s*\{[^}]*top:\s*calc\(\s*env\(safe-area-inset-top[^}]*\+\s*14px/s', $nav) === 1,
+   'the strip no longer brings the burger down to it, so in a PWA the burger floats '
+ . 'above the strip by the page wrapper\'s gutter');
+ok(preg_match('/@media\s*\(max-width:\s*700px\)\s*\{\s*#burger-menu\s+#burger-icon/s', $nav) === 1,
+   'the burger nudge is not scoped to mobile, so it moves the burger on desktop where '
+ . 'there is no burger to move and no safe area to clear');
+/* AND IT STAYS OUT OF THE PAGES THAT DO NOT CARRY THE STRIP. Realms and
+   Missions align the burger with their own 39px sticky bars, which sit at
+   the inset -- a global nudge would push it off those by 14px. */
+$flexcss = file_get_contents(__DIR__ . '/dist/flexbox.css');
+ok(strpos($flexcss, '+ 14px') === false,
+   'the nudge leaked into flexbox.css, which applies it to every page including the '
+ . 'ones whose burger is already aligned to a sticky bar');
+/*
  * A PAGE MAY BE SERVED BY ANOTHER PAGE. dhcbosses.php is two statements --
  * $DHC_MODE = 'bosses' and an include of dhcarena.php -- so the strip, and
  * the line that decides which chip is lit, live in the file it includes. A

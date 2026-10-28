@@ -98,6 +98,34 @@ $dhcnav_items = array(
 .dhcnav a.on span{opacity:.75}
 .dhcnav a.locked{opacity:.62}
 .dhcnav a.locked span{color:var(--ochre,#00c8a0);opacity:.8}
+/*
+ * THE BURGER COMES DOWN TO THE STRIP, ON DHC PAGES ONLY.
+ *
+ * #burger-icon is position:fixed at top: env(safe-area-inset-top), so it
+ * sits at the very top of the safe area. This strip is the first thing
+ * inside a page wrapper that pads itself -- .dhcf-wrap, .dhcg-wrap,
+ * .dhcs-wrap and .riv-wrap are all 14px -- so the strip starts 14px lower
+ * and the burger floated above its centre.
+ *
+ * THIS IS WHAT THE OLD 15px BODY SHAVE WAS REALLY FOR. flexbox.css used to
+ * pay `env(safe-area-inset-top) - 15px` on body in standalone, which pulled
+ * ALL page content up by about this gutter and made the burger line up here
+ * by accident -- at the cost of putting every page's first element under
+ * the status bar. The shave is gone; this is the same correction applied to
+ * the one element that actually needed moving.
+ *
+ * SCOPED BY INCLUSION. dhc-nav.php is only pulled in by the pages that
+ * carry this strip, so the rule reaches those and nothing else. Realms and
+ * Missions keep the burger at the inset, where it lines up with their 39px
+ * sticky bars.
+ *
+ * 14px AND NOT A PER-PAGE VALUE: four of the five wrappers are 14, the
+ * Arena is 12, and chasing the last two pixels with a selector per page is
+ * exactly the whack-a-mole that produced the 15.
+ */
+@media (max-width:700px){
+  #burger-menu #burger-icon{ top: calc(env(safe-area-inset-top, 0px) + 14px); }
+}
 @media (max-width:420px){
   .dhcnav a{padding:5px 11px}
   .dhcnav a b{font-size:11.5px}
