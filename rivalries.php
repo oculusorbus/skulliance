@@ -446,6 +446,10 @@ window.RIVALRY_ME        = <?php echo (int)$riv_user; ?>;
          it for every page, and a second tag would fetch the same file
          twice on the one page that happens to need it most. */ ?>
 <script src="map-kit.js?var=<?php echo rand(0,999); ?>"></script>
+<?php /* dhc-crew-kit.js: the Crew packing, the portrait and the trait-layer
+         geometry, shared with the Siege map. After map-kit.js, which owns
+         svgEl() and the text measurer, and before the map that uses it. */ ?>
+<script src="dhc-crew-kit.js?var=<?php echo rand(0,999); ?>"></script>
 <script src="rivalries.js?var=<?php echo rand(0,999); ?>"></script>
 <?php endif; ?>
 <?php

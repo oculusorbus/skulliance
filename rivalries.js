@@ -75,56 +75,17 @@
    * and where a single-sided arm is cut from the two-arm master. Those live
    * here so the two cannot disagree about what a Fighter looks like.
    */
-  function layerGeom(L, size) {
-    const g = { dy: (L.n || 0) / 100 * size, cut: null };
-    if (L.clip === 'right')     g.cut = { from: ARM_SPLIT, to: 100 };
-    else if (L.clip === 'left') g.cut = { from: 0, to: ARM_SPLIT };
-    return g;
-  }
+  /* MOVED TO dhc-crew-kit.js, which the Siege map also draws Fighters with.
+     What a Fighter looks like on a map has one answer. */
+  const KIT = window.DHCCrewKit;
+  /* What this map ranks a Fighter on. The kit never learns it; the Siege map
+     passes damage here instead. */
+  const WEIGHT = f => f.battles;
 
-  function satR(f, busiest, smax) {
-    const smin = Math.max(6, Math.round(smax * 0.5));
-    return Math.round(smin + (smax - smin) * Math.sqrt(f.battles / (busiest || 1)));
-  }
-
-  function geom(node) {
-    const total = node.fighters.length;
-    const k = Math.min(total, CREW_MAX);
-    const busiest = node.fighters.reduce((m, f) => Math.max(m, f.battles), 0) || 1;
-    if (!k) return { busiest: busiest, shown: 0, hidden: 0, smax: 0, shells: [], outer: node.r + 2 };
-
-    /* Portraits shrink with the Crew, so a deep one stays compact instead of
-       demanding a bigger ring for every extra Fighter. */
-    const smax = k <= PER_SHELL ? SAT_MAX
-               : Math.max(12, Math.round(SAT_MAX * Math.sqrt(PER_SHELL / k)));
-
-    /* Spread as evenly as possible over as few shells as will hold them. */
-    const nShell = Math.ceil(k / PER_SHELL);
-    const counts = [];
-    let left = k;
-    for (let i = 0; i < nShell; i++) {
-      const n = Math.ceil(left / (nShell - i));
-      counts.push(n);
-      left -= n;
-    }
-
-    /* Each shell has to clear the one inside it AND be long enough to hold
-       its own portraits side by side along CREW_SPAN. */
-    const shells = [];
-    let prev = node.r;
-    counts.forEach(n => {
-      const arc = n > 1 ? (2 * smax * (n - 1)) / CREW_SPAN : 0;
-      const r   = Math.max(prev + 6 + smax, arc);
-      shells.push({ n: n, r: r });
-      prev = r + smax;
-    });
-
-    return {
-      busiest: busiest, smax: smax,
-      shown: k, hidden: total - k, shells: shells,
-      outer: shells[shells.length - 1].r + smax + 2,
-    };
-  }
+  /* The packing lives in the kit; these are this map's numbers for it. */
+  const geom = node => KIT.crewGeom(node, {
+    max: CREW_MAX, perShell: PER_SHELL, satMax: SAT_MAX, span: CREW_SPAN, weight: WEIGHT,
+  });
 
   /*
    * ---- the ring ------------------------------------------------------------
@@ -229,13 +190,8 @@
    * the same is true here.
    */
   const FONT = 'Arial, sans-serif';
-  let inkX0 = Infinity, inkY0 = Infinity, inkX1 = -Infinity, inkY1 = -Infinity;
-  function ink(x0, y0, x1, y1) {
-    if (x0 < inkX0) inkX0 = x0;
-    if (y0 < inkY0) inkY0 = y0;
-    if (x1 > inkX1) inkX1 = x1;
-    if (y1 > inkY1) inkY1 = y1;
-  }
+  const INK = new KIT.Ink();
+  const ink = (x0, y0, x1, y1) => INK.add(x0, y0, x1, y1);
 
   const used  = needed / (R || 1);
   const slack = Math.max(0, Math.PI * 2 - used) / N;
@@ -270,18 +226,7 @@
      * ink exact and removes the second copy of the arc maths at the same
      * time: the thing measured is now literally the thing drawn.
      */
-    const sats = [];
-    let fi = 0;
-    g.shells.forEach(shell => {
-      for (let j = 0; j < shell.n; j++, fi++) {
-        const f = n.fighters[fi];
-        if (!f) break;
-        const t0 = shell.n === 1 ? 0.5 : j / (shell.n - 1);
-        const sa = a - CREW_SPAN / 2 + t0 * CREW_SPAN;
-        const fr = satR(f, g.busiest, g.smax);
-        sats.push({ f: f, r: fr, x: x + Math.cos(sa) * shell.r, y: y + Math.sin(sa) * shell.r });
-      }
-    });
+    const sats = KIT.crewPlaces(x, y, a, n, g, WEIGHT);
     /* The avatar, allowing for its lean ring, then every portrait.
        (The +5 for the ring is conservatism the tests cannot pin down: a
        leaning avatar is never the outermost ink, because its own label always
@@ -310,13 +255,13 @@
   /* Shift the whole drawing into positive space with a hair of breathing room,
      and the canvas is exactly the ink plus that. */
   const EDGE = 10;
-  const OX = EDGE - inkX0, OY = EDGE - inkY0;
+  const FRAME = INK.frame(EDGE);
+  const OX = FRAME.ox, OY = FRAME.oy;
   placed.forEach(p => {
     p.x += OX; p.y += OY;
     p.sats.forEach(sv => { sv.x += OX; sv.y += OY; });
   });
-  const W = Math.round(inkX1 - inkX0 + EDGE * 2);
-  const H = Math.round(inkY1 - inkY0 + EDGE * 2);
+  const W = FRAME.w, H = FRAME.h;
 
   const svg = svgEl('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}` });
   svg.setAttribute('class', 'riv-svg');
@@ -457,59 +402,15 @@
       {
         const f = sv.f, fr = sv.r, cx = sv.x, cy = sv.y;
 
-      const sg = svgEl('g', {});
+      const sg = KIT.drawPortrait(sv, {
+        svgEl: svgEl, defs: defs, uid: 'rivsat' + p.id + '_' + f.id,
+        ring: hexToRgba(col, 0.75), ground: '#0a1929', armSplit: ARM_SPLIT,
+      });
       sg.setAttribute('class', 'riv-sat');
       sg.setAttribute('data-fid', f.id);
       /* The serial too, because ajax/dhc-fighter.php is keyed on it and that
          endpoint is how a click opens the Collection's panel. */
       sg.setAttribute('data-serial', f.serial);
-      /* A disc behind the art: the trait PNGs are transparent, and with no
-         ground behind them a Fighter reads as floating debris, not a
-         portrait. */
-      sg.appendChild(svgEl('circle', {
-        cx: cx.toFixed(1), cy: cy.toFixed(1), r: fr,
-        fill: '#0a1929', stroke: hexToRgba(col, 0.75), 'stroke-width': 1.5,
-      }));
-      /* THE FIGHTER ITSELF, from the same layer stack the Collection and the
-         Discord render use. dhcf_layers() decided the draw order, the
-         armless-torso swap and the single-arm restore; none of it is
-         re-decided here. */
-      if (f.layers && f.layers.length) {
-        const cid = 'rivsat' + p.id + '_' + f.id;
-        const cp  = svgEl('clipPath', { id: cid });
-        cp.appendChild(svgEl('circle', { cx: cx.toFixed(1), cy: cy.toFixed(1), r: fr - 1 }));
-        defs.appendChild(cp);
-        const box = svgEl('g', { 'clip-path': 'url(#' + cid + ')' });
-        const S = fr * 2, X = cx - fr, Y = cy - fr;
-        f.layers.forEach((L, li) => {
-          const lg = layerGeom(L, S);
-          const attrs = {
-            x: X.toFixed(1), y: (Y + lg.dy).toFixed(1),
-            width: S.toFixed(1), height: S.toFixed(1),
-            href: L.src, preserveAspectRatio: 'xMidYMid meet',
-          };
-          /* A single-sided arm is the two-arm master with half cut away. The
-             Collection cuts it with a CSS inset(); a clipPath rect is the same
-             cut and does not rely on CSS applying to an SVG <image>. */
-          if (lg.cut) {
-            const hid = cid + '_a' + li;
-            const hcp = svgEl('clipPath', { id: hid });
-            hcp.appendChild(svgEl('rect', {
-              x: (X + S * lg.cut.from / 100).toFixed(1),
-              y: Y.toFixed(1),
-              width: (S * (lg.cut.to - lg.cut.from) / 100).toFixed(1),
-              height: S.toFixed(1),
-            }));
-            defs.appendChild(hcp);
-            const wrap = svgEl('g', { 'clip-path': 'url(#' + hid + ')' });
-            wrap.appendChild(svgEl('image', attrs));
-            box.appendChild(wrap);
-          } else {
-            box.appendChild(svgEl('image', attrs));
-          }
-        });
-        sg.appendChild(box);
-      }
       const t = svgEl('title', {});
       /* Said in words. "4/1/0" would need a legend nobody reads. */
       t.textContent = f.name + ' \u00b7 ' + f.battles + ' battle' + (f.battles === 1 ? '' : 's')
@@ -778,7 +679,7 @@
   function portrait(f) {
     if (!f.layers || !f.layers.length) return '';
     return f.layers.map(L => {
-      const g = layerGeom(L, 100);
+      const g = KIT.layerGeom(L, 100, ARM_SPLIT);
       const st = [];
       if (g.dy) st.push('transform:translateY(' + g.dy + '%)');
       if (g.cut) st.push('clip-path:inset(0 ' + (100 - g.cut.to) + '% 0 ' + g.cut.from + '%)');

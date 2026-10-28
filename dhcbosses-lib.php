@@ -1806,6 +1806,349 @@ function dhcb_ladder($conn, $week = null, $limit = 25) {
 	return $out;
 }
 
+/* ---------- the siege map --------------------------------------------------- */
+
+/*
+ * THE WEEK AS A PICTURE: the crew in the middle, everyone who attacked it
+ * ringed around it.
+ *
+ * The ladder answers "where do I stand". This answers "how is the week
+ * actually going, and who is carrying it" -- which is a different question
+ * and the one a shared bar invites. One cluster per player who sent a Crew,
+ * sized by the damage they put into the bar, with the Fighters they fielded
+ * drawn around them as real portraits.
+ *
+ * THE WINDOW IS WEEKS, NOT DAYS, AND THAT IS NOT COSMETIC. Rivalries windows
+ * on `started_at >= NOW() - INTERVAL n DAY`, which is right for a rolling
+ * feud. It is wrong here: the week turns at 4pm Thursday and a boss crew
+ * belongs to exactly one of them, so a rolling seven days straddles two
+ * crews and would show damage against a crew that no longer exists sitting
+ * next to the one on the board. dhc_boss_runs.day IS the week key, so every
+ * window is a range of keys and nothing can straddle.
+ *
+ * WAVES ARE THE TIME AXIS, NOT A RANK, which is the one thing a reader could
+ * take wrongly. Wave 1 stands for about 4.2 of the week's 7 days and every
+ * wave after it falls in well under one -- so "fought wave 5" means "turned
+ * up on the last day", not "is strong". Encoding the wave a player reached
+ * as distance or rank would look like a skill ranking and would actually be
+ * measuring when they logged in. So waves live in the CENTRE, as the shells
+ * of the crew itself, and a player's relationship to them is only which ones
+ * they were present for.
+ */
+
+/** The week key n weeks before $week. Keys are the Thursday's date. */
+function dhcb_week_back($week, $n) {
+	$d = DateTime::createFromFormat('!Y-m-d', (string)$week, new DateTimeZone('America/Chicago'));
+	if (!$d) return (string)$week;
+	$d->modify('-' . (max(1, (int)$n) - 1) * 7 . ' days');
+	return $d->format('Y-m-d');
+}
+
+/**
+ * Everything the siege map draws, for a window of whole weeks.
+ *
+ * Returns players, the waves that stood in the window, and each player's
+ * Fighters. Art is NOT resolved here -- dhcb_siege_art() does that, for the
+ * same reason dhca_rivalry_art() is separate: the trait list is the
+ * Fighter's recipe and the map only needs pictures.
+ */
+function dhcb_siege($conn, $weeks = 1, $week = null) {
+	$weeks = max(1, min(26, (int)$weeks));
+	if ($week === null) $week = dhcb_week($conn);
+	$from = dhcb_week_back($week, $weeks);
+	$ef   = $conn->real_escape_string($from);
+	$ew   = $conn->real_escape_string($week);
+
+	$out = array('weeks' => $weeks, 'week' => $week, 'from' => $from,
+	             'players' => array(), 'waves' => array(), 'fighters' => array(),
+	             'dealt' => 0, 'runs' => 0, 'crews' => 0, 'downed' => 0);
+
+	/* ---- 1. who turned up, and what they put in ---- */
+	/*
+	 * outcome <> 0 is the same bar the ladder and the trait cache use: a run
+	 * still in progress has not dealt anything the board can trust yet.
+	 * `scoring` mirrors dhcb_ladder() exactly -- Fighters that landed
+	 * something -- so the per-Fighter figure on this map and the one the
+	 * ladder ranks on are the same number and cannot disagree.
+	 */
+	$res = @$conn->query(
+		"SELECT r.user_id, u.username, u.discord_id, u.avatar,
+		        COALESCE(SUM(r.dealt), 0) AS dealt, COUNT(*) AS runs,
+		        COALESCE(SUM(r.crew_size), 0) AS fielded,
+		        COALESCE(SUM(CASE WHEN r.dealt > 0 THEN r.crew_size ELSE 0 END), 0) AS scoring,
+		        COUNT(DISTINCT r.day) AS weeks_in,
+		        COUNT(DISTINCT CONCAT(r.day, ':', " . skl_week_day_sql('r.started_at') . ")) AS rounds,
+		        MAX(r.wave) AS whi
+		   FROM dhc_boss_runs r
+		   INNER JOIN users u ON u.id = r.user_id
+		  WHERE r.day >= '$ef' AND r.day <= '$ew' AND r.outcome <> 0
+		  GROUP BY r.user_id");
+	if ($res) while ($x = $res->fetch_assoc()) {
+		$uid = (int)$x['user_id'];
+		if ($uid <= 0) continue;
+		$scoring = (int)$x['scoring'];
+		$out['players'][$uid] = array(
+			'id'      => $uid,
+			'name'    => (string)$x['username'],
+			'avatar'  => function_exists('avatar_url') ? avatar_url($x['discord_id'], $x['avatar']) : '',
+			'dealt'   => (int)$x['dealt'],
+			'runs'    => (int)$x['runs'],
+			'fielded' => (int)$x['fielded'],
+			/* Damage per Fighter that landed something -- dhcb_ladder()'s
+			   ranking number, carried so the map can SAY why its biggest
+			   circle is not always the board's first row. */
+			'per'     => $scoring > 0 ? (int)round((int)$x['dealt'] / $scoring) : 0,
+			'rounds'  => (int)$x['rounds'],
+			'weeksIn' => (int)$x['weeks_in'],
+			'top'     => max(1, (int)$x['whi']),
+			'waves'   => array(),
+			'kills'   => array(),
+			'fighters'=> array(),
+		);
+		$out['dealt'] += (int)$x['dealt'];
+		$out['runs']  += (int)$x['runs'];
+	}
+	if (!$out['players']) return $out;
+	$in = implode(',', array_map('intval', array_keys($out['players'])));
+
+	/* ---- 2. the waves that stood, and what each cost ---- */
+	/*
+	 * FROM dhc_boss_day, NOT FROM THE BUDGET FORMULA. max_health is what the
+	 * crew was actually sized to on the night it spawned; recomputing it
+	 * from dhcb_crew_budget() would re-derive today's community against last
+	 * month's wave and draw a shell nobody ever fought.
+	 */
+	$res = @$conn->query(
+		"SELECT day, wave, boss_key, max_health, health, killed_at, killed_by
+		   FROM dhc_boss_day
+		  WHERE day >= '$ef' AND day <= '$ew'
+		  ORDER BY day ASC, wave ASC, boss_key ASC");
+	$byWave = array();
+	if ($res) while ($x = $res->fetch_assoc()) {
+		$k = $x['day'] . '#' . (int)$x['wave'];
+		if (!isset($byWave[$k])) {
+			$byWave[$k] = array('day' => (string)$x['day'], 'wave' => (int)$x['wave'],
+			                    'max' => 0, 'left' => 0, 'bosses' => array(),
+			                    'cleared' => true, 'killers' => array());
+		}
+		$boss = dhcb_boss($x['boss_key']);
+		$dead = ($x['killed_at'] !== null);
+		$byWave[$k]['max']  += (int)$x['max_health'];
+		$byWave[$k]['left'] += max(0, (int)$x['health']);
+		$byWave[$k]['bosses'][] = array(
+			'key'  => (string)$x['boss_key'],
+			'name' => $boss ? $boss['name'] : (string)$x['boss_key'],
+			'art'  => dhcb_art($x['boss_key']),
+			'max'  => (int)$x['max_health'],
+			'left' => max(0, (int)$x['health']),
+			'dead' => $dead,
+			'by'   => $dead ? (int)$x['killed_by'] : 0,
+		);
+		if (!$dead) $byWave[$k]['cleared'] = false;
+		if ($dead && (int)$x['killed_by'] > 0) {
+			$byWave[$k]['killers'][(string)$x['boss_key']] = (int)$x['killed_by'];
+			if (isset($out['players'][(int)$x['killed_by']]))
+				$out['players'][(int)$x['killed_by']]['kills'][] = (string)$x['boss_key'];
+		}
+	}
+	foreach ($byWave as $w) {
+		if ($w['cleared']) $out['downed']++;
+		$out['waves'][] = $w;
+	}
+
+	/* ---- 3. which waves each player was present for ---- */
+	/*
+	 * THE SPOKE'S ONLY JOB. Every line on this map points at the same centre,
+	 * so the line itself says nothing beyond "took part" -- it is the waves
+	 * it crosses that carry when somebody was here. Scoped to ONE week,
+	 * because wave numbers restart every Thursday and a union across four
+	 * weeks would claim a player fought a wave 5 that four different crews
+	 * each had.
+	 */
+	if ($weeks === 1) {
+		$res = @$conn->query(
+			"SELECT user_id, wave, COUNT(*) AS n, COALESCE(SUM(dealt), 0) AS dealt
+			   FROM dhc_boss_runs
+			  WHERE day = '$ew' AND outcome <> 0 AND user_id IN ($in)
+			  GROUP BY user_id, wave");
+		if ($res) while ($x = $res->fetch_assoc()) {
+			$uid = (int)$x['user_id'];
+			if (!isset($out['players'][$uid])) continue;
+			$out['players'][$uid]['waves'][(int)$x['wave']] =
+				array('runs' => (int)$x['n'], 'dealt' => (int)$x['dealt']);
+		}
+	}
+
+	/* ---- 4. the Fighters each of them fielded ---- */
+	/*
+	 * THE PORTRAITS ARE THE POINT OF A CLUSTER, the same as on the Rivalries
+	 * map: a ring of dots says how many, a ring of Fighters says who. Ordered
+	 * by damage so the ones the renderer has room for are the ones that did
+	 * the work.
+	 */
+	$res = @$conn->query(
+		"SELECT rf.fighter_id, r.user_id, f.serial, f.name, f.traits,
+		        COALESCE(SUM(rf.dealt), 0) AS dealt, COUNT(*) AS runs,
+		        COALESCE(SUM(rf.fell), 0) AS fell
+		   FROM dhc_boss_run_fighters rf
+		   INNER JOIN dhc_boss_runs r ON r.id = rf.run_id
+		   LEFT JOIN dhc_fighters f ON f.id = rf.fighter_id
+		  WHERE r.day >= '$ef' AND r.day <= '$ew' AND r.outcome <> 0
+		    AND r.user_id IN ($in)
+		  GROUP BY rf.fighter_id, r.user_id, f.serial, f.name, f.traits
+		  ORDER BY dealt DESC");
+	if ($res) while ($x = $res->fetch_assoc()) {
+		$uid = (int)$x['user_id'];
+		if (!isset($out['players'][$uid])) continue;
+		$traits = json_decode((string)$x['traits'], true);
+		$out['fighters'][$uid][] = array(
+			'id'      => (int)$x['fighter_id'],
+			'serial'  => (int)$x['serial'],
+			'name'    => ($x['name'] !== null && $x['name'] !== '')
+			             ? (string)$x['name']
+			             : (function_exists('dhcf_default_name')
+			                ? dhcf_default_name((int)$x['serial']) : '#' . (int)$x['serial']),
+			'traits'  => is_array($traits) ? $traits : array(),
+			'dealt'   => (int)$x['dealt'],
+			'runs'    => (int)$x['runs'],
+			'fell'    => (int)$x['fell'],
+		);
+	}
+	foreach ($out['players'] as $uid => $p)
+		$out['players'][$uid]['crews'] = count(isset($out['fighters'][$uid]) ? $out['fighters'][$uid] : array());
+
+	return $out;
+}
+
+/**
+ * Swap each Fighter's trait set for the layers that draw it, and drop the
+ * traits. Separate from dhcb_siege() for the reason dhca_rivalry_art() is
+ * separate: the art directory is a property of the page, and the recipe must
+ * not reach the client.
+ */
+function dhcb_siege_art(&$s, $webroot, $base) {
+	foreach ($s['fighters'] as $uid => $list) {
+		foreach ($list as $i => $f) {
+			$layers = array();
+			if (function_exists('dhcf_layers')) {
+				foreach (dhcf_layers($f['traits'], $webroot) as $L) {
+					$layers[] = array(
+						/* The 250px masters. A portrait on this map is tens of
+						   pixels across; the 1000px art would be a hundred
+						   needless megabytes on a busy week. */
+						'src'  => $base . '/250/' . $L['cat'] . '/' . $L['slug'] . '.png',
+						'n'    => (float)$L['nudge'],
+						'clip' => $L['clip'],
+					);
+				}
+			}
+			$s['fighters'][$uid][$i]['layers'] = $layers;
+			unset($s['fighters'][$uid][$i]['traits']);
+		}
+	}
+}
+
+/**
+ * The siege as the renderer wants it: nodes with radii, shells with radii.
+ *
+ * SIZED ON sqrt, TWICE, for the reason dhca_rivalry_layout() gives once --
+ * area is what the eye reads on a circle, so a linear radius claims a
+ * tenfold difference where there is one of ten in area. It matters more here
+ * than there, because boss damage spans orders of magnitude where battle
+ * counts do not.
+ *
+ * THE SHELLS ARE THE WAVES, nested, each sized on sqrt(max_health). That
+ * geometry is the week's real shape rather than decoration: a wave is
+ * budgeted against the DAYS LEFT, so wave 1 is a fat outer ring and the late
+ * ones collapse inward exactly as fast as they get cheaper to drop.
+ *
+ * MIN_STEP exists because that collapse is severe. On a measured week the
+ * last two waves land three pixels apart, and two shells three pixels apart
+ * are one thick line -- the drawing would be honest and unreadable, which
+ * is not honest.
+ */
+function dhcb_siege_layout($s, $rmin = 16, $rmax = 46, $shellMax = 120, $shellMin = 26, $step = 9) {
+	$nodes = array();
+	$biggest = 0;
+	foreach ($s['players'] as $p) $biggest = max($biggest, $p['dealt']);
+
+	foreach ($s['players'] as $id => $p) {
+		$share = $biggest > 0 ? sqrt($p['dealt'] / $biggest) : 0;
+		$node = $p;
+		$node['r'] = (int)round($rmin + ($rmax - $rmin) * $share);
+		$node['fighters'] = isset($s['fighters'][$id]) ? $s['fighters'][$id] : array();
+		$nodes[$id] = $node;
+	}
+
+	/* The shells, outermost (wave 1) first. Only the single-week view has
+	   shells at all -- see dhcb_siege(): wave numbers restart every week, so
+	   a four-week window has four wave 1s and nesting them is nonsense. */
+	$shells = array();
+	$gap    = (float)$step;
+	if ($s['weeks'] === 1 && $s['waves']) {
+		$fattest = 0;
+		foreach ($s['waves'] as $w) $fattest = max($fattest, (int)$w['max']);
+		foreach ($s['waves'] as $w) {
+			$sh = $w;
+			$sh['r'] = $fattest > 0
+				? (int)round($shellMin + ($shellMax - $shellMin) * sqrt($w['max'] / $fattest))
+				: $shellMax;
+			$shells[] = $sh;
+		}
+		/*
+		 * OUTERMOST FIRST, THEN FORCED APART IN ONE PASS INWARD. Walking
+		 * inward keeps wave 1 at the radius it earned and spends the squeeze
+		 * on the late waves, which are the ones that cost nothing anyway.
+		 *
+		 * THE STEP SHRINKS WHEN THE WAVES OUTNUMBER THE ROOM. A fixed 9px
+		 * gap is right for the five or six waves a week usually reaches and
+		 * walks straight past zero on a week that reached fifteen -- shells
+		 * at negative radii, which SVG draws as nothing at all. Dividing the
+		 * room by the shells that have to fit in it cannot do that.
+		 *
+		 * This was two passes, a forward clamp and a backward floor, and
+		 * EITHER ONE ALONE ENFORCED THE SPACING -- so disabling one changed
+		 * nothing and a harness could not tell which was load-bearing.
+		 * Mutation found it. One pass, one rule.
+		 */
+		usort($shells, function ($a, $b) { return $b['r'] <=> $a['r']; });
+		$floor = 10.0;
+		$n     = count($shells);
+		$gap   = $n > 1 ? min((float)$step, max(0.5, ($shells[0]['r'] - $floor) / ($n - 1)))
+		                : (float)$step;
+		/* Every shell has to leave room for all the ones inside it. On a
+		   normal week this binds nowhere and the radii stay exactly what the
+		   health earned them; on a deep one it pushes the middle outward
+		   just far enough, degrading toward even spacing only where there is
+		   genuinely no room to be proportional. */
+		for ($i = 0; $i < $n; $i++)
+			$shells[$i]['r'] = max((float)$shells[$i]['r'], $floor + ($n - 1 - $i) * $gap);
+		/* And clear the one outside it. */
+		for ($i = 1; $i < $n; $i++)
+			$shells[$i]['r'] = min((float)$shells[$i]['r'], $shells[$i - 1]['r'] - $gap);
+		foreach ($shells as $i => $sh) $shells[$i]['r'] = (int)round($sh['r']);
+	}
+
+	/* The per-week summary the wide views get instead of shells: how deep
+	   each week got, in order, so the trend reads across weeks rather than
+	   the structure within one. */
+	$byWeek = array();
+	foreach ($s['waves'] as $w) {
+		$k = $w['day'];
+		if (!isset($byWeek[$k])) $byWeek[$k] = array('day' => $k, 'top' => 0, 'downed' => 0, 'max' => 0);
+		$byWeek[$k]['top'] = max($byWeek[$k]['top'], (int)$w['wave']);
+		$byWeek[$k]['max'] += (int)$w['max'];
+		if (!empty($w['cleared'])) $byWeek[$k]['downed']++;
+	}
+	ksort($byWeek);
+
+	return array('nodes' => $nodes, 'shells' => $shells, 'shellGap' => $gap,
+	             'weeks' => $s['weeks'], 'week' => $s['week'], 'from' => $s['from'],
+	             'byWeek' => array_values($byWeek),
+	             'dealt' => $s['dealt'], 'runs' => $s['runs'], 'downed' => $s['downed'],
+	             'biggest' => $biggest);
+}
+
 /* ---------- reports --------------------------------------------------------- */
 
 /*

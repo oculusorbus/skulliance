@@ -146,6 +146,10 @@ try { execFileSync('php', [path.join(__dirname, 'rivalries-fixture.php'), tmp], 
 catch (e) { console.log('FAIL  cannot build the fixture: ' + (e.stderr || e.message)); process.exit(2); }
 const LAYOUTS = JSON.parse(fs.readFileSync(path.join(tmp, 'layouts.json'), 'utf8'));
 const kitSrc = fs.readFileSync(path.join(__dirname, 'map-kit.js'), 'utf8');
+/* dhc-crew-kit.js owns the packing, the portrait and the trait-layer
+   geometry, shared with the Siege map. Loaded the same way the page
+   loads it: after map-kit.js, before the map. */
+const crewSrc = fs.readFileSync(path.join(__dirname, 'dhc-crew-kit.js'), 'utf8');
 const rivSrc = fs.readFileSync(path.join(__dirname, 'rivalries.js'), 'utf8');
 
 /*
@@ -231,7 +235,7 @@ function draw(layout, winH, boxW, me) {
       };
     },
   };
-  new Function('document', 'window', kitSrc + '\n' + rivSrc)(global.document, global.window);
+  new Function('document', 'window', kitSrc + '\n' + crewSrc + '\n' + rivSrc)(global.document, global.window);
   return host;
 }
 
@@ -1339,7 +1343,10 @@ console.log('\n-- clicking a Fighter opens the COLLECTION\'s panel --');
   ok(!/border-radius\s*:\s*50%/.test(artRule), 'the panel does not round it into a circle');
   ok(/aspect-ratio\s*:\s*1/.test(artRule), 'and keeps it square');
   /* The map's own satellites stay circular -- that is a different job. */
-  ok(/r: fr - 1/.test(rivSrc), 'the map still clips its satellites to a disc');
+  /* The clip moved to dhc-crew-kit.js with the rest of the portrait when the
+     Siege map started drawing Fighters too; the claim is unchanged and so is
+     the behaviour, only its address. */
+  ok(/r: fr - 1/.test(crewSrc), 'the map still clips its satellites to a disc');
   for (const cls of spanCls) {
     const rule = (css2.match(new RegExp('\\.[\\w-]*\\s*\\.' + cls + '\\s*\\{([^}]*)\\}')) || [])[1];
     if (!rule) continue;

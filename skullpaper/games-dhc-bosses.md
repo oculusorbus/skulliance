@@ -165,6 +165,58 @@ A quiet week gets a smaller crew. A busy one gets a bigger crew and the same
 chance of clearing it. It is never sized beyond what the week can physically
 deliver, so a perfect week always clears it.
 
+## The Siege map
+
+The ladder says where you stand. **Siege** says how the week is going, and who
+is carrying it — which is the question a shared bar invites and a per-player
+board cannot answer.
+
+It has **its own tab** in the DHC strip, next to Rivalries. The boss crew sits
+in the middle and everyone who sent a Crew at it is ringed around the outside,
+with the Fighters they fielded drawn as portraits.
+
+**The rings in the middle are this week's waves.** Each one is sized by the
+health that wave was actually given, which makes the picture the real shape of
+the week rather than decoration: wave 1 is the big outer ring because it stands
+for most of the week, and every later wave shrinks inward exactly as fast as it
+gets cheaper to drop — see **They get back up** above on how a wave is budgeted
+against the days that are left. The crew still standing is the solid ring with
+the portraits inside it; the waves already down are dashed.
+
+| What you see | What it means |
+|---|---|
+| A bigger circle | That player put more damage into the bar |
+| A bigger portrait | That Fighter dealt more of it |
+| A thicker line | More damage down that line |
+| A longer line | They were here earlier — it reaches as far in as the waves they fought |
+| An amber line and ring | They landed a last blow on a boss |
+| An amber dot on a ring | Which boss, and on which wave |
+
+**A line's length is when you turned up, not how well you did.** A player's line
+reaches inward as far as the earliest wave they fought, so somebody who was
+there from Thursday crosses every ring and somebody who arrived on Wednesday has
+a short one near the middle. That is deliberately the only thing the wave you
+reached says about you: wave 1 stands for roughly four of the week's seven days,
+so "got to wave 5" means "played late in the week", not "is strong". Nothing on
+the map sizes or ranks anyone by it.
+
+**Circles are sized on total damage; the ladder ranks on damage per Fighter.**
+Those are different numbers on purpose. Contribution to a shared bar really is
+raw damage, so that is what a circle carries — but the ladder deliberately
+divides by Fighters fielded so that a large roster cannot win on volume alone.
+The biggest circle on the map is therefore not always the top row of the board.
+Both figures are on every label.
+
+**Three windows: this week, 4 weeks and 13 weeks.** They are whole weeks rather
+than rolling days, because a boss crew belongs to exactly one week and the week
+turns at 4pm Thursday — a rolling seven days would straddle that and show damage
+against a crew that no longer exists. Over more than one week the middle shows
+how deep each week got instead of one week's waves, since wave numbers restart
+every Thursday.
+
+The map is **public**, like the Collection and Rivalries: every name and avatar
+on it is already on the weekly ladder.
+
 ## The weekly ladder
 
 Everybody who sends a Crew appears. The minimum decides who can hold a **position** and who is paid, not who is listed, so if you are a Crew or two short the board tells you how many rather than leaving you off it.

@@ -10,7 +10,8 @@
  * ONE FILE, INCLUDED ON EVERY DHC PAGE, so the strip cannot drift into four
  * slightly different strips. Set $dhcnav_at before including:
  *
- *     $dhcnav_at = 'fighters' | 'collection' | 'arena' | 'bosses' | 'sandbox';
+ *     $dhcnav_at = 'fighters' | 'collection' | 'arena' | 'bosses' | 'rivalries'
+ *                | 'siege' | 'sandbox';
  *     include 'dhc-nav.php';
  *
  * SIGNED OUT, ONE OF THE THREE IS A TRAP. The Arena and the Collection are
@@ -61,6 +62,14 @@ $dhcnav_items = array(
 	   Arena has been doing, and every name and avatar on it is already on a
 	   leaderboard. Label is the noun and hint the verb, like the rest. */
 	'rivalries'  => array('rivalries.php',   'Rivalries',  'watch',  0, 0),
+	/* NEXT TO RIVALRIES, because they are the same kind of object: one is
+	   players against each other and one is everyone against the same crew,
+	   and both are pictures rather than places to play. That is also why
+	   neither is in header.php's Play list -- see the note there.
+	   The hint is `track` and not a second `watch`: you come back to this
+	   one across the week as the bars come down, which is a different
+	   relationship than watching a feud. */
+	'siege'      => array('siege.php',       'Siege',      'track',  0, 0),
 	'sandbox'    => array('dhcsandbox.php',  'Sandbox',    'experiment', 0, 0),
 );
 ?>
@@ -74,11 +83,16 @@ $dhcnav_items = array(
    column of the page it jumps into. */
 .dhcnav a.only-mobile{display:none}
 @media (max-width:700px){
-  /* TWO ROWS, NOT A SIDEWAYS SCROLLER. Five chips do not fit a phone, and a
-     horizontal scroller hides whichever ones overflow behind a gesture
-     nobody is told about -- the same trap the trait grid had. Wrapping costs
-     about thirty pixels and shows all five. The strip sits below the navbar
-     in normal flow, so nothing here can reach the burger. */
+  /* WRAPPED, NOT A SIDEWAYS SCROLLER. The chips do not fit a phone in one
+     row, and a horizontal scroller hides whichever ones overflow behind a
+     gesture nobody is told about -- the same trap the trait grid had.
+     Wrapping costs a row and shows all of them. The strip sits below the
+     navbar in normal flow, so nothing here can reach the burger.
+
+     It was five chips when this was written and is eight now, which is
+     three rows on a narrow phone. Still every chip visible, which is the
+     property that matters; if it grows again the answer is fewer entries,
+     not a scroller. */
   .dhcnav{flex-wrap:wrap;overflow-x:visible}
   .dhcnav a{flex:1 1 auto;align-items:center}
   .dhcnav a.only-mobile{display:flex}
