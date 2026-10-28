@@ -20,21 +20,42 @@ let fails = 0;
 const ok = (c, w) => { if (!c) { fails++; console.log('FAIL  ' + w); } else console.log('ok    ' + w); };
 
 /* ---- a DOM stub that records what was built ---- */
+/*
+ * THE STUB HAS TO BE WRONG IN THE SAME WAYS THE DOM IS, or it grades a
+ * different renderer than the one that ships.
+ *
+ * `children` was a plain Array here. In a browser it is an HTMLCollection,
+ * which has NO forEach -- and siege.js walked the tree with
+ * `(el.children || []).forEach ? ... : null`, so live it never recursed at
+ * all, collected nothing, and hover did nothing. Every check passed,
+ * because the Array in this file answered a method the real thing does not
+ * have. So children is array-LIKE here now: indices and length, no
+ * iteration helpers, exactly like the real one.
+ *
+ * classList, querySelectorAll and closest are real for the same reason:
+ * stubbing them to no-ops is how an interaction layer gets shipped without
+ * ever being exercised.
+ */
 function makeEl(tag) {
+  const kids = [];
   const el = {
-    tagName: tag, children: [], attrs: {}, _class: '', _text: '', parent: null,
+    tagName: tag, _kids: kids, attrs: {}, _class: '', _text: '', parent: null,
     setAttribute(k, v) { if (k === 'class') this._class = String(v); this.attrs[k] = String(v); },
-    getAttribute(k) { return k === 'class' ? this._class : (k in this.attrs ? this.attrs[k] : null); },
-    appendChild(c) { c.parent = this; this.children.push(c); return c; },
-    /* map-kit.js's measurer appends a probe and takes it straight back out;
-       without removeChild the hidden svg grows forever and the first call
-       throws. */
-    removeChild(c) { const i = this.children.indexOf(c); if (i > -1) this.children.splice(i, 1); return c; },
+    getAttribute(k) { return k === 'class' ? (this._class || null) : (k in this.attrs ? this.attrs[k] : null); },
+    removeAttribute(k) { delete this.attrs[k]; if (k === 'class') this._class = ''; },
+    appendChild(c) { c.parent = this; kids.push(c); return c; },
+    removeChild(c) { const i = kids.indexOf(c); if (i > -1) kids.splice(i, 1); return c; },
+    /* An HTMLCollection: indices and length, and nothing else. */
+    get children() {
+      const col = { length: kids.length, item: i => kids[i] || null };
+      kids.forEach((k, i) => { col[i] = k; });
+      return col;
+    },
     get textContent() { return this._text; },
     set textContent(v) { this._text = String(v); },
     /*
      * A PLAUSIBLE TEXT WIDTH, not zero -- the same 0.58em per character
-     * rivalries-harness.js uses, and for the same reason it records: a stub
+     * rivalries-harness.js uses, and for the reason it records: a stub
      * answering 0 makes every label weightless, which is exactly how a
      * canvas sized from measured labels passes while a long username runs
      * off the edge.
@@ -43,15 +64,56 @@ function makeEl(tag) {
       const fs = parseFloat(this.attrs['font-size']) || 11;
       return this._text.length * fs * 0.58;
     },
-    set innerHTML(v) { if (v === '') this.children = []; },
-    get innerHTML() { return ''; },
-    style: {}, classList: { add() {}, remove() {}, contains() { return false; } },
-    addEventListener() {}, getBoundingClientRect() { return { width: 600, height: 400, top: 0, left: 0 }; },
-    querySelector() { return null; }, querySelectorAll() { return []; },
+    _html: '',
+    set innerHTML(v) { this._html = String(v); if (v === '') kids.length = 0; },
+    get innerHTML() { return this._html; },
+    get classList() {
+      const self = this;
+      const list = () => (self._class ? self._class.split(/[ ]+/).filter(Boolean) : []);
+      const put = a => { self._class = a.join(' '); self.attrs['class'] = self._class; };
+      return {
+        contains: c => list().indexOf(c) > -1,
+        add(c) { const a = list(); if (a.indexOf(c) < 0) { a.push(c); put(a); } },
+        remove(c) { put(list().filter(x => x !== c)); },
+        toggle(c, on) { (on === undefined ? !this.contains(c) : on) ? this.add(c) : this.remove(c); },
+      };
+    },
+    /* Enough of a selector engine for ".cls" and "tag", which is all either
+       map asks for. Anything else throws rather than quietly matching
+       nothing -- a selector that silently returns [] is how this whole
+       layer went untested. */
+    matches(sel) {
+      if (sel.charAt(0) === '.') return this.classList.contains(sel.slice(1));
+      if (/^[a-z]+$/i.test(sel)) return this.tagName === sel;
+      if (/^[a-z]*\[[a-z-]+\]$/i.test(sel)) {
+        const m = sel.match(/^([a-z]*)\[([a-z-]+)\]$/i);
+        return (!m[1] || this.tagName === m[1]) && this.getAttribute(m[2]) != null;
+      }
+      throw new Error('stub selector not supported: ' + sel);
+    },
+    closest(sel) { let n = this; while (n) { if (n.matches && n.matches(sel)) return n; n = n.parent; } return null; },
+    querySelectorAll(sel) {
+      const out = [];
+      (function go(n) { kidsOf(n).forEach(c => { if (c.matches(sel)) out.push(c); go(c); }); })(this);
+      return out;
+    },
+    querySelector(sel) { return this.querySelectorAll(sel)[0] || null; },
+    _on: {},
+    addEventListener(t, fn) { (this._on[t] = this._on[t] || []).push(fn); },
+    /* Bubbling, because the click handling is delegated to the host. */
+    fire(t, ev) {
+      ev = ev || {}; ev.target = ev.target || this;
+      let n = this;
+      while (n) { (n._on[t] || []).forEach(fn => fn(ev)); n = n.parent; }
+    },
+    style: {},
+    getBoundingClientRect() { return { width: 600, height: 400, top: 0, left: 0, bottom: 400, right: 600 }; },
   };
   return el;
 }
-function walk(el, fn) { fn(el); el.children.forEach(c => walk(c, fn)); }
+function kidsOf(el) { return el && el._kids ? el._kids : []; }
+
+function walk(el, fn) { fn(el); kidsOf(el).forEach(c => walk(c, fn)); }
 function all(root, pred) { const out = []; walk(root, e => { if (pred(e)) out.push(e); }); return out; }
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'siege-'));
@@ -61,26 +123,74 @@ const L = JSON.parse(fs.readFileSync(path.join(tmp, 'layouts.json'), 'utf8'));
 
 const kitSrc  = fs.readFileSync(path.join(__dirname, 'map-kit.js'), 'utf8');
 const crewSrc = fs.readFileSync(path.join(__dirname, 'dhc-crew-kit.js'), 'utf8');
+/* dhc-map-export.js owns the download/copy buttons, shared with the
+   Rivalries map. Loaded the same way the page loads it. */
+const expSrc  = fs.readFileSync(path.join(__dirname, 'dhc-map-export.js'), 'utf8');
 const sgSrc   = fs.readFileSync(path.join(__dirname, 'siege.js'), 'utf8');
 
 function draw(layout, me) {
   const host = makeEl('div');
   const body = makeEl('body');
+  /* The page's own panel elements, so the click paths have somewhere to go.
+     A stub that answers null for these makes openPlayer() return early and
+     a broken click look exactly like a working one. */
+  const veil = makeEl('div'); veil.hidden = true;
+  const pbody = makeEl('div');
+  const closeBtn = makeEl('button');
+  const dlBtn = makeEl('button'), cpBtn = makeEl('button'), note = makeEl('span');
+  const byId = { 'sg-map': host, 'sg-veil': veil, 'sg-body': pbody, 'sg-close': closeBtn,
+                 'sg-download': dlBtn, 'sg-copy': cpBtn, 'sg-shot-note': note };
   const doc = {
     body: body,
-    getElementById: id => (id === 'sg-map' ? host : null),
+    getElementById: id => byId[id] || null,
     createElement: makeEl,
     createElementNS: (ns, tag) => makeEl(tag),
     querySelector: () => null, querySelectorAll: () => [],
     addEventListener() {},
   };
+  const opened = { fighters: [] };
   const win = { SIEGE_DATA: layout, SIEGE_ARM_SPLIT: 50, SIEGE_ME: me || 0,
                 document: doc, addEventListener() {}, innerHeight: 900, innerWidth: 1400,
-                devicePixelRatio: 1, getComputedStyle: () => ({ getPropertyValue: () => '' }) };
+                devicePixelRatio: 1, getComputedStyle: () => ({ getPropertyValue: () => '' }),
+                DHC_MODAL: { open(f) { opened.fighters.push(f); } },
+                fetch: url => { opened.fetched = url;
+                  return Promise.resolve({ ok: false, status: 0,
+                    json: () => Promise.resolve({ ok: true, fighter: { serial: 1 } }) }); },
+                /*
+                 * EVERYTHING dhc-map-export.js GUARDS ON, so the real path
+                 * runs rather than the "this browser cannot" branch -- which
+                 * hides both buttons and makes a dead wiring look deliberate.
+                 *
+                 * requestIdleCallback IS STRICT ON PURPOSE, the same as in
+                 * rivalries-harness.js: its second argument is an
+                 * IdleRequestOptions object, not setTimeout's milliseconds,
+                 * and the real one throws on a number. A lenient stub lets
+                 * the exact bug that once killed both buttons straight
+                 * through.
+                 */
+                requestIdleCallback(fn, opts) {
+                  if (opts !== undefined && (typeof opts !== 'object' || opts === null))
+                    throw new TypeError("Failed to execute 'requestIdleCallback' on 'Window': "
+                      + 'The provided value is not of type IdleRequestOptions.');
+                  return 1;
+                },
+                setTimeout(fn, ms) {
+                  if (typeof ms !== 'number' && ms !== undefined) throw new TypeError('bad delay');
+                  return 1;
+                },
+                XMLSerializer: function () { this.serializeToString = () => '<svg/>'; },
+                FileReader: function () {},
+                sklImage: { canvasBlob: () => ({}), save: () => Promise.resolve(''),
+                            copy: () => Promise.resolve(''), canCopy: () => true } };
   win.window = win;
-  new Function('document', 'window', 'globalThis',
-               kitSrc + '\n' + crewSrc + '\n' + sgSrc)(doc, win, win);
-  return { host: host, svg: host.children[0] };
+  /* fetch as a PARAMETER. A bare `fetch` in the map resolves to the real
+     global one in node, not to win.fetch -- so the click would fire a live
+     request at a relative URL and the check would see nothing. In a browser
+     the two are the same object; here they have to be made so. */
+  new Function('document', 'window', 'globalThis', 'fetch',
+               kitSrc + '\n' + crewSrc + '\n' + expSrc + '\n' + sgSrc)(doc, win, win, win.fetch);
+  return { host: host, svg: kidsOf(host)[0], veil: veil, pbody: pbody, opened: opened,
+           dlBtn: dlBtn, cpBtn: cpBtn, note: note };
 }
 
 console.log('-- one week --');
@@ -160,7 +270,7 @@ if (centre.x !== null) {
   const clash = [];
   clusters.forEach(g => {
     /* A cluster's avatar is the filled #0a1929 disc in its own group. */
-    const av = g.children.filter(e => e.tagName === 'circle' && e.getAttribute('fill') === '#0a1929')
+    const av = kidsOf(g).filter(e => e.tagName === 'circle' && e.getAttribute('fill') === '#0a1929')
                          .sort((a, b) => parseFloat(b.getAttribute('r')) - parseFloat(a.getAttribute('r')))[0];
     if (!av) return;
     const d = Math.hypot(parseFloat(av.getAttribute('cx')) - centre.x,
@@ -226,7 +336,7 @@ ok(bRings.length === 0, 'a multi-week window draws no wave shells');
    rects that cut a single-sided arm out of its two-arm master -- one per
    Fighter drawn -- so it counted four portraits as four weeks. */
 const coreG = all(B.svg, e => e.getAttribute('class') === 'sg-core')[0];
-const bars = coreG ? coreG.children.filter(e => e.tagName === 'rect') : [];
+const bars = coreG ? kidsOf(coreG).filter(e => e.tagName === 'rect') : [];
 ok(bars.length === L.wide.byWeek.length,
    `one bar per week instead (${bars.length} of ${L.wide.byWeek.length})`);
 const outB = outside(B.svg, bW, bH);
@@ -252,7 +362,72 @@ const caps = all(B.svg, e => e.tagName === 'text' && /played/.test(e.textContent
 ok(caps.length === 1 && caps[0].textContent.indexOf(String(L.wide.weeks)) === 0,
    'the caption leads with the window: "' + (caps[0] ? caps[0].textContent : '') + '"');
 
-console.log('\n-- the interactions exist --');
+console.log('\n-- the interactions actually run --');
+/*
+ * DISPATCHED, NOT INSPECTED. The first cut of this asserted that the data
+ * attributes were present and called it covered -- and the map shipped with
+ * hover doing nothing at all, because siege.js walked the tree with
+ * `el.children.forEach` and an HTMLCollection has no forEach. Checking that
+ * a hook EXISTS says nothing about whether anything is holding it.
+ */
+const hv = draw(L.week, 1);
+const hClusters = hv.svg.querySelectorAll('.sg-cluster');
+const hLines = hv.svg.querySelectorAll('.sg-line');
+ok(hClusters.length > 1, `the fixture has clusters to isolate between (${hClusters.length})`);
+const mine = hClusters[0], other = hClusters[1];
+const myId = mine.getAttribute('data-id');
+mine.fire('mouseenter');
+ok(!mine.classList.contains('sg-dim'), 'the hovered player stays lit');
+ok(other.classList.contains('sg-dim'), 'every other player dims');
+const myLine = hLines.filter(l => l.getAttribute('data-id') === myId)[0];
+const otherLine = hLines.filter(l => l.getAttribute('data-id') !== myId)[0];
+ok(!!myLine && myLine.classList.contains('sg-march'), "the hovered player's line marches");
+ok(!!otherLine && otherLine.classList.contains('sg-dim'), 'and the rest dim');
+/* NEITHER CLASS ON A DIMMED LINE, never both: a CSS animation beats an
+   ordinary declaration, so a dimmed line still marching keeps animating its
+   own opacity and the dim never lands. */
+ok(!otherLine.classList.contains('sg-march'), 'a dimmed line is not also marching');
+mine.fire('mouseleave');
+ok(!other.classList.contains('sg-dim') && !myLine.classList.contains('sg-march'),
+   'leaving puts every line and cluster back');
+
+console.log('\n-- clicking opens the panels --');
+const sat = hv.svg.querySelectorAll('.sg-sat').filter(x => x.getAttribute('data-serial') !== '0')[0];
+ok(!!sat, 'there is a live Fighter to click');
+sat.fire('click');
+ok(/dhc-fighter\.php\?serial=/.test(hv.opened.fetched || ''),
+   'clicking a Fighter asks the Collection endpoint: ' + (hv.opened.fetched || 'nothing'));
+/* A disassembled one must not: there is no serial the endpoint could
+   resolve, and a panel that opens empty is worse than one that does not. */
+hv.opened.fetched = null;
+const goneSat = hv.svg.querySelectorAll('.sg-sat-gone')[0];
+if (goneSat) { goneSat.fire('click'); }
+ok(!hv.opened.fetched, 'clicking a disassembled Fighter asks for nothing');
+/* And the player panel. */
+ok(hv.veil.hidden === true, 'the player panel starts closed');
+mine.fire('click');
+ok(hv.veil.hidden === false, 'clicking a player opens the panel');
+ok((hv.pbody.innerHTML || '').indexOf(D_name(L.week, myId)) > -1,
+   'and the panel is about the player that was clicked');
+function D_name(layout, id) { return layout.nodes[id].name; }
+
+console.log('\n-- the picture buttons are wired --');
+/*
+ * THE SAME CHECK rivalries-harness.js MAKES, and for the same reason: these
+ * are wired at the very end of the map script, so anything that throws
+ * between drawing the map and reaching them leaves two buttons that look
+ * live and do nothing. The map shipped once with no buttons at all and
+ * once with hover dead; a dead button is the same failure wearing a
+ * different hat.
+ */
+ok((hv.dlBtn._on.click || []).length === 1,
+   `sg-download has ${(hv.dlBtn._on.click || []).length} click handlers after the script runs`);
+ok((hv.cpBtn._on.click || []).length === 1,
+   `sg-copy has ${(hv.cpBtn._on.click || []).length} click handlers after the script runs`);
+ok(hv.dlBtn.hidden !== true && hv.cpBtn.hidden !== true,
+   'the buttons were hidden although this browser can export');
+
+console.log('\n-- the hooks are addressable --');
 /*
  * FOUR THINGS THE ARENA MAP HAS AND THIS ONE SHIPPED WITHOUT, all reported
  * in a row because the gap was systematic rather than four oversights: the

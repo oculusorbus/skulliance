@@ -482,14 +482,18 @@
      would highlight without ever dimming. rivalries.js records the same
      trap; it is not tidiness, it is the only way the dim applies.
   */
-  const lineEls = [];
-  const clusterEls = [];
-  (function collect(el) {
-    const c = el.getAttribute && el.getAttribute('class');
-    if (c === 'sg-line') lineEls.push(el);
-    if (c === 'sg-cluster') clusterEls.push(el);
-    (el.children || []).forEach ? Array.prototype.forEach.call(el.children, collect) : null;
-  })(svg);
+  /*
+   * querySelectorAll, NOT A HAND-ROLLED WALK.
+   *
+   * The walk this replaces recursed with `(el.children || []).forEach`, and
+   * el.children is an HTMLCollection -- which has no forEach. So the
+   * condition was undefined, the ternary did nothing, nothing was ever
+   * collected and hover did nothing at all on the live page. It passed here
+   * because the test stub's children was a plain Array. The stub is honest
+   * about that now, and this asks the DOM the way rivalries.js does.
+   */
+  const lineEls = Array.prototype.slice.call(svg.querySelectorAll('.sg-line'));
+  const clusterEls = Array.prototype.slice.call(svg.querySelectorAll('.sg-cluster'));
 
   function focus(id) {
     const idle = (id == null);
@@ -606,6 +610,18 @@
     });
     veil.hidden = false;
   }
+
+  /* ---- taking a picture of it -------------------------------------------
+     dhc-map-export.js, the same one the Rivalries map uses. Everything in
+     there was learned the hard way once -- secure static mode, the idle
+     warm-up, and the clipboard write having to stay inside the click's own
+     activation -- and a copy would fail silently, which is the worst shape
+     a bug can take on a button. */
+  if (window.DHCMapExport) window.DHCMapExport.wire({
+    host: host, stem: 'skulliance-siege', bg: '#050c14', scale: 2,
+    expose: 'sgExportBlob',
+    ids: { download: 'sg-download', copy: 'sg-copy', note: 'sg-shot-note' },
+  });
 
   /*
    * DELEGATED, not bound per node: a Fighter opens its own panel, anything

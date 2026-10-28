@@ -150,6 +150,9 @@ const kitSrc = fs.readFileSync(path.join(__dirname, 'map-kit.js'), 'utf8');
    geometry, shared with the Siege map. Loaded the same way the page
    loads it: after map-kit.js, before the map. */
 const crewSrc = fs.readFileSync(path.join(__dirname, 'dhc-crew-kit.js'), 'utf8');
+/* dhc-map-export.js owns the download/copy buttons, shared with the Siege
+   map. Loaded the same way the page loads it. */
+const expSrc = fs.readFileSync(path.join(__dirname, 'dhc-map-export.js'), 'utf8');
 const rivSrc = fs.readFileSync(path.join(__dirname, 'rivalries.js'), 'utf8');
 
 /*
@@ -235,7 +238,7 @@ function draw(layout, winH, boxW, me) {
       };
     },
   };
-  new Function('document', 'window', kitSrc + '\n' + crewSrc + '\n' + rivSrc)(global.document, global.window);
+  new Function('document', 'window', kitSrc + '\n' + crewSrc + '\n' + expSrc + '\n' + rivSrc)(global.document, global.window);
   return host;
 }
 

@@ -134,6 +134,13 @@ include 'header.php';
 .sg-key .k-gone{width:9px;height:9px;border-radius:50%;
   background:#0a1929;border:1.5px dashed rgba(122,158,176,.7)}
 .sg-note{font-size:10.5px;color:var(--dim);margin:10px 0 0;line-height:1.6;max-width:none}
+.sg-shot{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 0}
+.sg-shot button{font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
+  font-family:inherit;padding:6px 12px;border-radius:3px;border:1px solid var(--line);
+  background:transparent;color:var(--bone)}
+.sg-shot button:hover{border-color:var(--ochre);color:var(--ochre)}
+.sg-shot button[hidden]{display:none}
+#sg-shot-note{font-size:10px;color:var(--dim);letter-spacing:.04em}
 .sg-empty{padding:28px 16px;text-align:center;color:var(--dim);font-size:12.5px;
   background:#050c14;border:1px solid var(--line);border-radius:4px}
 .sg-stats{display:flex;flex-wrap:wrap;gap:4px 18px;margin:0 0 10px;font-size:11px;color:var(--dim)}
@@ -245,6 +252,15 @@ include 'header.php';
     <p class="sg-note">Hover a player to isolate their line. Click one to open their
        week; click a Fighter to open it in the Collection's panel.</p>
 
+    <?php /* Hidden by dhc-map-export.js when the browser cannot do it, rather
+             than rendered conditionally: whether a clipboard write is allowed
+             is a browser fact and the server has no business guessing it. */ ?>
+    <div class="sg-shot">
+      <button type="button" id="sg-download">Download image</button>
+      <button type="button" id="sg-copy">Copy image</button>
+      <span id="sg-shot-note"></span>
+    </div>
+
     <?php
       /*
        * SAID OUT LOUD, because the two numbers genuinely disagree and the
@@ -311,6 +327,9 @@ include 'header.php';
          Both before siege.js, and all three after the markup it writes into. */ ?>
 <script src="map-kit.js?var=<?php echo rand(0,999); ?>"></script>
 <script src="dhc-crew-kit.js?var=<?php echo rand(0,999); ?>"></script>
+<?php /* dhc-map-export.js: the download/copy buttons, shared with the
+         Rivalries map. Needs js/save-image.js, which header.php carries. */ ?>
+<script src="dhc-map-export.js?var=<?php echo rand(0,999); ?>"></script>
 <script src="siege.js?var=<?php echo rand(0,999); ?>"></script>
 <?php endif; ?>
 <?php $conn->close(); ?>

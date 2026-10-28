@@ -23,7 +23,10 @@ const fs = require('fs'), path = require('path');
 let fail = 0;
 const ok = (c, what) => { if (!c) { fail++; console.log('  FAIL  ' + what); } };
 
-const src = fs.readFileSync(path.join(__dirname, 'rivalries.js'), 'utf8');
+/* THE EXPORT MOVED TO dhc-map-export.js when the Siege map needed the same
+   buttons. This file slices named pieces out of it by hand, so it follows
+   the code rather than the page -- the claims are unchanged. */
+const src = fs.readFileSync(path.join(__dirname, 'dhc-map-export.js'), 'utf8');
 
 /* ---- the SVG the renderer would have built ---- */
 function makeSvg(hrefs) {
@@ -95,7 +98,7 @@ function run(hrefs, opts) {
 
 	/* Lift exportBlob() and the two constants it closes over. */
 	const grab = (name) => {
-		const a = src.indexOf('  function ' + name + '(');
+		const a = src.indexOf('function ' + name + '(');
 		let o = src.indexOf('{', a), d = 0;
 		for (let i = o; i < src.length; i++) {
 			if (src[i] === '{') d++;
@@ -103,17 +106,19 @@ function run(hrefs, opts) {
 		}
 		throw new Error('unbalanced ' + name);
 	};
-	const consts = src.slice(src.indexOf('  const SCALE = 2;'), src.indexOf('  const dataUri'));
-	const dataUriSrc = src.slice(src.indexOf('  const dataUri'), src.indexOf('  function exportBlob'));
+	const consts = src.slice(src.indexOf('const SCALE = o.scale'), src.indexOf('const dataUri'));
+	const dataUriSrc = src.slice(src.indexOf('const dataUri'), src.indexOf('function exportBlob'));
 
 	const body = [consts, dataUriSrc, grab('exportBlob'),
 	              'return exportBlob();'].join('\n');
+	/* `o` is wire()'s options object, which the lifted lines now read SCALE
+	   and BG from. Defaults here, the same ones the pages pass. */
 	const fn = new Function('window', 'document', 'host', 'fetch', 'FileReader',
-	                        'XMLSerializer', 'Image', 'URL',
+	                        'XMLSerializer', 'Image', 'URL', 'o',
 		'"use strict";\n' + body);
 
 	return fn(win, doc, { querySelector: () => svg }, win.fetch, win.FileReader,
-	          win.XMLSerializer, win.Image, global.URL)
+	          win.XMLSerializer, win.Image, global.URL, { scale: 2, bg: '#050c14' })
 		.then((blob) => ({ blob, asked, serialised, filled, canvasSize, drawn }));
 }
 

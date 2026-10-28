@@ -450,6 +450,9 @@ window.RIVALRY_ME        = <?php echo (int)$riv_user; ?>;
          geometry, shared with the Siege map. After map-kit.js, which owns
          svgEl() and the text measurer, and before the map that uses it. */ ?>
 <script src="dhc-crew-kit.js?var=<?php echo rand(0,999); ?>"></script>
+<?php /* dhc-map-export.js: the download/copy buttons, shared with the Siege
+         map. Needs js/save-image.js, which the page already loads. */ ?>
+<script src="dhc-map-export.js?var=<?php echo rand(0,999); ?>"></script>
 <script src="rivalries.js?var=<?php echo rand(0,999); ?>"></script>
 <?php endif; ?>
 <?php
