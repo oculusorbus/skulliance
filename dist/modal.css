@@ -10,6 +10,31 @@
   overflow: auto; /* Enable scroll if needed */
   background-color: rgb(0,0,0); /* Fallback color */
   background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+  /*
+   * THE SAFE AREA, AND WHY A MODAL NEEDS IT WHEN THE PAGE DOES NOT.
+   *
+   * header.php sets viewport-fit=cover, so in an installed PWA the viewport
+   * starts UNDER the status bar and notch. flexbox.css pays for that once,
+   * with padding-top: env(safe-area-inset-top) on body -- which moves all
+   * ordinary page content down into the visible area.
+   *
+   * A modal is position:fixed, so its containing block is the VIEWPORT, not
+   * body. It never saw that padding. top:0 is therefore the true top of the
+   * screen and the modal opened roughly fifty pixels above everything else,
+   * with its header under the clock. Reported as modals "shifted up" in the
+   * PWA, on every location and at every scroll position -- and invisible in
+   * a browser tab, where every inset is 0 and these four lines do nothing.
+   *
+   * PADDING, NOT top/height. The dim background has to keep covering the
+   * whole screen including the notch strip, or there is an undimmed band
+   * above the overlay. Padding insets the CONTENT and leaves the backdrop
+   * full-bleed. `* { box-sizing: border-box }` in flexbox.css is what keeps
+   * height:100% honest once the padding is there.
+   */
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 /* The Close Button */

@@ -497,6 +497,46 @@ ok(!preg_match('/#quick-menu\s*\{[^}]*bottom:\s*calc\(env\(safe-area-inset-botto
 ok(strpos($flex, 'body:has(#quick-menu[style*="block"])::after') === false,
    'the body::after masking strip is back; it exists only to hide the gap under a '
  . 'lifted bar, and the bar is not lifted any more');
+/*
+ * A MODAL SITS INSIDE THE SAFE AREA, AND ONLY A PWA EVER NOTICED.
+ *
+ * header.php sets viewport-fit=cover, so in an installed PWA the viewport
+ * begins UNDER the status bar. flexbox.css pays for that once, with
+ * padding-top: env(safe-area-inset-top) on body -- but a modal is
+ * position:fixed, so its containing block is the VIEWPORT and it never saw
+ * that padding. Every modal on the platform opened about fifty pixels
+ * above everything else with its header behind the clock.
+ *
+ * MEASURED, with a real iPhone inset substituted for env() because headless
+ * Chrome reports every inset as 0: the modal title rendered at y=35 against
+ * a status bar ending at 47. With the padding it lands at 82.
+ *
+ * PADDING, NOT top/height -- which is the way somebody will be tempted to
+ * fix it next. The dim backdrop has to keep covering the whole screen
+ * including the notch strip; insetting the box itself leaves an undimmed
+ * band above the overlay. So top:0 and height:100% MUST survive.
+ */
+/* COMMENTS STRIPPED FIRST. The note explaining this fix contains the words
+   `* { box-sizing: border-box }` -- so a non-greedy match for the rule's
+   closing brace stopped inside the comment and read half a rule. Same trap
+   as matching PHP prose instead of PHP code, in a different language. */
+$modalcss = preg_replace('~/\*.*?\*/~s', '', file_get_contents(__DIR__ . '/dist/modal.css'));
+preg_match('/\.modal\s*\{(.*?)\}/s', $modalcss, $mm);
+$mrule = isset($mm[1]) ? $mm[1] : '';
+ok($mrule !== '', 'the .modal rule could not be found in dist/modal.css');
+ok(preg_match('/padding-top:\s*env\(safe-area-inset-top/', $mrule) === 1,
+   'a modal ignores the safe area, so in the PWA it opens under the status bar with its '
+ . 'header behind the clock -- invisible in a browser tab, where every inset is 0');
+ok(preg_match('/padding-bottom:\s*env\(safe-area-inset-bottom/', $mrule) === 1,
+   'a modal runs under the home indicator at the bottom of the screen');
+ok(preg_match('/top:\s*0/', $mrule) === 1 && preg_match('/height:\s*100%/', $mrule) === 1,
+   'the safe area was paid for by moving the modal box instead of padding it, which '
+ . 'leaves an undimmed band above the overlay');
+/* And the global border-box is what keeps height:100% honest with padding on. */
+ok(preg_match('/\*\s*\{[^}]*box-sizing:\s*border-box/', $flex) === 1,
+   'flexbox.css no longer sets box-sizing:border-box globally, so .modal height:100% '
+ . 'plus the safe-area padding now overflows the screen');
+
 printf("  preload generated from realm_con_names(): %s; sticky nav: %s\n",
 	$genPreload ? 'yes' : 'no',
 	preg_match('/\.rl-nav\s*\{[^}]*position:\s*sticky/', $src) ? 'yes' : 'no');
