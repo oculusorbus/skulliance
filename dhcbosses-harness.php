@@ -2932,6 +2932,58 @@ ok($bar($parts),
    'the settle no longer uses the same qualifying bar as the grid, so a box can fill '
  . 'without paying a trait');
 
+/*
+ * WHAT THE LINE UNDER THE GRID SAYS A ROUND IS WORTH -- LIFTED AND RUN.
+ *
+ * It is four lines of accumulator inside dhcarena.php, and it was wrong in
+ * the one state nobody tests by hand: the round you have ALREADY played.
+ * The loop only ever read the 'today' slot, and a round you have sent a
+ * Crew at is 'filled', so $nowWorth kept its initialiser and the page said
+ * "this round is worth 1" under a grid of x3 boxes. Reported from a phone
+ * at wave 6.
+ *
+ * So the loop is cut out of the page and EXECUTED against the three states
+ * it has to answer in. A grep for 'nowWorth' would have passed on the bug.
+ */
+$sumSrc = substr($ARE, strpos($ARE, '$filled = 0; $banked = 0;'));
+$sumSrc = substr($sumSrc, 0, strpos($sumSrc, '} ?>') + 1);
+ok(strpos($sumSrc, "=== 'today'") !== false && strlen($sumSrc) < 600,
+   'the cache summary loop could not be lifted out of dhcarena.php: ' . strlen($sumSrc) . ' bytes');
+$summarise = function ($slots) use ($sumSrc) {
+	$dhcb_slots = $slots;
+	$filled = 0; $banked = 0; $nowWorth = 0; $nowOpen = false;
+	eval($sumSrc);
+	return array('filled'=>$filled, 'banked'=>$banked,
+	             'worth'=>$nowWorth, 'open'=>$nowOpen);
+};
+$slot = function ($state, $traits) { return array('state'=>$state, 'traits'=>$traits); };
+/* The reported screen: rounds 1-2 missed, 3-6 played at waves 1, 2, 3 and 6,
+   round 6 is now and is already filled, round 7 still to come at wave 6. */
+$played = $summarise(array(
+	$slot('missed',0), $slot('missed',0), $slot('filled',1), $slot('filled',2),
+	$slot('filled',3), $slot('filled',3), $slot('open',3)));
+ok($played['banked'] === 9, 'the grid and the banked count disagree: ' . $played['banked']);
+ok($played['filled'] === 4, 'the rounds count is not the filled boxes: ' . $played['filled']);
+ok($played['worth'] === 3,
+   'a round already sent leaves the page saying the next one is worth '
+ . $played['worth'] . ' when the standing wave pays 3');
+ok($played['open'] === false,
+   'the page offers "this round is worth" for a round that is already banked');
+/* Same week, one round earlier: this round is still open. */
+$openNow = $summarise(array(
+	$slot('missed',0), $slot('missed',0), $slot('filled',1), $slot('filled',2),
+	$slot('filled',3), $slot('today',3),  $slot('open',3)));
+ok($openNow['open'] === true && $openNow['worth'] === 3,
+   'an open round does not read as open and worth 3: ' . json_encode($openNow));
+/* Nothing left to earn, and the sentence must not invent one. */
+$full = $summarise(array_fill(0, 7, $slot('filled', 3)));
+ok($full['worth'] === 0 && $full['open'] === false && $full['filled'] === 7,
+   'a full week still advertises a round to come: ' . json_encode($full));
+/* A worth of zero must never reach the page as a number. */
+ok(preg_match('~elseif\s*\(\$nowWorth > 0\):~', $ARE) === 1
+   && preg_match('~if\s*\(\$nowOpen\):~', $ARE) === 1,
+   'the sentence no longer branches on whether this round is still open, so a banked '
+ . 'round is priced as if it were not');
 $days = substr($LIB, strpos($LIB, 'function dhcb_cache_days'));
 $days = substr($days, 0, strpos($days, "\nfunction "));
 ok(strpos($days, 'DHCB_CACHE_MAX') !== false, 'the cache is uncapped');

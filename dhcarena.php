@@ -2313,10 +2313,19 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <?php endforeach; ?>
         </div>
 
-        <?php if ($dhcb_slots): $filled = 0; $banked = 0; $nowWorth = 1;
+        <?php /* WHAT A ROUND BANKS FROM HERE, off the first slot still to be
+                 earned -- 'today' if this round is still open, otherwise the
+                 next one. It used to read only the 'today' slot and fall back
+                 to a hard 1, so the moment you sent a Crew this round the line
+                 under a grid of x3 boxes read "this round is worth 1". Every
+                 unearned slot already carries dhcb_round_traits() of the wave
+                 standing now, so the first of them is the answer. */ ?>
+        <?php if ($dhcb_slots): $filled = 0; $banked = 0; $nowWorth = 0; $nowOpen = false;
           foreach ($dhcb_slots as $sl) {
-            if ($sl['state'] === 'filled') { $filled++; $banked += (int)$sl['traits']; }
-            if ($sl['state'] === 'today') $nowWorth = max(1, (int)$sl['traits']);
+            if ($sl['state'] === 'filled') { $filled++; $banked += (int)$sl['traits']; continue; }
+            if ($sl['state'] === 'missed') continue;
+            if ($sl['state'] === 'today') $nowOpen = true;
+            if (!$nowWorth) $nowWorth = max(1, (int)$sl['traits']);
           } ?>
         <?php /* THE CACHE, AS SEVEN BOXES RATHER THAN A NUMBER.
                  A count going up is information; Wednesday sitting visibly
@@ -2369,9 +2378,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         <div class="a-bsum a-cachenote">
           <b><?php echo (int)$banked; ?></b> trait<?php echo $banked === 1 ? '' : 's'; ?> banked
           · <?php echo (int)$filled; ?> of <?php echo count($dhcb_slots); ?> rounds
-          <?php if ($filled < count($dhcb_slots)): ?>
+          <?php if ($nowOpen): ?>
             · this round is worth <b><?php echo (int)$nowWorth; ?></b>
-          <?php else: ?>
+          <?php elseif ($nowWorth > 0): ?>
+            · the next round is worth <b><?php echo (int)$nowWorth; ?></b>
+          <?php elseif ($filled === count($dhcb_slots)): ?>
             · a full week
           <?php endif; ?>
         </div>
