@@ -2005,6 +2005,24 @@ section.active {
 	
 	.row, .navbar {   
 		flex-direction: column;
+		/*
+		 * NOWRAP IS NOT TIDYING. IT IS WHY THE PAGE FITS.
+		 *
+		 * .row carries flex-wrap: wrap for the desktop two-column layout
+		 * (.side 30% + .main 70%). Flipping direction to column here left
+		 * the wrap on, and a MULTI-LINE COLUMN flex container does not take
+		 * its width from its containing block -- it takes it from its flex
+		 * line, and the line is sized to the items' max-content. So .main
+		 * came out 465px wide inside a 390px .row, measured, and every
+		 * child stretched to that: the sticky nav, the panels and the
+		 * mission cards all clipped at the same point off the right of the
+		 * screen, which is what missions.php looked like on a phone.
+		 *
+		 * It is not .main's fault and min-width: 0 does not touch it -- the
+		 * overflow is the LINE, not the item. There is nothing to wrap in a
+		 * single column anyway, so the wrap was only ever carrying this.
+		 */
+		flex-wrap: nowrap;
 	}
 	.navbar-first {
 		margin-left: 0;

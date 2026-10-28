@@ -447,6 +447,12 @@ define('MS_FIELD_CAP', 24);
 .ms-mcard-body { flex: 1 1 auto; min-width: 0; padding: 10px 12px 0;
   display: flex; flex-direction: column; gap: 8px; }
 .ms-mcard-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+/* THE TITLE HALF HAS TO BE ALLOWED TO SHRINK. Its own div is a flex item,
+   so min-width: auto makes its minimum the nowrap title's full width -- which
+   on a 320px screen pushed the clock off the right of the card and clipped it
+   against overflow: hidden. The ellipsis on .ms-mcard-title only works once
+   the box around it can get smaller than the text. */
+.ms-mcard-top > div { min-width: 0; }
 .ms-mcard-title { display: block; color: #e8eaed; font-weight: bold; font-size: .92rem;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ms-mcard-sub { display: block; font-size: .72rem; color: #7a9eb0; }
@@ -501,21 +507,25 @@ define('MS_FIELD_CAP', 24);
  * color-scheme: dark is the belt and braces -- it tells a browser that
  * ignores both to paint its native scrollbar dark instead of light.
  */
-.ms-projects, .ms-d-scroll, .ms-d-crew, .ms-drawer {
+.ms-nav, .ms-projects, .ms-d-scroll, .ms-d-crew, .ms-drawer {
   color-scheme: dark;
   scrollbar-width: thin;
   scrollbar-color: #2a4050 transparent;
 }
+.ms-nav::-webkit-scrollbar,
 .ms-projects::-webkit-scrollbar, .ms-d-scroll::-webkit-scrollbar,
 .ms-d-crew::-webkit-scrollbar, .ms-drawer::-webkit-scrollbar { width: 8px; height: 8px; }
+.ms-nav::-webkit-scrollbar-track,
 .ms-projects::-webkit-scrollbar-track, .ms-d-scroll::-webkit-scrollbar-track,
 .ms-d-crew::-webkit-scrollbar-track, .ms-drawer::-webkit-scrollbar-track {
   background: transparent;
 }
+.ms-nav::-webkit-scrollbar-thumb,
 .ms-projects::-webkit-scrollbar-thumb, .ms-d-scroll::-webkit-scrollbar-thumb,
 .ms-d-crew::-webkit-scrollbar-thumb, .ms-drawer::-webkit-scrollbar-thumb {
   background: #2a4050; border-radius: 4px;
 }
+.ms-nav::-webkit-scrollbar-thumb:hover,
 .ms-projects::-webkit-scrollbar-thumb:hover, .ms-d-scroll::-webkit-scrollbar-thumb:hover,
 .ms-d-crew::-webkit-scrollbar-thumb:hover, .ms-drawer::-webkit-scrollbar-thumb:hover {
   background: rgba(0,200,160,.55);
