@@ -165,6 +165,19 @@ A quiet week gets a smaller crew. A busy one gets a bigger crew and the same
 chance of clearing it. It is never sized beyond what the week can physically
 deliver, so a perfect week always clears it.
 
+## When the week pays out
+
+The week closes at **4pm Thursday** and the traits are handed out shortly after,
+by a job that runs whether or not you are online. You will see them two ways:
+posted to Discord as they drop, and **revealed on the platform the next time you
+visit** — the same reveal a trait earned in a game gives you, played one after
+another for everything the week owed you.
+
+That second half did not work on the first payout. Traits awarded by a scheduled
+job have no browser session to hold a reveal in, so the week paid out and the
+platform said nothing about it. Fixed: anything awarded while you were away is
+replayed when you next arrive.
+
 ## The Siege map
 
 The ladder says where you stand. **Siege** says how the week is going, and who

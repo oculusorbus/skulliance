@@ -103,10 +103,21 @@ define('DHCF_REQUIRED', array('background', 'torso', 'head'));
  * How many un-shown reveals are parked in the session at once. Must be
  * larger than the biggest single payout, which is the welcome-back
  * package at one of every category (8) -- and that can coincide with an
- * invite paying three. Twelve covers both with room; see the note in
- * dhcf_commit_drop() for what going over actually costs.
+ * invite paying three. Twelve covered both with room.
+ *
+ * TWENTY-TWO NOW, because the DHC Bosses week outgrew it. A perfect week
+ * banks 7 x DHCB_WAVE_TRAITS_MAX = 21 traits, all awarded in one cron and
+ * all replayed on the player's next visit -- at twelve, nine of them would
+ * have been silently dropped from the reveal on the single biggest payout
+ * the platform has. One over, so the cap is visibly not the limit.
+ *
+ * This has been wrong three times now: five, then nine, then twelve. The
+ * pattern each time is a payout that pays MORE THAN ONE AT ONCE growing
+ * past a number chosen for the previous biggest. Over the cap the trait is
+ * still theirs and still in the ledger; they just never see it, and nothing
+ * anywhere looks wrong, which is what makes it worth overshooting.
  */
-if (!defined('DHCF_UNSEEN_MAX')) define('DHCF_UNSEEN_MAX', 12);
+if (!defined('DHCF_UNSEEN_MAX')) define('DHCF_UNSEEN_MAX', 22);
 
 /*
  * The artist, and where to send people who want to see more of the work.
@@ -1390,6 +1401,22 @@ function dhcf_band_label($key, $value = 0, $placement = null) {
  * will ever reach it.
  * ------------------------------------------------------------------ */
 define('DHCF_DAILY_CAP', 3);
+
+/*
+ * SOURCES THAT CANNOT PARK THEIR OWN REVEAL.
+ *
+ * dhcf_commit_drop() queues a reveal in the session of the player who
+ * earned the trait. A cron has no session, so a trait it awards reaches
+ * the player through Discord and nowhere else -- which is how the first
+ * DHC Bosses week paid out silently. dhcf_replay_unattended() shows these
+ * on the next visit.
+ *
+ * NAMED RATHER THAN "EVERYTHING SINCE LAST LOGIN", because referral traits
+ * are already replayed by ref_replay() and a second pass would show them
+ * twice. Add a source here only when it genuinely runs unattended.
+ */
+if (!defined('DHCF_UNATTENDED_SOURCES'))
+	define('DHCF_UNATTENDED_SOURCES', array('dhcbosses'));
 
 /**
  * Daily cap for one source. Override per game by adding 'cap' to its

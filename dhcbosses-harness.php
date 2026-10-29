@@ -3207,5 +3207,71 @@ ok(is_string($repayTool) && strpos($repayTool, 'dhcb_settle($conn, $week, false,
    'the repay tool does not call the settle in repay mode');
 
 
+/* ---------------------------------------------------------------- *
+ * A CRON-AWARDED TRAIT STILL GETS SEEN
+ * ---------------------------------------------------------------- */
+echo "\nthe weekly payout is visible on the platform, not only in Discord\n";
+/*
+ * WHAT WENT WRONG. dhcf_commit_drop() parks a reveal in the session of the
+ * player who earned the trait -- which is right, and which a cron cannot
+ * satisfy: the weekly settle runs from the command line, there is no
+ * session, and the guard scoping the queue to the earning player correctly
+ * refuses to park anywhere.
+ *
+ * So the first ever Bosses payout reached players through Discord and
+ * nowhere else. The traits were in the ledger and on their Fighters and
+ * the platform said nothing at all -- on the one mechanic whose whole
+ * point is a weekly reveal.
+ */
+$fl  = harness_strip_comments((string)@file_get_contents(__DIR__ . '/dhcfighters-lib.php'));
+$cfg = harness_strip_comments((string)@file_get_contents(__DIR__ . '/dhcfighters-config.php'));
+$skl = harness_strip_comments((string)@file_get_contents(__DIR__ . '/skulliance.php'));
+
+ok(strpos($fl, 'function dhcf_replay_unattended') !== false,
+   'nothing replays a trait awarded while the player was away');
+ok(strpos($cfg, 'DHCF_UNATTENDED_SOURCES') !== false,
+   'the sources that cannot park their own reveal are not named anywhere');
+ok(strpos($skl, 'dhcf_replay_unattended(') !== false,
+   'skulliance.php never calls the replay, so it runs nowhere -- this is the arrival path '
+ . 'and the only place the previous login is still readable');
+
+/*
+ * FENCED ON THE PREVIOUS LOGIN, like ref_replay(). The fence moves forward
+ * on arrival, so a drop cannot be replayed twice -- and it needs no new
+ * column. Reading last_login AFTER the UPDATE would make every returning
+ * player look active and replay nothing, which is a feature that silently
+ * does nothing.
+ */
+$replay = substr($fl, strpos($fl, 'function dhcf_replay_unattended'));
+$replay = substr($replay, 0, strpos($replay, "\nfunction "));
+ok(strpos($replay, '$prev_login') !== false && strpos($replay, "awarded_at > '\$since'") !== false,
+   'the replay is not fenced on the previous login, so it replays the same drops forever');
+ok(strpos($replay, 'source IN (') !== false,
+   'the replay takes every source, which double-shows the referral traits ref_replay() '
+ . 'already handles');
+ok(strpos($replay, 'dhcf_drop_payload(') !== false,
+   'the replay builds its own payload instead of the one a live drop uses, so a replayed '
+ . 'reveal can drift from a real one');
+$readsBeforeUpdate = strpos($skl, 'SELECT last_login FROM users') < strpos($skl, 'UPDATE users SET last_login');
+ok($readsBeforeUpdate,
+   'last_login is read after it is updated, so every returning player looks active and '
+ . 'nothing is ever replayed');
+
+/*
+ * AND THE QUEUE IS BIG ENOUGH FOR THE BIGGEST PAYOUT ON THE PLATFORM.
+ * A perfect boss week banks 7 x DHCB_WAVE_TRAITS_MAX, all awarded in one
+ * cron and all replayed on one visit. Over the cap the trait is still
+ * theirs and still in the ledger -- it is only the reveal that is lost,
+ * silently, which is exactly why this is asserted.
+ */
+ok(DHCF_UNSEEN_MAX > (int)DHCB_CACHE_MAX * (int)DHCB_WAVE_TRAITS_MAX,
+   sprintf('the reveal queue holds %d but a perfect boss week pays %d, so the biggest payout '
+         . 'on the platform loses its reveal',
+           DHCF_UNSEEN_MAX, (int)DHCB_CACHE_MAX * (int)DHCB_WAVE_TRAITS_MAX));
+/* The modal plays a queue rather than one drop, or the rest never appear. */
+$dm = (string)@file_get_contents(__DIR__ . '/dhc-dropmodal.php');
+ok(strpos($dm, 'var queue = pending.slice()') !== false,
+   'the drop modal shows one pending drop rather than playing the queue');
+
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all DHC Bosses checks passed\n");
 exit($fail ? 1 : 0);

@@ -486,6 +486,65 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
  * the announcement is skipped, which is the one part that is safe to
  * lose. Defaults to true, so every existing caller is unchanged.
  */
+/**
+ * Traits awarded while nobody was looking, replayed on the next visit.
+ *
+ * WHY THE SESSION QUEUE IS NOT ENOUGH. dhcf_commit_drop() parks a reveal in
+ * $_SESSION, which works for every drop a player earns while they are on
+ * the site. It cannot work for one awarded by a CRON: the weekly DHC Bosses
+ * settle runs from the command line, there is no session to park in, and
+ * the guard that scopes the queue to the earning player correctly refuses
+ * to park it anywhere.
+ *
+ * So the first ever Bosses payout reached players only through Discord.
+ * The traits were in the ledger and on their Fighters, and the platform
+ * said nothing at all -- which for the one mechanic built on a weekly
+ * reveal is most of the reward missing.
+ *
+ * FENCED ON THE PREVIOUS LOGIN, exactly as ref_replay() is and for the same
+ * reason: anything awarded after a player was last here is something they
+ * cannot have been shown. It needs no new column and cannot replay a drop
+ * twice, because the fence moves forward on arrival.
+ *
+ * SOURCES ARE NAMED, NOT INFERRED. Replaying "everything since last login"
+ * would double up on referral traits, which ref_replay() already handles,
+ * and on anything a future caller parks itself. A source lands here only
+ * when it genuinely has no session to park in.
+ */
+function dhcf_replay_unattended($conn, $user_id, $prev_login) {
+	$user_id = (int)$user_id;
+	if (!($conn instanceof mysqli) || $user_id <= 0) return array();
+	if (session_status() !== PHP_SESSION_ACTIVE) return array();
+	if ($prev_login === null || $prev_login === '') return array();
+
+	$sources = defined('DHCF_UNATTENDED_SOURCES')
+		? DHCF_UNATTENDED_SOURCES : array('dhcbosses');
+	if (!$sources) return array();
+	$in = array();
+	foreach ($sources as $src) $in[] = "'" . $conn->real_escape_string($src) . "'";
+
+	$since = $conn->real_escape_string($prev_login);
+	/* Bounded by the same cap the session queue uses: a full boss week can
+	   owe twenty-one, and a reveal queue is a nicety rather than a ledger.
+	   What is not shown is still theirs and still in dhc_trait_drops. */
+	$lim = (int)(defined('DHCF_UNSEEN_MAX') ? DHCF_UNSEEN_MAX : 12);
+	$r = $conn->query("SELECT category, slug, source FROM dhc_trait_drops
+	                    WHERE user_id = $user_id
+	                      AND source IN (" . implode(',', $in) . ")
+	                      AND awarded_at > '$since'
+	                 ORDER BY awarded_at ASC LIMIT $lim");
+	if (!$r) return array();
+
+	$out = array();
+	while ($row = $r->fetch_assoc()) {
+		/* Through the one function that builds a drop payload, so a replayed
+		   reveal cannot drift from a live one. */
+		$d = dhcf_drop_payload($conn, $user_id, $row['category'], $row['slug'], null, $row['source']);
+		if ($d) { $d['why'] = 'away'; $out[] = $d; }
+	}
+	return $out;
+}
+
 function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_detail = '', $announce = true) {
 	$sql = sprintf(
 		"INSERT INTO dhc_trait_drops (user_id, category, slug, tier, drop_rate, source, source_detail, awarded_at)
