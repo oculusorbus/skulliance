@@ -1,0 +1,271 @@
+{
+    "policy": "b3dab69f7e6100849434fb1781e34bd12a916557f6231b8d2629b6f6",
+    "assets": 2000,
+    "taken": "2026-10-29",
+    "loadMin": 1,
+    "loadMax": 9,
+    "slots": {
+        "Background": {
+            "coverage": 1994,
+            "values": {
+                "Gray Dawn": 203,
+                "Faded Ember": 197,
+                "Rosy Tide": 196,
+                "Molten Shore": 191,
+                "Azure Horizon": 185,
+                "Emerald Isle": 168,
+                "Crimson Seas": 138,
+                "Golden Mirage": 133,
+                "Cobalt Waves": 130,
+                "Lost Reef": 130,
+                "Royal Dusk": 111,
+                "Mystic Lagoon": 106,
+                "Twilight Abyss": 106
+            }
+        },
+        "Clothes": {
+            "coverage": 1994,
+            "values": {
+                "None": 130,
+                "Pirate's Tatter": 123,
+                "Regal Stripe": 116,
+                "Ropebound Rags": 108,
+                "Seaworn Binding": 106,
+                "Deckhand Tunic": 101,
+                "Lasso": 98,
+                "Tidebound Jacket": 96,
+                "Sailor's Accord": 74,
+                "Red Tide Wraps": 74,
+                "Greencrest Vest": 67,
+                "Grim Vest": 62,
+                "Worn Deckshirt": 59,
+                "Violet Buccaneer": 58,
+                "Bluewater Vest": 56,
+                "Vineweave Coat": 54,
+                "Golden Relic": 48,
+                "Olive Marauder": 48,
+                "Pirate's Talisman": 46,
+                "Bone Baron": 44,
+                "Crimson Sentinel": 43,
+                "Rogue's Red": 38,
+                "Royal Knave": 35,
+                "Shellpack": 34,
+                "Raven's Cloak": 32,
+                "Majestic Robe": 27,
+                "Golden Regalia": 26,
+                "Grim Raider": 25,
+                "Royal Scoundrel": 23,
+                "Golden Ivory": 23,
+                "Celestial Jewel": 18,
+                "Ruby Warlord": 18,
+                "Emerald Gold": 17,
+                "Sapphire Warlord": 17,
+                "Ethereal Cloak": 17,
+                "Treasure Crest": 17,
+                "Wings": 16
+            }
+        },
+        "Eyes": {
+            "coverage": 1994,
+            "values": {
+                "Intense": 150,
+                "Gaze": 145,
+                "Focus": 136,
+                "Cut": 130,
+                "Patch": 128,
+                "Green": 123,
+                "Brown": 116,
+                "Blue": 115,
+                "Amber": 98,
+                "Bronze": 88,
+                "Gray": 86,
+                "Wise": 83,
+                "Sapphire": 80,
+                "Emerald": 73,
+                "Scar": 63,
+                "Elder": 57,
+                "Powder": 56,
+                "Torn": 55,
+                "Chill": 48,
+                "Blind": 45,
+                "Eyeless": 44,
+                "Sewn": 44,
+                "Coin": 31
+            }
+        },
+        "Headwear": {
+            "coverage": 1994,
+            "values": {
+                "Mohawk": 202,
+                "Parted": 197,
+                "Bun": 188,
+                "Swab's Bandana": 182,
+                "Deckhand's Cap": 135,
+                "Bronze Sailor": 131,
+                "Dreads": 123,
+                "Stapled Skull": 92,
+                "Black Death": 91,
+                "Dusk Sailor": 77,
+                "Vineweave Brim": 76,
+                "Brain": 63,
+                "Bone Baron": 61,
+                "Horns": 59,
+                "Crimson Sentinel": 55,
+                "Royal Scoundrel": 49,
+                "Golden Bandana": 47,
+                "Majestic Cap": 35,
+                "Golden Regalia": 22,
+                "Sapphire Warlord": 16,
+                "Celestial Jewel": 16,
+                "Divine Halo": 15,
+                "Treasure Crest": 15,
+                "Emerald Gold": 15,
+                "Ethereal Hat": 12,
+                "Golden Crown": 10,
+                "King of the Pirates": 10
+            }
+        },
+        "Mouth": {
+            "coverage": 1994,
+            "values": {
+                "Smirk": 248,
+                "Scruff": 206,
+                "Closed": 205,
+                "Dark Curl": 159,
+                "Light Curl": 143,
+                "Toothpick": 141,
+                "Chops": 129,
+                "Light Mustache": 123,
+                "Pale Mustache": 98,
+                "Pipe": 91,
+                "Thick": 88,
+                "Clean": 70,
+                "Sewn": 61,
+                "Elder": 59,
+                "Viking": 55,
+                "Red": 51,
+                "Dagger": 23,
+                "Pearl": 22,
+                "Gold Beard": 11,
+                "Golden": 11
+            }
+        },
+        "Nose": {
+            "coverage": 1994,
+            "values": {
+                "Skinny": 285,
+                "Button": 264,
+                "Square": 232,
+                "Blocky": 224,
+                "Chiseled": 186,
+                "Aquiline": 179,
+                "Subtle": 168,
+                "Tall": 163,
+                "Flat": 157,
+                "Lumpy": 136
+            }
+        },
+        "Rank": {
+            "coverage": 2000,
+            "values": {
+                "Swab": 389,
+                "Deckhand": 319,
+                "Lookout": 280,
+                "Cook": 220,
+                "Sailmaker": 200,
+                "Carpenter": 181,
+                "Gunner": 160,
+                "Boatswain": 100,
+                "Quartermaster": 60,
+                "Navigator": 40,
+                "First Mate": 30,
+                "Captain": 15,
+                "Legendary": 6
+            }
+        },
+        "Skin": {
+            "coverage": 1994,
+            "values": {
+                "Pale": 308,
+                "Tanned": 306,
+                "Ebony": 299,
+                "Scarred": 252,
+                "Inked": 210,
+                "Powdered": 181,
+                "Frozen": 137,
+                "Crimson": 98,
+                "Ghoul": 78,
+                "Robotic": 55,
+                "Undead": 45,
+                "Golden": 25
+            }
+        },
+        "Weapon": {
+            "coverage": 1994,
+            "values": {
+                "None": 188,
+                "Swab's Edge": 184,
+                "Deckhand's Fury": 151,
+                "Plunderer's Pistol": 150,
+                "Corsair's Shot": 148,
+                "Black Sea Blade": 148,
+                "Tempest Blade": 131,
+                "Gunner's Pistol": 124,
+                "Hook's Hand": 118,
+                "Bone Club": 114,
+                "Reaper's Kiss": 92,
+                "Shark's Hook": 74,
+                "The Gunblade": 70,
+                "Golden Knuckles": 51,
+                "Blackbeard's Wrath": 48,
+                "The Royal Shot": 33,
+                "Captain's Longshot": 32,
+                "Captain's Judgment": 31,
+                "Ghoul Hunter": 25,
+                "Cosmic Pulse": 13,
+                "The Frost King's Blade": 13,
+                "Dragon's Breath": 12,
+                "Thunderblade": 12,
+                "Soulshot": 11,
+                "The Revenant's Strike": 11,
+                "The Burning Vengeance": 10
+            }
+        }
+    },
+    "scored": 2000,
+    "cuts": {
+        "strength": [
+            1.381952,
+            1.508638,
+            1.560667,
+            1.619789,
+            1.657577,
+            1.79588,
+            2.045757
+        ],
+        "tactics": [
+            1.033858,
+            1.075721,
+            1.124939,
+            1.145694,
+            1.177178,
+            1.211125
+        ],
+        "speed": [
+            -16.825101,
+            -16.34356,
+            -16.005489,
+            -15.718654,
+            -15.432606,
+            -15.099977
+        ],
+        "size": [
+            10.12155,
+            10.834644
+        ],
+        "type": [
+            9.7541,
+            11.174019
+        ]
+    }
+}

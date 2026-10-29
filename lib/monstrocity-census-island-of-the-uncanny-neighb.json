@@ -1,0 +1,29 @@
+{
+    "policy": "b0b93618e3f594ae0b56e4636bbd7e47d537f0642203d80e88a631e0",
+    "assets": 4,
+    "taken": "2026-10-29",
+    "loadMin": 0,
+    "loadMax": 3,
+    "slots": {
+        "Artist": {
+            "coverage": 3,
+            "values": {
+                "DARKULA": 3
+            }
+        },
+        "Collection": {
+            "coverage": 3,
+            "values": {
+                "Island of The Uncanny Neighbours": 3
+            }
+        },
+        "No. Editions": {
+            "coverage": 3,
+            "values": {
+                "1": 3
+            }
+        }
+    },
+    "scored": 0,
+    "cuts": []
+}

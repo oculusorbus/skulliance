@@ -1,0 +1,389 @@
+{
+    "policy": "d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779",
+    "assets": 5777,
+    "taken": "2026-10-29",
+    "loadMin": 1,
+    "loadMax": 16,
+    "slots": {
+        "Beard": {
+            "coverage": 954,
+            "values": {
+                "After Shave": 398,
+                "Goatee": 213,
+                "Chin Hair": 156,
+                "Chin Curtain": 91,
+                "Braided Beard Dark": 49,
+                "Braided Beard Violet": 37,
+                "Wavy Beard": 10
+            }
+        },
+        "Body": {
+            "coverage": 5585,
+            "values": {
+                "Tank Top": 1007,
+                "T-shirt Blank White": 892,
+                "Sleeveless Blouse": 621,
+                "Sleeveless Shirt": 496,
+                "Hawaiian Shirt Green": 310,
+                "New Wave Longsleeve": 293,
+                "Rocket Tattoo": 289,
+                "T-shirt Bug Brew": 245,
+                "Bushy Chest Hair": 231,
+                "T-shirt Cricket Bar": 200,
+                "Polkadot Shirt": 194,
+                "Rainbow Tank Top": 192,
+                "Hawaiian Shirt Pink": 167,
+                "Wings Tattoo": 121,
+                "Long Sleeve": 116,
+                "Star Tattoo": 83,
+                "T-shirt Universe 25": 23,
+                "T-shirt Lion Legends": 17,
+                "T-shirt Degen Crypto Club": 17,
+                "T-shirt Derp Birds": 15,
+                "T-shirt The Mandrillz": 15,
+                "T-shirt Ada Ninjaz": 14,
+                "T-shirt Horrocubes": 13,
+                "T-shirt Cypherkicks": 8,
+                "Custom": 6
+            }
+        },
+        "Cheek": {
+            "coverage": 2994,
+            "values": {
+                "Bandage": 694,
+                "Blush Makeup": 684,
+                "Heart": 498,
+                "Smiley": 453,
+                "Kiss Mark": 447,
+                "Freckles": 218
+            }
+        },
+        "Earrings": {
+            "coverage": 5127,
+            "values": {
+                "Small Earring": 1138,
+                "Punk Earrings": 840,
+                "Cross": 818,
+                "Violet Bolt Earring": 547,
+                "Red Bolt Earring": 417,
+                "Grey Cardano Earring": 327,
+                "Golden Earring": 310,
+                "Round Plate Earring": 263,
+                "Blue Cardano Earring": 262,
+                "Triangle Earring": 205
+            }
+        },
+        "Eyes": {
+            "coverage": 5774,
+            "values": {
+                "Bored": 677,
+                "Wink": 575,
+                "Raised Eyebrow": 563,
+                "Scared": 474,
+                "Side Glance": 465,
+                "Closed": 381,
+                "Different Colours": 375,
+                "Teary": 343,
+                "Spaced Out": 317,
+                "Super Spaced Out": 315,
+                "Neon Green": 277,
+                "Dark Makeup": 245,
+                "Heartbreaker": 237,
+                "Tech Green": 233,
+                "Tech Dark": 147,
+                "Green Makeup": 144,
+                "Custom": 6
+            }
+        },
+        "Glasses": {
+            "coverage": 2843,
+            "values": {
+                "Miami Yellow": 618,
+                "Goggles": 494,
+                "Wayfarer": 429,
+                "Reflective": 263,
+                "Round": 234,
+                "Hearts": 181,
+                "One Piece": 172,
+                "Monocle": 172,
+                "Headset": 171,
+                "Mutant Crocs": 109
+            }
+        },
+        "Hair": {
+            "coverage": 5550,
+            "values": {
+                "Short Red": 553,
+                "Peroxide Blonde": 533,
+                "Courtain": 373,
+                "Hairsprayed": 348,
+                "Combed Back": 324,
+                "Backcombed Blue": 317,
+                "Orange Mohawk": 310,
+                "Hairsprayed With Headkerchief": 260,
+                "Unkept": 242,
+                "Wavy Violet": 238,
+                "Semi Long Blonde": 197,
+                "Side Ponytail": 188,
+                "Fade": 183,
+                "Blue Mohawk": 161,
+                "Wavy": 153,
+                "Afro With Bandana": 131,
+                "Long Under Bandana": 130,
+                "Green Mohawk": 123,
+                "Shaved Sides": 121,
+                "Curly": 99,
+                "Afro": 97,
+                "Glam Blonde": 92,
+                "White Duke Dark": 86,
+                "Balding": 85,
+                "Shaved": 63,
+                "Glam Orange": 59,
+                "Combover": 40,
+                "White Duke Fire": 38,
+                "Custom": 6
+            }
+        },
+        "Hat": {
+            "coverage": 719,
+            "values": {
+                "Top Hat": 480,
+                "Insect Hat": 144,
+                "Fancy Hat With Butterfly": 71,
+                "Green Top Hat": 24
+            }
+        },
+        "Headphones": {
+            "coverage": 1572,
+            "values": {
+                "Headphones Small": 1121,
+                "Headphones Large": 451
+            }
+        },
+        "Moustache": {
+            "coverage": 913,
+            "values": {
+                "Small Moustache": 322,
+                "Pomaded Moustache": 234,
+                "Parted Moustache": 162,
+                "Light Bushy Moustache": 111,
+                "Dark Bushy Moustache": 84
+            }
+        },
+        "Mouth": {
+            "coverage": 5774,
+            "values": {
+                "Cloth Mask": 678,
+                "Pink Mask": 541,
+                "Neutral Full Lips": 445,
+                "Smile": 382,
+                "Neutral Brown": 380,
+                "Lollipop": 358,
+                "Dark Mask": 332,
+                "Neutral With Green Lipstick": 295,
+                "Neutral Grey": 283,
+                "Bubblegum Pink": 276,
+                "Neutral With Red Lipstick": 251,
+                "Smirk": 185,
+                "Cigarette": 184,
+                "Pout": 184,
+                "Bubblegum Blue": 158,
+                "Diastema": 147,
+                "Earth Natives Mask": 130,
+                "Scared": 122,
+                "Tongue": 112,
+                "Bubblegum Green": 90,
+                "Missing Tooth": 65,
+                "Golden Tooth": 65,
+                "Tongue With Pill": 57,
+                "Violet Teeth": 30,
+                "Distaste": 18,
+                "Custom": 6
+            }
+        },
+        "Necklace": {
+            "coverage": 2871,
+            "values": {
+                "Choker": 697,
+                "Golden Necklace": 588,
+                "Leather": 567,
+                "Golden Chain": 403,
+                "Short Pearl Necklace": 301,
+                "Long Pearl Necklace": 113,
+                "Amber Necklace Medium": 90,
+                "Amber Necklace Small": 84,
+                "Amber Necklace Large": 28
+            }
+        },
+        "Outerwear": {
+            "coverage": 5333,
+            "values": {
+                "Sleeveless Jacket": 575,
+                "Badlands Jacket": 459,
+                "Bomber Jacket": 456,
+                "Tracksuit": 451,
+                "Sweatshirt": 384,
+                "Denim Jacket": 383,
+                "Moss Jacket": 242,
+                "Moss Jacket With Flower": 235,
+                "Leather Jacket With Cables": 226,
+                "Thick Pink Jacket": 187,
+                "Moss Jacket With Insect": 162,
+                "Moss Jacket With Mushrooms": 154,
+                "Fancy Shirt": 150,
+                "Night Dress": 138,
+                "Solar Jacket": 137,
+                "Lab Coat": 129,
+                "Formal Jacket": 123,
+                "Formal Jacket With Card": 114,
+                "Black Coat": 106,
+                "Green Coat": 101,
+                "Formal Jacket With Phone": 90,
+                "Formal Jacket With Pack": 81,
+                "Formal Jacket With Green Console": 74,
+                "Formal Jacket With Floppy": 72,
+                "Formal Jacket With Grey Console": 56,
+                "Soho Kids Jacket": 42,
+                "Custom": 6
+            }
+        },
+        "Phase": {
+            "coverage": 5774,
+            "values": {
+                "First Quarter Moon": 2369,
+                "Waxing Gibbous Moon": 1180,
+                "Waxing Crescent Moon": 1110,
+                "Full Moon": 558,
+                "New Moon": 557
+            }
+        },
+        "Skin": {
+            "coverage": 5774,
+            "values": {
+                "Peach": 2533,
+                "Violet": 1648,
+                "Pink": 1022,
+                "Blue": 379,
+                "Teal": 192
+            }
+        },
+        "Special": {
+            "coverage": 725,
+            "values": {
+                "Fans": 607,
+                "Police Officer Uniform": 46,
+                "Senior Police Officer Uniform": 31,
+                "Violet Space Suit": 18,
+                "Green Space Suit": 8,
+                "Police Sergeant Uniform": 8,
+                "Police Lieutenant Uniform": 4,
+                "Moebius-9 Poster": 2,
+                "Amber VHS Poster": 1
+            }
+        },
+        "ZaF-b51ab4": {
+            "coverage": 5774,
+            "values": {
+                "000000": 1577,
+                "000001": 386,
+                "000010": 375,
+                "010000": 360,
+                "000100": 353,
+                "001000": 349,
+                "100000": 325,
+                "011000": 120,
+                "001010": 117,
+                "100001": 106,
+                "100010": 104,
+                "000101": 102,
+                "110000": 99,
+                "000011": 96,
+                "010001": 95,
+                "100100": 93,
+                "001001": 93,
+                "000110": 92,
+                "010010": 90,
+                "001100": 88,
+                "010100": 87,
+                "101000": 73,
+                "001101": 34,
+                "100011": 31,
+                "110010": 30,
+                "010011": 30,
+                "100101": 28,
+                "000111": 27,
+                "101010": 27,
+                "101001": 27,
+                "011010": 27,
+                "010110": 25,
+                "110001": 24,
+                "001011": 23,
+                "010101": 22,
+                "100110": 22,
+                "001110": 22,
+                "101100": 21,
+                "011100": 21,
+                "111000": 19,
+                "110100": 18,
+                "001111": 11,
+                "101110": 10,
+                "101101": 10,
+                "111001": 9,
+                "011001": 8,
+                "111010": 8,
+                "101011": 7,
+                "011110": 7,
+                "110110": 6,
+                "100111": 6,
+                "111100": 5,
+                "110111": 4,
+                "110101": 4,
+                "011011": 3,
+                "111011": 3,
+                "010111": 3,
+                "111101": 3,
+                "110011": 3,
+                "101111": 2,
+                "011101": 2,
+                "111111": 1,
+                "011111": 1
+            }
+        }
+    },
+    "scored": 5777,
+    "cuts": {
+        "strength": [
+            1.478401,
+            1.594385,
+            1.693517,
+            1.766067,
+            1.80746,
+            1.90437,
+            2.284581
+        ],
+        "tactics": [
+            1.002035,
+            1.034975,
+            1.085924,
+            1.111395,
+            1.163635,
+            1.212829
+        ],
+        "speed": [
+            -21.716182,
+            -20.343232,
+            -19.318464,
+            -18.397938,
+            -17.417135,
+            -16.146908
+        ],
+        "size": [
+            11.361154,
+            12.998195
+        ],
+        "type": [
+            10.424606,
+            13.807873
+        ]
+    }
+}

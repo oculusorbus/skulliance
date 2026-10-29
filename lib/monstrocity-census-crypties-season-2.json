@@ -1,0 +1,215 @@
+{
+    "policy": "e77fe5101469bdbd2d596f69abbd8ea6311008f5687dec3d950bb17a",
+    "assets": 2000,
+    "taken": "2026-10-29",
+    "loadMin": 3,
+    "loadMax": 6,
+    "slots": {
+        "aura": {
+            "coverage": 1955,
+            "values": {
+                "gamer": 154,
+                "king": 147,
+                "mantra": 128,
+                "vamp": 127,
+                "wired": 126,
+                "magnet": 126,
+                "vine": 124,
+                "mayhem": 118,
+                "petal": 117,
+                "scorpion": 117,
+                "snaggletooth": 117,
+                "necro": 115,
+                "tag": 114,
+                "devil": 111,
+                "combatant": 109,
+                "decorative": 105
+            }
+        },
+        "background": {
+            "coverage": 1955,
+            "values": {
+                "overkill": 159,
+                "cursed": 149,
+                "sea": 137,
+                "feast": 130,
+                "toasted": 130,
+                "growth": 128,
+                "haunt": 125,
+                "paprika": 125,
+                "ice": 123,
+                "grunge": 120,
+                "quasar": 119,
+                "golden": 118,
+                "riddle": 111,
+                "slay": 107,
+                "crimson": 101,
+                "foam": 73
+            }
+        },
+        "carcass": {
+            "coverage": 1955,
+            "values": {
+                "shiny": 166,
+                "cobalt": 146,
+                "wild": 144,
+                "tattered": 138,
+                "bloodied": 132,
+                "spores": 127,
+                "plum": 124,
+                "adored": 122,
+                "neta": 121,
+                "tangerine": 115,
+                "frost": 112,
+                "nether": 110,
+                "shroud": 109,
+                "plated": 105,
+                "conduct": 104,
+                "neon": 80
+            }
+        },
+        "mantle": {
+            "coverage": 1955,
+            "values": {
+                "shock": 136,
+                "sacrifice": 134,
+                "tribal": 133,
+                "ruin": 133,
+                "torched": 130,
+                "champ": 130,
+                "prized": 125,
+                "pimp": 123,
+                "hermano": 120,
+                "demi": 118,
+                "streamer": 118,
+                "god": 117,
+                "seeker": 114,
+                "cyber": 111,
+                "blizzard": 109,
+                "smart": 104
+            }
+        },
+        "project": {
+            "coverage": 24,
+            "values": {
+                "ada dolls": 9,
+                "withspaces": 6,
+                "aeoniumsky": 5,
+                "never engine": 4
+            }
+        },
+        "rarity": {
+            "coverage": 2000,
+            "values": {
+                "common": 794,
+                "uncommon": 548,
+                "epic": 365,
+                "legendary": 235,
+                "wtf": 45,
+                "mythic": 13
+            }
+        },
+        "subset": {
+            "coverage": 45,
+            "values": {
+                "collab": 24,
+                "chimera": 21
+            }
+        },
+        "trinket": {
+            "coverage": 1955,
+            "values": {
+                "ada": 139,
+                "fungi": 136,
+                "ace": 134,
+                "moon": 133,
+                "dagger": 133,
+                "idol": 125,
+                "protect": 125,
+                "onigiri": 123,
+                "mini-tiger": 121,
+                "chalice": 118,
+                "banana": 116,
+                "flame": 116,
+                "hex": 114,
+                "mini-ape": 112,
+                "rose": 106,
+                "mini-bear": 104
+            }
+        },
+        "variant": {
+            "coverage": 45,
+            "values": {
+                "the one": 2,
+                "fog cinnamon": 2,
+                "frankenlogo": 2,
+                "spectrum twist": 2,
+                "potassium": 2,
+                "horny": 2,
+                "static logo": 2,
+                "original": 2,
+                "blackbeard": 2,
+                "fog kelly": 2,
+                "indiana": 2,
+                "pathfinder purple": 2,
+                "boombox": 1,
+                "static twist": 1,
+                "summon moss": 1,
+                "mardi gras grape": 1,
+                "mardi gras clementine": 1,
+                "stargaze turquoise": 1,
+                "sketch humbrol": 1,
+                "summon morado": 1,
+                "street chartreuse": 1,
+                "magenta": 1,
+                "stargaze lava": 1,
+                "spectrum logo": 1,
+                "lovesick": 1,
+                "tribe cobalt": 1,
+                "mass byzantine": 1,
+                "mandala lust": 1,
+                "block": 1,
+                "mass sunglow": 1,
+                "black & white": 1,
+                "tribe saffron": 1,
+                "grunge scarlett": 1
+            }
+        }
+    },
+    "scored": 2000,
+    "cuts": {
+        "strength": [
+            1.229148,
+            1.240332,
+            1.251812,
+            1.259637,
+            1.263603,
+            1.283997,
+            1.296709
+        ],
+        "tactics": [
+            1.177178,
+            1.190453,
+            1.19897,
+            1.205864,
+            1.214904,
+            1.229148
+        ],
+        "speed": [
+            -10.492214,
+            -10.337237,
+            -10.232918,
+            -10.154245,
+            -10.080234,
+            -10.009066
+        ],
+        "size": [
+            6.505777,
+            6.706492
+        ],
+        "type": [
+            6.425877,
+            6.822056
+        ]
+    }
+}

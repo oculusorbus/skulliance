@@ -32,7 +32,7 @@
                 "Eastern Steel": 61,
                 "Pristine Swamp": 60,
                 "Northern Midnight": 59,
-                "Gladiator Midnight": 58,
+                "Gladiator Midnight": 57,
                 "Western Crimson": 57,
                 "Reinforced Charcoal": 57,
                 "Pristine Cobalt": 57,
@@ -56,8 +56,8 @@
                 "Northern Charcoal": 51,
                 "Pristine Charcoal": 50,
                 "Southern Crimson": 50,
+                "Southern Swamp": 50,
                 "Heavy Charcoal": 50,
-                "Southern Swamp": 49,
                 "Heavy Cobalt": 49,
                 "Southern Midnight": 49,
                 "Pristine Steel": 49,
@@ -100,12 +100,12 @@
                 "Brush White": 248,
                 "Abstract Orange": 237,
                 "Abstract Purple": 226,
-                "Abstract Blue": 213,
                 "Mosaic Blue": 213,
+                "Abstract Blue": 212,
                 "Mosaic Turquoise": 201,
                 "Abstract Charcoal": 201,
                 "Mosaic White": 198,
-                "Brush Gray": 194,
+                "Brush Gray": 195,
                 "Abstract Turquoise": 189,
                 "Abstract Pink": 188,
                 "Mosaic Red": 188,
@@ -125,9 +125,9 @@
         "chain": {
             "coverage": 3000,
             "values": {
-                "None": 1665,
+                "None": 1666,
                 "Officer": 736,
-                "Lord": 432,
+                "Lord": 431,
                 "Ancient": 159,
                 "Utility Sash": 2,
                 "Experimental": 2,
@@ -144,8 +144,8 @@
                 "Seething Spectral": 155,
                 "Blizzard": 153,
                 "Blazing Spectral": 152,
+                "Tempestuous Spectral": 149,
                 "Hatred": 148,
-                "Tempestuous Spectral": 148,
                 "Blazing Blizzard": 147,
                 "Tempestuous Blizzard": 147,
                 "Diabolical Spectral": 146,
@@ -157,7 +157,7 @@
                 "Seething Hatred": 137,
                 "Diabolical Hatred": 135,
                 "Tempestuous Inferno": 131,
-                "Seething Blizzard": 128,
+                "Seething Blizzard": 127,
                 "Blazing Hatred": 122,
                 "Spectral": 120,
                 "Raging Hatred": 2,
@@ -177,7 +177,7 @@
                 "Locust Steel": 101,
                 "Angel Crimson": 98,
                 "Angel Steel": 97,
-                "Skull Charcoal": 96,
+                "Skull Charcoal": 95,
                 "Skull Crimson": 93,
                 "Zuu Steel": 90,
                 "Locust Cobalt": 88,
@@ -193,8 +193,8 @@
                 "Scorpion Cobalt": 82,
                 "Locust Crimson": 82,
                 "Angel Swamp": 82,
+                "Zuu Crimson": 82,
                 "Locust Swamp": 81,
-                "Zuu Crimson": 81,
                 "Angel Cobalt": 80,
                 "Zuu Midnight": 80,
                 "Locust Charcoal": 79,
@@ -224,7 +224,7 @@
                 "Spiked Beast Mithril": 178,
                 "None": 175,
                 "Minotaur Bone": 174,
-                "Underworld": 174,
+                "Underworld": 173,
                 "Beast Mithril": 171,
                 "Scarab Mithril": 167,
                 "Scarab Bone": 167,
@@ -235,7 +235,7 @@
                 "Spikes Bone": 158,
                 "Maul Bone": 157,
                 "Beast Bone": 155,
-                "Carnage Bone": 152,
+                "Carnage Bone": 153,
                 "Spider Mithril": 147,
                 "Grungy Mop": 2,
                 "Windswept Undercut": 2,
@@ -248,10 +248,10 @@
             "coverage": 3000,
             "values": {
                 "Cthulu": 465,
-                "Yoroi": 445,
+                "Yoroi": 444,
                 "Daedalus": 431,
                 "None": 429,
-                "Ouroboros": 420,
+                "Ouroboros": 421,
                 "Ravanne": 413,
                 "Bajuzki": 397
             }
@@ -389,21 +389,21 @@
                 "Bejeweled Doom Mace of Hatred": 16,
                 "Doom Mace of the Blizzard": 15,
                 "Bejewelled Blade of the Blizzard": 15,
-                "Bejewelled Exile Blade of the Blizzard": 15,
                 "Bloody Exile Axe of the Inferno": 15,
                 "Bloody Mace of the Blizzard": 15,
                 "Bloody Bejewelled Exile Blade of the Blizzard": 14,
                 "Bloody Bejeweled Axe": 14,
+                "Bejewelled Exile Blade of the Blizzard": 14,
                 "Bejeweled Exile Mace": 14,
                 "Bloody Exile Blade of the Inferno": 14,
                 "Bloody Bejewelled Blade of the Inferno": 14,
                 "Doom Blade of Hatred": 14,
                 "Bejeweled Exile Axe of the Inferno": 13,
+                "Doom Blade of the Inferno": 13,
                 "Bloody Doom Mace of the Blizzard": 13,
                 "Bloody Mace of Hatred": 13,
                 "Bejeweled Exile Mace of Hatred": 13,
                 "Hammer": 13,
-                "Doom Blade of the Inferno": 12,
                 "Bloody Bejeweled Exile Mace of the Blizzard": 12,
                 "Doom Blade": 11,
                 "Exile Axe of the Inferno": 9,
@@ -422,14 +422,77 @@
         "wings": {
             "coverage": 3000,
             "values": {
-                "None": 1489,
+                "None": 1490,
                 "Fire Angel": 460,
                 "Iron Angel": 452,
                 "Midnight Angel": 452,
-                "Beast": 122,
+                "Beast": 121,
                 "Torn": 23,
                 "Devilish": 2
             }
         }
+    },
+    "authoredCuts": {
+        "strength": [
+            3.808114,
+            3.866461,
+            3.905024,
+            3.943095,
+            3.976519,
+            4.024824,
+            4.087365
+        ],
+        "tactics": [
+            2.816635,
+            2.845407,
+            2.867242,
+            2.885093,
+            2.909076,
+            2.938464
+        ],
+        "speed": [
+            -2.050234,
+            -1.611179,
+            -1.212464,
+            19.356626,
+            20.710668,
+            21.787536
+        ]
+    },
+    "scored": 3000,
+    "cuts": {
+        "strength": [
+            2.045757,
+            2.09691,
+            2.134699,
+            2.176091,
+            2.198368,
+            2.221849,
+            2.273001
+        ],
+        "tactics": [
+            1.234083,
+            1.244125,
+            1.254405,
+            1.267606,
+            1.278464,
+            1.29243
+        ],
+        "speed": [
+            -17.098399,
+            -16.809019,
+            -16.614631,
+            -16.479059,
+            -16.289481,
+            -16.051775
+        ],
+        "size": [
+            10.973868,
+            11.331762
+        ],
+        "type": [
+            10.681709,
+            11.569022
+        ]
     }
 }

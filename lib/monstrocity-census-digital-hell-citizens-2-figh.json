@@ -1,0 +1,371 @@
+{
+    "policy": "b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5",
+    "assets": 226,
+    "taken": "2026-10-29",
+    "loadMin": 14,
+    "loadMax": 14,
+    "slots": {
+        "Arms": {
+            "coverage": 226,
+            "values": {
+                "None": 158,
+                "Robo Crusher Arms": 11,
+                "Turret Blue MK200 Limbs": 8,
+                "Symbio Flexx Arms": 7,
+                "Connected Protector Limbs": 6,
+                "Deflektor": 6,
+                "Perforator Arm Replacement": 5,
+                "Cyber 666 Knight Armor": 4,
+                "Influenza Blaster 3K": 3,
+                "Silver Cyborg Limbs": 3,
+                "Infested Robo-Limb": 3,
+                "Damaged MK100 Blaster Arms": 2,
+                "DH Pilot": 2,
+                "Cyber inferno Limbs": 1,
+                "Golden Cyborg Limbs": 1,
+                "Propellant Limbs": 1,
+                "Skeletal Stabber": 1,
+                "Cyber Inferno Limbs": 1,
+                "MK100 Blaster Arms": 1,
+                "Head Chopper": 1,
+                "Turret Blue Cyborg Limbs": 1
+            }
+        },
+        "Artist": {
+            "coverage": 226,
+            "values": {
+                "MadMaxi": 226
+            }
+        },
+        "Background": {
+            "coverage": 226,
+            "values": {
+                "None": 72,
+                "Digital Flames #2": 10,
+                "XLONs DDoS Attack": 9,
+                "Digital Trap #4": 8,
+                "Advanced Circuit #1": 8,
+                "XLONs Complex": 8,
+                "DH Aracnyd Web": 8,
+                "Hellscape": 7,
+                "Digital Trap #2": 7,
+                "Digital Trap #1": 6,
+                "XLONs Psi Attack": 6,
+                "Quasar TF-39 Sun": 6,
+                "Eon Raider Spacecraft Interior": 5,
+                "DH Thunder": 5,
+                "Digital Flames #1": 5,
+                "Red Planet Decoy": 4,
+                "XLONs 2YK Attack #1": 4,
+                "Data Tunnel": 4,
+                "DH Nebula #2": 4,
+                "XLONs Room Entrance": 4,
+                "XLONs Complex Trap": 4,
+                "DH Nebula #1": 3,
+                "Experimentation Facility Entrance": 3,
+                "XLONs 2YK Attack #2": 3,
+                "Advanced Circuit #2": 3,
+                "Digital Trap #3": 2,
+                "": 2,
+                "DH Killer Bubbles": 2,
+                "Wormhole Passage": 2,
+                "XLONs 2YK Attack": 2,
+                "Dark Explosion": 2,
+                "XLONs Digital Smoke Attack": 2,
+                "Digital Abyss": 1,
+                "Dh Aracnyd Web": 1,
+                "DH Nebula #3": 1,
+                "DIgital Trap #3": 1,
+                "XLONs Complex Interior": 1,
+                "DH Landscape": 1
+            }
+        },
+        "Collection": {
+            "coverage": 226,
+            "values": {
+                "Digital Hell Citizens 2: Fighters": 226
+            }
+        },
+        "Companion": {
+            "coverage": 226,
+            "values": {
+                "None": 182,
+                "DH Vision Shoulder Cam": 7,
+                "Unknown Vigilance Device #1": 6,
+                "Silver Isopunk": 5,
+                "MK100 Insekt": 5,
+                "Aracnyd Laser Cannon": 5,
+                "": 4,
+                "Unknown Vigilance Device #2": 3,
+                "Threat Seeker Antenna": 3,
+                "Golden Isopunk": 2,
+                "Code Sea Predator": 2,
+                "Demon Companion": 2
+            }
+        },
+        "Effects 1": {
+            "coverage": 6,
+            "values": {
+                "": 5,
+                "Digital Bullet Impacts": 1
+            }
+        },
+        "Effects 2": {
+            "coverage": 6,
+            "values": {
+                "": 6
+            }
+        },
+        "Effects1": {
+            "coverage": 220,
+            "values": {
+                "None": 101,
+                "Cyber Lava Attack": 11,
+                "Lava Thunder Attack": 10,
+                "DHC2 Comic Cover #1": 10,
+                "Earth Recovery System Interface": 9,
+                "XLONs Chamber Destruction": 8,
+                "Digital Fire": 8,
+                "DHC2 Comic Cover #3": 8,
+                "DHC2 Comic Cover #2": 7,
+                "Digital Bubbles #2": 6,
+                "XLONs Digi Fire Attack": 6,
+                "XLONs Black Fire Attack": 5,
+                "Short Circuit": 5,
+                "Digital Bubbles #1": 4,
+                "Love Bomb": 3,
+                "DHC2 Comic Cover #4": 3,
+                "Cyber Sparks": 3,
+                "Digital 666 Smoke": 3,
+                "Virtual Toxic Smoke": 2,
+                "Dissolving Code Attack": 2,
+                "Digital Bubbles #3": 1,
+                "Dissolving Bubbles #1": 1,
+                "XLON Digi Fire Attack": 1,
+                "Digi Goo Attack": 1,
+                "XLONs Code Attack": 1,
+                "": 1
+            }
+        },
+        "Effects2": {
+            "coverage": 220,
+            "values": {
+                "None": 189,
+                "Cyber Lava Attack": 5,
+                "Dissolving Code Attack": 4,
+                "Bionic Eye": 2,
+                "Lava Thunder Attack": 2,
+                "XLONs Chamber Destruction": 2,
+                "Digital Bubbles #2": 2,
+                "Digital 666 Smoke": 2,
+                "Digital Bubbles #3": 2,
+                "Digital Fire": 2,
+                "Cyber Sparks": 1,
+                "XLONs Digi Fire Attack": 1,
+                "Short Circuit": 1,
+                "Virtual Smoke": 1,
+                "Digi Goo Trap": 1,
+                "Love Bomb": 1,
+                "Digital Bubbles #1": 1,
+                "": 1
+            }
+        },
+        "Extra": {
+            "coverage": 226,
+            "values": {
+                "None": 219,
+                "": 4,
+                "Killer Phantom Mask": 1,
+                "Annihilation Belt": 1,
+                "Digital Bubbles #1": 1
+            }
+        },
+        "Head": {
+            "coverage": 226,
+            "values": {
+                "Sentinel": 21,
+                "Cyborg Stryker #1": 13,
+                "UE Mutant #2": 11,
+                "Xbot": 11,
+                "Beheaded Cyborg": 11,
+                "DH Cop #3": 11,
+                "MK100": 10,
+                "Red Cyborg": 10,
+                "Cyborg Stryker #2": 10,
+                "C73": 9,
+                "V12 Raider": 9,
+                "DH Alien Punk": 8,
+                "UE Mutant #1": 8,
+                "Predator": 7,
+                "Silver Cyborg": 7,
+                "MK200": 6,
+                "Alien Zombie #2": 6,
+                "Gas Mask": 6,
+                "Golden Cyborg": 5,
+                "None": 4,
+                "DH Cop #1": 4,
+                "MK300": 4,
+                "XLON Repeater": 4,
+                "DH Demon": 4,
+                "Cyborg Stryker #3": 4,
+                "Happy Robot Decoy": 3,
+                "Inferno Wasp Guardian": 2,
+                "Virtual Raider": 2,
+                "UE Mutant Pirate": 2,
+                "DH Cop #2": 2,
+                "Planet 8TZ Specter": 2,
+                "Alien Zombie #1": 2,
+                "Planet 1KZ Killer Alien": 1,
+                "Broken XLON Repeater": 1,
+                "Dh Cop #3": 1,
+                "Virtual Smoke": 1,
+                "Nightmare Robot": 1,
+                "DH Zombie": 1,
+                "Battled Out Red Cyborg": 1,
+                "XBot": 1
+            }
+        },
+        "Headgear": {
+            "coverage": 226,
+            "values": {
+                "None": 123,
+                "Cyber Purr Helmet": 10,
+                "Red Cyborg Helmet": 8,
+                "Saber Tech Headgear": 7,
+                "Malware Detecting Mask": 6,
+                "Skull Collector": 5,
+                "D\u00d8\u00d8M Mask": 5,
+                "MK200 Cyber Plague VR Headset": 5,
+                "Golden Cyborg Plague Detection Mask": 5,
+                "Alien Skull": 4,
+                "Trojan Detection Mask": 4,
+                "Post Apocalyptic Exo Mask": 4,
+                "MK100 Codesea Explorer": 4,
+                "Superbug 3": 4,
+                "Arachno Neural Implant": 3,
+                "Cyber Insekt Helmet": 3,
+                "XLON Implant": 3,
+                "Cyber Knight Helmet": 3,
+                "Code Prisoner Helmet": 3,
+                "": 2,
+                "WW2 Helmet": 2,
+                "DH Destroyer": 2,
+                "Bio Circuit Head Port": 2,
+                "DH Fire Goggles": 2,
+                "MK100 Scuba Headgear": 1,
+                "Code Viking Helmet": 1,
+                "666 Demon Headgear": 1,
+                "Killer Phantom Mask": 1,
+                "DH Sorceror": 1,
+                "Damaged MK100 Scuba Headgear": 1,
+                "Alien Predator": 1
+            }
+        },
+        "Supply": {
+            "coverage": 226,
+            "values": {
+                "420": 226
+            }
+        },
+        "Torso": {
+            "coverage": 226,
+            "values": {
+                "DH Cop #1": 21,
+                "Bone Robot": 15,
+                "T39 Planet Alien Flesh": 14,
+                "Skeletal Robot": 14,
+                "V12 Raider": 10,
+                "C38": 10,
+                "DH Cop #2": 10,
+                "Amplified Dreadnought": 10,
+                "C-4589 Mechanic": 9,
+                "MK200": 8,
+                "Cyber Venom Predator": 8,
+                "Nebula Demon": 8,
+                "Planet 8TZ Specter": 7,
+                "Silver Cyborg": 7,
+                "Golden Cyborg": 7,
+                "Dynamo": 7,
+                "C73": 7,
+                "Data Explorer": 6,
+                "MK100": 6,
+                "Red Cyborg": 6,
+                "UE Punk": 6,
+                "ZX350 Sentinel": 4,
+                "DH Alien Punk": 4,
+                "None": 4,
+                "ZX350 Centinel": 4,
+                "Inferno Wasp Guardian": 3,
+                "Virtual Raider": 3,
+                "Damaged DH Cop #1": 2,
+                "Virtual Smoke": 1,
+                "MK3K": 1,
+                "ZX50 Sentinel": 1,
+                "inferno Wasp Guardian": 1,
+                "Battled Out Red Cyborg": 1,
+                "ZX50 Centinel": 1
+            }
+        },
+        "Weapon": {
+            "coverage": 226,
+            "values": {
+                "None": 166,
+                "Annihilation Belt": 11,
+                "Lil Fren": 10,
+                "Plastic Blaster": 6,
+                "Axe": 5,
+                "": 4,
+                "DH Raider Equipment": 4,
+                "Scythe": 4,
+                "Skull Krusher": 4,
+                "Electric Morning Star": 3,
+                "Bone Blaster 3X": 3,
+                "Mega Taser Cannon": 3,
+                "Bio Weapon": 2,
+                "DH Spike Blaster": 1
+            }
+        },
+        "Year": {
+            "coverage": 226,
+            "values": {
+                "2024": 226
+            }
+        }
+    },
+    "scored": 226,
+    "cuts": {
+        "strength": [
+            1.575957,
+            1.752048,
+            1.752048,
+            1.876987,
+            2.053078,
+            2.053078,
+            2.354108
+        ],
+        "tactics": [
+            0.209827,
+            0.306995,
+            0.423282,
+            0.72111,
+            0.809156,
+            1.209091
+        ],
+        "speed": [
+            -15.828537,
+            -14.506109,
+            -14.099083,
+            -13.492833,
+            -12.990316,
+            -11.678793
+        ],
+        "size": [
+            7.142497,
+            8.388952
+        ],
+        "type": [
+            6.14065,
+            9.052228
+        ]
+    }
+}

@@ -1,0 +1,208 @@
+{
+    "policy": "243f0ca18ded6b45ba87655ce3917abc8e04830b23ba1f498de67a8a",
+    "assets": 1070,
+    "taken": "2026-10-29",
+    "loadMin": 8,
+    "loadMax": 8,
+    "slots": {
+        "Background": {
+            "coverage": 1070,
+            "values": {
+                "Cyberframe": 300,
+                "Electric": 264,
+                "Target": 206,
+                "Spark": 143,
+                "Glitch": 106,
+                "Inferno": 38,
+                "Everlasting Fire": 13
+            }
+        },
+        "Body": {
+            "coverage": 1070,
+            "values": {
+                "Raider Armor": 215,
+                "Night Stalker": 198,
+                "Night Ronin": 169,
+                "Reaver": 148,
+                " Immortal Soul": 132,
+                "X-01 Power Armor": 126,
+                "Burning Ronin": 25,
+                "Burning Reaver": 20,
+                " Burning Immortal": 19,
+                " X-01 Burning Armor": 8,
+                "Immortal Soul": 7,
+                "Gold Reaver": 2,
+                "Winged Immortal Soul": 1
+            }
+        },
+        "Head": {
+            "coverage": 1070,
+            "values": {
+                "Juggernaut ": 174,
+                "Neuromancer ": 167,
+                "Stinger": 150,
+                "Beowulf": 115,
+                "Nemesis": 99,
+                "Hunter-Killer": 98,
+                "Vecna": 95,
+                "Sandewistan": 80,
+                "Cyber Machine": 42,
+                "Maelstrom": 38,
+                "Neuromancer": 3,
+                "Destroyer": 1,
+                "Beowulf ": 1,
+                "Eternal Gold": 1,
+                "Archangel": 1,
+                "Hunter-killer": 1,
+                "Hunter-Killer ": 1,
+                "Cyber Machine ": 1,
+                "Umbra": 1,
+                "Eternal": 1
+            }
+        },
+        "Left Tech": {
+            "coverage": 1070,
+            "values": {
+                "None": 570,
+                "Qiant Booster": 104,
+                "Combat Intel M2": 86,
+                "Metawave T2": 73,
+                "Neuro Implant": 68,
+                "Neotech": 64,
+                "Fusion Booster": 50,
+                "Militech Laser": 40,
+                "Cyberhex": 3,
+                "Wire Cortex Delta": 3,
+                "Warp Defender MK2": 2,
+                "Combat Vision": 2,
+                "Laser Destroyer": 1,
+                "Dragon Scale": 1,
+                "Ritual Gold": 1,
+                "Militech Armor": 1,
+                "Zeta Booster": 1
+            }
+        },
+        "Mask and Jaws": {
+            "coverage": 1070,
+            "values": {
+                "None": 299,
+                "Subdermal Armor": 142,
+                "Dynalar Tech": 116,
+                "Sarin X3": 116,
+                "Human Skin": 89,
+                "Fighter Pilot": 82,
+                "Thunder Jaw": 77,
+                "Titan Plates": 70,
+                "Hellfire": 41,
+                "Hazard": 17,
+                "StreetPunk": 3,
+                "Archon": 3,
+                "Apex": 2,
+                "Gasmask": 2,
+                "Prime": 2,
+                "Oni": 2,
+                "USA": 2,
+                "Dragon Jaw": 1,
+                "Enhanced Titan Plates": 1,
+                "Spikemask": 1,
+                "Netrunner": 1,
+                "Militech Prime": 1
+            }
+        },
+        "Right Tech": {
+            "coverage": 1070,
+            "values": {
+                "None": 523,
+                "Qiant Armor": 114,
+                "Combat Rada M2r": 100,
+                "Neuro Enhancer": 84,
+                "Metawave M1": 82,
+                "Neodeck": 58,
+                "Drone Relay": 53,
+                "Fusiontronic": 41,
+                "Cyberhex": 3,
+                "Wire Cortex Alpha": 3,
+                "Warp Launcher MK1": 2,
+                "Combat Vision": 2,
+                "Laser Destroyer": 1,
+                "Dragon Scale": 1,
+                "Ritual Gold": 1,
+                "Militech Booster": 1,
+                "Zeta Defender": 1
+            }
+        },
+        "Top": {
+            "coverage": 1070,
+            "values": {
+                "None": 258,
+                "Ion Shield": 162,
+                "Mohawk": 139,
+                "Soldier Helmet": 109,
+                "Pathfinder": 109,
+                "Horns of Darkness": 97,
+                "Two-Face": 84,
+                "Singularity": 56,
+                "Skull King": 31,
+                "Blade Crown": 18,
+                "Frontal Militech": 2,
+                "Mindwarper": 2,
+                "Nova Enhancer": 1,
+                "Core Enhancer": 1,
+                "Hair": 1
+            }
+        },
+        "Vision": {
+            "coverage": 1070,
+            "values": {
+                "None": 369,
+                "Stalker": 154,
+                "TAC Eye": 150,
+                "Cyberoptic": 105,
+                "Army Google": 86,
+                "Target Laser": 76,
+                "Eternal Vision": 60,
+                "Exolaser": 49,
+                "Draconian": 14,
+                "Bone Collector": 4,
+                "Quantum Rippler": 2,
+                "Laser Optics": 1
+            }
+        }
+    },
+    "scored": 1070,
+    "cuts": {
+        "strength": [
+            1.079994,
+            1.11557,
+            1.166061,
+            1.251233,
+            1.330414,
+            1.4166,
+            1.728354
+        ],
+        "tactics": [
+            0.724118,
+            0.793006,
+            0.846518,
+            0.874441,
+            0.923263,
+            0.980322
+        ],
+        "speed": [
+            -12.485795,
+            -11.981113,
+            -11.599523,
+            -11.294654,
+            -10.969787,
+            -10.531431
+        ],
+        "size": [
+            6.277495,
+            7.064805
+        ],
+        "type": [
+            5.833001,
+            7.425383
+        ]
+    }
+}

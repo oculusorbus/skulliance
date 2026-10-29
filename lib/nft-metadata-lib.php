@@ -206,7 +206,12 @@ function nft_metadata_traits($json) {
 	 *   attributes: [{trait_type, value}]   Metaplex, most EVM collections
 	 *   attributes: {K: V}                  the same idea, as a map
 	 *   traits:     [{K: V}, {K: V}]        a LIST OF SINGLE-KEY OBJECTS
+	 *   properties: [{K: V}, {K: V}]        the same, under another name
 	 *   flat keys                           CIP-25, XLS-24
+	 *
+	 * `properties` turned up the same way `traits` did -- Havoc Worlds, all
+	 * 9,999 of them, censused as having no traits whatsoever. There is no
+	 * standard here, only names people chose.
 	 *
 	 * The third one is why this function was rewritten. Wavy Ape Vibe
 	 * Empire writes it, 4,444 assets of it, and this reader returned an
@@ -215,7 +220,7 @@ function nft_metadata_traits($json) {
 	 * stored correctly all along; only the reading was wrong, which is the
 	 * worst way for it to be wrong because nothing anywhere says so.
 	 */
-	foreach (array('attributes', 'traits') as $container) {
+	foreach (array('attributes', 'traits', 'properties') as $container) {
 		if (!isset($doc[$container]) || !is_array($doc[$container])) continue;
 		$out = array();
 		foreach ($doc[$container] as $ck => $a) {
@@ -243,7 +248,8 @@ function nft_metadata_traits($json) {
 		if ($out) return $out;
 	}
 
-	$skip = array('name', 'description', 'project', 'collection', 'attributes', 'traits');
+	$skip = array('name', 'description', 'project', 'collection', 'attributes', 'traits',
+	              'properties', 'publisher', 'artist', 'creator');
 	$out = array();
 	foreach ($doc as $k => $v)
 		if (is_scalar($v) && !in_array((string)$k, $skip, true) && !nft_metadata_is_uri($v))

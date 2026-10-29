@@ -1,0 +1,148 @@
+{
+    "policy": "8f63e08467bfbbc260a382a80f3297f9a569fca0293f296620d72d17",
+    "assets": 1029,
+    "taken": "2026-10-29",
+    "loadMin": 5,
+    "loadMax": 10,
+    "slots": {
+        "background": {
+            "coverage": 1029,
+            "values": {
+                "Cyberframe": 292,
+                "Electric": 244,
+                "Target": 229,
+                "Spark": 155,
+                "Glitch": 101,
+                "Limited": 8
+            }
+        },
+        "color": {
+            "coverage": 1029,
+            "values": {
+                "Scarlet": 231,
+                "Purple": 201,
+                "Green": 199,
+                "Blue": 195,
+                "Red": 195,
+                "Gold": 7,
+                "Turquoise": 1
+            }
+        },
+        "jaw implant": {
+            "coverage": 714,
+            "values": {
+                "Falcon Implant": 255,
+                "Shock Booster": 206,
+                "BioTech": 146,
+                "Stealth Tech": 101,
+                "None": 6
+            }
+        },
+        "left tech": {
+            "coverage": 1029,
+            "values": {
+                "Falcon Tech": 287,
+                "Spike Relay": 226,
+                "Mechatronic": 187,
+                "Combat Implant": 120,
+                "Combat Vision": 106,
+                "X-Vision": 60,
+                "Quantum Display": 43
+            }
+        },
+        "mask": {
+            "coverage": 269,
+            "values": {
+                "Gasmask": 87,
+                "Oni": 72,
+                "Apex": 65,
+                "StreetPunk": 44,
+                "None": 1
+            }
+        },
+        "rarity": {
+            "coverage": 8,
+            "values": {
+                "Special": 8
+            }
+        },
+        "right tech": {
+            "coverage": 1029,
+            "values": {
+                "Cyberdeck": 278,
+                "Exo Armor": 227,
+                "Bionic Armor": 177,
+                "Holographic Sensor": 135,
+                "Radar Implant": 106,
+                "Pulse Sensor": 61,
+                "Cybernetic Booster": 45
+            }
+        },
+        "skull": {
+            "coverage": 1029,
+            "values": {
+                "Termination Droid": 349,
+                "Shadowrunner": 307,
+                "Juggernaut": 205,
+                "Neuromancer": 168
+            }
+        },
+        "top": {
+            "coverage": 936,
+            "values": {
+                "Panzar": 225,
+                "Nova Shield": 166,
+                "Mohawk": 152,
+                "Horns": 127,
+                "Spike": 99,
+                "Panzar Horns": 74,
+                "Nova Enhancer": 59,
+                "Core Enhancer": 33,
+                "None": 1
+            }
+        },
+        "vision": {
+            "coverage": 107,
+            "values": {
+                "Ghost Screen": 101,
+                "None": 6
+            }
+        }
+    },
+    "scored": 1029,
+    "cuts": {
+        "strength": [
+            0.848063,
+            0.98711,
+            1.008094,
+            1.072896,
+            1.155083,
+            1.234264,
+            1.359203
+        ],
+        "tactics": [
+            0.65258,
+            0.660233,
+            0.698548,
+            0.713562,
+            0.722381,
+            0.787106
+        ],
+        "speed": [
+            -10.257693,
+            -9.781414,
+            -9.490475,
+            -9.26525,
+            -9.060771,
+            -8.661564
+        ],
+        "size": [
+            4.948684,
+            5.459627
+        ],
+        "type": [
+            4.654229,
+            5.775968
+        ]
+    }
+}

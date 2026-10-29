@@ -245,5 +245,127 @@ ok(monstrocity_trait_stats($otherPolicy, $ancTraits) === null,
 ok(monstrocity_nft_stats($fpAnc, $ancTraits, $ANC) !== monstrocity_nft_stats($fpAnc),
    'the mapped card is identical to the hashed one, so the map is not running');
 
+/* ------------------------------------------------------------------ *
+ * HELLKNIGHTS: THE SECOND AUTHORED MAP
+ * ------------------------------------------------------------------ */
+echo "\nthe Hellknights map\n";
+$HK = 'f0eca3e1fbe2d3801eff903b755d06bed64f19c30aacb1f124d18d6c';
+$hkMap = monstrocity_trait_map($HK);
+ok(is_array($hkMap), 'the Hellknights policy is not mapped');
+$hkCen = $hkMap ? monstrocity_trait_census($hkMap['slug']) : null;
+ok(is_array($hkCen) && !empty($hkCen['authoredCuts']),
+   'the Hellknights census carries no authored cuts, so the map cannot band anything');
+
+$hkFx = json_decode((string)@file_get_contents(__DIR__ . '/monstrocity-hellknights-fixture.json'), true);
+ok(is_array($hkFx) && count($hkFx) >= 5, 'the Hellknights fixture is missing');
+$hkBad = array();
+foreach ((array)$hkFx as $f) {
+	$got = monstrocity_trait_stats($HK, $f['traits']);
+	if ($got !== $f['want']) $hkBad[] = $f['asset'] . ': ' . json_encode($got);
+}
+ok(!$hkBad, "a pinned Hellknight plays a different card now:\n        " . implode("\n        ", $hkBad));
+
+/*
+ * THE RULES THAT MAKE IT HELLKNIGHTS RATHER THAN A RARITY SORT. `chain` is
+ * a literal rank ladder and `wings` a speed axis; if either stopped being
+ * read, every card would still look plausible.
+ */
+$base = array('weapon' => 'Iron Sword', 'armor' => 'Northern Steel', 'helmet' => 'Angel Steel',
+              'eyes' => 'Blizzard', 'horns' => 'Scarab Bone', 'insignia' => 'Cthulu',
+              'background' => 'Mosaic Blue', 'wings' => 'None', 'chain' => 'None');
+$with = function ($k, $v) use ($base) { $b = $base; $b[$k] = $v; return $b; };
+ok(monstrocity_trait_stats($HK, $with('chain', 'Lord'))['type'] === 'Leader',
+   'a Lord is not a Leader, so the rank chain is not being read');
+ok(monstrocity_trait_stats($HK, $with('chain', 'Ancient'))['type'] === 'Leader',
+   'an Ancient is not a Leader');
+ok(monstrocity_trait_stats($HK, $with('chain', 'Officer'))['type'] === 'Base',
+   'an Officer outranks itself into a Leader');
+ok(monstrocity_trait_stats($HK, $with('wings', 'Torn'))['type'] === 'Battle Damaged',
+   'torn wings are not read as damage');
+/*
+ * AND "BLOODY" IS NOT DAMAGE. It prefixes 72 of 158 weapons; reading it as
+ * damage made 40% of the collection the 70-health card.
+ */
+ok(monstrocity_trait_stats($HK, $with('weapon', 'Bloody Blade of Hatred'))['type'] === 'Base',
+   'a bloodied weapon makes its owner Battle Damaged, which is 40% of the collection');
+/* Wings decide speed, and the same armour that raises strength lowers it. */
+$noWing = monstrocity_trait_stats($HK, $with('wings', 'None'));
+$flying = monstrocity_trait_stats($HK, $with('wings', 'Fire Angel'));
+ok($flying['speed'] > $noWing['speed'],
+   "wings do not make a Hellknight faster ({$flying['speed']} vs {$noWing['speed']})");
+$plainArmour = monstrocity_trait_stats($HK, $with('armor', 'Northern Steel'));
+$rareArmour  = monstrocity_trait_stats($HK, $with('armor', 'Royal Gown'));
+ok($rareArmour['strength'] >= $plainArmour['strength'] && $rareArmour['speed'] <= $plainArmour['speed'],
+   'rarer armour does not trade speed for strength, which is the whole shape of the map');
+
+echo "\nand the generic reading, for collections nobody has authored\n";
+/*
+ * A COLLECTION CAN BE READ WITHOUT BEING UNDERSTOOD. Happy Hoppers is
+ * Eyes, Hands, Hat, Mouth, Skin and Wings -- nothing in it says "strong",
+ * so there is nothing to author. What can still be read is how unusual a
+ * given Hopper is, which is the part a holder wants reflected.
+ */
+$gen = array();
+foreach (array('happyhoppers', 'wavyape', 'omen', 'meltingmoonboy', 'meltingmoongirls') as $slug) {
+	$c = monstrocity_trait_census($slug);
+	if (!$c) { ok(false, "the $slug census is missing"); continue; }
+	ok(!empty($c['cuts']['strength']) && !empty($c['cuts']['size']) && !empty($c['cuts']['type']),
+	   "the $slug census carries no band cuts, so nothing can be read from it");
+	$gen[$slug] = $c;
+}
+/* Every slug the index names must have a census behind it, or a whole
+   collection silently falls back to the hash. */
+$missing = array();
+foreach (array('wavyape', 'omen', 'meltingmoonboy', 'meltingmoongirls', 'happyhoppers',
+               'dph-afterdark', 'dph-uni2', 'dph-2bdevilgirls', 'dph-demondolls', 'dph-amievil') as $slug)
+	if (!monstrocity_trait_census($slug)) $missing[] = $slug;
+ok(!$missing, 'a policy is indexed for the generic reading with no census behind it: '
+   . implode(', ', $missing));
+
+/* Driven on real documents. */
+$gfx = json_decode((string)@file_get_contents(__DIR__ . '/monstrocity-generic-fixture.json'), true);
+ok(is_array($gfx) && count($gfx) >= 5, 'the generic fixture is missing');
+$gbad = array(); $gor = array();
+foreach ((array)$gfx as $f) {
+	$got = monstrocity_trait_stats($f['policy'], $f['traits']);
+	if ($got !== $f['want']) $gbad[] = $f['asset'] . ': ' . json_encode($got);
+	if (!is_array($got)) continue;
+	if ($got['strength'] < 1 || $got['strength'] > 8) $gor[] = 'strength ' . $got['strength'];
+	if ($got['speed'] < 1 || $got['speed'] > 7)       $gor[] = 'speed ' . $got['speed'];
+	if ($got['tactics'] < 1 || $got['tactics'] > 7)   $gor[] = 'tactics ' . $got['tactics'];
+	if (!in_array($got['size'], $mSizes, true))       $gor[] = 'size ' . $got['size'];
+	if (!in_array($got['type'], $mTypes, true))       $gor[] = 'type ' . $got['type'];
+	if (!in_array($got['powerup'], $mPows, true))     $gor[] = 'powerup ' . $got['powerup'];
+}
+ok(!$gbad, "a pinned generic NFT plays a different card now:\n        " . implode("\n        ", $gbad));
+ok(!$gor, 'a generic stat is outside what createCharacter() switches on: ' . implode(', ', $gor));
+
+/*
+ * THE THREE AXES ARE NOT ONE AXIS. strength is your rarest trait, tactics
+ * your commonest, speed the inverse of the lot -- if any two collapsed
+ * into the same ranking there would be one best card and nothing to
+ * choose between the rest.
+ */
+$hop = monstrocity_trait_census('happyhoppers');
+if ($hop) {
+	$slots = monstrocity_generic_slots($hop);
+	ok(count($slots) >= 5, 'the generic slot filter left ' . count($slots) . ' of the Hoppers slots');
+	/* Boilerplate slots must be gone: one value across the collection is an
+	   artist credit, not a trait. */
+	$one = array();
+	foreach ($hop['slots'] as $k => $v) if (count($v['values']) < 2) $one[] = $k;
+	foreach ($one as $k) if (in_array($k, $slots, true)) ok(false, "the generic reading scores '$k', which has one value across the whole collection");
+	ok(true, 'single-value slots are scored as traits');
+}
+/* A collection with a census but NOT in the index still hashes: a census
+   file is research, and dropping one in a directory must not change what
+   every holder plays. */
+ok(monstrocity_generic_policy('3966cf1c948109e34f2c5a9f9670445ccc85008e5b8a6e67f913b491') === null,
+   'the Ancestors is in the generic index as well as authored, so which one answers is luck');
+ok(monstrocity_generic_policy($HK) === null,
+   'Hellknights is in the generic index as well as authored');
+ok(monstrocity_generic_policy(str_repeat('cd', 28)) === null,
+   'an unknown policy resolves to a census');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
 exit($fail ? 1 : 0);

@@ -1,0 +1,117 @@
+{
+    "policy": "c7ad13b8f11d1d1d2abe519b4394b4ca62c1dd2ce737e382ab573947",
+    "assets": 16,
+    "taken": "2026-10-29",
+    "loadMin": 4,
+    "loadMax": 4,
+    "slots": {
+        "BACKGROUND": {
+            "coverage": 16,
+            "values": {
+                "Shoin-zukuri": 2,
+                "Blue Moon": 2,
+                "Red Moon": 2,
+                "Sky Rays": 1,
+                "Cemetery": 1,
+                "Dark Night": 1,
+                "Purple Forest": 1,
+                "Green": 1,
+                "Kinmokusei": 1,
+                "Stormy Morning": 1,
+                "Night City": 1,
+                "Height Chart": 1,
+                "Astral Rays": 1
+            }
+        },
+        "CLOTHES": {
+            "coverage": 16,
+            "values": {
+                "Black Top": 3,
+                "Nun's Habit": 1,
+                "Shaolin Beads": 1,
+                "Linen Bandages": 1,
+                "Purple Top": 1,
+                "Tuxedo Cape": 1,
+                "Linen Top": 1,
+                "Green Kimono": 1,
+                "Nagagi": 1,
+                "Cyber Jacket": 1,
+                "Sapphire Armor": 1,
+                "Red Kimono": 1,
+                "Sakura Kimono": 1,
+                "Amethyst Top": 1
+            }
+        },
+        "RACE": {
+            "coverage": 16,
+            "values": {
+                "Human": 5,
+                "Demon": 3,
+                "Yurei": 1,
+                "Mystic": 1,
+                "Zombie": 1,
+                "Vampire": 1,
+                "Orc": 1,
+                "Cyborg": 1,
+                "Elf": 1,
+                "Succubus": 1
+            }
+        },
+        "WEAPON": {
+            "coverage": 16,
+            "values": {
+                "Uchigatana": 2,
+                "Psychic": 1,
+                "Lucille Bat": 1,
+                "Grenade": 1,
+                "Blood Magic": 1,
+                "Amethyst Reaver": 1,
+                "Naginata": 1,
+                "Bladed Monarch": 1,
+                "Sapphire Edge": 1,
+                "Silent Fang Pistol": 1,
+                "Dual Katana": 1,
+                "Fists": 1,
+                "Dagger": 1,
+                "Laser Eyes": 1,
+                "Dual Kunai": 1
+            }
+        }
+    },
+    "scored": 16,
+    "cuts": {
+        "strength": [
+            1.20412,
+            1.20412,
+            1.20412,
+            1.20412,
+            1.20412,
+            1.20412,
+            1.20412
+        ],
+        "tactics": [
+            0.965559,
+            1.053605,
+            1.20412,
+            1.20412,
+            1.20412,
+            1.20412
+        ],
+        "speed": [
+            -7.21648,
+            -6.91545,
+            -6.91545,
+            -6.438329,
+            -6.21648,
+            -6.040389
+        ],
+        "size": [
+            4.038329,
+            4.81648
+        ],
+        "type": [
+            3.81648,
+            4.81648
+        ]
+    }
+}

@@ -1,0 +1,336 @@
+[
+    {
+        "policy": "11ff0e0d9ad037d18e3ed575cd35a0513b8473f83008124db89f1d8f",
+        "asset": "HappyHopper11107",
+        "traits": {
+            "Hat": "OutOfTheWorld",
+            "Eyes": "OutOfTheWorld",
+            "Skin": "OutOfTheWorld",
+            "Hands": "OutOfTheWorld",
+            "Mouth": "OutOfTheWorld",
+            "Wings": "None",
+            "Background": "OutOfTheWorld"
+        },
+        "want": {
+            "strength": 1,
+            "speed": 7,
+            "tactics": 1,
+            "size": "Small",
+            "type": "Battle Damaged",
+            "powerup": "Regenerate"
+        }
+    },
+    {
+        "policy": "11ff0e0d9ad037d18e3ed575cd35a0513b8473f83008124db89f1d8f",
+        "asset": "HappyHopper03213",
+        "traits": {
+            "Hat": "Stag beetle helmet",
+            "Eyes": "Crying",
+            "Skin": "Slime",
+            "Hands": "Fishing rod",
+            "Mouth": "Cigar",
+            "Wings": "None",
+            "Background": "Lime green"
+        },
+        "want": {
+            "strength": 2,
+            "speed": 4,
+            "tactics": 6,
+            "size": "Medium",
+            "type": "Base",
+            "powerup": "Regenerate"
+        }
+    },
+    {
+        "policy": "11ff0e0d9ad037d18e3ed575cd35a0513b8473f83008124db89f1d8f",
+        "asset": "HappyHopper11101",
+        "traits": {
+            "Hat": "Alien",
+            "Eyes": "Alien",
+            "Skin": "Alien",
+            "Hands": "Alien",
+            "Mouth": "Alien",
+            "Wings": "None",
+            "Background": "Alien"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 1,
+            "tactics": 7,
+            "size": "Large",
+            "type": "Leader",
+            "powerup": "Boost Attack"
+        }
+    },
+    {
+        "policy": "1088b361c41f49906645cedeeb7a9ef0e0b793b1a2d24f623ea74876",
+        "asset": "HavocWorlds7516",
+        "traits": {
+            "Background": "Plain Blue",
+            "Xeno Weapon": "Meteorite Spear",
+            "Xeno Base": "Base 1",
+            "Xeno Marking": "None",
+            "Xeno Clothes": "Civil Pink",
+            "Xeno Head Item": "Bandage Yellow",
+            "Xeno Piercing": "None",
+            "Xeno Bonus Item": "None"
+        },
+        "want": {
+            "strength": 1,
+            "speed": 7,
+            "tactics": 1,
+            "size": "Small",
+            "type": "Battle Damaged",
+            "powerup": "Heal"
+        }
+    },
+    {
+        "policy": "1088b361c41f49906645cedeeb7a9ef0e0b793b1a2d24f623ea74876",
+        "asset": "HavocWorlds5858",
+        "traits": {
+            "Background": "Plain Blue",
+            "Human Weapon": "Stone Spear",
+            "Male Base": "Male 3",
+            "Male Marking": "Snake",
+            "Male Face": "Happy",
+            "Male Clothes": "Advance Vest Purple",
+            "Male Hair": "Short Blue",
+            "Human Head Item": "Tech Hannya Mask Black",
+            "Human Piercing": "Thunder",
+            "Human Bonus Item": "None"
+        },
+        "want": {
+            "strength": 1,
+            "speed": 4,
+            "tactics": 5,
+            "size": "Medium",
+            "type": "Base",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "policy": "1088b361c41f49906645cedeeb7a9ef0e0b793b1a2d24f623ea74876",
+        "asset": "HavocWorlds4405",
+        "traits": {
+            "Background": "Black Glitch",
+            "Human Weapon": "Rifle Gold",
+            "Male Base": "Male 2",
+            "Male Marking": "Scar",
+            "Male Face": "Fierce",
+            "Male Clothes": "Urban Jacket Gold",
+            "Male Hair": "Wavy Blonde",
+            "Human Head Item": "Skull Mask Gold",
+            "Human Piercing": "Industrial Gold",
+            "Human Bonus Item": "Desert Eagle Gold"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 1,
+            "tactics": 7,
+            "size": "Large",
+            "type": "Leader",
+            "powerup": "Boost Attack"
+        }
+    },
+    {
+        "policy": "b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5",
+        "asset": "DHC2F414",
+        "traits": {
+            "Arms": "None",
+            "Head": "Xbot",
+            "Year": "2024",
+            "Extra": "None",
+            "Torso": "Cyber Venom Predator",
+            "Artist": "MadMaxi",
+            "Supply": "420",
+            "Weapon": "None",
+            "Effects1": "None",
+            "Effects2": "None",
+            "Headgear": "None",
+            "Companion": "None",
+            "Background": "None",
+            "Collection": "Digital Hell Citizens 2: Fighters"
+        },
+        "want": {
+            "strength": 1,
+            "speed": 7,
+            "tactics": 2,
+            "size": "Small",
+            "type": "Battle Damaged",
+            "powerup": "Boost Attack"
+        }
+    },
+    {
+        "policy": "b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5",
+        "asset": "DHC2F165",
+        "traits": {
+            "Arms": "None",
+            "Head": "Sentinel",
+            "Year": "2024",
+            "Extra": "None",
+            "Torso": "Dynamo",
+            "Artist": "MadMaxi",
+            "Supply": "420",
+            "Weapon": "None",
+            "Effects1": "Digital Bubbles #2",
+            "Effects2": "None",
+            "Headgear": "Saber Tech Headgear",
+            "Companion": "None",
+            "Background": "Data Tunnel",
+            "Collection": "Digital Hell Citizens 2: Fighters"
+        },
+        "want": {
+            "strength": 4,
+            "speed": 4,
+            "tactics": 4,
+            "size": "Medium",
+            "type": "Base",
+            "powerup": "Regenerate"
+        }
+    },
+    {
+        "policy": "b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5",
+        "asset": "DHC2F014",
+        "traits": {
+            "Arms": "None",
+            "Head": "DH Cop #3",
+            "Year": "2024",
+            "Extra": "Annihilation Belt",
+            "Torso": "Dynamo",
+            "Artist": "MadMaxi",
+            "Supply": "420",
+            "Weapon": "Bio Weapon",
+            "Effects1": "Dissolving Code Attack",
+            "Effects2": "Cyber Lava Attack",
+            "Headgear": "Alien Skull",
+            "Companion": "None",
+            "Background": "XLONs 2YK Attack #1",
+            "Collection": "Digital Hell Citizens 2: Fighters"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 1,
+            "tactics": 7,
+            "size": "Large",
+            "type": "Leader",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "policy": "bedb9383c1ad91247ec2a81fc3841934bbb298530eb99a55e77a0fb8",
+        "asset": "GalacticoMovieAddict",
+        "traits": {
+            "Type": "Normal",
+            "Theme": "Lifestyle",
+            "Project": "Galactico",
+            "Serial Number": "#17"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 7,
+            "tactics": 1,
+            "size": "Small",
+            "type": "Battle Damaged",
+            "powerup": "Regenerate"
+        }
+    },
+    {
+        "policy": "bedb9383c1ad91247ec2a81fc3841934bbb298530eb99a55e77a0fb8",
+        "asset": "GalacticoFreshTillDeath",
+        "traits": {
+            "Type": "Special",
+            "Theme": "Lifestyle",
+            "Project": "Galactico",
+            "Serial Number": "#14"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 4,
+            "tactics": 4,
+            "size": "Medium",
+            "type": "Base",
+            "powerup": "Heal"
+        }
+    },
+    {
+        "policy": "bedb9383c1ad91247ec2a81fc3841934bbb298530eb99a55e77a0fb8",
+        "asset": "GalacticoSpaceTitan",
+        "traits": {
+            "Type": "Epic",
+            "Theme": "Anime",
+            "Project": "Galactico",
+            "Serial Number": "#30"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 1,
+            "tactics": 7,
+            "size": "Large",
+            "type": "Leader",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "policy": "106e44f8ce68e28500545dcb68b407331a9d4b6088f11f672c6d07db",
+        "asset": "DPHAIE14",
+        "traits": {
+            "Top": "Red Crop Top",
+            "Hair": "Jet Black Straight",
+            "Skin": "Mango",
+            "Makeup": "Cherry",
+            "copyright": "Dead Pop Hell",
+            "Background": "Bone",
+            "Hair Accessories": "Red Skully Demon Clips"
+        },
+        "want": {
+            "strength": 1,
+            "speed": 7,
+            "tactics": 1,
+            "size": "Small",
+            "type": "Battle Damaged",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "policy": "106e44f8ce68e28500545dcb68b407331a9d4b6088f11f672c6d07db",
+        "asset": "DPHAIE32",
+        "traits": {
+            "Top": "Exposed",
+            "Hair": "Jet Black Straight",
+            "Skin": "Chili Pepper",
+            "Makeup": "Gray Winter",
+            "copyright": "Dead Pop Hell",
+            "Background": "Bone",
+            "Hair Accessories": "Slate Skully Demon Clips"
+        },
+        "want": {
+            "strength": 3,
+            "speed": 3,
+            "tactics": 5,
+            "size": "Medium",
+            "type": "Base",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "policy": "106e44f8ce68e28500545dcb68b407331a9d4b6088f11f672c6d07db",
+        "asset": "DPHAIE24",
+        "traits": {
+            "Top": "Magenta Crop Top",
+            "Hair": "Jet Black Straight",
+            "Skin": "Frost",
+            "Makeup": "Atomic Pink",
+            "copyright": "Dead Pop Hell",
+            "Background": "Bone",
+            "Hair Accessories": "Magenta Skully Demon Clips"
+        },
+        "want": {
+            "strength": 6,
+            "speed": 1,
+            "tactics": 7,
+            "size": "Large",
+            "type": "Leader",
+            "powerup": "Minor Regen"
+        }
+    }
+]

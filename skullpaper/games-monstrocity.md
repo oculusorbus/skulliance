@@ -23,13 +23,30 @@ If you own NFTs from the collections behind a theme, they show up as characters 
 
 Stats for those characters are worked out from the NFT's own on-chain identifier, so every NFT always has the same stats and no two holders can argue about it. The original **Monstrocity** collection is the exception: its stats were written into the NFTs when they were minted, and the game reads those directly.
 
-### Collections whose traits decide the card
+### Your NFT's traits decide its card
 
-A theme can be any collection on the platform, and most of them have nothing a
-fighting game could read — so for those, the identifier is all there is. Some
-collections are different, and those are **mapped**: the game reads their actual
-traits, and rarity is measured against the whole collection on-chain rather than
-against whoever happens to be staked.
+**36 collections, 116,497 NFTs**, play by their own traits rather than by a hash
+of their identifier. Rarity is measured against the **whole collection on chain**,
+not against whoever happens to be staked, so your card is fixed from the day the
+collection minted and the same NFT plays the same way in everybody's roster.
+
+Most collections get the **general reading**, which makes no claim about what a
+trait *means* — only about how unusual it is:
+
+| Stat | What decides it |
+|---|---|
+| **Strength** | Your rarest single trait. One standout piece |
+| **Tactics** | Your median trait. How good your typical piece is |
+| **Speed** | The inverse of your total rarity, less what you are carrying |
+| **Size** and **Type** | Overall rarity. The rarest wear the crown |
+| **Power-up** | Keyed on your rarest trait, so two NFTs with the same standout piece share a charm |
+
+Speed deliberately pulls the other way. Rare traits hit harder and think faster;
+common traits move quicker. There is no single best card — a plain NFT is a fast
+one, not a worthless one.
+
+A few collections are **authored** instead, where the traits say something a
+fighting game can use directly.
 
 **The Ancestors** is the first. 1,225 of them, ten trait slots, 432 distinct
 values, and the card follows what the Ancestor is actually wearing:
@@ -51,6 +68,28 @@ with one good blade is a genuinely different card rather than a worse one.
 Rarity is taken from the chain once and committed, so it never shifts under you:
 the same Ancestor plays the same card in everybody's roster, forever, whether or
 not it has ever been staked.
+
+#### Hellknights
+
+The second authored collection, and its traits already read like a character
+sheet. The **chain** is a rank ladder, so a Lord or an Ancient fields as a
+**Leader**; **wings** decide speed, and the same elaborate **armour** that raises
+strength takes speed back; **horns** set the frame, with Minotaur, Carnage, Maul
+and Underworld the big ones; **weapon** and **armour** rarity make strength,
+**eyes** and **helmet** make tactics, and the seven **insignia** houses — evenly
+spread, so they carry no rarity at all — decide the charm.
+
+Torn wings and mortal wounds make a knight **Battle Damaged**. A bloodied weapon
+does not: it prefixes most of the armoury and says something about the blade
+rather than the one holding it.
+
+#### Collections that still hash
+
+Fifteen are left on the old identifier hash, and for a reason rather than an
+oversight. Eight carry no readable traits at all — only a name, a description and
+an image. Seven have exactly one usable trait slot, where strength, tactics and
+speed would all be the same number wearing three hats, which is worse than a hash
+rather than better.
 
 ## Progress & Scoring
 

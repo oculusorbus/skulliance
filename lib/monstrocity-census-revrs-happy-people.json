@@ -1,0 +1,319 @@
+{
+    "policy": "ac9067e22a857ee2e4ea20f77c6c047f78a11511f285d30d81857196",
+    "assets": 1774,
+    "taken": "2026-10-29",
+    "loadMin": 3,
+    "loadMax": 15,
+    "slots": {
+        "accessories": {
+            "coverage": 1736,
+            "values": {
+                "arrow": 198,
+                "none": 162,
+                "collar": 92,
+                "chai": 92,
+                "spiderbite": 86,
+                "device": 86,
+                "jpeg": 84,
+                "disk": 82,
+                "revrs tattoo": 80,
+                "choker": 80,
+                "bandage": 78,
+                "electropoles": 76,
+                "rings": 74,
+                "rainbow": 72,
+                "radr": 70,
+                "stitched": 68,
+                "piercing": 66,
+                "tape chain": 66,
+                "headshot": 64,
+                "vent": 60
+            }
+        },
+        "back gear": {
+            "coverage": 1736,
+            "values": {
+                "jetpack": 260,
+                "snek": 226,
+                "shovel": 214,
+                "fire": 214,
+                "tentacles": 210,
+                "fox": 210,
+                "none": 206,
+                "sword": 196
+            }
+        },
+        "background": {
+            "coverage": 1736,
+            "values": {
+                "red": 124,
+                "hangar white": 116,
+                "orange": 112,
+                "cockpit cyan": 108,
+                "machine red": 102,
+                "cockpit neo": 100,
+                "blue": 96,
+                "cockpit blue": 92,
+                "green": 86,
+                "machine lime": 86,
+                "spaceship green": 84,
+                "machine yellow": 82,
+                "spaceship white": 78,
+                "hangar neon": 76,
+                "spaceship purple": 70,
+                "yellow": 68,
+                "street pink": 68,
+                "street purple": 66,
+                "hangar teal": 62,
+                "cockpit yellow": 60
+            }
+        },
+        "body": {
+            "coverage": 1736,
+            "values": {
+                "dark": 586,
+                "mid": 580,
+                "light": 570
+            }
+        },
+        "character": {
+            "coverage": 38,
+            "values": {
+                "Esco": 2,
+                "El": 2,
+                "Ape": 2,
+                "Charles": 2,
+                "Bitboy": 2,
+                "Skull": 2,
+                "Thor": 2,
+                "Head": 2,
+                "Lorenzo": 2,
+                "Tight Hoodie": 2,
+                "Stoned Santa": 2,
+                "Man": 2,
+                "Woman": 2,
+                "Worm": 2,
+                "Goat": 2,
+                "Headless": 2,
+                "Heart": 2,
+                "Boomer Tray": 2,
+                "Shark Bite": 2
+            }
+        },
+        "chin": {
+            "coverage": 1736,
+            "values": {
+                "wide": 306,
+                "bold": 304,
+                "small": 300,
+                "long": 186,
+                "wider": 170,
+                "moon": 166,
+                "balls": 156,
+                "up": 148
+            }
+        },
+        "ears": {
+            "coverage": 1736,
+            "values": {
+                "ogre": 140,
+                "regular": 136,
+                "flower": 134,
+                "hole": 134,
+                "pain": 132,
+                "sensor": 132,
+                "earrings": 130,
+                "van gogh": 130,
+                "elf": 128,
+                "second mouth": 126,
+                "earring": 114,
+                "coins": 108,
+                "tube": 98,
+                "alien": 94
+            }
+        },
+        "eyes": {
+            "coverage": 1736,
+            "values": {
+                "blue": 156,
+                "lizard": 152,
+                "popping": 146,
+                "robotics": 146,
+                "green": 136,
+                "spider": 134,
+                "chameleon": 132,
+                "shut": 128,
+                "demon": 128,
+                "brown": 122,
+                "god mode": 120,
+                "sad": 118,
+                "sunken": 118
+            }
+        },
+        "hair": {
+            "coverage": 1736,
+            "values": {
+                "none": 196,
+                "redhead": 196,
+                "punk": 178,
+                "sharkfin": 114,
+                "front tail": 106,
+                "prince charming": 106,
+                "clown": 102,
+                "crazy": 102,
+                "green": 96,
+                "worms": 94,
+                "princess": 92,
+                "blue": 92,
+                "blondy": 92,
+                "beanie": 88,
+                "spaghetti": 82
+            }
+        },
+        "hands": {
+            "coverage": 1736,
+            "values": {
+                "none": 148,
+                "chilla": 108,
+                "eye": 102,
+                "gm cup": 98,
+                "banana": 94,
+                "gun": 94,
+                "milk": 86,
+                "guitar": 82,
+                "staff": 82,
+                "mouse": 82,
+                "fud cup": 78,
+                "eyes": 78,
+                "jamonbread": 74,
+                "drum": 72,
+                "hexen": 72,
+                "nunchakus": 70,
+                "leaf": 68,
+                "monster": 68,
+                "uzis": 64,
+                "food": 60,
+                "illuminati": 56
+            }
+        },
+        "logo": {
+            "coverage": 1736,
+            "values": {
+                "logo 2": 452,
+                "logo 1": 442,
+                "logo 4": 440,
+                "logo 3": 402
+            }
+        },
+        "mouth": {
+            "coverage": 1736,
+            "values": {
+                "smile": 164,
+                "juicy lips": 162,
+                "shut": 142,
+                "squeeze": 136,
+                "tongue": 122,
+                "shark": 122,
+                "smile red": 120,
+                "vampire": 118,
+                "fly": 116,
+                "purple": 112,
+                "anger": 112,
+                "scream": 112,
+                "smile yellow": 102,
+                "blue": 96
+            }
+        },
+        "nose": {
+            "coverage": 1736,
+            "values": {
+                "red": 300,
+                "blue": 176,
+                "fat": 164,
+                "regular": 162,
+                "slim": 156,
+                "nosering": 154,
+                "pig": 134,
+                "holes": 132,
+                "pointy": 128,
+                "vampire": 122,
+                "pipes": 108
+            }
+        },
+        "outfit": {
+            "coverage": 1736,
+            "values": {
+                "sweater": 202,
+                "none": 130,
+                "firestarter": 104,
+                "rambo": 100,
+                "MBR shirt": 94,
+                "friend sack": 94,
+                "leather vest": 90,
+                "red diamond": 88,
+                "infested": 80,
+                "krang": 80,
+                "fancy": 80,
+                "rags": 76,
+                "spacesuit": 74,
+                "stripes": 70,
+                "barrel": 64,
+                "jumpsuit": 64,
+                "vest": 64,
+                "heroine": 62,
+                "wasteland": 60,
+                "nemo hoodie": 60
+            }
+        },
+        "signature": {
+            "coverage": 1774,
+            "values": {
+                "N. Cohen": 1774
+            }
+        },
+        "type": {
+            "coverage": 1774,
+            "values": {
+                "boy": 924,
+                "girl": 812,
+                "1-of-1": 38
+            }
+        }
+    },
+    "scored": 1774,
+    "cuts": {
+        "strength": [
+            1.345864,
+            1.36814,
+            1.403856,
+            1.416445,
+            1.442774,
+            1.456562,
+            1.470802
+        ],
+        "tactics": [
+            1.047634,
+            1.070215,
+            1.090759,
+            1.109211,
+            1.125114,
+            1.145811
+        ],
+        "speed": [
+            -22.850847,
+            -22.640301,
+            -22.476157,
+            -22.326126,
+            -22.185364,
+            -21.990343
+        ],
+        "size": [
+            13.832534,
+            14.164851
+        ],
+        "type": [
+            13.635496,
+            14.345191
+        ]
+    }
+}

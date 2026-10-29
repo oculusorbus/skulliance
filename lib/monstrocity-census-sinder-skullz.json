@@ -1,0 +1,173 @@
+{
+    "policy": "83732ff37818e7e520592fcd3e5257e429307d40a9f5437240e926de",
+    "assets": 2223,
+    "taken": "2026-10-29",
+    "loadMin": 7,
+    "loadMax": 7,
+    "slots": {
+        "author": {
+            "coverage": 2223,
+            "values": {
+                "Copyright 2022 Sinder Skullz": 2223
+            }
+        },
+        "background": {
+            "coverage": 2223,
+            "values": {
+                "Purple": 441,
+                "Green": 413,
+                "Yellow": 377,
+                "Grey": 353,
+                "Red": 302,
+                "Blue": 262,
+                "Black And White": 54,
+                "Sinder Skullz Portrait 1 of 3": 2,
+                "Sinder Skullz Portrait 3 of 3": 2,
+                "Sinder Skullz Studio Session 2 of 6": 2,
+                "Sinder Skullz Studio Session 4 of 6": 2,
+                "Sinder Skullz Studio Session 5 of 6": 2,
+                "Sinder Skullz Hear No Evil 1 of 3": 1,
+                "Sinder Skullz Speak No Evil 3 of 3": 1,
+                "Sinder Skullz See No Evil 2 of 3": 1,
+                "Sinder Skullz Portrait 2 of 3": 1,
+                "Sinder Skullz Chillin 1 of 3": 1,
+                "Sinder Skullz Chillin 2 of 3": 1,
+                "Sinder Skullz Chillin 3 of 3": 1,
+                "Sinder Skullz Studio Session 1 of 6": 1,
+                "Sinder Skullz Studio Session 3 of 6": 1,
+                "Sinder Skullz Studio Session 6 of 6": 1,
+                "Sinder and Sindy Skullz 1 of 1": 1
+            }
+        },
+        "clothing": {
+            "coverage": 2223,
+            "values": {
+                "None": 324,
+                "Sleeveless Tee": 255,
+                "Metal Tee": 245,
+                "Leather Jacket": 243,
+                "Black Tee": 226,
+                "Hoodie": 178,
+                "Black Shirt": 170,
+                "Golf Polo": 170,
+                "Denim Jacket": 158,
+                "White Tee": 128,
+                "Zip Hoodie": 49,
+                "Hawaiian Shirt": 39,
+                "Tie Dye": 37,
+                "Bow Tie": 1
+            }
+        },
+        "eyes": {
+            "coverage": 2223,
+            "values": {
+                "Sunglasses": 264,
+                "Bloodshot": 237,
+                "Eyeballs": 231,
+                "Galexy": 200,
+                "Green Glow": 199,
+                "Red Glow": 176,
+                "Hypnotize": 166,
+                "Aviators": 156,
+                "Retro Glasses": 147,
+                "Red Laser": 135,
+                "Eyepatch": 134,
+                "Green Laser": 129,
+                "None": 21,
+                "ADA Eyes": 16,
+                "3D Glasses": 12
+            }
+        },
+        "hand": {
+            "coverage": 2223,
+            "values": {
+                "Devil Horns": 231,
+                "The Finger": 205,
+                "Peace": 200,
+                "None": 188,
+                "Lighter": 184,
+                "A OK": 183,
+                "Beer": 179,
+                "Shaka Brah": 177,
+                "Coffee": 170,
+                "Molotov Cocktail": 140,
+                "Mic": 81,
+                "Electric Guitar": 81,
+                "Bass Guitar": 73,
+                "Drums": 65,
+                "7 Iron": 30,
+                "Axe": 28,
+                "Skull Staff": 7,
+                "Rose": 1
+            }
+        },
+        "head": {
+            "coverage": 2223,
+            "values": {
+                "Mohawk": 365,
+                "Backwards Cap": 357,
+                "Cap": 341,
+                "Bennie": 234,
+                "Fedora": 214,
+                "Pork Pie": 176,
+                "Cheesecutter": 167,
+                "Black Five Panel Cap": 141,
+                "Headphones": 133,
+                "None": 70,
+                "Five Panel Cap": 18,
+                "Crown": 7
+            }
+        },
+        "mouth": {
+            "coverage": 2223,
+            "values": {
+                "Jaw Open": 380,
+                "Lick": 375,
+                "Tongue Out": 296,
+                "Cigarette": 289,
+                "Joint": 237,
+                "Jaw Closed": 237,
+                "Toothpick": 222,
+                "Cigar": 110,
+                "Bandana": 56,
+                "None": 21
+            }
+        }
+    },
+    "scored": 2223,
+    "cuts": {
+        "strength": [
+            1.101427,
+            1.124223,
+            1.179622,
+            1.216606,
+            1.23635,
+            1.438454,
+            1.614546
+        ],
+        "tactics": [
+            0.904293,
+            0.948763,
+            0.972191,
+            0.988079,
+            1.01937,
+            1.057574
+        ],
+        "speed": [
+            -10.031095,
+            -9.728595,
+            -9.582933,
+            -9.444387,
+            -9.315692,
+            -9.169466
+        ],
+        "size": [
+            5.754857,
+            6.073607
+        ],
+        "type": [
+            5.596927,
+            6.287774
+        ]
+    }
+}

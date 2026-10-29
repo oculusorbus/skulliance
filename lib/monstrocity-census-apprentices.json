@@ -1,0 +1,593 @@
+{
+    "policy": "93ff51e7dfdf32314fd2f99ff222aa9c92f486b7d2cc0d46b64a9785",
+    "assets": 1522,
+    "taken": "2026-10-29",
+    "loadMin": 0,
+    "loadMax": 18,
+    "slots": {
+        "2Moon Studios": {
+            "coverage": 18,
+            "values": {
+                "publisher": 18
+            }
+        },
+        "80s": {
+            "coverage": 2,
+            "values": {
+                "description": 2
+            }
+        },
+        "ATRON 905": {
+            "coverage": 2,
+            "values": {
+                "description": 2
+            }
+        },
+        "BEATLE SUIT": {
+            "coverage": 2,
+            "values": {
+                "clothes": 2
+            }
+        },
+        "FREE NIPS B": {
+            "coverage": 2,
+            "values": {
+                "clothes": 2
+            }
+        },
+        "MATRIX": {
+            "coverage": 2,
+            "values": {
+                "description": 2
+            }
+        },
+        "NONE": {
+            "coverage": 6,
+            "values": {
+                "eyewear": 6
+            }
+        },
+        "OFFICE SHIRT": {
+            "coverage": 2,
+            "values": {
+                "clothes": 2
+            }
+        },
+        "OFFICER CHARLES": {
+            "coverage": 2,
+            "values": {
+                "description": 2
+            }
+        },
+        "ORANGE GRADIENT": {
+            "coverage": 2,
+            "values": {
+                "description": 2
+            }
+        },
+        "PRINCE MOEBIUS": {
+            "coverage": 2,
+            "values": {
+                "description": 2
+            }
+        },
+        "PRISCILLA GERMAINE": {
+            "coverage": 2,
+            "values": {
+                "description": 2
+            }
+        },
+        "PUG IN THE MEKA": {
+            "coverage": 2,
+            "values": {
+                "description": 2
+            }
+        },
+        "RUKU": {
+            "coverage": 2,
+            "values": {
+                "description": 2
+            }
+        },
+        "UNIQUE": {
+            "coverage": 12,
+            "values": {
+                "extras": 12
+            }
+        },
+        "background": {
+            "coverage": 1502,
+            "values": {
+                "PURPLE GRADIENT": 194,
+                "BLUE GRADIENT": 174,
+                "GREEN GRADIENT": 152,
+                "ORANGE GRADIENT": 102,
+                "RED": 92,
+                "RED GRADIENT": 80,
+                "MATRIX": 66,
+                "YELLOW": 62,
+                "BLUE": 54,
+                "ORANGE": 50,
+                "GREEN": 48,
+                "80s": 48,
+                "BLACK GRADIENT": 46,
+                "ARCTURIAN SHIP": 44,
+                "SPILLED VITAE": 40,
+                "SKIES": 38,
+                "TRINITY GANG": 38,
+                "USTRA PARTY": 34,
+                "GRAFFITI": 32,
+                "YELLOW GRADIENT": 30,
+                "SIMULATION": 26,
+                "PURPLE": 24,
+                "CHIP": 12,
+                "OUTER SPACE": 10,
+                "NONE": 6
+            }
+        },
+        "body": {
+            "coverage": 1520,
+            "values": {
+                "TYPE A": 822,
+                "TYPE B": 698
+            }
+        },
+        "clothes": {
+            "coverage": 1502,
+            "values": {
+                "T SHIRT A": 64,
+                "RAINCOAT A": 58,
+                "UNIFORM A": 52,
+                "TRINITY SUIT": 50,
+                "NEO OVERCOAT": 50,
+                "BEATLE SUIT": 48,
+                "LATEX SUIT A": 48,
+                "FIT TOP": 46,
+                "TWO RINGS TOP": 44,
+                "RAINCOAT B": 42,
+                "LATEX SUIT B": 42,
+                "LEATHER JACKET B": 40,
+                "CYBER SUIT A": 40,
+                "POLAR COAT B": 38,
+                "LEATHER JACKET A": 38,
+                "ANARCHY TOP": 38,
+                "UNIFORM B": 34,
+                "MILITARY ARMOR A": 34,
+                "POLAR COAT A": 32,
+                "OFFICE DRESS": 32,
+                "T SHIRT B": 32,
+                "CYBER SUIT B": 32,
+                "CROP TOP": 30,
+                "PUNK TOP": 30,
+                "EVE SUIT": 28,
+                "DISCO COAT A": 28,
+                "TUNIC A": 28,
+                "FREE NIPS B": 26,
+                "STRIDER SUIT A": 26,
+                "KIMONO A": 26,
+                "ADAN SUIT": 26,
+                "STRIDER SUIT B": 24,
+                "KIMONO B": 22,
+                "FREE NIPS A": 20,
+                "MEKA ARMOR B": 20,
+                "OFFICE SHIRT": 20,
+                "MEKA ARMOR A": 18,
+                "FUTURE DRESS": 18,
+                "SPORT UNIFORM": 16,
+                "TUNIC B": 16,
+                "BLACK TIE B": 16,
+                "DISCO COAT B": 16,
+                "COOL JACKET B": 12,
+                "SAINT ARMOR": 12,
+                "BUBBLEGUM": 12,
+                "NEON JACKET A": 12,
+                "SHANGHAI 30S": 12,
+                "BLACK TIE A": 10,
+                "MILITARY ARMOR B": 8,
+                "JEAN JACKET": 6,
+                "SPACE SUIT B": 6,
+                "SPACE SUIT A": 6,
+                "TIGHT HOODIE": 6,
+                "OZARU APE": 4,
+                "COOL JACKET A": 4,
+                "ANGELUS ARMOR": 2,
+                "ARCTURUS DRESS": 2
+            }
+        },
+        "ears": {
+            "coverage": 1520,
+            "values": {
+                "NONE": 1074,
+                "LIGHTNING": 84,
+                "EARRING": 70,
+                "NEON EARRING": 56,
+                "TRINITY EARRING": 44,
+                "CHIP": 34,
+                "DISCO BALL": 28,
+                "ELVEN": 28,
+                "HOLY SPIRIT": 26,
+                "PYRAMID": 24,
+                "MERKAVA": 20,
+                "BIG NEON RINGS": 20,
+                "ATRON 905": 2,
+                "RUKU": 2,
+                "OFFICER CHARLES": 2,
+                "PUG IN THE MEKA": 2,
+                "PRINCE MOEBIUS": 2,
+                "PRISCILLA GERMAINE": 2
+            }
+        },
+        "extras": {
+            "coverage": 1502,
+            "values": {
+                "NONE": 1438,
+                "CYBER MODIFIED BODY": 16,
+                "YIKKI WINGS": 14,
+                "CYBER KATANA": 8,
+                "GUITAR": 6,
+                "ARC WINGS": 6,
+                "BLING": 4,
+                "GIFT C": 4,
+                "CAT TAIL": 2,
+                "PROTON RIFLE": 2,
+                "GIFT A": 2
+            }
+        },
+        "eyes": {
+            "coverage": 1520,
+            "values": {
+                "BROWN": 258,
+                "BLUE": 236,
+                "GREEN": 164,
+                "RED": 158,
+                "YELLOW": 118,
+                "BLACK": 112,
+                "PURPLE": 94,
+                "FULL BLACK": 88,
+                "FULL WHITE": 70,
+                "MULTICOLOR": 48,
+                "LASER PROSTHESIS": 46,
+                "SPIDER PROSTHESIS": 44,
+                "CAT": 40,
+                "GOAT": 16,
+                "POWER": 12,
+                "OCTOPUS PROSTHESIS": 4,
+                "ATRON 905": 2,
+                "RUKU": 2,
+                "OFFICER CHARLES": 2,
+                "PUG IN THE MEKA": 2,
+                "PRINCE MOEBIUS": 2,
+                "PRISCILLA GERMAINE": 2
+            }
+        },
+        "eyewear": {
+            "coverage": 1502,
+            "values": {
+                "NONE": 972,
+                "SKIN WIRES": 70,
+                "MATRIX SUNGLASSES": 44,
+                "LENNON SUNGLASSES": 44,
+                "MINDANCE DEVICE": 40,
+                "BLINDFOLDED": 38,
+                "AVIATORS": 34,
+                "HEART SUNGLASSES": 28,
+                "STEAMPUNK GOGGLES": 28,
+                "POWER MONOVISOR": 28,
+                "BDSM MASK": 28,
+                "RAY BEAM": 24,
+                "TRIANGULAR SUNGLASSES": 22,
+                "WAYFARU SUNGLASSES": 22,
+                "ID MONOVISOR": 18,
+                "CYPHERPUNK GOGGLES": 18,
+                "ROUND SUNGLASSES": 16,
+                "VR GOGGLES": 12,
+                "ROUND MONOVISOR": 10,
+                "80s GOGGLES": 6
+            }
+        },
+        "gift": {
+            "coverage": 1520,
+            "values": {
+                "DORMANT": 1520
+            }
+        },
+        "hand": {
+            "coverage": 1520,
+            "values": {
+                "FIST": 640,
+                "OK": 482,
+                "FINGER": 386,
+                "UNIQUE": 12
+            }
+        },
+        "head": {
+            "coverage": 1520,
+            "values": {
+                "AFRO A": 58,
+                "BALD B": 56,
+                "WAVY": 56,
+                "CARRE A": 48,
+                "PONY TAILS": 46,
+                "PUNK BEANIE A": 44,
+                "NEKO HELMET": 44,
+                "MOHAWK A": 44,
+                "CURLY": 42,
+                "MOHAWK B": 42,
+                "DREADLOCKS B": 40,
+                "CAP A": 40,
+                "DREADLOCKS A": 40,
+                "TWO BUNS A": 38,
+                "CYBERMAX HELMET": 36,
+                "SAMURAI": 34,
+                "MOTOKO A": 32,
+                "WINGS": 32,
+                "BALD A": 30,
+                "AFRO B": 28,
+                "AOW HORNS": 28,
+                "JAGGER": 28,
+                "80S SHAMATE B": 28,
+                "CLOSE CROPPED": 28,
+                "BRAIDS B": 26,
+                "SNOW": 24,
+                "ELECTRIC EARS A": 24,
+                "INTO THE MATRIX A": 24,
+                "CAP B": 22,
+                "BRAIDS A": 22,
+                "80S SHAMATE A": 20,
+                "HALO A": 18,
+                "PUNKY": 18,
+                "FIGHTER": 18,
+                "PUNK BEANIE B": 18,
+                "ELECTRIC EARS B": 16,
+                "MAVI": 16,
+                "JAPAN HELMET": 16,
+                "CYBER BALACLAVA": 16,
+                "Z MAN": 16,
+                "WAR HELMET": 16,
+                "GLAM": 14,
+                "QUIFF": 12,
+                "MOTOKO B": 12,
+                "MEKA HELMET A": 12,
+                "POWER HORNS": 12,
+                "CARRE": 12,
+                "TACTICAL HELMET": 12,
+                "TWO BUNS": 12,
+                "BUBBLEGUM HELMET": 10,
+                "AOW HORNS B": 10,
+                "MEKA HELMET B": 10,
+                "INTO THE MATRIX": 10,
+                "IKKI": 8,
+                "SPACE COWBOY": 8,
+                "90S": 8,
+                "STONE": 8,
+                "DAFT HELMET": 6,
+                "SHAR LOVER": 6,
+                "TUXEDO": 6,
+                "MERLINA": 6,
+                "SKULL HELMET": 6,
+                "HALO B": 6,
+                "REI": 4,
+                "ANTENNA HEADPHONES": 4,
+                "GEISHA": 4,
+                "WAWA": 4,
+                "VIOLETA": 4,
+                "RUGGED PEPE": 4,
+                "ATRON 905": 2,
+                "LILITH": 2,
+                "SLASHER": 2,
+                "RUKU": 2,
+                "PLAGUE": 2,
+                "OFFICER CHARLES": 2,
+                "PUG IN THE MEKA": 2,
+                "PRINCE MOEBIUS": 2,
+                "PRISCILLA GERMAINE": 2
+            }
+        },
+        "https://discord.gg/apprentices": {
+            "coverage": 18,
+            "values": {
+                "discord": 18
+            }
+        },
+        "https://theapprentices.io/": {
+            "coverage": 18,
+            "values": {
+                "website": 18
+            }
+        },
+        "https://www.instagram.com/apprentices.cnft": {
+            "coverage": 18,
+            "values": {
+                "instagram": 18
+            }
+        },
+        "image/gif": {
+            "coverage": 6,
+            "values": {
+                "mediaType": 6
+            }
+        },
+        "image/png": {
+            "coverage": 12,
+            "values": {
+                "mediaType": 12
+            }
+        },
+        "ipfs://QmRF7Vc5w5txGC2t44PdXMDjsMDxcEWsMpKRVXSpaKCCEr": {
+            "coverage": 2,
+            "values": {
+                "image": 2
+            }
+        },
+        "ipfs://QmRbgDPq5Mh9GQSbGUDZZ6y86heWyUiwZMisWP2ZQve55D": {
+            "coverage": 2,
+            "values": {
+                "image": 2
+            }
+        },
+        "ipfs://QmTfSeYVnhezn3rNAzNG2crYCG3o5SwRBHFXYWrdiVrdED": {
+            "coverage": 2,
+            "values": {
+                "image": 2
+            }
+        },
+        "ipfs://QmUcCjTxVReqXXeCQgNA7nNs6xMbqiNMwmDp7xXMxuR9py": {
+            "coverage": 2,
+            "values": {
+                "image": 2
+            }
+        },
+        "ipfs://QmX6K7ehfAabzFJYRU1P6oXF1ntMvpcALVBGGXpN6S3jQP": {
+            "coverage": 2,
+            "values": {
+                "image": 2
+            }
+        },
+        "ipfs://QmXvjkw33WvomKa7SkXYcNb9zwqBk3GPNiJ1gFzuny1yAm": {
+            "coverage": 2,
+            "values": {
+                "image": 2
+            }
+        },
+        "ipfs://QmaGY1NxJ9SL2Gugi8W38oK6GU3LnvQCkbpe9c7rix8EVB": {
+            "coverage": 2,
+            "values": {
+                "image": 2
+            }
+        },
+        "ipfs://QmdXZHxafh5TJW2njCqN5zbprr3x6naHbWDbxJMRt8Ryfx": {
+            "coverage": 2,
+            "values": {
+                "image": 2
+            }
+        },
+        "ipfs://QmeL5Rmvzs57cvsk91DTnghZBUEXcywobbPwg2cUEH2ESw": {
+            "coverage": 2,
+            "values": {
+                "image": 2
+            }
+        },
+        "mouth": {
+            "coverage": 1502,
+            "values": {
+                "NONE": 866,
+                "TONGUE OUT": 104,
+                "CIGARETTE": 90,
+                "JOINT": 70,
+                "VAMPIRE FANGS": 56,
+                "BLOOD": 44,
+                "NINJA MASK": 40,
+                "NEON MASK": 38,
+                "GAS MASK": 36,
+                "JAPAN MASK": 32,
+                "CYBER MASK": 28,
+                "ID MASK": 20,
+                "CHAIN MASK": 20,
+                "MOUTH PROSTHESIS": 16,
+                "BEARD": 14,
+                "DAGGER": 12,
+                "OPERA MASK": 6,
+                "GRIN MASK": 6,
+                "ONI": 4
+            }
+        },
+        "neck": {
+            "coverage": 1520,
+            "values": {
+                "NONE": 1124,
+                "CHINESE COIN": 60,
+                "CHAINS": 56,
+                "DOG TAG": 50,
+                "SPIKED COLLAR": 40,
+                "TRIBAL": 28,
+                "SACRED CHIP": 26,
+                "NEON LIGHTS": 22,
+                "SPIKED CHOKER": 20,
+                "LOVE N PEACE": 20,
+                "STEAMPUNK": 20,
+                "MERKAVA SPHERE": 14,
+                "USTRA CHOKER": 12,
+                "CRYSTAL": 10,
+                "HOLO CHOKER": 6,
+                "ATRON 905": 2,
+                "RUKU": 2,
+                "OFFICER CHARLES": 2,
+                "PUG IN THE MEKA": 2,
+                "PRINCE MOEBIUS": 2,
+                "PRISCILLA GERMAINE": 2
+            }
+        },
+        "nose": {
+            "coverage": 1520,
+            "values": {
+                "NONE": 1048,
+                "NEON RING": 86,
+                "BULL BLING": 76,
+                "CARDANO": 68,
+                "NANOCHIP": 54,
+                "TRINITY RING": 52,
+                "SCAR": 48,
+                "BANDAID": 36,
+                "LIGHTNING RING": 28,
+                "INDIA RING": 12,
+                "ATRON 905": 2,
+                "RUKU": 2,
+                "OFFICER CHARLES": 2,
+                "PUG IN THE MEKA": 2,
+                "PRINCE MOEBIUS": 2,
+                "PRISCILLA GERMAINE": 2
+            }
+        },
+        "publisher": {
+            "coverage": 1502,
+            "values": {
+                "2Moon Studios": 1502
+            }
+        },
+        "race": {
+            "coverage": 1520,
+            "values": {
+                "HUMAN": 716,
+                "ANDROID": 464,
+                "ARCTURIAN": 336,
+                "YIKKIVIRE": 4
+            }
+        }
+    },
+    "scored": 1520,
+    "cuts": {
+        "strength": [
+            1.650936,
+            1.735257,
+            1.802203,
+            1.881385,
+            1.978295,
+            2.103233,
+            2.279325
+        ],
+        "tactics": [
+            0.338559,
+            0.376235,
+            0.499368,
+            0.515897,
+            0.595827,
+            0.809503
+        ],
+        "speed": [
+            -19.630034,
+            -18.760542,
+            -18.213157,
+            -17.714696,
+            -17.171727,
+            -16.590929
+        ],
+        "size": [
+            9.552505,
+            10.742373
+        ],
+        "type": [
+            8.877292,
+            11.426098
+        ]
+    }
+}

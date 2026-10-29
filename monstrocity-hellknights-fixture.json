@@ -1,0 +1,127 @@
+[
+    {
+        "asset": "BylethTomassontheBrute",
+        "traits": {
+            "eyes": "Blazing Inferno",
+            "armor": "Eastern Charcoal",
+            "chain": "None",
+            "horns": "Scarab Mithril",
+            "wings": "None",
+            "Artist": "Bajuzki Studios",
+            "helmet": "Angel Midnight",
+            "weapon": "Bloody Bejeweled Mace",
+            "insignia": "Yoroi",
+            "Developer": "Adam K. Dean",
+            "Collection": "Hellknights",
+            "background": "Abstract Orange"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 1,
+            "tactics": 1,
+            "size": "Medium",
+            "type": "Base",
+            "powerup": "Boost Attack"
+        }
+    },
+    {
+        "asset": "AmelouithHannessontheDenier",
+        "traits": {
+            "eyes": "Tempestuous Hatred",
+            "armor": "Reinforced Charcoal",
+            "chain": "Ancient",
+            "horns": "Minotaur Mithril",
+            "wings": "Fire Angel",
+            "Artist": "Bajuzki Studios",
+            "helmet": "Locust Charcoal",
+            "weapon": "Bejeweled Exile Axe of Hatred",
+            "insignia": "Daedalus",
+            "Developer": "Adam K. Dean",
+            "Collection": "Hellknights",
+            "background": "Abstract Green"
+        },
+        "want": {
+            "strength": 3,
+            "speed": 7,
+            "tactics": 6,
+            "size": "Large",
+            "type": "Leader",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "asset": "VassagoArasontheRevolting",
+        "traits": {
+            "eyes": "Diabolical Hatred",
+            "armor": "Gladiator Midnight",
+            "chain": "Officer",
+            "horns": "Underworld",
+            "wings": "Fire Angel",
+            "Artist": "Bajuzki Studios",
+            "helmet": "Angel Cobalt",
+            "weapon": "Bloody Bejeweled Exile Mace",
+            "insignia": "Ouroboros",
+            "Developer": "Adam K. Dean",
+            "Collection": "Hellknights",
+            "background": "Abstract Orange"
+        },
+        "want": {
+            "strength": 3,
+            "speed": 7,
+            "tactics": 6,
+            "size": "Large",
+            "type": "Base",
+            "powerup": "Heal"
+        }
+    },
+    {
+        "asset": "ZahakTryggvasontheParasitic",
+        "traits": {
+            "eyes": "Blindfold",
+            "armor": "Northern Midnight",
+            "chain": "Lord",
+            "horns": "Spider Bone",
+            "wings": "Fire Angel",
+            "Artist": "Bajuzki Studios",
+            "helmet": "Angel Charcoal",
+            "weapon": "Exile Axe of Hatred",
+            "insignia": "Yoroi",
+            "Developer": "Adam K. Dean",
+            "Collection": "Hellknights",
+            "background": "Abstract Purple"
+        },
+        "want": {
+            "strength": 1,
+            "speed": 7,
+            "tactics": 4,
+            "size": "Medium",
+            "type": "Leader",
+            "powerup": "Boost Attack"
+        }
+    },
+    {
+        "asset": "LerajeGunnarssontheWicked",
+        "traits": {
+            "eyes": "Tempestuous Spectral",
+            "armor": "Reinforced Midnight",
+            "chain": "None",
+            "horns": "Beast Bone",
+            "wings": "Torn",
+            "Artist": "Bajuzki Studios",
+            "helmet": "Scorpion Crimson",
+            "weapon": "Bloody Bejewelled Exile Blade",
+            "insignia": "None",
+            "Developer": "Adam K. Dean",
+            "Collection": "Hellknights",
+            "background": "Abstract Blue"
+        },
+        "want": {
+            "strength": 4,
+            "speed": 4,
+            "tactics": 5,
+            "size": "Medium",
+            "type": "Battle Damaged",
+            "powerup": "Minor Regen"
+        }
+    }
+]

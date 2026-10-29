@@ -90,9 +90,45 @@
         "summary": {
             "coverage": 10,
             "values": {
-                "Zombie Devil Girl cheerleader smokin' a joint.": 5,
-                "Sexy Squid Game girl in red skin tight latex hoodie.": 5
+                "Sexy Squid Game girl in red skin tight latex hoodie.": 5,
+                "Zombie Devil Girl cheerleader smokin' a joint.": 5
             }
         }
+    },
+    "scored": 25,
+    "cuts": {
+        "strength": [
+            1.041393,
+            1.041393,
+            1.041393,
+            1.041393,
+            1.041393,
+            1.041393,
+            1.041393
+        ],
+        "tactics": [
+            1.041393,
+            1.041393,
+            1.041393,
+            1.041393,
+            1.041393,
+            1.041393
+        ],
+        "speed": [
+            -3.282785,
+            -3.282785,
+            -3.282785,
+            -3.282785,
+            -1.641393,
+            -1.641393
+        ],
+        "size": [
+            1.041393,
+            2.082785
+        ],
+        "type": [
+            1.041393,
+            2.082785
+        ]
     }
 }
