@@ -248,7 +248,7 @@ function monstrocity_trait_band($score, $cuts) {
  * hash, exactly as before -- which is still the right answer for a theme
  * whose project is not on the platform at all.
  */
-function monstrocity_generic_policy($policy) {
+function monstrocity_generic_index() {
 	static $byPolicy = null;
 	if ($byPolicy === null) $byPolicy = array(
 		'7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55' => 'muses-of-the-multiverse',
@@ -275,38 +275,62 @@ function monstrocity_generic_policy($policy) {
 		'f4ae899bda2d478baec88620a06108619b231dfc6197be2a3b74a0ea' => 'machine-headz-chaos-edition',
 		'8f63e08467bfbbc260a382a80f3297f9a569fca0293f296620d72d17' => 'machine-headz',
 		'6710d32c862a616ba81ef00294e60fe56969949e0225452c48b5f0ed' => 'dph-afterdark',
-		'4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c' => 'drop-ship',
 		'b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5' => 'digital-hell-citizens-2-figh',
 		'43158c3ad95b6c97a6d71138f9ec41a1a46f1156d8db4a92b289e73f' => 'dph-uni2',
 		'89c01dc68d57169d9c02c3f35562d219884bbafa9d9f868c2f39ce67' => 'galactico-2',
-		'4e8734679e8cf731a3cca851bf57d900a0eff76996a7a2362bc8938b' => 'dph-genesis3',
 		'106e44f8ce68e28500545dcb68b407331a9d4b6088f11f672c6d07db' => 'dph-amievil',
 		'bedb9383c1ad91247ec2a81fc3841934bbb298530eb99a55e77a0fb8' => 'galactico-1',
 		'9d6ab3f9b103ba734761309e0ce02c1817e27306e4fdbaee60610686' => 'dph-2bdevilgirls',
-		'c7ad13b8f11d1d1d2abe519b4394b4ca62c1dd2ce737e382ab573947' => 'anime-origins',
 		'e935d5dfde8dc7346c6e64ce2997f2cd287c3da7dd807c63af6002ea' => 'dph-demondolls',
 		/*
 		 * NOT INDEXED, AND EACH FOR A STATED REASON.
 		 *
-		 * No readable traits at all -- only name, description, image and a
-		 * website, so there is nothing a map could be built from:
+		 * NOTHING READABLE -- only name, description, image and a website,
+		 * so there is nothing a map could be built from:
 		 *   fauna-x-nemonium 152, john-doe 57, skada 50, galaxy-of-sons 29,
 		 *   yume 22, beelzebub 16, machine-headz-clan-leaders 14,
 		 *   island-of-the-uncanny-neighbours 4
 		 *
-		 * ONE usable trait slot, which is worse than the hash rather than
-		 * better: with a single slot strength, tactics and speed are all
-		 * the same number wearing three hats, so every card in the
-		 * collection would sit on one line:
+		 * ONE usable slot. With a single slot strength, tactics and speed
+		 * are the same number wearing three hats and the whole collection
+		 * sits on one line -- worse than the hash, not better:
 		 *   shorty-verse 381, sh4pes-x-nemonium 343, bogeyman 206,
 		 *   dph-genesis1 82, derivative-heroes 19, dph-genesis2 12,
 		 *   dph-uni2-special 8
 		 *
+		 * NO RARITY TO READ. The band cuts come out as one repeated number,
+		 * which means every NFT scores the same and the whole collection
+		 * lands in one band:
+		 *   drop-ship 321      Character is 20 values at ~16 each and Rank
+		 *                      and Level are perfectly even. There is no
+		 *                      rarity in it. It wants an AUTHORED map --
+		 *                      Rank -> type, Level -> strength, Character
+		 *                      -> powerup -- which is a better reading of
+		 *                      that collection than rarity could ever be.
+		 *   dph-genesis3 55, anime-origins 16
+		 *
 		 * All of these keep hashing their identifier, exactly as before.
 		 */
 	);
+	return $byPolicy;
+}
+
+/** The census slug for a policy on the generic reading, or null. */
+function monstrocity_generic_policy($policy) {
+	$byPolicy = monstrocity_generic_index();
 	$policy = strtolower(trim((string)$policy));
 	return isset($byPolicy[$policy]) ? $byPolicy[$policy] : null;
+}
+
+/** Is this census slug reachable through the index? Used by the harness to
+    check only what the game can actually serve. */
+function monstrocity_generic_policy_slug_indexed($slug) {
+	foreach (array('3966cf1c948109e34f2c5a9f9670445ccc85008e5b8a6e67f913b491' => 'ancestors',
+	               'f0eca3e1fbe2d3801eff903b755d06bed64f19c30aacb1f124d18d6c' => 'hellknights') as $p => $sl)
+		if ($sl === $slug) return true;                   // authored
+	foreach (array_keys(monstrocity_generic_index()) as $p)
+		if (monstrocity_generic_policy($p) === $slug) return true;
+	return false;
 }
 
 /* ---------- the generic mapper ---------------------------------------- *
@@ -353,6 +377,24 @@ function monstrocity_generic_slots($census) {
 		$name = trim((string)$k);
 		if ($name === '' || ctype_digit($name)) continue;
 		if (!isset($v['values']) || count($v['values']) < 2) continue;
+		/*
+		 * AND NOT AN IDENTIFIER. A slot where most holders have a value
+		 * nobody else has is a serial number, not a trait -- "ID",
+		 * "Serial Number", "R.I.P The Fallen", and most of Moebius
+		 * Pioneers, whose `background` has 806 values across 1,231 assets.
+		 *
+		 * It breaks the scoring rather than merely adding noise. Strength
+		 * is the RAREST trait you carry, so one near-unique slot pins
+		 * almost everybody at -log10(1/N) -- all seven Moebius strength
+		 * cuts came out as the same number and every Pioneer in the game
+		 * showed strength 8. Reported from a roster screen.
+		 */
+		$cov = isset($v['coverage']) ? (int)$v['coverage'] : 0;
+		if ($cov >= 20) {
+			$ones = 0;
+			foreach ($v['values'] as $c) if ((int)$c === 1) $ones++;
+			if ($ones > $cov / 2) continue;
+		}
 		$out[] = (string)$k;
 	}
 	sort($out);

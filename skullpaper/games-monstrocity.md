@@ -25,7 +25,7 @@ Stats for those characters are worked out from the NFT's own on-chain identifier
 
 ### Your NFT's traits decide its card
 
-**36 collections, 116,497 NFTs**, play by their own traits rather than by a hash
+**33 collections, 116,105 NFTs**, play by their own traits rather than by a hash
 of their identifier. Rarity is measured against the **whole collection on chain**,
 not against whoever happens to be staked, so your card is fixed from the day the
 collection minted and the same NFT plays the same way in everybody's roster.
@@ -44,6 +44,10 @@ trait *means* — only about how unusual it is:
 Speed deliberately pulls the other way. Rare traits hit harder and think faster;
 common traits move quicker. There is no single best card — a plain NFT is a fast
 one, not a worthless one.
+
+Slots that are **identifiers rather than traits** are ignored: a serial number, or
+a background nobody else has, says nothing about what an NFT *is*, and counting it
+would make almost every holder's rarest trait a one-of-one.
 
 A few collections are **authored** instead, where the traits say something a
 fighting game can use directly.
@@ -85,11 +89,15 @@ rather than the one holding it.
 
 #### Collections that still hash
 
-Fifteen are left on the old identifier hash, and for a reason rather than an
+Eighteen are left on the old identifier hash, and for a reason rather than an
 oversight. Eight carry no readable traits at all — only a name, a description and
 an image. Seven have exactly one usable trait slot, where strength, tactics and
 speed would all be the same number wearing three hats, which is worse than a hash
-rather than better.
+rather than better. Three have no **rarity** to read: their traits are spread
+evenly enough that every NFT scores the same, so banding them would put the whole
+collection on one line. **Drop Ship** is the clearest of those — `Character` is
+twenty values at about sixteen each, and Rank and Level are perfectly even. It
+wants an authored map rather than a rarity one, and will get one.
 
 ## Progress & Scoring
 

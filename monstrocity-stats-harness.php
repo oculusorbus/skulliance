@@ -322,6 +322,56 @@ foreach (array('wavyape', 'omen', 'meltingmoonboy', 'meltingmoongirls', 'happyho
 ok(!$missing, 'a policy is indexed for the generic reading with no census behind it: '
    . implode(', ', $missing));
 
+/*
+ * NO INDEXED COLLECTION MAY HAVE DEGENERATE BAND CUTS.
+ *
+ * THE BUG THIS PINS, REPORTED OFF A ROSTER SCREEN TWICE. A cut set where
+ * every threshold is the same number puts the entire collection in one
+ * band: all 1,231 Moebius Pioneers showed strength 8, and so did every
+ * Drop Ship. It happens two ways and both are real --
+ *
+ *   an IDENTIFIER SLOT, where most holders have a value nobody else has,
+ *   so everyone's rarest trait is a 1-of-1: Moebius `background` (806
+ *   values over 1,231), Drop Ship `ID`, two Galactico `Serial Number`s,
+ *   The Fourth's `R.I.P The Fallen` at 1,600 of 1,602. Filtered out of
+ *   the scoring now, in monstrocity_generic_slots().
+ *
+ *   NO RARITY AT ALL. Drop Ship still collapses with ID gone, because
+ *   `Character` is 20 values at roughly 16 each and Rank and Level are
+ *   perfectly even. Nothing to read; the collection is not indexed.
+ *
+ * Checked over every census rather than the indexed ones only, so a
+ * collection cannot be added to the index without this noticing.
+ */
+$degen = array();
+foreach (glob(__DIR__ . '/lib/monstrocity-census-*.json') as $cf) {
+	$slug = substr(basename($cf), strlen('monstrocity-census-'), -5);
+	$doc  = json_decode((string)file_get_contents($cf), true);
+	if (!is_array($doc) || empty($doc['cuts'])) continue;
+	$indexed = monstrocity_generic_policy_slug_indexed($slug);
+	if (!$indexed) continue;
+	foreach ($doc['cuts'] as $stat => $cuts)
+		if ($cuts && count(array_unique($cuts)) === 1)
+			$degen[] = "$slug/$stat all = " . $cuts[0];
+}
+ok(!$degen, 'an indexed collection bands every NFT the same: ' . implode('; ', $degen));
+/* And the filter that stops the commonest cause. */
+$ids = array();
+foreach (glob(__DIR__ . '/lib/monstrocity-census-*.json') as $cf) {
+	$slug = substr(basename($cf), strlen('monstrocity-census-'), -5);
+	$doc  = json_decode((string)file_get_contents($cf), true);
+	if (!is_array($doc) || !isset($doc['slots']) || !is_array($doc['slots'])) continue;
+	$scored = monstrocity_generic_slots($doc);
+	foreach ($doc['slots'] as $k => $v) {
+		$cov = (int)$v['coverage'];
+		if ($cov < 20) continue;
+		$ones = 0;
+		foreach ($v['values'] as $c) if ((int)$c === 1) $ones++;
+		if ($ones > $cov / 2 && in_array($k, $scored, true)) $ids[] = "$slug.$k";
+	}
+}
+ok(!$ids, 'an identifier slot is being scored as a trait: ' . implode(', ', $ids));
+
 /* Driven on real documents. */
 $gfx = json_decode((string)@file_get_contents(__DIR__ . '/monstrocity-generic-fixture.json'), true);
 ok(is_array($gfx) && count($gfx) >= 5, 'the generic fixture is missing');
