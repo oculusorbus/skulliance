@@ -3203,8 +3203,15 @@ ok($branch !== false && $insert !== false && $branch < $insert,
 $repayTool = @file_get_contents(__DIR__ . '/dhcbosses-repay.php');
 ok(is_string($repayTool) && strpos($repayTool, "in_array('--run'") !== false,
    'the repay tool has no dry run, so inspecting what it would pay means paying it');
-ok(is_string($repayTool) && strpos($repayTool, 'dhcb_settle($conn, $week, false, true)') !== false,
+/* The repay flag, whatever else the call carries -- it gained a pacing
+   argument so Discord takes all 43 announcements, and pinning the exact
+   argument list made that addition look like a regression. */
+ok(is_string($repayTool)
+   && preg_match('~dhcb_settle\(\$conn, \$week, false, true~', $repayTool) === 1,
    'the repay tool does not call the settle in repay mode');
+ok(is_string($repayTool) && preg_match('~dhcb_settle\([^)]*, \d{4,}\)~', $repayTool) === 1,
+   'the repay tool does not pace its awards, so Discord rate-limits away a share of 43 '
+ . 'announcements and nothing says so');
 
 
 /* ---------------------------------------------------------------- *
