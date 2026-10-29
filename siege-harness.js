@@ -210,13 +210,24 @@ ok(spokes.length === Object.keys(L.week.nodes).length,
 
 /* The shells: one ring per wave, plus a progress arc on the live one. */
 const circles = all(A.svg, e => e.tagName === 'circle');
-const rings = circles.filter(c => c.getAttribute('fill') === 'none' && c.getAttribute('stroke'));
+/* SCOPED TO THE CENTRE GROUP. A bare sweep for "fill:none with a stroke"
+   also catches the ring on a player who landed a last blow and the dashed
+   one around whoever is looking, so a positional comparison against the
+   server's shells lined up against the wrong circles. */
+const coreA = all(A.svg, e => e.getAttribute('class') === 'sg-core')[0];
+const rings = (coreA ? all(coreA, e => e.tagName === 'circle') : [])
+  .filter(c => c.getAttribute('fill') === 'none' && c.getAttribute('stroke'));
 ok(rings.length >= L.week.shells.length,
    `a ring for every wave (${rings.length} rings, ${L.week.shells.length} waves)`);
+/* PROPORTIONALLY, not literally. The centre is scaled to fill whatever the
+   ring leaves, so the drawn radii are the server's times one factor -- what
+   has to survive is the shape, not the absolute numbers. */
 const radii = L.week.shells.map(s => s.r);
-const drawn = new Set(rings.map(c => Math.round(parseFloat(c.getAttribute('r')))));
-ok(radii.every(r => drawn.has(r)),
-   'every wave radius the server computed was actually drawn: ' + radii.join(','));
+const drawnR = rings.map(c => parseFloat(c.getAttribute('r'))).sort((a, b) => b - a);
+const kw = drawnR[0] / radii[0];
+const wDrift = radii.map((r, i) => Math.abs(drawnR[i] - r * kw)).reduce((m, d) => Math.max(m, d), 0);
+ok(wDrift < 2.5,
+   `the drawn shells are not the server's, scaled: ${radii.join(',')} vs ${drawnR.join(',')}`);
 
 /* The live wave is the only one drawn solid; the rest are dashed. */
 const dashed = rings.filter(c => (c.getAttribute('stroke-dasharray') || '') === '3 4');
@@ -280,6 +291,31 @@ if (centre.x !== null) {
   });
   ok(clash.length === 0,
      'a player is drawn on top of the crew they are attacking: ' + clash.join(', '));
+
+  /*
+   * AND THE CENTRE IS NOT LOST IN THE MIDDLE OF IT.
+   *
+   * The previous check only asked that the clusters clear the crew, which a
+   * tiny centre satisfies trivially -- so a wave-10 week drew ten rings
+   * crammed into a fixed 120px with a hundred and forty of empty annulus
+   * around them, and every check passed. Reported off the live map.
+   *
+   * The moat is the clear air between the outermost shell and the nearest
+   * avatar's inner edge. It has to exist (the clusters must not sit on the
+   * crew) and it has to stay a MOAT rather than become the picture.
+   */
+  let moat = Infinity;
+  clusters.forEach(g => {
+    const av = kidsOf(g).filter(e => e.tagName === 'circle' && e.getAttribute('fill') === '#0a1929')
+                        .sort((a, b) => parseFloat(b.getAttribute('r')) - parseFloat(a.getAttribute('r')))[0];
+    if (!av) return;
+    const d = Math.hypot(parseFloat(av.getAttribute('cx')) - centre.x,
+                         parseFloat(av.getAttribute('cy')) - centre.y);
+    moat = Math.min(moat, d - parseFloat(av.getAttribute('r')) - outerShell);
+  });
+  ok(moat > 8, `the crew and the attackers are touching (${moat.toFixed(0)}px of air)`);
+  ok(moat < outerShell, `the empty ring between the crew and the attackers is wider than `
+     + `the crew itself (${moat.toFixed(0)}px of air around a ${outerShell}px centre)`);
 }
 
 console.log('\n-- nothing is drawn outside the canvas --');
@@ -324,6 +360,48 @@ function outside(svg, w, h) {
 }
 const out1 = outside(A.svg, W, H);
 ok(out1.length === 0, 'the week view keeps its ink inside the canvas: ' + out1.slice(0, 4).join(' | '));
+
+console.log('\n-- a busy week: the centre fills the ring --');
+/*
+ * EIGHT PLAYERS WITH DEEP CREWS AND TEN WAVES -- the live shape. The ring
+ * is sized by the circumference eight clusters of Fighter portraits need,
+ * which is far wider than the nominal centre the server sizes shells
+ * against, so the ten rings sat crammed in the middle with a wide band of
+ * nothing around them. The three-player fixture above cannot show this: its
+ * ring is small enough that the centre already fills it.
+ */
+const BZ = draw(L.busy, 0);
+const bzOuter = L.busy.shells[0].r;
+const bzCore = all(BZ.svg, e => e.getAttribute('class') === 'sg-core')[0];
+const bzRings = (bzCore ? all(bzCore, e => e.tagName === 'circle') : [])
+  .filter(c => c.getAttribute('fill') === 'none' && c.getAttribute('stroke'));
+const bzDrawn = Math.max.apply(null, bzRings.map(c => parseFloat(c.getAttribute('r'))));
+ok(bzDrawn > bzOuter * 1.4,
+   `the centre was not grown to fit the ring (drawn ${bzDrawn}, nominal ${bzOuter})`);
+/* The shells keep their proportions while they grow -- the band areas are
+   the waves, and a scale must not become a redesign. */
+const bzSorted = bzRings.map(c => parseFloat(c.getAttribute('r'))).sort((a, b) => b - a);
+const k = bzDrawn / bzOuter;
+const drift = L.busy.shells.map((sh, i) => Math.abs(bzSorted[i] - sh.r * k)).reduce((m, d) => Math.max(m, d), 0);
+ok(drift < 2.5, `scaling the centre distorted the wave bands by ${drift.toFixed(1)}px`);
+/* And the moat is still a moat at this size. */
+let bzMoat = Infinity;
+const bzCentre = bzRings.filter(c => Math.round(parseFloat(c.getAttribute('r'))) === Math.round(bzDrawn))[0];
+all(BZ.svg, e => e.getAttribute('class') === 'sg-cluster').forEach(g => {
+  const av = kidsOf(g).filter(e => e.tagName === 'circle' && e.getAttribute('fill') === '#0a1929')
+                      .sort((a, b) => parseFloat(b.getAttribute('r')) - parseFloat(a.getAttribute('r')))[0];
+  if (!av || !bzCentre) return;
+  const d = Math.hypot(parseFloat(av.getAttribute('cx')) - parseFloat(bzCentre.getAttribute('cx')),
+                       parseFloat(av.getAttribute('cy')) - parseFloat(bzCentre.getAttribute('cy')));
+  bzMoat = Math.min(bzMoat, d - parseFloat(av.getAttribute('r')) - bzDrawn);
+});
+ok(bzMoat > 8, `a busy week puts the attackers on the crew (${bzMoat.toFixed(0)}px of air)`);
+ok(bzMoat < bzDrawn * 0.45,
+   `a busy week still leaves a dead ring around the crew (${bzMoat.toFixed(0)}px of air `
+   + `around a ${bzDrawn.toFixed(0)}px centre)`);
+ok(outside(BZ.svg, parseFloat(BZ.svg.getAttribute('width')),
+                   parseFloat(BZ.svg.getAttribute('height'))).length === 0,
+   'and it still keeps its ink inside the canvas');
 
 console.log('\n-- a wider window shows weeks, not shells --');
 const B = draw(L.wide, 0);

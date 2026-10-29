@@ -350,6 +350,41 @@ if ($dump !== null) {
 		 * check cannot fail. One player puts the whole middle outside the ink
 		 * the clusters produce, which is the case the measurement exists for.
 		 */
+		/*
+		 * THE LIVE SHAPE: eight players with deep Crews and a week that
+		 * reached wave 10. The three-player fixture cannot show this -- its
+		 * ring is small, so the centre already fills it and the scaling never
+		 * engages. This is the week that drew ten rings inside 120px with a
+		 * hundred and forty of dead annulus around them.
+		 */
+		'busy' => dhcb_siege_layout((function () {
+			$c = new SgConn();
+			$names = array('oculusorbus','tallnupinks','michael_heistonalpha','mikej_uptownmarge6',
+			               'fomz','spark3333','vanwink','latecomer');
+			foreach ($names as $i => $nm) {
+				$uid = $i + 1;
+				$c->players[] = array('user_id'=>$uid,'username'=>$nm,'discord_id'=>'d'.$uid,
+					'avatar'=>'a'.$uid,'dealt'=>25280 - $i * 2800,'runs'=>20 - $i,
+					'fielded'=>45 - $i * 3,'scoring'=>45 - $i * 3,'weeks_in'=>1,
+					'rounds'=>7 - (int)($i / 2),'whi'=>10);
+				/* Deep Crews: the thing that makes the ring wide. */
+				for ($f = 0; $f < 14; $f++)
+					$c->fighters[] = array('fighter_id'=>$uid * 100 + $f,'user_id'=>$uid,
+						'serial'=>$uid * 100 + $f,'name'=>'F'.$uid.'-'.$f,
+						'traits'=>'{"torso":"t1"}','dealt'=>2000 - $f * 90,'runs'=>6,'fell'=>1);
+			}
+			$hp = 42000;
+			for ($w = 1; $w <= 10; $w++) {
+				foreach (dhcb_bosses() as $b)
+					$c->days[] = array('day'=>'2026-10-22','wave'=>$w,'boss_key'=>$b['key'],
+						'max_health'=>(int)round($hp * $b['hp']),
+						'health'=>($w === 10 ? (int)round($hp * $b['hp'] * 0.8) : 0),
+						'killed_at'=>($w === 10 ? null : '2026-10-24 10:00:00'),
+						'killed_by'=>($w === 10 ? null : 1 + ($w % 8)));
+				$hp = max(5200, (int)round($hp * 0.58));
+			}
+			return dhcb_siege($c, 1, '2026-10-22');
+		})()),
 		'wideSolo' => dhcb_siege_layout(dhcb_siege((function () use ($cw) {
 			$c = $cw; $c->players = array($c->players[0]); return $c;
 		})(), 13, '2026-10-22')),

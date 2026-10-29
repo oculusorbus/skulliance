@@ -55,6 +55,10 @@
   /* ---- the centre ---------------------------------------------------------
      Shells on the week view, a column of weeks on the wider ones. Either way
      it occupies a disc of CORE radius, and the ring of players clears it. */
+  /* READ-ONLY. The scaled copy is SHELLS below; D is what the server sent
+     and nothing here may edit it -- an in-place scale compounds the moment
+     anything renders twice, and it makes the data object lie about what
+     arrived. */
   const shells = D.shells || [];
   const byWeek = D.byWeek || [];
   /*
@@ -76,9 +80,6 @@
              below: inner + 12 + barMax + 20,
              half:  Math.max(inner + 8, (n * colW) / 2 + 6) };
   })();
-  const CORE = shells.length ? shells[0].r + 14
-             : Math.max(WIDE.below, WIDE.half);
-
   /* ---- the ring -----------------------------------------------------------
      Heaviest first and running clockwise from the top, so the eye lands on
      the player carrying the week. No seriation: there are no chords between
@@ -103,7 +104,57 @@
   const demand = seq.map(id => 2 * G[id].outer + GAP);
   const needed = demand.reduce((t, d) => t + d, 0);
   const maxOut = Math.max.apply(null, seq.map(id => G[id].outer));
-  const R = Math.max(CORE + maxOut + 18, maxOut + 40, needed / (2 * Math.PI));
+  const ringC  = needed / (2 * Math.PI);          // what the clusters alone need
+  const MOAT   = 26;                              // clear air between crew and crew
+
+  /*
+   * THE CENTRE FILLS THE ROOM IT HAS, rather than a fixed 120.
+   *
+   * dhcb_siege_layout() sizes the shells against a nominal outer radius,
+   * because the ORDER and the band areas and the legibility floor are
+   * assertions about the data and belong where they can be tested without a
+   * browser. How much room there actually is, though, is a property of the
+   * drawing: the ring is sized by the circumference eight clusters of
+   * Fighter portraits need, and on a busy week that is far larger than the
+   * nominal centre -- a wave-10 week drew ten rings crammed into 120px with
+   * a hundred and forty of dead annulus around them. Reported from the live
+   * map.
+   *
+   * So the server's radii are treated as PROPORTIONS and scaled to whatever
+   * the ring leaves. Only ever up: shrinking them would undo the minimum
+   * spacing that was enforced at the nominal scale, and the whole drawing
+   * scales down through the viewBox anyway, so what matters here is the
+   * ratio of centre to ring rather than any absolute size.
+   */
+  /*
+   * THE AVATAR, NOT THE WHOLE CLUSTER, is what stands between the ring and
+   * the centre: a Crew faces OUTWARD and the label runs outward past it, so
+   * subtracting the cluster's full reach would reserve the crew's depth on
+   * the side of the ring it is not on -- and leave exactly the dead annulus
+   * this is meant to close.
+   */
+  const maxAv = Math.max.apply(null, seq.map(id => D.nodes[id].r));
+  const CSCALE = (function () {
+    const nominal = shells.length ? shells[0].r + 14
+                  : Math.max(WIDE.below, WIDE.half);
+    const room = ringC - maxAv - MOAT;
+    return (nominal > 0 && room > nominal) ? room / nominal : 1;
+  })();
+  /* A COPY, not an edit of D.shells -- see the note at the top. */
+  const SHELLS = shells.map(sh => {
+    const o = {}; for (const k in sh) o[k] = sh[k];
+    o.r = Math.round(sh.r * CSCALE);
+    return o;
+  });
+  const CORE = SHELLS.length ? SHELLS[0].r + Math.round(14 * CSCALE)
+             : Math.round(Math.max(WIDE.below, WIDE.half) * CSCALE);
+  if (CSCALE > 1 && !SHELLS.length) {
+    WIDE.inner  = Math.round(WIDE.inner * CSCALE);
+    WIDE.barMax = Math.round(WIDE.barMax * CSCALE);
+    WIDE.colW   = WIDE.colW * CSCALE;
+  }
+
+  const R = Math.max(CORE + maxAv + MOAT, maxOut + 40, ringC);
 
   const used  = needed / (R || 1);
   const slack = Math.max(0, Math.PI * 2 - used) / N;
@@ -180,9 +231,9 @@
     /* Which shell to stop at: the innermost wave they fought. Shells are
        ordered outermost first, so that is the smallest radius among them. */
     let stop = CORE;
-    if (shells.length && present.length) {
+    if (SHELLS.length && present.length) {
       let r = Infinity;
-      shells.forEach(sh => { if (waves[sh.wave] && sh.r < r) r = sh.r; });
+      SHELLS.forEach(sh => { if (waves[sh.wave] && sh.r < r) r = sh.r; });
       if (r !== Infinity) stop = r;
     }
     const dx = CX - p.x, dy = CY - p.y;
@@ -252,9 +303,9 @@
     });
   }
 
-  if (shells.length) {
+  if (SHELLS.length) {
     /* Outermost first, so a later wave draws over an earlier one. */
-    shells.forEach(sh => {
+    SHELLS.forEach(sh => {
       const live = sh.left > 0;
       core.appendChild(svgEl('circle', {
         cx: CX, cy: CY, r: sh.r, fill: 'none',
@@ -313,7 +364,7 @@
     /* The live crew's own portraits, inside the innermost shell -- which the
        cumulative sizing guarantees IS the live wave, since the health summed
        from the last wave onward is the smallest sum there is. */
-    const liveWave = shells.filter(s2 => s2.left > 0).pop();
+    const liveWave = SHELLS.filter(s2 => s2.left > 0).pop();
     if (liveWave && liveWave.bosses.length)
       drawCrew(liveWave.bosses, liveWave.r, b => b.name + ' \u00b7 '
         + (b.dead ? 'down' : b.left.toLocaleString() + ' / ' + b.max.toLocaleString()));
