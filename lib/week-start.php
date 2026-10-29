@@ -130,3 +130,49 @@ function skl_week_day_sql($col = 'started_at') {
 	return 'LEAST(6, GREATEST(0, FLOOR(TIMESTAMPDIFF(SECOND, '
 	     . skl_week_start_sql() . ', ' . $col . ') / 86400)))';
 }
+
+/**
+ * The same two, anchored on a GIVEN week rather than on the clock.
+ *
+ * THIS EXISTS BECAUSE THE SETTLE PAID EVERYBODY THREE TRAITS.
+ *
+ * skl_week_day_sql() measures from "the week NOW() is in", which is right
+ * while a week is running and wrong at the only moment the weekly settle
+ * executes: the cron fires after 4pm Thursday, so NOW() is already inside
+ * the NEW week while the rows being settled belong to the old one. Every
+ * TIMESTAMPDIFF came out negative, GREATEST(0, ...) clamped all of them to
+ * block 0, and a player's five separate rounds collapsed into one group --
+ * paying LEAST(DHCB_WAVE_TRAITS_MAX, MAX(wave)) once instead of per round.
+ *
+ * Three traits for everyone who took part, whether they turned up once or
+ * seven times. It looked entirely normal in the announcement.
+ *
+ * Anything that groups rows by round for a week it is not currently inside
+ * must use these.
+ */
+function skl_week_start_sql_for($weekKey) {
+	/* A key is the DATE of a Thursday. Anything else is a bug upstream and
+	   falling back to the clock would reintroduce the fault quietly, so it
+	   is refused loudly instead. */
+	if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)$weekKey))
+		throw new InvalidArgumentException('week key must be Y-m-d, got ' . var_export($weekKey, true));
+	return "TIMESTAMP('" . $weekKey . "', '16:00:00')";
+}
+
+function skl_week_day_sql_for($weekKey, $col = 'started_at') {
+	return 'LEAST(6, GREATEST(0, FLOOR(TIMESTAMPDIFF(SECOND, '
+	     . skl_week_start_sql_for($weekKey) . ', ' . $col . ') / 86400)))';
+}
+
+/**
+ * And anchored on each ROW's own week, for a query spanning several.
+ *
+ * A single key cannot serve a range: the Siege map counts rounds across
+ * thirteen weeks at once, and measuring all of them from one Thursday puts
+ * twelve weeks' worth of rows outside the 0-6 window. `day` already holds
+ * the Thursday each row belongs to, so it is the anchor.
+ */
+function skl_week_day_sql_col($weekCol = 'day', $col = 'started_at') {
+	return 'LEAST(6, GREATEST(0, FLOOR(TIMESTAMPDIFF(SECOND, '
+	     . "TIMESTAMP($weekCol, '16:00:00'), " . $col . ') / 86400)))';
+}

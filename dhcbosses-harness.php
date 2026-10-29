@@ -895,8 +895,26 @@ ok(strpos($LIB, 'INSERT INTO dhc_boss_payouts') !== false,
    'the settle writes no payout row, so nothing stops it paying again');
 $settle = substr($LIB, strpos($LIB, 'function dhcb_settle'));
 $settle = substr($settle, 0, strpos($settle, "\nfunction "));
-$ins = strpos($settle, 'INSERT INTO dhc_boss_payouts');
-$awd = strpos($settle, 'dhcf_award(');
+/*
+ * EVERY AWARD HAS A PAYOUT WRITE BEFORE IT, which is the actual rule. This
+ * used to compare the first INSERT against the first dhcf_award() -- and
+ * then repay mode added a branch that UPDATEs the row and awards the
+ * difference, which is correct and which that comparison called a
+ * regression. The claim never changed; only one branch's verb did.
+ */
+preg_match_all('~(?:INSERT INTO|UPDATE) dhc_boss_payouts~', $settle, $wm, PREG_OFFSET_CAPTURE);
+preg_match_all('~dhcf_award\(~', $settle, $am, PREG_OFFSET_CAPTURE);
+$unbacked = 0;
+foreach ($am[0] as $a) {
+	$seen = false;
+	foreach ($wm[0] as $w) if ($w[1] < $a[1]) $seen = true;
+	if (!$seen) $unbacked++;
+}
+ok(count($wm[0]) >= 1 && count($am[0]) >= 1 && $unbacked === 0,
+   "$unbacked of " . count($am[0]) . ' award sites hand out a trait with no payout row written '
+ . 'before them, so a half-failure pays every time the cron runs');
+$ins = count($wm[0]) ? $wm[0][0][1] : false;
+$awd = count($am[0]) ? $am[0][0][1] : false;
 ok($ins !== false && $awd !== false && $ins < $awd,
    'the trait is awarded before the payout row is written, so a half-failure pays every time '
  . 'the cron runs');
@@ -3088,6 +3106,106 @@ foreach ($bm as $bx) if (strpos($bx[1], 'btn') === false) $offStyle[] = $bx[2];
 ok(!$offStyle, 'an Arena button uses the global .button style instead of .btn: '
              . implode(', ', $offStyle));
 ok(count($bm) >= 8, 'the button sweep found only ' . count($bm) . ' buttons, so it is not sweeping');
+
+/* ---------------------------------------------------------------- *
+ * THE SETTLE MEASURES THE WEEK IT IS SETTLING, NOT THE CLOCK
+ * ---------------------------------------------------------------- */
+echo "\nthe settle groups rounds against the week it is paying for\n";
+/*
+ * THE BUG THIS PINS COST EVERY PLAYER THEIR WEEK.
+ *
+ * dhcb_participants() grouped a player's rounds with skl_week_day_sql(),
+ * which measures from "the week NOW() is in". The weekly cron fires AFTER
+ * the 4pm Thursday turn, so NOW() was already inside the new week while
+ * the rows being settled belonged to the old one: every TIMESTAMPDIFF came
+ * out negative, GREATEST(0, ...) clamped all of them to block 0, and a
+ * player's five separate rounds collapsed into a single group.
+ *
+ * That paid LEAST(DHCB_WAVE_TRAITS_MAX, MAX(wave)) ONCE instead of per
+ * round -- three traits to everybody who took part, whether they turned up
+ * once or seven times, on the first ever DHC Bosses payout. The owner
+ * noticed because twelve banked traits arrived as three.
+ */
+$parts = substr($LIB, strpos($LIB, 'function dhcb_participants'));
+$parts = substr($parts, 0, strpos($parts, "\nfunction "));
+ok(strpos($parts, 'skl_week_day_sql_for(') !== false,
+   'dhcb_participants() does not anchor its round grouping on the week being settled');
+ok(!preg_match('~skl_week_day_sql\(~', $parts),
+   'dhcb_participants() still uses the clock-anchored day index somewhere, which pays three '
+ . 'traits to everyone the moment the cron runs after the turn');
+/* Same fault, same fix, in everything else scoped to a passed-in week. */
+foreach (array('dhcb_cache_days', 'dhcb_cache_slots') as $fn) {
+	$src = substr($LIB, strpos($LIB, 'function ' . $fn));
+	$src = substr($src, 0, strpos($src, "\nfunction "));
+	ok(!preg_match('~skl_week_day_sql\(~', $src),
+	   "$fn() measures a given week against the clock, so it is wrong for any week but the "
+	 . 'current one');
+}
+/* And the Siege map, which spans thirteen weeks at once and cannot use a
+   single key for all of them. */
+$sg = substr($LIB, strpos($LIB, 'function dhcb_siege('));
+$sg = substr($sg, 0, strpos($sg, "\nfunction dhcb_siege_art"));
+ok(strpos($sg, 'skl_week_day_sql_col(') !== false,
+   'the Siege map measures a multi-week range from one Thursday, which puts twelve weeks of '
+ . 'rows outside the 0-6 window');
+
+/* The generated SQL itself, which is the thing that was wrong. */
+require_once __DIR__ . '/lib/week-start.php';
+$forWeek = skl_week_day_sql_for('2026-10-22', 'started_at');
+ok(strpos($forWeek, 'NOW()') === false,
+   'the week-anchored day index still reads the clock: ' . $forWeek);
+ok(strpos($forWeek, "'2026-10-22'") !== false,
+   'the week-anchored day index does not mention the week it was given');
+ok(strpos(skl_week_day_sql('started_at'), 'NOW()') !== false,
+   'the clock-anchored version stopped reading the clock, which is what it is FOR');
+/* A key that is not a Thursday date is a bug upstream and must be refused
+   rather than quietly falling back to the clock -- that fallback would
+   reintroduce the three-trait week invisibly. */
+$threw = false;
+try { skl_week_day_sql_for('not-a-date', 'started_at'); } catch (Throwable $e) { $threw = true; }
+ok($threw, 'a malformed week key is accepted, so a caller can silently get the clock back');
+
+echo "\nand a week settled wrongly can be made whole\n";
+/*
+ * REPAY PAYS THE DIFFERENCE. Deleting the payout rows and re-running would
+ * pay the full amount again to anyone whose first payout happened to be
+ * right, and would lose what was originally paid.
+ */
+$settleSrc = substr($LIB, strpos($LIB, 'function dhcb_settle'));
+$settleSrc = substr($settleSrc, 0, strpos($settleSrc, "\nfunction "));
+ok(strpos($settleSrc, '$repay') !== false, 'dhcb_settle() has no repay mode');
+ok(preg_match('~\$owed\s*=\s*\$slots\s*-\s*\$prev~', $settleSrc) === 1,
+   'repay does not pay the DIFFERENCE, so it either overpays or pays nothing');
+ok(preg_match('~if \(\$owed <= 0\) continue~', $settleSrc) === 1,
+   'repay pays a player who is already whole, so running it twice pays twice');
+ok(strpos($settleSrc, 'UPDATE dhc_boss_payouts SET slots') !== false,
+   'repay does not record what it paid, so the next run pays it all over again');
+/* FAIL CLOSED: no row written, no trait handed out. */
+$upd = strpos($settleSrc, 'UPDATE dhc_boss_payouts SET slots');
+$guard = strpos($settleSrc, 'if (!$ok) continue;', $upd);
+$nextAward = strpos($settleSrc, 'dhcf_award(', $upd);
+ok($guard !== false && $nextAward !== false && $guard < $nextAward,
+   'repay awards traits without checking the row was updated, so a failed write pays out '
+ . 'again on every run');
+/* A participant with no payout row at all falls through to the normal
+   insert rather than being skipped -- repay is "pay what is outstanding". */
+/* The repay branch is entered only when a row EXISTS; a player with none
+   falls out of it to the ordinary insert below, which is how "pay what is
+   outstanding" covers somebody the first settle missed entirely. */
+ok(preg_match('~if \(\$prev !== null\) \{~', $settleSrc) === 1,
+   'repay does not gate on whether a payout row exists, so a player who was never paid is '
+ . 'either skipped or paid through the wrong branch');
+$branch = strpos($settleSrc, 'if ($prev !== null) {');
+$insert = strpos($settleSrc, 'INSERT INTO dhc_boss_payouts');
+ok($branch !== false && $insert !== false && $branch < $insert,
+   'the repay branch does not sit before the insert, so a never-paid player cannot reach it');
+
+$repayTool = @file_get_contents(__DIR__ . '/dhcbosses-repay.php');
+ok(is_string($repayTool) && strpos($repayTool, "in_array('--run'") !== false,
+   'the repay tool has no dry run, so inspecting what it would pay means paying it');
+ok(is_string($repayTool) && strpos($repayTool, 'dhcb_settle($conn, $week, false, true)') !== false,
+   'the repay tool does not call the settle in repay mode');
+
 
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all DHC Bosses checks passed\n");
 exit($fail ? 1 : 0);

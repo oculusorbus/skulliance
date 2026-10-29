@@ -807,7 +807,7 @@ function dhcb_round($conn) {
  */
 function dhcb_cache_days($conn, $user_id, $week = null) {
 	if ($week === null) $week = dhcb_week($conn);
-	$r = @$conn->query("SELECT COUNT(DISTINCT " . skl_week_day_sql('started_at') . ") AS n
+	$r = @$conn->query("SELECT COUNT(DISTINCT " . skl_week_day_sql_for($week, 'started_at') . ") AS n
 	                      FROM dhc_boss_runs
 	                     WHERE user_id = " . (int)$user_id . "
 	                       AND day = '" . $conn->real_escape_string($week) . "'
@@ -1534,7 +1534,7 @@ function dhcb_participants($conn, $day) {
 	$r = @$conn->query("SELECT user_id, SUM(dealt) AS dealt, COUNT(*) AS runs,
 	                           SUM(crew_size) AS fighters, MAX(rounds) AS rounds_max,
 	                           COUNT(DISTINCT CASE WHEN dealt >= $min OR rounds >= $mr
-	                                 THEN " . skl_week_day_sql('started_at') . " END) AS days
+	                                 THEN " . skl_week_day_sql_for($day, 'started_at') . " END) AS days
 	                      FROM dhc_boss_runs
 	                     WHERE day = '$esc' AND outcome <> 0
 	                     GROUP BY user_id");
@@ -1569,14 +1569,19 @@ function dhcb_participants($conn, $day) {
 	 * broke. This runs once a week, on an indexed column.
 	 */
 	$cap = (int)DHCB_WAVE_TRAITS_MAX;
+	/* ANCHORED ON THE WEEK BEING SETTLED, not on the clock -- see the note
+	   on skl_week_day_sql_for(). With the clock-anchored version every
+	   round of a closed week collapsed into one group and everybody was
+	   paid three traits. */
+	$dayCol = skl_week_day_sql_for($day, 'started_at');
 	$tq  = @$conn->query(
 		"SELECT user_id, SUM(t) AS traits FROM (
-		   SELECT user_id, " . skl_week_day_sql('started_at') . " AS d,
+		   SELECT user_id, $dayCol AS d,
 		          LEAST($cap, GREATEST(1, MAX(wave))) AS t
 		     FROM dhc_boss_runs
 		    WHERE day = '$esc' AND outcome <> 0
 		      AND (dealt >= $min OR rounds >= $mr)
-		    GROUP BY user_id, " . skl_week_day_sql('started_at') . "
+		    GROUP BY user_id, $dayCol
 		 ) r GROUP BY user_id");
 	if ($tq) while ($x = $tq->fetch_assoc()) {
 		$uid = (int)$x['user_id'];
@@ -1600,7 +1605,26 @@ function dhcb_participants($conn, $day) {
  *
  * Returns array(paid, table, progress).
  */
-function dhcb_settle($conn, $day = null, $announce = true) {
+/**
+ * Settle a week, or REPAY one that was settled wrongly.
+ *
+ * $repay pays the DIFFERENCE between what a player is owed and what the
+ * payout row says they already got, and updates that row. It exists
+ * because the first ever DHC Bosses payout gave everybody three traits:
+ * the settle grouped rounds with a clock-anchored day index, which after
+ * the 4pm Thursday turn collapsed every round of the closed week into one
+ * block. See skl_week_day_sql_for().
+ *
+ * WHY NOT JUST DELETE THE ROWS AND RE-RUN. The row is the record that a
+ * week was paid, and dropping it to re-run would pay the whole amount
+ * again to anyone whose first payout happened to be right -- and lose the
+ * audit trail of what was originally paid. Repay is additive and leaves
+ * `slots` holding the true total.
+ *
+ * IDEMPOTENT, like the settle it mirrors: run twice and the second run
+ * finds nothing owed.
+ */
+function dhcb_settle($conn, $day = null, $announce = true, $repay = false) {
 	if ($day === null) $day = dhcb_week($conn);
 	$state = dhcb_state($conn, $day);
 	$prog  = dhcb_progress($state);
@@ -1629,6 +1653,35 @@ function dhcb_settle($conn, $day = null, $announce = true) {
 		$slots = max(1, (int)$p['traits'] > 0
 			? (int)$p['traits']
 			: min((int)DHCB_CACHE_MAX, (int)$p['days']));
+		$owed = $slots;
+		if ($repay) {
+			/* What this player was actually given. A missing row means they
+			   were never paid at all, which the normal path below handles
+			   -- repay is "pay whatever is outstanding", not "pay again". */
+			$prev = null;
+			$pr = @$conn->query(sprintf(
+				"SELECT slots FROM dhc_boss_payouts WHERE day = '%s' AND user_id = %d",
+				$conn->real_escape_string($day), (int)$uid));
+			if ($pr && ($px = $pr->fetch_assoc())) $prev = (int)$px['slots'];
+			if ($prev !== null) {
+				$owed = $slots - $prev;
+				if ($owed <= 0) continue;          // already whole
+				$ok = @$conn->query(sprintf(
+					"UPDATE dhc_boss_payouts SET slots = %d, paid_at = NOW()
+					  WHERE day = '%s' AND user_id = %d",
+					$slots, $conn->real_escape_string($day), (int)$uid));
+				/* FAIL CLOSED. If the row cannot be updated the awards below
+				   would be handed out with nothing recording them, and a
+				   second run would hand them out again. */
+				if (!$ok) continue;
+				if (function_exists('dhcf_award'))
+					for ($i = 0; $i < $owed; $i++)
+						dhcf_award($conn, (int)$uid, 'wildcard', 'dhcbosses',
+						           'the weekly boss crew', $tiers);
+				$paid++; $traits += $owed; $who[] = (int)$uid;
+				continue;
+			}
+		}
 		$ok = @$conn->query(sprintf(
 			"INSERT INTO dhc_boss_payouts (day, user_id, tier_table, dealt, slots, paid_at)
 			 VALUES ('%s', %d, '%s', %d, %d, NOW())",
@@ -1671,7 +1724,7 @@ function dhcb_cache_slots($conn, $user_id, $week = null) {
 	   trait flat: a round fought after a crew fell banks more, and a box
 	   that does not say so is a box the player cannot read. Same MAX(wave)
 	   per round as the settle, so the grid and the payout cannot disagree. */
-	$r = @$conn->query("SELECT " . skl_week_day_sql('started_at') . " AS d,
+	$r = @$conn->query("SELECT " . skl_week_day_sql_for($week, 'started_at') . " AS d,
 	                           GREATEST(1, MAX(wave)) AS w
 	                      FROM dhc_boss_runs
 	                     WHERE user_id = $uid
@@ -1679,7 +1732,7 @@ function dhcb_cache_slots($conn, $user_id, $week = null) {
 	                       AND outcome <> 0
 	                       AND (dealt >= " . (int)DHCB_MIN_DEALT
 	                     . " OR rounds >= " . (int)DHCB_MIN_ROUNDS . ")
-	                     GROUP BY " . skl_week_day_sql('started_at'));
+	                     GROUP BY " . skl_week_day_sql_for($week, 'started_at'));
 	if ($r) while ($x = $r->fetch_assoc()) $done[(int)$x['d']] = (int)$x['w'];
 
 	/* What a round played RIGHT NOW would bank, for the slots not yet
@@ -1877,7 +1930,7 @@ function dhcb_siege($conn, $weeks = 1, $week = null) {
 		        COALESCE(SUM(r.crew_size), 0) AS fielded,
 		        COALESCE(SUM(CASE WHEN r.dealt > 0 THEN r.crew_size ELSE 0 END), 0) AS scoring,
 		        COUNT(DISTINCT r.day) AS weeks_in,
-		        COUNT(DISTINCT CONCAT(r.day, ':', " . skl_week_day_sql('r.started_at') . ")) AS rounds,
+		        COUNT(DISTINCT CONCAT(r.day, ':', " . skl_week_day_sql_col('r.day', 'r.started_at') . ")) AS rounds,
 		        MAX(r.wave) AS whi
 		   FROM dhc_boss_runs r
 		   INNER JOIN users u ON u.id = r.user_id
