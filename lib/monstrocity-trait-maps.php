@@ -186,6 +186,144 @@ function monstrocity_trait_map($policy) {
 			'powerDefault'  => 'Minor Regen',
 			'powerWeapons'  => array('weapon'),
 		),
+		/*
+		 * Disco Solaris. 5,777 of them, and a vocabulary built for this:
+		 * `Phase` is a moon cycle, `Special` is a uniform, and `Cheek`
+		 * includes a bandage.
+		 */
+		'd0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779' => array(
+			'slug'    => 'disco-solaris',
+			'arms'    => array('Outerwear', 'Body'),
+			'mind'    => array('Eyes', 'Glasses'),
+			/* Headphones on means you are in the groove; a top hat and a
+			   heavy coat are not what you dance in. */
+			/* Hundredths and a continuous load, for the reason given on
+			   the Moebius map below: three headphone states and four
+			   on/off weights is a dozen distinct scores across 5,777
+			   dancers, which is not a spread. */
+			'speedBy' => 'Headphones',
+			/*
+			 * A NARROW GAP, because the jump has to be smaller than the
+			 * spread it sits inside. At 400/360/260 the 1,572 with
+			 * headphones and the 4,205 without formed two clusters a
+			 * hundred points apart with nothing between them -- 2,509 in
+			 * speed band 1, 2,842 in band 7 and the middle bands empty.
+			 * Fifty points reads the same and blends.
+			 */
+			'speed0'  => array('Headphones Large' => 330, 'Headphones Small' => 310),
+			'speedDefault' => 280,
+			'weight'  => array('Hat' => 80, 'Necklace' => 20),
+			'speedLoadBy' => array('Outerwear', 'Body'),
+			'speedLoadScale' => 100,
+			'cuts'    => array(),
+			/* THE MOON DECIDES THE FRAME. New and waxing crescent are slim,
+			   a full moon is the whole disc. It is the collection's own
+			   metaphor and it costs nothing to use it. */
+			'sizeBy'  => 'Phase',
+			'size'    => array('New Moon' => 'Small', 'Waxing Crescent Moon' => 'Small',
+			                   'First Quarter Moon' => 'Medium', 'Waxing Gibbous Moon' => 'Medium',
+			                   'Full Moon' => 'Large'),
+			'sizeDefault' => 'Medium',
+			/* A uniform is a rank. Fans -- 607 of the 725 Specials -- are
+			   not, and should not be. */
+			'rankBy'  => array('Special'),
+			'lead'    => '~\b(police|sergeant|lieutenant|space\s*suit)\b~i',
+			'dmgBy'   => array('Cheek'),
+			'dmg'     => '~\bbandage\b~i',
+			'powerBy' => 'Cheek',
+			'power'   => array(
+				'Heart'        => 'Heal',        'Kiss Mark'   => 'Boost Attack',
+				'Blush Makeup' => 'Boost Attack','Smiley'      => 'Minor Regen',
+				'Freckles'     => 'Minor Regen', 'Bandage'     => 'Regenerate',
+			),
+			/* Only half of them have a cheek mark, so the jewellery answers
+			   for the rest rather than handing 2,800 the same charm. */
+			'powerFallback' => array(
+				array('~cross|pearl|amber~i', 'Heal'),
+				array('~bolt|punk~i',         'Boost Attack'),
+				array('~gold~i',              'Regenerate'),
+			),
+			'powerDefault'  => 'Minor Regen',
+			'powerWeapons'  => array('Earrings', 'Necklace'),
+		),
+		/*
+		 * Moebius Pioneers: Dressed Discos. The same universe, 1,231 of
+		 * them, and unreadable until the edition suffix comes off -- see
+		 * valueTrim and the note in monstrocity_trait_rarity().
+		 */
+		'9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99' => array(
+			'slug'    => 'moebius-pioneers-dressed-dis',
+			'valueTrim' => '~\s*#\d+\s*$~',
+			'arms'    => array('outerwear', 'hand'),
+			'mind'    => array('eyes', 'glasses'),
+			/*
+			 * A FLYING BOARD IS A FLYING BOARD whichever colour it is, so
+			 * speed is matched on the family rather than on 16 exact
+			 * values. Premium boards beat standard ones, a pinwheel beats
+			 * walking, and a Sweeper's kit is heavy.
+			 */
+			'speedBy' => 'backpack',
+			/*
+			 * HUNDREDTHS, AND A CONTINUOUS LOAD. Only 265 of the 1,231
+			 * carry a backpack at all, so on the board alone everyone else
+			 * landed on the same two or three numbers -- speed bands 2, 3
+			 * and 4 were empty and 846 Pioneers sat in band 5. The
+			 * outerwear rarity is continuous and gives the other 966
+			 * somewhere to spread.
+			 */
+			'speedRules' => array(
+				array('~flying board - premium~i', 440),
+				array('~flying board~i',           380),
+				array('~pinwheel~i',               330),
+				array('~sweeper~i',                200),
+				array('~backpack~i',               220),
+			),
+			'speed0'  => array(),
+			'speedDefault' => 280,
+			'weight'  => array('suit' => 90, 'helmet' => 40),
+			'speedLoadBy' => array('outerwear'),
+			'speedLoadScale' => 100,
+			'cuts'    => array(),
+			/* What you are wearing is your silhouette. Nothing at all is a
+			   smaller one, which is 220 of them. */
+			'sizeBy'  => 'outerwear',
+			'size'    => array(),
+			'sizeBig'   => '~suit|armor|coat~i',
+			'sizeSmall' => '~^\s*$~',
+			'sizeAbsent' => 'Small',
+			'sizeDefault' => 'Medium',
+			/* OG gear and the Moonlight Radio Pendant are the originals. */
+			'rankBy'  => array('outerwear', 'necklace'),
+			'lead'    => '~\bOG\b|moonlight radio~i',
+			/* Smudges, stitches, grease and a damaged bionic hand. This is
+			   a working crew, and it shows on them. */
+			'dmgBy'   => array('bodycover', 'hand'),
+			'dmg'     => '~smudge|stitch|grease|bandage|patch|damaged~i',
+			'powerBy' => 'facetattoo',
+			'power'   => array(
+				'Heart'        => 'Heal',        'Pierced Heart' => 'Heal',
+				'Broken Heart' => 'Regenerate',  'DBD Logo'      => 'Regenerate',
+				'Star'         => 'Boost Attack','Discoin'       => 'Boost Attack',
+				'Smiley'       => 'Minor Regen',
+			),
+			/*
+			 * THE LIPS CATCH EVERYONE. Only 416 Pioneers have a face
+			 * tattoo and 250 a body tattoo, so on those two alone 801 of
+			 * 1,231 fell to the same default charm. `lips` is on all of
+			 * them and carries the collection's four colours, which is
+			 * exactly four charms.
+			 */
+			'powerFallback' => array(
+				array('~skull|code~i',        'Boost Attack'),
+				array('~moons|forever~i',     'Regenerate'),
+				array('~skateboard|amber~i',  'Heal'),
+				array('~green~i',             'Regenerate'),
+				array('~red~i',               'Boost Attack'),
+				array('~violet~i',            'Heal'),
+			),
+			'powerDefault'  => 'Minor Regen',
+			'powerWeapons'  => array('tattoo', 'lips'),
+		),
 	);
 	$policy = strtolower(trim((string)$policy));
 	return isset($maps[$policy]) ? $maps[$policy] : null;
@@ -218,13 +356,33 @@ function monstrocity_trait_census($slug) {
  * Scythe" and "Legendary scythe"; four owners of the same weapon getting
  * different cards is not a rarity, it is a typo.
  */
-function monstrocity_trait_rarity($census, $slot, $value) {
+function monstrocity_trait_rarity($census, $slot, $value, $trim = '') {
 	if (!is_array($census) || $value === null || $value === '') return 0.0;
 	if (!isset($census['slots'][$slot]['values'])) return 0.0;
 	$n = 0;
-	$want = mb_strtolower((string)$value);
+	/*
+	 * THE EDITION NUMBER IS NOT PART OF THE TRAIT.
+	 *
+	 * Moebius Pioneers writes its values as "<item> #<edition>" -- "Black
+	 * Coat - New #16", "Choker 2 #31" -- so the same coat appears under
+	 * five hundred different names and every Pioneer looks like it is
+	 * wearing a one-of-one. Trimming the suffix takes `body` from 718
+	 * distinct values to 14 and `earjewellery` from 155 to 9, which is the
+	 * difference between a collection that cannot be read and one that
+	 * reads beautifully.
+	 *
+	 * Counts are SUMMED across everything that trims to the same thing, so
+	 * the rarity of "Choker 1" is how many Pioneers wear a Choker 1 rather
+	 * than how many wear that exact edition of one.
+	 */
+	$norm = function ($v) use ($trim) {
+		$v = (string)$v;
+		if ($trim !== '') $v = preg_replace($trim, '', $v);
+		return mb_strtolower(trim($v));
+	};
+	$want = $norm($value);
 	foreach ($census['slots'][$slot]['values'] as $v => $c)
-		if (mb_strtolower((string)$v) === $want) $n += (int)$c;
+		if ($norm($v) === $want) $n += (int)$c;
 	if ($n <= 0) return 0.0;
 	return -log10($n / max(1, (int)$census['assets']));
 }
@@ -258,8 +416,7 @@ function monstrocity_generic_index() {
 		'da286f15e0de865e3d50fec6fa0484d7e2309671dc4ba8ce6bdd122b' => 'omen',
 		'e6ba9c0ff27be029442c32533c6efd956a60d15ecb976acbb64c4de0' => 'perps',
 		'8972aab912aed2cf44b65916e206324c6bdcb6fbd3dc4eb634fdbd28' => 'ug',
-		'd0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779' => 'disco-solaris',
-		'637bae5845e801779651d997bedc2dad53ddbe0d5f940b4ff723d769' => 'meltingmoonboy',
+				'637bae5845e801779651d997bedc2dad53ddbe0d5f940b4ff723d769' => 'meltingmoonboy',
 		'a616aab3b18eb855b4292246bd58f9e131d7c8c25d1d1d7c88b666c4' => 'pendulum-order',
 		'd458857ae7d121bfb5af64d78c0454a519133248e030a0225734452b' => 'wavyape',
 		'bcc954e4d0483a292b753df87ab9a72b857f9ee8f61aa4c42e03df8c' => 'meltingmoongirls',
@@ -269,8 +426,7 @@ function monstrocity_generic_index() {
 		'ac9067e22a857ee2e4ea20f77c6c047f78a11511f285d30d81857196' => 'revrs-happy-people',
 		'a4b7f3bbb16b028739efc983967f1e631883f63a2671d508023b5dfb' => 'the-fourth',
 		'93ff51e7dfdf32314fd2f99ff222aa9c92f486b7d2cc0d46b64a9785' => 'apprentices',
-		'9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99' => 'moebius-pioneers-dressed-dis',
-		'f85be1a54efa2607de78a0f8855f9d73c9dd79bfa116f3767c015098' => 'proxy-by-heist-on-alpha',
+				'f85be1a54efa2607de78a0f8855f9d73c9dd79bfa116f3767c015098' => 'proxy-by-heist-on-alpha',
 		'243f0ca18ded6b45ba87655ce3917abc8e04830b23ba1f498de67a8a' => 'machine-headz-carnage-editio',
 		'f4ae899bda2d478baec88620a06108619b231dfc6197be2a3b74a0ea' => 'machine-headz-chaos-edition',
 		'8f63e08467bfbbc260a382a80f3297f9a569fca0293f296620d72d17' => 'machine-headz',
@@ -518,14 +674,23 @@ function monstrocity_authored_score($map, $census, $traits) {
 		return isset($traits[$slot]) && is_scalar($traits[$slot]) ? (string)$traits[$slot] : '';
 	};
 
+	$trim = isset($map['valueTrim']) ? $map['valueTrim'] : '';
 	$arms = 0.0;
-	foreach ($map['arms'] as $s) $arms += monstrocity_trait_rarity($census, $s, $get($s));
+	foreach ($map['arms'] as $s) $arms += monstrocity_trait_rarity($census, $s, $get($s), $trim);
 	$mind = 0.0;
-	foreach ($map['mind'] as $s) $mind += monstrocity_trait_rarity($census, $s, $get($s));
+	foreach ($map['mind'] as $s) $mind += monstrocity_trait_rarity($census, $s, $get($s), $trim);
 
 	$speedSlot = isset($map['speedBy']) ? $map['speedBy'] : $map['sizeBy'];
 	$speedVal  = $get($speedSlot);
-	$speed = isset($map['speed0'][$speedVal]) ? $map['speed0'][$speedVal] : $map['speedDefault'];
+	$speed = null;
+	/* Regex rules where the vocabulary is "<family> - <variant>" and it is
+	   the family that matters -- a Flying Board is fast whichever colour. */
+	if (!empty($map['speedRules']) && $speedVal !== '') {
+		foreach ($map['speedRules'] as $rule)
+			if (preg_match($rule[0], $speedVal)) { $speed = $rule[1]; break; }
+	}
+	if ($speed === null)
+		$speed = isset($map['speed0'][$speedVal]) ? $map['speed0'][$speedVal] : $map['speedDefault'];
 	/* Load by PRESENCE, for a collection where what you carry varies. */
 	foreach ($map['weight'] as $s => $w) if ($get($s) !== '') $speed -= $w;
 	/* Load by WEIGHT, for one where every slot is always filled and the
@@ -546,7 +711,7 @@ function monstrocity_authored_score($map, $census, $traits) {
 		 * common -- and then landing in the same band is correct.
 		 */
 		foreach ($map['speedLoadBy'] as $s)
-			$speed -= monstrocity_trait_rarity($census, $s, $get($s)) * $scale;
+			$speed -= monstrocity_trait_rarity($census, $s, $get($s), $trim) * $scale;
 	}
 
 	return array('strength' => $arms, 'tactics' => $mind, 'speed' => $speed);
@@ -585,7 +750,12 @@ function monstrocity_trait_stats($policy, $traits) {
 	if ($sc === null) return null;
 
 	$frame = $get($map['sizeBy']);
-	if (isset($map['size'][$frame])) {
+	/* ABSENT IS A FRAME TOO. A Pioneer wearing no outerwear at all is a
+	   smaller silhouette than one in a Corpo Suit, and reading "nothing"
+	   as the default middle would throw that away. */
+	if ($frame === '' && isset($map['sizeAbsent'])) {
+		$size = $map['sizeAbsent'];
+	} elseif (isset($map['size'][$frame])) {
 		$size = $map['size'][$frame];
 	} elseif (!empty($map['sizeBig']) && $frame !== '' && preg_match($map['sizeBig'], $frame)) {
 		$size = 'Large';

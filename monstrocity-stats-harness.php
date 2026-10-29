@@ -417,5 +417,115 @@ ok(monstrocity_generic_policy($HK) === null,
 ok(monstrocity_generic_policy(str_repeat('cd', 28)) === null,
    'an unknown policy resolves to a census');
 
+/* ------------------------------------------------------------------ *
+ * DISCO SOLARIS AND MOEBIUS PIONEERS
+ * ------------------------------------------------------------------ */
+echo "\ntwo more authored maps\n";
+$DS = 'd0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779';
+$MP = '9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99';
+foreach (array('Disco Solaris' => $DS, 'Moebius Pioneers' => $MP) as $name => $P) {
+	$m = monstrocity_trait_map($P);
+	ok(is_array($m), "$name is not mapped");
+	$c = $m ? monstrocity_trait_census($m['slug']) : null;
+	ok(is_array($c) && !empty($c['authoredCuts']), "$name has no authored cuts");
+	ok(monstrocity_generic_policy($P) === null,
+	   "$name is in the generic index as well as authored, so which one answers is luck");
+}
+
+$afx = json_decode((string)@file_get_contents(__DIR__ . '/monstrocity-authored-fixture.json'), true);
+ok(is_array($afx) && count($afx) >= 8, 'the Disco/Moebius fixture is missing');
+$abad = array();
+foreach ((array)$afx as $f) {
+	$got = monstrocity_trait_stats($f['policy'], $f['traits']);
+	if ($got !== $f['want']) $abad[] = $f['asset'] . ': ' . json_encode($got);
+}
+ok(!$abad, "a pinned Disco/Moebius NFT plays a different card now:\n        "
+   . implode("\n        ", $abad));
+
+/* THE MOON IS THE FRAME. It is the collection's own metaphor and the whole
+   reason this map is authored rather than generic. */
+$ds = array('Eyes'=>'Bored','Mouth'=>'Smile','Skin'=>'Peach','Body'=>'Tank Top',
+            'Hair'=>'Short Red','Outerwear'=>'Bomber Jacket','Earrings'=>'Cross',
+            'Phase'=>'First Quarter Moon');
+$withDs = function ($k, $v) use ($ds) { $b = $ds; if ($v === null) unset($b[$k]); else $b[$k] = $v; return $b; };
+$frames = array('New Moon'=>'Small','Waxing Crescent Moon'=>'Small','First Quarter Moon'=>'Medium',
+                'Waxing Gibbous Moon'=>'Medium','Full Moon'=>'Large');
+$wrong = array();
+foreach ($frames as $moon => $want) {
+	$g = monstrocity_trait_stats($DS, $withDs('Phase', $moon));
+	if ($g['size'] !== $want) $wrong[] = "$moon -> {$g['size']}, wanted $want";
+}
+ok(!$wrong, 'the moon phase no longer decides the frame: ' . implode('; ', $wrong));
+/* A uniform is a rank; the 607 Fans are not. */
+ok(monstrocity_trait_stats($DS, $withDs('Special', 'Police Officer Uniform'))['type'] === 'Leader',
+   'a police uniform is not a rank');
+ok(monstrocity_trait_stats($DS, $withDs('Special', 'Fans'))['type'] === 'Base',
+   'Fans are being read as a rank, which is 607 of the 725 Specials');
+ok(monstrocity_trait_stats($DS, $withDs('Cheek', 'Bandage'))['type'] === 'Battle Damaged',
+   'a bandage on the cheek is not read as damage');
+/* AND RANK BEATS DAMAGE. An officer with a bandage is still an officer --
+   asserted because the order of those two rules is arbitrary-looking and a
+   swap would quietly demote every injured Leader. */
+$both = $withDs('Special', 'Police Officer Uniform'); $both['Cheek'] = 'Bandage';
+ok(monstrocity_trait_stats($DS, $both)['type'] === 'Leader',
+   'a bandaged officer is demoted out of Leader');
+/* Headphones make you faster, a top hat slows you down. */
+$noPhones = monstrocity_trait_stats($DS, $withDs('Headphones', null));
+$phones   = monstrocity_trait_stats($DS, $withDs('Headphones', 'Headphones Large'));
+ok($phones['speed'] >= $noPhones['speed'], 'headphones do not make a dancer faster');
+$hat = $withDs('Headphones', 'Headphones Large'); $hat['Hat'] = 'Top Hat';
+ok(monstrocity_trait_stats($DS, $hat)['speed'] <= $phones['speed'],
+   'a top hat does not slow anybody down');
+
+/*
+ * THE EDITION SUFFIX, which is the whole reason Moebius can be read at all.
+ * "Choker 2 #31" and "Choker 2 #41" are the same choker; untrimmed, every
+ * Pioneer wears a one-of-one and every strength lands in band 8 -- which is
+ * exactly what the roster showed before this map existed.
+ */
+$mpCen = monstrocity_trait_census('moebius-pioneers-dressed-dis');
+$trim  = '~\s*#\d+\s*$~';
+$r1 = monstrocity_trait_rarity($mpCen, 'neck', 'Choker 2 #31', $trim);
+$r2 = monstrocity_trait_rarity($mpCen, 'neck', 'Choker 2 #41', $trim);
+ok($r1 > 0 && abs($r1 - $r2) < 1e-9,
+   "two editions of one choker are priced differently ($r1 vs $r2)");
+$untrimmed = monstrocity_trait_rarity($mpCen, 'neck', 'Choker 2 #31');
+ok($untrimmed > $r1,
+   'trimming the edition number does not change the rarity, so it is not being applied');
+/* And the collapse it produces, stated as a number so a change to the
+   pattern shows up here rather than on a roster screen. */
+$raw = count($mpCen['slots']['body']['values']);
+$seen = array();
+foreach (array_keys($mpCen['slots']['body']['values']) as $v)
+	$seen[mb_strtolower(preg_replace($trim, '', $v))] = true;
+ok($raw > 200 && count($seen) < 30,
+   "the Moebius body slot trims from $raw to " . count($seen) . ' values, expected hundreds to tens');
+
+/* A Flying Board is the fastest thing in the collection, whichever colour. */
+$mp = array('eyes'=>'Bored','lips'=>'Straight Line','body'=>'Violet Male','nose'=>'Nose 01 - Violet',
+            'hair'=>'Curly Fringe','nipples'=>'Stars','background'=>'Disco Yellow',
+            'outerwear'=>'Tech Crew Suit');
+$withMp = function ($k, $v) use ($mp) { $b = $mp; if ($v === null) unset($b[$k]); else $b[$k] = $v; return $b; };
+$walk  = monstrocity_trait_stats($MP, $mp);
+$board = monstrocity_trait_stats($MP, $withMp('backpack', 'Flying Board - Premium - Pink #3'));
+ok($board['speed'] > $walk['speed'],
+   "a flying board does not make a Pioneer faster ({$board['speed']} vs {$walk['speed']})");
+$pink  = monstrocity_trait_stats($MP, $withMp('backpack', 'Flying Board - Standard - Pink #1'));
+$blue  = monstrocity_trait_stats($MP, $withMp('backpack', 'Flying Board - Standard - Blue #9'));
+ok($pink['speed'] === $blue['speed'],
+   'the same board in another colour is a different speed, so the family rule is not matching');
+/* OG gear is the rank; nothing else is. */
+ok(monstrocity_trait_stats($MP, $withMp('outerwear', 'OG H-Collar Jacket - Pink #61'))['type'] === 'Leader',
+   'OG gear is not read as the original');
+ok(monstrocity_trait_stats($MP, $withMp('outerwear', 'Tech Crew Suit'))['type'] === 'Base',
+   'a plain crew suit outranks itself into a Leader');
+ok(monstrocity_trait_stats($MP, $withMp('bodycover', 'Neck Stitch'))['type'] === 'Battle Damaged',
+   'a neck stitch is not read as damage');
+/* Wearing nothing is a smaller silhouette than a suit. */
+ok(monstrocity_trait_stats($MP, $withMp('outerwear', null))['size'] === 'Small',
+   'a Pioneer with no outerwear is not the smallest frame');
+ok(monstrocity_trait_stats($MP, $withMp('outerwear', 'Corpo Suit - Pink'))['size'] === 'Large',
+   'a Corpo Suit is not the largest frame');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
 exit($fail ? 1 : 0);

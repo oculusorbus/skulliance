@@ -1,0 +1,260 @@
+[
+    {
+        "policy": "d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779",
+        "asset": "DiscoSolaris0003",
+        "note": "Full Moon",
+        "traits": {
+            "Body": "Custom",
+            "Eyes": "Custom",
+            "Hair": "Custom",
+            "Skin": "Peach",
+            "Mouth": "Custom",
+            "Phase": "Full Moon",
+            "Outerwear": "Custom",
+            "ZaF-b51ab4": "110001"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 1,
+            "tactics": 7,
+            "size": "Large",
+            "type": "Base",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "policy": "d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779",
+        "asset": "DiscoSolaris0015",
+        "note": "New Moon",
+        "traits": {
+            "Body": "T-shirt Blank White",
+            "Eyes": "Closed",
+            "Hair": "Orange Mohawk",
+            "Skin": "Pink",
+            "Mouth": "Bubblegum Pink",
+            "Phase": "New Moon",
+            "Glasses": "Goggles",
+            "Earrings": "Cross",
+            "Necklace": "Short Pearl Necklace",
+            "Outerwear": "Black Coat",
+            "Headphones": "Headphones Large",
+            "ZaF-b51ab4": "000001"
+        },
+        "want": {
+            "strength": 5,
+            "speed": 5,
+            "tactics": 5,
+            "size": "Small",
+            "type": "Base",
+            "powerup": "Heal"
+        }
+    },
+    {
+        "policy": "d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779",
+        "asset": "DiscoSolaris2019",
+        "note": "Police",
+        "traits": {
+            "Eyes": "Heartbreaker",
+            "Skin": "Peach",
+            "Cheek": "Blush Makeup",
+            "Mouth": "Bubblegum Blue",
+            "Phase": "Full Moon",
+            "Glasses": "Goggles",
+            "Special": "Senior Police Officer Uniform",
+            "ZaF-b51ab4": "000000"
+        },
+        "want": {
+            "strength": 1,
+            "speed": 7,
+            "tactics": 6,
+            "size": "Large",
+            "type": "Leader",
+            "powerup": "Boost Attack"
+        }
+    },
+    {
+        "policy": "d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779",
+        "asset": "DiscoSolaris0149",
+        "note": "Bandage",
+        "traits": {
+            "Eyes": "Bored",
+            "Skin": "Peach",
+            "Cheek": "Bandage",
+            "Mouth": "Scared",
+            "Phase": "First Quarter Moon",
+            "Special": "Senior Police Officer Uniform",
+            "ZaF-b51ab4": "110010"
+        },
+        "want": {
+            "strength": 1,
+            "speed": 7,
+            "tactics": 1,
+            "size": "Medium",
+            "type": "Leader",
+            "powerup": "Regenerate"
+        }
+    },
+    {
+        "policy": "d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779",
+        "asset": "DiscoSolaris0015",
+        "note": "Headphones Large",
+        "traits": {
+            "Body": "T-shirt Blank White",
+            "Eyes": "Closed",
+            "Hair": "Orange Mohawk",
+            "Skin": "Pink",
+            "Mouth": "Bubblegum Pink",
+            "Phase": "New Moon",
+            "Glasses": "Goggles",
+            "Earrings": "Cross",
+            "Necklace": "Short Pearl Necklace",
+            "Outerwear": "Black Coat",
+            "Headphones": "Headphones Large",
+            "ZaF-b51ab4": "000001"
+        },
+        "want": {
+            "strength": 5,
+            "speed": 5,
+            "tactics": 5,
+            "size": "Small",
+            "type": "Base",
+            "powerup": "Heal"
+        }
+    },
+    {
+        "policy": "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
+        "asset": "Blue Male #151",
+        "note": "Flying Board - Premium",
+        "traits": {
+            "body": "Blue Male #151",
+            "eyes": "Heartbreaker - Violet",
+            "hair": "Short - Red",
+            "hand": "Bug Brew Cup #86",
+            "lips": "Neutral - Red",
+            "nose": "Nose 02 - Blue",
+            "beard": "Papo's Beard - Dark",
+            "glasses": "Mini Black #8",
+            "nipples": "Normal nipples",
+            "backpack": "Flying Board - Premium - Pink #16",
+            "necklace": "Neon Bead Necklaces - YGR #112",
+            "bodycover": "Neck Stitch",
+            "innerwear": "Tank Top - Violet #84",
+            "background": "Dark Pink Gradient",
+            "chestcover": "Triangle shaped"
+        },
+        "want": {
+            "strength": 2,
+            "speed": 7,
+            "tactics": 7,
+            "size": "Small",
+            "type": "Battle Damaged",
+            "powerup": "Boost Attack"
+        }
+    },
+    {
+        "policy": "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
+        "asset": "Aqua Green Male #13",
+        "note": "OG H-Collar",
+        "traits": {
+            "body": "Aqua Green Male #13",
+            "eyes": "Scared",
+            "hair": "Undercut",
+            "lips": "Neutral - Red",
+            "nose": "NOSE 01 - aqua green",
+            "nipples": "Normal nipples",
+            "outerwear": "OG H-Collar Jacket - B&V #6",
+            "background": "Gradient: 139deg, #25e4b8, #b758b6",
+            "chestcover": "Scarce",
+            "eyediscoloration": "Discolouration 3 - Green"
+        },
+        "want": {
+            "strength": 5,
+            "speed": 3,
+            "tactics": 2,
+            "size": "Medium",
+            "type": "Leader",
+            "powerup": "Boost Attack"
+        }
+    },
+    {
+        "policy": "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
+        "asset": "Teal Female #52",
+        "note": "Damaged Bionic",
+        "traits": {
+            "body": "Teal Female #52",
+            "eyes": "Shiny - Blue",
+            "hair": "Combed - Black",
+            "hand": "Damaged Bionic Hand - Bug Brew #0",
+            "lips": "Kiss - Dark",
+            "nose": "Nose 04 - Teal",
+            "glasses": "Headset - Dark #4",
+            "nipples": "Cross Tape Sticker - Black",
+            "backpack": "Flying Board - Standard - Pink #97",
+            "outerwear": "Black Coat - Used #9",
+            "background": "Deadpaint's Graffiti - Light",
+            "chestcover": "Push Up Bra",
+            "earjewellery": "Bolt Earrings - Violet #16"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 6,
+            "tactics": 6,
+            "size": "Large",
+            "type": "Battle Damaged",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "policy": "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
+        "asset": "Teal Male #52",
+        "note": "Sweeper",
+        "traits": {
+            "body": "Teal Male #52",
+            "eyes": "Neutral - Neon Violet",
+            "hair": "Curly Fringe",
+            "lips": "Neutral - Red",
+            "nose": "Nose 01 - Teal",
+            "suit": "Sweeper Armor - S200 - Pink Light #0",
+            "beard": "Stubble",
+            "glasses": "Headset - Violet #21",
+            "nipples": "Pierced nipples",
+            "backpack": "Sweeper Backpack - Plant - Lighteater #1",
+            "background": "Gradient: 270deg, #35d3af, #e52b80",
+            "headphones": "Square Headphones - Star #55",
+            "bodydiscoloration": "Body Discoloration 01 - Green"
+        },
+        "want": {
+            "strength": 2,
+            "speed": 4,
+            "tactics": 7,
+            "size": "Small",
+            "type": "Base",
+            "powerup": "Boost Attack"
+        }
+    },
+    {
+        "policy": "9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99",
+        "asset": "Aqua Green Male #0",
+        "note": "Corpo Suit",
+        "traits": {
+            "body": "Aqua Green Male #0",
+            "eyes": "Shiny - Blue",
+            "hair": "Long Top - Dark",
+            "lips": "Neutral - Black",
+            "nose": "NOSE 04 - aqua green",
+            "beard": "Papo's Beard - Dark",
+            "nipples": "Normal nipples",
+            "bodycover": "Ear Smudge",
+            "outerwear": "Corpo Suit - Pink - Day After #0",
+            "background": "Yellow And Pink 2"
+        },
+        "want": {
+            "strength": 4,
+            "speed": 3,
+            "tactics": 1,
+            "size": "Large",
+            "type": "Battle Damaged",
+            "powerup": "Minor Regen"
+        }
+    }
+]

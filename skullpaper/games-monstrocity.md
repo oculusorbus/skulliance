@@ -49,8 +49,9 @@ Slots that are **identifiers rather than traits** are ignored: a serial number, 
 a background nobody else has, says nothing about what an NFT *is*, and counting it
 would make almost every holder's rarest trait a one-of-one.
 
-A few collections are **authored** instead, where the traits say something a
-fighting game can use directly.
+**Four collections are authored** instead, where the traits say something a
+fighting game can use directly — The Ancestors, Hellknights, Disco Solaris and
+Moebius Pioneers.
 
 **The Ancestors** is the first. 1,225 of them, ten trait slots, 432 distinct
 values, and the card follows what the Ancestor is actually wearing:
@@ -86,6 +87,41 @@ spread, so they carry no rarity at all — decide the charm.
 Torn wings and mortal wounds make a knight **Battle Damaged**. A bloodied weapon
 does not: it prefixes most of the armoury and says something about the blade
 rather than the one holding it.
+
+#### Disco Solaris
+
+A nightlife collection, and its vocabulary was built for this. **The moon phase
+is your frame** — a New Moon is Small, a Full Moon is Large. **A uniform is a
+rank**: Police Officers, Sergeants, Lieutenants and the Space Suits field as
+**Leaders**, while the 607 holding Fans do not. **A bandage on the cheek** makes
+you Battle Damaged, which is the only collection so far where the artwork
+literally shows the injury.
+
+Strength is your outerwear and body, tactics your eyes and glasses. Speed is your
+headphones, less what you are wearing — on means you are in the groove, and a top
+hat and a heavy coat are not what you dance in. Your power-up is the mark on your
+cheek: a Heart heals, a Bandage regenerates, a Kiss Mark boosts the attack. Half
+of them have no cheek mark, so the jewellery answers for the rest.
+
+A bandaged officer is still an officer. Rank beats damage.
+
+#### Moebius Pioneers
+
+The same universe, and the one that took the most work to read. Its traits carry
+an edition number — `Black Coat - New #16`, `Choker 2 #31` — so the same coat
+appeared under hundreds of names and every Pioneer looked like it was wearing a
+one-of-one. Strip the edition and the real collection appears: the body slot goes
+from 718 values to **14**, the ear jewellery from 155 to **9**.
+
+**Your backpack is your speed**, matched on the family rather than the colour: a
+**Flying Board Premium** is the fastest thing in the collection, a standard board
+next, a Pinwheel beats walking, and a Sweeper's kit is heavy. **What you are
+wearing is your silhouette** — a Corpo Suit or Sweeper Armor is Large, nothing at
+all is Small. **OG gear** and the Moonlight Radio Pendant are the originals and
+field as Leaders. Smudges, neck stitches, grease, patches and the Damaged Bionic
+Hand make you Battle Damaged: it is a working crew and it shows on them.
+
+Your power-up is your face tattoo, and where there is none, your lips.
 
 #### Collections that still hash
 
