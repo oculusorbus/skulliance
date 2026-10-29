@@ -1,0 +1,72 @@
+{
+    "policy": "106e44f8ce68e28500545dcb68b407331a9d4b6088f11f672c6d07db",
+    "assets": 32,
+    "taken": "2026-10-29",
+    "loadMin": 7,
+    "loadMax": 7,
+    "slots": {
+        "Background": {
+            "coverage": 32,
+            "values": {
+                "Bone": 14,
+                "Twisted Teal": 10,
+                "Blood Red": 8
+            }
+        },
+        "Hair": {
+            "coverage": 32,
+            "values": {
+                "Jet Black Space Buns": 14,
+                "Jet Black Straight": 14,
+                "Bleach Blonde Space Buns": 2,
+                "Bleach Blonde Straight": 2
+            }
+        },
+        "Hair Accessories": {
+            "coverage": 32,
+            "values": {
+                "Red Skully Demon Clips": 16,
+                "Slate Skully Demon Clips": 8,
+                "Turquoise Skully Demon Clips": 6,
+                "Magenta Skully Demon Clips": 2
+            }
+        },
+        "Makeup": {
+            "coverage": 32,
+            "values": {
+                "Cherry": 16,
+                "Gray Winter": 6,
+                "Twisted Teal": 6,
+                "Atomic Pink": 2,
+                "Cold Winter": 2
+            }
+        },
+        "Skin": {
+            "coverage": 32,
+            "values": {
+                "Mango": 16,
+                "Chili Pepper": 12,
+                "Dragon Fruit": 2,
+                "Frost": 2
+            }
+        },
+        "Top": {
+            "coverage": 32,
+            "values": {
+                "Turquoise Crop Top": 6,
+                "Slate Crop Top": 6,
+                "Red Crop Top": 6,
+                "Exposed": 4,
+                "Black Bikini Top": 4,
+                "Sand Crop Top": 4,
+                "Magenta Crop Top": 2
+            }
+        },
+        "copyright": {
+            "coverage": 32,
+            "values": {
+                "Dead Pop Hell": 32
+            }
+        }
+    }
+}

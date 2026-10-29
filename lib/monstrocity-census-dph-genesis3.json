@@ -1,0 +1,98 @@
+{
+    "policy": "4e8734679e8cf731a3cca851bf57d900a0eff76996a7a2362bc8938b",
+    "assets": 55,
+    "taken": "2026-10-29",
+    "loadMin": 1,
+    "loadMax": 7,
+    "slots": {
+        "": {
+            "coverage": 30,
+            "values": {
+                "deadpophell@gmail.com": 30
+            }
+        },
+        "0": {
+            "coverage": 5,
+            "values": {
+                "Braided Pigtails": 5
+            }
+        },
+        "1": {
+            "coverage": 5,
+            "values": {
+                "Edges": 5
+            }
+        },
+        "Clothes": {
+            "coverage": 15,
+            "values": {
+                "Babydoll T-shirt": 15
+            }
+        },
+        "Eyes": {
+            "coverage": 5,
+            "values": {
+                "3": 5
+            }
+        },
+        "Features": {
+            "coverage": 5,
+            "values": {
+                "Devil Horns & Tail": 5
+            }
+        },
+        "Hair": {
+            "coverage": 10,
+            "values": {
+                "Braided Pigtails": 10
+            }
+        },
+        "Horns": {
+            "coverage": 10,
+            "values": {
+                "Devil": 10
+            }
+        },
+        "Lips": {
+            "coverage": 15,
+            "values": {
+                "Dragon Fruit Pink": 5,
+                "Blue Raspberry": 5,
+                "Guava Pink": 5
+            }
+        },
+        "Skin": {
+            "coverage": 15,
+            "values": {
+                "Blue Raspberry": 5,
+                "Dragon Fruit": 5,
+                "Coffee": 5
+            }
+        },
+        "Tail": {
+            "coverage": 10,
+            "values": {
+                "Devil": 10
+            }
+        },
+        "artist": {
+            "coverage": 10,
+            "values": {
+                "Dead Pop Hell": 10
+            }
+        },
+        "assetType": {
+            "coverage": 10,
+            "values": {
+                "NFT": 10
+            }
+        },
+        "summary": {
+            "coverage": 10,
+            "values": {
+                "Zombie Devil Girl cheerleader smokin' a joint.": 5,
+                "Sexy Squid Game girl in red skin tight latex hoodie.": 5
+            }
+        }
+    }
+}

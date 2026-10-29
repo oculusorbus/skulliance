@@ -1,0 +1,193 @@
+{
+    "policy": "43158c3ad95b6c97a6d71138f9ec41a1a46f1156d8db4a92b289e73f",
+    "assets": 161,
+    "taken": "2026-10-29",
+    "loadMin": 4,
+    "loadMax": 12,
+    "slots": {
+        "Background": {
+            "coverage": 109,
+            "values": {
+                "Blackout": 41,
+                "Winter": 32,
+                "Chapel Bone": 22,
+                "Chapel Cold": 6,
+                "Chapel Blood": 5,
+                "Heartbreaker": 3
+            }
+        },
+        "Clothes": {
+            "coverage": 33,
+            "values": {
+                "Bikini Top": 12,
+                "Cropped Dress": 9,
+                "Dress": 9,
+                "None": 3
+            }
+        },
+        "Demons": {
+            "coverage": 12,
+            "values": {
+                "Soul Demon": 5,
+                "Mind Demon": 4,
+                "Body Demon": 2,
+                "Mind, Body & Sould Demons": 1
+            }
+        },
+        "Ear Accessory": {
+            "coverage": 11,
+            "values": {
+                "Hooped Earrings": 11
+            }
+        },
+        "Extra": {
+            "coverage": 11,
+            "values": {
+                "Heartbreaker Beauty Mark": 11
+            }
+        },
+        "Extra Extras": {
+            "coverage": 9,
+            "values": {
+                "Umbrella": 9
+            }
+        },
+        "Extras": {
+            "coverage": 38,
+            "values": {
+                "Zombie Hand & Webs": 24,
+                "Devil Hand & Webs": 9,
+                "Snow Flurry": 5
+            }
+        },
+        "Eye Accessory": {
+            "coverage": 15,
+            "values": {
+                "Velma Glasses": 12,
+                "Mntn Goggles": 3
+            }
+        },
+        "Face Accessory": {
+            "coverage": 7,
+            "values": {
+                "Mntn Mask": 7
+            }
+        },
+        "Foreground": {
+            "coverage": 5,
+            "values": {
+                "Blood Splatter": 5
+            }
+        },
+        "Hair": {
+            "coverage": 76,
+            "values": {
+                "Hair": 33,
+                "Jet Black": 31,
+                "Bleach Blonde": 12
+            }
+        },
+        "Head Accessory": {
+            "coverage": 76,
+            "values": {
+                "Veil & Collar": 33,
+                "Pink Ear Muffs": 12,
+                "Teal Ear Muffs": 6,
+                "Eden Rabbit Ears": 6,
+                "Jasmine Jacket Ear Muffs": 5,
+                "Powder Blue Ear Muffs": 5,
+                "Sunset Rabbit Ears": 5,
+                "Teal Beanie": 3,
+                "Pink Beanie": 1
+            }
+        },
+        "Jacket": {
+            "coverage": 32,
+            "values": {
+                "Pink Jacket": 13,
+                "Teal Jacket": 9,
+                "Powder Blue Jacket": 4,
+                "Jasmine Jacket": 3,
+                "Jasmine Jacket Open": 2,
+                "Powder Blue Jacket Open": 1
+            }
+        },
+        "Neck Accessory": {
+            "coverage": 76,
+            "values": {
+                "Rosary": 19,
+                "Bolt Necklace": 18,
+                "RAD Necklace": 14,
+                "Inverted Skully Cross": 9,
+                "Invader Necklace": 7,
+                "Inverted Rosary": 5,
+                "Eden Spiked Choker": 2,
+                "Sunset Spiked Choker": 2
+            }
+        },
+        "Nose Accessory": {
+            "coverage": 11,
+            "values": {
+                "Nose Ring": 11
+            }
+        },
+        "Skin": {
+            "coverage": 161,
+            "values": {
+                "Mango": 50,
+                "Caramel": 45,
+                "Ghost": 20,
+                "Chili Pepper": 20,
+                "Chilipepper": 8,
+                "Lime": 6,
+                "Peach": 6,
+                "Mummy": 5,
+                "Pear": 1
+            }
+        },
+        "Top": {
+            "coverage": 111,
+            "values": {
+                "Tank": 15,
+                "Cincher with X Nip Covers": 15,
+                "X Nip Covers": 10,
+                "Corset": 8,
+                "Robe with X Nip Covers": 6,
+                "Sunset Off Shoulder Top": 5,
+                "Latex PeekaBoo": 5,
+                "Bikini": 5,
+                "Kimono": 5,
+                "Sexy Top": 5,
+                "Eden Off Shoulder Top": 4,
+                "Cincher": 4,
+                "Santa": 4,
+                "Sheer": 4,
+                "Topless": 3,
+                "Exposed": 3,
+                "Full": 3,
+                "Partial": 3,
+                "X Pasties": 2,
+                "Kimono Open": 2
+            }
+        },
+        "copyright": {
+            "coverage": 161,
+            "values": {
+                "Dead Pop Hell": 161
+            }
+        },
+        "theme": {
+            "coverage": 161,
+            "values": {
+                "Thank God Its Wednesday": 33,
+                "Sinful Sisters": 33,
+                "Wicked Winter Babez": 32,
+                "Sultry Devil Nurses": 17,
+                "Oni Baddies": 17,
+                "Heartbreakers": 11,
+                "Santa's Helpers": 9,
+                "MA Succubus": 9
+            }
+        }
+    }
+}

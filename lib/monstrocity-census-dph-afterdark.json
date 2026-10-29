@@ -1,0 +1,457 @@
+{
+    "policy": "6710d32c862a616ba81ef00294e60fe56969949e0225452c48b5f0ed",
+    "assets": 678,
+    "taken": "2026-10-29",
+    "loadMin": 0,
+    "loadMax": 15,
+    "slots": {
+        "Accessory": {
+            "coverage": 72,
+            "values": {
+                "Inverted Cross Necklace": 17,
+                "Chain Restraints": 11,
+                "Chain 666 Necklace": 9,
+                "Zipped Choker": 8,
+                "Barbed Wire Dog Bone Necklace": 7,
+                "Spiked Choker": 7,
+                "Leather Restraints": 5,
+                "Crimson Harness": 4,
+                "Lead Choker": 4
+            }
+        },
+        "BG Extras": {
+            "coverage": 71,
+            "values": {
+                "none": 38,
+                "Devil Wings": 22,
+                "Samurai Swords": 4,
+                "Radioactive Bat": 4,
+                "Battle Bat": 3
+            }
+        },
+        "Background": {
+            "coverage": 646,
+            "values": {
+                "Metal": 453,
+                "Metal Light": 96,
+                "Bone": 72,
+                "Blood": 19,
+                "Mint": 6
+            }
+        },
+        "Background Feature": {
+            "coverage": 104,
+            "values": {
+                "none": 74,
+                "Demon Wings": 30
+            }
+        },
+        "Body Wear": {
+            "coverage": 265,
+            "values": {
+                "Maid Dress": 22,
+                "Flight Tight Blue": 19,
+                "Open Shirt Lace Bra": 14,
+                "Lace Bra": 14,
+                "Body Harness": 13,
+                "Raven Zipped": 12,
+                "Flight Tight Gray": 11,
+                "Steel Zipped": 10,
+                "Crimson Unzipped Fishnet Shirt": 10,
+                "Metal Top Bottom Corset": 9,
+                "Power Suit Gray": 8,
+                "Open Shirt": 8,
+                "Captains Shirt Standard": 8,
+                "Power Suit Red": 7,
+                "Pierced Chains": 7,
+                "Cherry Top Corset": 7,
+                "Inverted Cross TT Covers": 7,
+                "Crimson Zipped": 6,
+                "Metal Top Corset": 6,
+                "Cherry Top Bottom Corset": 6,
+                "Captains Shirt Red": 5,
+                "Captains Shirt Bleached": 5,
+                "Lace Bra Pierced Nips": 5,
+                "Steel Unzipped Fishnet Shirt": 5,
+                "Tape": 5,
+                "Captains Shirt Darkness": 4,
+                "Raven Unzipped Fishnet Shirt": 4,
+                "skullHands": 3,
+                "Atomic Turquoise Zipped": 3,
+                "Raven Unzipped": 3,
+                "Steel Unzipped": 3,
+                "Crimson Unzipped": 3,
+                "Rust Top Corset": 3,
+                "Bubblegum Unzipped": 2,
+                "Toxic Top Bottom Corset": 2,
+                "Toxic Top Corset": 2,
+                "Skull Chains": 1,
+                "Atomic Turquoise Unzipped Fishnet Shirt": 1,
+                "Atomic Turquoise Cow Zipped": 1,
+                "Crimson Cow Zipped": 1
+            }
+        },
+        "Ear Accessory": {
+            "coverage": 104,
+            "values": {
+                "Pentagram Earings": 36,
+                "Skully Studs": 34,
+                "Airpods": 34
+            }
+        },
+        "Earrings": {
+            "coverage": 84,
+            "values": {
+                "Gauges": 19,
+                "none": 19,
+                "Razorblades": 17,
+                "Hoops": 16,
+                "Ball Hoops": 13
+            }
+        },
+        "Eyes": {
+            "coverage": 80,
+            "values": {
+                "Demon Eyes": 44,
+                "Looking Up": 36
+            }
+        },
+        "FG Extras": {
+            "coverage": 71,
+            "values": {
+                "none": 64,
+                "Shoulder Demon": 5,
+                "Toxic Demon": 1,
+                "Metal Demon": 1
+            }
+        },
+        "Face": {
+            "coverage": 176,
+            "values": {
+                "Eyes Up Freckles Gray Lips": 25,
+                "Pouty Cherry Lips": 18,
+                "Tongue Drips Cherry Lips": 15,
+                "Eyes Up Freckles Red Lips": 13,
+                "Pouty Raspberry Lips": 12,
+                "Tongue Drips Raspberry Lips": 8,
+                "Eyes Shut Red Lips Red Drips": 7,
+                "Eyes Up Blue Bubblegum": 6,
+                "Eyes Shut Gray Lips Gray Drips": 6,
+                "Eyes Up Pink Bubblegum": 6,
+                "Pouty Steel Lips": 6,
+                "Cherry Lips Lime Lollipop": 6,
+                "Eyes Up Freckles Red Lips Blue Lollipop": 5,
+                "Demon Eyes Cigarette": 5,
+                "Eyes Up Gray Clowny Makeup": 5,
+                "Tongue Drips Steel Lips": 5,
+                "Eyes Up Freckles Gray Lips Pink Lollipop": 4,
+                "Demon Eyes Cigar": 4,
+                "Eyes Up Freckles Gray Lips 420": 3,
+                "Eyes Up Red Clowny Makeup": 3,
+                "Eyes Shut Red Lips Blue Tongue Out": 3,
+                "Demon Eyes Pouty": 2,
+                "Demon Eyes Dripping": 2,
+                "Eyes Shut Gray Lips Pink Tongue Out": 2,
+                "Eyes Up Freckles Red Lips 420": 2,
+                "Steel Lips Blue Raspberry Lollipop": 2,
+                "Demon Eyes Skully Demon Tongue": 1
+            }
+        },
+        "Face Accessory": {
+            "coverage": 143,
+            "values": {
+                "none": 89,
+                "Metal Gas Mask": 15,
+                "Cherry Gas Mask": 13,
+                "Gas Mask": 13,
+                "Top Gun Shades": 4,
+                "Toxic Gas Mask": 4,
+                "Rust Gas Mask": 3,
+                "Eye Patch": 2
+            }
+        },
+        "Feature": {
+            "coverage": 365,
+            "values": {
+                "Skull Devil Batz, Tight Top, Tongue, Eyes Up": 58,
+                "Skull Devil Batz, Tight Top, Pouty, Eyes Up": 52,
+                "Taped": 30,
+                "Skull Hands": 24,
+                "Latex Top, Tongue": 21,
+                "Lemmy Hat, Flannel Shirt, Pouty": 21,
+                "Latex Top, Pouty": 20,
+                "666 Hat, Flannel Shirt, Tongue": 18,
+                "666 Hat, Flannel Shirt, Pouty": 18,
+                "Skull Devil Batz, Exposed, Tongue, Eyes Up": 14,
+                "666 Hat, Bikini, Tongue": 12,
+                "Lemmy Hat, Bikini, Pouty": 12,
+                "Lemmy Hat, Bikini, Tongue": 12,
+                "Exposed and Pierced": 9,
+                "Exposed, Pouty": 9,
+                "Exposed, Tongue": 9,
+                "Skull Hands & Skully Makeup": 7,
+                "Eyeball Batz, Exposed, Tongue, White Eyes": 6,
+                "Eyeball Batz cover-up, Tongue, White Eyes": 5,
+                "Lemmy Hat, Exposed, Mask": 3,
+                "666 Hat, Skull Hands, Tongue": 3,
+                "Lemmy Hat, Bikini, Tongue, Skull Makeup": 1,
+                "Ace of Spades Hat, Bikini, Pouty, Bloody Eyes": 1
+            }
+        },
+        "Foreground": {
+            "coverage": 4,
+            "values": {
+                "none": 3,
+                "Toxicity": 1
+            }
+        },
+        "Foreground Extras": {
+            "coverage": 9,
+            "values": {
+                "Smoke": 5,
+                "Smoke Red": 4
+            }
+        },
+        "Foreground Feature": {
+            "coverage": 178,
+            "values": {
+                "none": 149,
+                "Crimson Chained Demon": 7,
+                "Bubblegum Pinned Demon": 6,
+                "Number of the Beast Demon": 5,
+                "Piece of Mind Demon": 5,
+                "Bone Pinned Demon": 3,
+                "Piece of Mind Demon Mango": 1,
+                "Atomic Turqoise Chained Demon": 1,
+                "Atomic Turquoise Chained Demon": 1
+            }
+        },
+        "Hair": {
+            "coverage": 369,
+            "values": {
+                "Black": 52,
+                "Blonde": 28,
+                "Style 1 Black": 28,
+                "Style 3 Black": 22,
+                "Black & Blonde": 20,
+                "Black & Gray": 19,
+                "Jet Black Pulled Back": 19,
+                "Platinum Marilyn": 17,
+                "Platinum Bangs": 16,
+                "Jet Black Pigtails": 14,
+                "Platinum Pigtails": 12,
+                "Style 2 Black": 11,
+                "Jet Black Long": 11,
+                "Style 1 Bleach Blonde": 9,
+                "Style 3 Bleach Blonde": 7,
+                "Cajun Spice Pigtails": 7,
+                "Twisted Teal Pigtails": 7,
+                "Platinum Long": 7,
+                "Hot Pink Pigtails": 6,
+                "Black & Red": 5,
+                "Style 2 Bleach Blonde": 5,
+                "Style 1 Frost": 5,
+                "Style 1 Dark Red": 5,
+                "Style 3 Dark Red": 4,
+                "Style 3 Frost": 4,
+                "Bleach Blond Long": 4,
+                "Style 2 Frost": 3,
+                "Jet Black Bangs": 3,
+                "Red & Light Red": 2,
+                "Blonde & Black": 2,
+                "Gray & Black": 2,
+                "Atomic Pink Long": 2,
+                "Root Beer Long": 2,
+                "Black & Light Red": 1,
+                "Black & Green": 1,
+                "Blonde & Red": 1,
+                "Pink & Light Pink": 1,
+                "Dark Red & Light Red": 1,
+                "Style 2 Dark Red": 1,
+                "Twisted Teal Long": 1,
+                "Crimson Long": 1,
+                "Blood Raspberry Long": 1
+            }
+        },
+        "Hair Accessory": {
+            "coverage": 118,
+            "values": {
+                "none": 39,
+                "Skull Clip": 36,
+                "Demonhead Dead Hair Clip": 12,
+                "Voodoo Heart Hair Clip": 8,
+                "Demonhead Tasty Hair Clip": 8,
+                "Demonhead Ghouly Hair Clip": 8,
+                "Demonhead Goofy Hair Clip": 4,
+                "Demonhead Quiet Hair Clip": 3
+            }
+        },
+        "Head Wear": {
+            "coverage": 265,
+            "values": {
+                "Mob-cap": 36,
+                "Skull Cap Blue": 19,
+                "Captains Hat Red": 15,
+                "Steel Hood": 15,
+                "Metal Bunny Ears": 15,
+                "Skull Cap Red": 14,
+                "Crimson Hood": 13,
+                "Raven Hood": 13,
+                "Cherry Bunny Ears": 13,
+                "Black Rose": 13,
+                "Tilted Flight Hat Blue": 12,
+                "Skull Cap Gray": 11,
+                "Tilted Flight Hat Red": 10,
+                "Tilted Flight Hat Gray Red": 8,
+                "Raven Bat": 6,
+                "Tilted Flight Hat Red Gray": 5,
+                "Steel Cat": 5,
+                "Crimson Bat": 5,
+                "Captains Hat Dark": 4,
+                "Toxic Bunny Ears": 4,
+                "Captains Hat Gray Red": 3,
+                "Tilted Flight Hat Gray": 3,
+                "Atomic Turquoise Hood": 3,
+                "Steel Bat": 3,
+                "Rust Bunny Ears": 3,
+                "Bubblegum Hood": 2,
+                "Bubblegum Bat": 2,
+                "Demon Frost Tongue": 2,
+                "Crimson Cat": 2,
+                "Demon Red Tongue": 2,
+                "Demon Dragon Fruit Tongue": 1,
+                "Atomic Turquoise Cat": 1,
+                "Raven Cat": 1,
+                "Atomic Turquoise Bat": 1
+            }
+        },
+        "Horns": {
+            "coverage": 217,
+            "values": {
+                "Devil": 180,
+                "Demon": 32,
+                "Doom": 5
+            }
+        },
+        "Lips": {
+            "coverage": 35,
+            "values": {
+                "Gray Pouty Lips": 35
+            }
+        },
+        "Makeup": {
+            "coverage": 83,
+            "values": {
+                "Basic": 18,
+                "Eye Band": 17,
+                "Lightning Drips": 14,
+                "Demon Claws": 7,
+                "XX": 7,
+                "Red Heart": 7,
+                "Evil Clown": 4,
+                "Skull Face": 3,
+                "Teal Heart": 2,
+                "Pink Heart": 2,
+                "Caramel Heart": 1,
+                "Green Heart": 1
+            }
+        },
+        "Mouth": {
+            "coverage": 36,
+            "values": {
+                "Pouty Lips": 32,
+                "Tongue Out": 4
+            }
+        },
+        "Neck Wear": {
+            "coverage": 131,
+            "values": {
+                "Choker & Necklace": 22,
+                "Choker & Inverted Cross Necklace": 14,
+                "Spiked Color": 13,
+                "Scarf 2 Frost": 11,
+                "Skull Crossbones Necklace": 10,
+                "Scarf 1 Gray": 10,
+                "Tie Frost": 9,
+                "Scarf 2 Gray": 9,
+                "Dogtags Eddie Lives": 7,
+                "Dogtag Flight 666": 6,
+                "Tie Gray": 6,
+                "Scarf 1 Frost": 5,
+                "Scarf 1 Red": 4,
+                "Tie Red": 3,
+                "Scarf 2 Red": 2
+            }
+        },
+        "Project": {
+            "coverage": 393,
+            "values": {
+                "666-U After Dark": 358,
+                "666 University": 35
+            }
+        },
+        "Rarity": {
+            "coverage": 391,
+            "values": {
+                "1 out of 6": 96,
+                "1 out of 7": 62,
+                "1 out of 10": 60,
+                "1 out of 8": 48,
+                "1 out of 4": 40,
+                "1 out of 3": 27,
+                "1 out of 1": 21,
+                "1 out of 20": 15,
+                "1 out of 13": 12,
+                "1 out of 2": 10
+            }
+        },
+        "Skin": {
+            "coverage": 644,
+            "values": {
+                "Mango": 259,
+                "Chilipepper": 167,
+                "Lime": 147,
+                "Coffee": 22,
+                "Chili Pepper": 12,
+                "Dragon Fruit": 5,
+                "Mango Inked Skull Flames": 5,
+                "Mango Inked Cherry Blossoms": 4,
+                "Chilipepper Inked Skull Flames": 4,
+                "Lime Inked Cherry Blossoms": 4,
+                "Frost": 4,
+                "Lime Inked Skull Flames": 3,
+                "Atomic": 3,
+                "Chilipepper Inked Cherry Blossoms": 2,
+                "Mint": 1,
+                "Coffee Inked Cherry Blossoms": 1,
+                "Cosmic": 1
+            }
+        },
+        "Special Features": {
+            "coverage": 8,
+            "values": {
+                "Animated": 8
+            }
+        },
+        "TT Covers": {
+            "coverage": 35,
+            "values": {
+                "Bikini Top": 19,
+                "Electrical Tape": 16
+            }
+        },
+        "Tattoos": {
+            "coverage": 135,
+            "values": {
+                "Devil Bat, Flames": 83,
+                "Flames": 52
+            }
+        },
+        "copyright": {
+            "coverage": 658,
+            "values": {
+                "Dead Pop Hell": 658
+            }
+        }
+    }
+}

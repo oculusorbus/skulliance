@@ -1,0 +1,69 @@
+{
+    "policy": "e935d5dfde8dc7346c6e64ce2997f2cd287c3da7dd807c63af6002ea",
+    "assets": 10,
+    "taken": "2026-10-29",
+    "loadMin": 8,
+    "loadMax": 8,
+    "slots": {
+        "Background": {
+            "coverage": 10,
+            "values": {
+                "Saffron": 10
+            }
+        },
+        "Copyright": {
+            "coverage": 10,
+            "values": {
+                "Dead Pop Hell": 10
+            }
+        },
+        "Mask": {
+            "coverage": 10,
+            "values": {
+                "Saffron Bone Demon": 3,
+                "Bone Blood Demon": 2,
+                "Atomic Pink Demon": 2,
+                "Tanjiro": 2,
+                "Sakonji": 1
+            }
+        },
+        "Outfit": {
+            "coverage": 10,
+            "values": {
+                "None": 7,
+                "1NE": 3
+            }
+        },
+        "Project": {
+            "coverage": 10,
+            "values": {
+                "666 University - Demon Dolls": 10
+            }
+        },
+        "Series": {
+            "coverage": 10,
+            "values": {
+                "1NE": 10
+            }
+        },
+        "Skin": {
+            "coverage": 10,
+            "values": {
+                "Mango": 4,
+                "Chili Pepper": 4,
+                "Frost": 1,
+                "Lime": 1
+            }
+        },
+        "Weapon": {
+            "coverage": 10,
+            "values": {
+                "Machete": 3,
+                "Hattori Hanzo Sword": 3,
+                "Tanjiro's Sword": 2,
+                "Inosuke's Swords": 1,
+                "Negan's Bat": 1
+            }
+        }
+    }
+}

@@ -1,0 +1,30 @@
+{
+    "policy": "cad383087aeccd1c03d790d83591ebf255d7b85955dc782414d6140e",
+    "assets": 82,
+    "taken": "2026-10-29",
+    "loadMin": 3,
+    "loadMax": 3,
+    "slots": {
+        "artist": {
+            "coverage": 82,
+            "values": {
+                "Dead Pop Hell": 82
+            }
+        },
+        "assetType": {
+            "coverage": 82,
+            "values": {
+                "NFT": 82
+            }
+        },
+        "summary": {
+            "coverage": 82,
+            "values": {
+                "Sexy Devil Girl in tight hooded onesie.": 37,
+                "Sexy Devil Skool Girl.": 20,
+                "Sexy Devil Girl in tight hooded panda onesie.": 15,
+                "Sexy Devil Girl in tight hooded onesie": 10
+            }
+        }
+    }
+}

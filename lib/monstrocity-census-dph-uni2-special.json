@@ -1,0 +1,28 @@
+{
+    "policy": "51712cd43de4831902a911309388b57508251362444d2a68dee9427a",
+    "assets": 8,
+    "taken": "2026-10-29",
+    "loadMin": 3,
+    "loadMax": 3,
+    "slots": {
+        "copyright": {
+            "coverage": 8,
+            "values": {
+                "Dead Pop Hell": 8
+            }
+        },
+        "series": {
+            "coverage": 8,
+            "values": {
+                "Special Edition - Glitched": 8
+            }
+        },
+        "theme": {
+            "coverage": 8,
+            "values": {
+                "Wicked Winter Babez": 4,
+                "Thank God Its Wednesday": 4
+            }
+        }
+    }
+}

@@ -1,0 +1,29 @@
+{
+    "policy": "346a8eaf73a0e915b1444bbff5c385e30c2d48a730b7fa35552c9529",
+    "assets": 12,
+    "taken": "2026-10-29",
+    "loadMin": 3,
+    "loadMax": 3,
+    "slots": {
+        "artist": {
+            "coverage": 12,
+            "values": {
+                "Dead Pop Hell": 12
+            }
+        },
+        "assetType": {
+            "coverage": 12,
+            "values": {
+                "NFT": 12
+            }
+        },
+        "summary": {
+            "coverage": 12,
+            "values": {
+                "Sexy Squid Game girl in red skin tight unzipped latex hoodie.": 6,
+                "Sexy Devil Girl in tight hooded button up onesie.": 3,
+                "Sexy Devil Girl in tight hooded onesie.": 3
+            }
+        }
+    }
+}

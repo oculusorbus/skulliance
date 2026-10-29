@@ -1,0 +1,61 @@
+{
+    "policy": "9d6ab3f9b103ba734761309e0ce02c1817e27306e4fdbaee60610686",
+    "assets": 17,
+    "taken": "2026-10-29",
+    "loadMin": 7,
+    "loadMax": 7,
+    "slots": {
+        "Background": {
+            "coverage": 17,
+            "values": {
+                "Metal": 17
+            }
+        },
+        "Body Wear": {
+            "coverage": 17,
+            "values": {
+                "Outfit 2": 9,
+                "Outfit 1": 8
+            }
+        },
+        "Head Wear": {
+            "coverage": 17,
+            "values": {
+                "Hair Band": 10,
+                "Bunny Ears": 7
+            }
+        },
+        "Horns": {
+            "coverage": 17,
+            "values": {
+                "Devil Horns": 11,
+                "Demon Horns": 5,
+                "Doom Horns": 1
+            }
+        },
+        "Skin": {
+            "coverage": 17,
+            "values": {
+                "Mango": 6,
+                "Chili Pepper": 5,
+                "Coffee": 2,
+                "Frost": 2,
+                "Lime": 2
+            }
+        },
+        "Weapon": {
+            "coverage": 17,
+            "values": {
+                "Virtuous Contract": 7,
+                "Virtuous Contract & Virtuous Treaty": 7,
+                "Beastlord": 3
+            }
+        },
+        "copyright": {
+            "coverage": 17,
+            "values": {
+                "Dead Pop Hell": 17
+            }
+        }
+    }
+}
