@@ -501,44 +501,97 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
  * said nothing at all -- which for the one mechanic built on a weekly
  * reveal is most of the reward missing.
  *
- * FENCED ON THE PREVIOUS LOGIN, exactly as ref_replay() is and for the same
- * reason: anything awarded after a player was last here is something they
- * cannot have been shown. It needs no new column and cannot replay a drop
- * twice, because the fence moves forward on arrival.
+ * FENCED ON THE ROW, NOT ON THE LOGIN, and the first version got this
+ * wrong in a way that locked players out of the platform.
+ *
+ * It used to select `awarded_at > last_login`, reasoning that anything
+ * awarded since a player was last here cannot have been shown to them.
+ * True, but last_login is only written ONCE A DAY (skulliance.php guards
+ * the UPDATE on `last_login < NOW() - INTERVAL 1 DAY`, which the invite
+ * and lapsed-package paths both need). So the fence does not move when a
+ * player navigates -- it sits at their FIRST page load of the day, all
+ * day. Any drop awarded after that point satisfies `awarded_at >` it on
+ * EVERY subsequent page load, and the reveal queue was refilled on every
+ * one: a modal that reopened faster than it could be dismissed, on every
+ * page, for the rest of the day. The repay run awarded 43 traits to 7
+ * players who were already on the site, so all 7 hit it at once.
+ *
+ * It needed the new column after all. dhc_trait_drops.revealed_at is the
+ * fence now: NULL means owed, a timestamp means shown, and it can only be
+ * stamped once.
+ *
+ *   ALTER TABLE dhc_trait_drops ADD COLUMN revealed_at DATETIME NULL;
+ *
+ * Until that runs this returns nothing and logs once. Inert is the right
+ * failure: the traits are in the ledger and on the Fighters either way,
+ * and the alternative failure was a player unable to use the site.
+ *
+ * CLAIM, THEN READ. The rows are stamped FIRST and then selected back by
+ * that stamp, rather than selected and then stamped. It needs no id column
+ * (there is no CREATE TABLE in the repo to take the key name from), and
+ * two tabs arriving together claim disjoint sets instead of both showing
+ * the same drops. If the request dies between the two statements the
+ * reveal is lost and the trait is not -- the safe direction.
  *
  * SOURCES ARE NAMED, NOT INFERRED. Replaying "everything since last login"
  * would double up on referral traits, which ref_replay() already handles,
  * and on anything a future caller parks itself. A source lands here only
  * when it genuinely has no session to park in.
  */
-function dhcf_replay_unattended($conn, $user_id, $prev_login) {
+function dhcf_replay_unattended($conn, $user_id) {
 	$user_id = (int)$user_id;
 	if (!($conn instanceof mysqli) || $user_id <= 0) return array();
 	if (session_status() !== PHP_SESSION_ACTIVE) return array();
-	if ($prev_login === null || $prev_login === '') return array();
+
+	/* Asked once per request. A missing column is a deploy that has not had
+	   its ALTER run yet, not an error worth logging on every page load. */
+	static $has_col = null;
+	if ($has_col === null) {
+		$c = $conn->query("SHOW COLUMNS FROM dhc_trait_drops LIKE 'revealed_at'");
+		$has_col = (bool)($c && $c->num_rows);
+		if (!$has_col) {
+			error_log('dhcf_replay_unattended: dhc_trait_drops.revealed_at is missing, '
+			        . 'so cron-awarded traits will not be revealed on the platform. '
+			        . 'ALTER TABLE dhc_trait_drops ADD COLUMN revealed_at DATETIME NULL;');
+		}
+	}
+	if (!$has_col) return array();
 
 	$sources = defined('DHCF_UNATTENDED_SOURCES')
 		? DHCF_UNATTENDED_SOURCES : array('dhcbosses');
 	if (!$sources) return array();
 	$in = array();
 	foreach ($sources as $src) $in[] = "'" . $conn->real_escape_string($src) . "'";
+	$in = implode(',', $in);
 
-	$since = $conn->real_escape_string($prev_login);
 	/* Bounded by the same cap the session queue uses: a full boss week can
 	   owe twenty-one, and a reveal queue is a nicety rather than a ledger.
-	   What is not shown is still theirs and still in dhc_trait_drops. */
+	   What is not claimed here stays NULL and is offered again next visit. */
 	$lim = (int)(defined('DHCF_UNSEEN_MAX') ? DHCF_UNSEEN_MAX : 12);
+
+	/* CLAIM. Oldest first, so a player who is owed more than the cap sees
+	   them in the order they were earned across however many visits. */
+	$stamp = date('Y-m-d H:i:s');
+	$ok = $conn->query("UPDATE dhc_trait_drops SET revealed_at = '$stamp'
+	                     WHERE user_id = $user_id
+	                       AND source IN ($in)
+	                       AND revealed_at IS NULL
+	                  ORDER BY awarded_at ASC LIMIT $lim");
+	if (!$ok || $conn->affected_rows <= 0) return array();
+
+	/* READ BACK exactly what this request claimed. */
 	$r = $conn->query("SELECT category, slug, source FROM dhc_trait_drops
 	                    WHERE user_id = $user_id
-	                      AND source IN (" . implode(',', $in) . ")
-	                      AND awarded_at > '$since'
-	                 ORDER BY awarded_at ASC LIMIT $lim");
+	                      AND revealed_at = '$stamp'
+	                 ORDER BY awarded_at ASC");
 	if (!$r) return array();
 
 	$out = array();
 	while ($row = $r->fetch_assoc()) {
 		/* Through the one function that builds a drop payload, so a replayed
-		   reveal cannot drift from a live one. */
+		   reveal cannot drift from a live one. A row whose payload will not
+		   build stays claimed on purpose: it would not build next time
+		   either, and leaving it NULL would offer it again forever. */
 		$d = dhcf_drop_payload($conn, $user_id, $row['category'], $row['slug'], null, $row['source']);
 		if ($d) { $d['why'] = 'away'; $out[] = $d; }
 	}

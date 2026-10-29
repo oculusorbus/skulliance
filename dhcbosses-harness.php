@@ -3243,16 +3243,53 @@ ok(strpos($skl, 'dhcf_replay_unattended(') !== false,
  . 'and the only place the previous login is still readable');
 
 /*
- * FENCED ON THE PREVIOUS LOGIN, like ref_replay(). The fence moves forward
- * on arrival, so a drop cannot be replayed twice -- and it needs no new
- * column. Reading last_login AFTER the UPDATE would make every returning
- * player look active and replay nothing, which is a feature that silently
- * does nothing.
+ * FENCED ON THE ROW, AND NOT ON last_login -- WHICH IS WHAT THIS CHECK
+ * USED TO ASSERT, WRONGLY.
+ *
+ * The first version selected `awarded_at > last_login` and this check
+ * pinned it, on the reasoning that the fence moves forward on arrival so a
+ * drop cannot replay twice. It does not move on arrival. skulliance.php
+ * guards the UPDATE on `last_login < NOW() - INTERVAL 1 DAY` (the invite
+ * and lapsed-package paths need that), so the fence sits at a player's
+ * FIRST page load of the day for the whole day, and anything awarded after
+ * that point re-satisfied the query on every page load. The reveal queue
+ * refilled each time: a modal reopening faster than it could be dismissed,
+ * on every page. The repay awarded 43 traits to 7 players who were already
+ * on the site and all 7 were locked out of navigating.
+ *
+ * So the fence is dhc_trait_drops.revealed_at, which can only be stamped
+ * once, and these checks now assert the OPPOSITE of what they did.
  */
 $replay = substr($fl, strpos($fl, 'function dhcf_replay_unattended'));
 $replay = substr($replay, 0, strpos($replay, "\nfunction "));
-ok(strpos($replay, '$prev_login') !== false && strpos($replay, "awarded_at > '\$since'") !== false,
-   'the replay is not fenced on the previous login, so it replays the same drops forever');
+ok(strpos($replay, 'revealed_at IS NULL') !== false,
+   'the replay does not fence on revealed_at, so nothing stops it offering the same drop '
+ . 'again on the next page load');
+ok(strpos($replay, 'SET revealed_at') !== false,
+   'the replay never marks a drop as revealed, so its fence can never close');
+/* Stamp BEFORE the select, or a crash between them re-shows the drops --
+   and two tabs arriving together both claim the same set. */
+ok(strpos($replay, 'SET revealed_at') < strpos($replay, 'SELECT category'),
+   'the replay selects the drops before claiming them, so two page loads at once show the '
+ . 'same reveal twice');
+/* The whole bug in one line: this function must not see last_login at all. */
+ok(strpos($replay, 'prev_login') === false && strpos($replay, 'last_login') === false,
+   'the replay still reads the previous login, which only moves once a day and therefore '
+ . 'refills the reveal queue on every page load');
+/* Scoped to this call's own arguments: ref_replay() on the line above
+   legitimately takes $skl_prev_login, so searching the whole file for it
+   fails on correct code. */
+$sklCall = substr($skl, strpos($skl, 'dhcf_replay_unattended($conn,'));
+$sklCall = substr($sklCall, 0, strpos($sklCall, ');'));
+ok(strpos($skl, 'dhcf_replay_unattended($conn,') !== false
+   && strpos($sklCall, 'prev_login') === false,
+   'skulliance.php still passes the previous login to the replay: ' . $sklCall);
+/* An unrun ALTER must make the feature inert, not make it loop. */
+ok(strpos($replay, "SHOW COLUMNS FROM dhc_trait_drops LIKE 'revealed_at'") !== false,
+   'the replay assumes the revealed_at column exists, so a pull without the ALTER either '
+ . 'errors on every page load or falls back to the fence that caused the loop');
+ok(strpos($replay, 'ALTER TABLE dhc_trait_drops ADD COLUMN revealed_at') !== false,
+   'nothing in the log says which ALTER to run when the column is missing');
 ok(strpos($replay, 'source IN (') !== false,
    'the replay takes every source, which double-shows the referral traits ref_replay() '
  . 'already handles');
@@ -3271,6 +3308,9 @@ ok($readsBeforeUpdate,
  * theirs and still in the ledger -- it is only the reveal that is lost,
  * silently, which is exactly why this is asserted.
  */
+ok(strpos($replay, 'ORDER BY awarded_at ASC LIMIT') !== false,
+   'the claim takes an unordered slice, so a player owed more than the cap gets an '
+ . 'arbitrary handful rather than the oldest first');
 ok(DHCF_UNSEEN_MAX > (int)DHCB_CACHE_MAX * (int)DHCB_WAVE_TRAITS_MAX,
    sprintf('the reveal queue holds %d but a perfect boss week pays %d, so the biggest payout '
          . 'on the platform loses its reveal',

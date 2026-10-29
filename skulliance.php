@@ -128,14 +128,21 @@ if (!empty($_SESSION['userData']['discord_id'])) {
 			$skl_owed = ref_replay($conn, (int)$_SESSION['userData']['user_id'], $skl_prev_login);
 			/*
 			 * AND TRAITS A CRON AWARDED WHILE THEY WERE AWAY. Same problem,
-			 * same fence, different reason: a weekly settle has no session
-			 * to park a reveal in, so the first DHC Bosses payout reached
-			 * players through Discord and nowhere else. See
+			 * different fence: a weekly settle has no session to park a
+			 * reveal in, so the first DHC Bosses payout reached players
+			 * through Discord and nowhere else.
+			 *
+			 * IT DOES NOT TAKE $skl_prev_login, and that is the whole point.
+			 * It used to, and because the UPDATE below moves last_login at
+			 * most once a day, the fence sat at a player's first page load
+			 * all day and the queue refilled on every navigation -- a modal
+			 * that reopened faster than it could be dismissed. It stamps
+			 * dhc_trait_drops.revealed_at instead. See
 			 * dhcf_replay_unattended().
 			 */
 			if (function_exists('dhcf_replay_unattended')) {
 				$skl_cron = dhcf_replay_unattended($conn,
-					(int)$_SESSION['userData']['user_id'], $skl_prev_login);
+					(int)$_SESSION['userData']['user_id']);
 				if ($skl_cron) $skl_owed = array_merge($skl_owed, $skl_cron);
 			}
 			if ($skl_owed) {
