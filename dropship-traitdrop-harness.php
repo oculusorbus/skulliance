@@ -87,7 +87,7 @@ foreach ($c->queries as $i => $q) {
 	   "query $i is not scoped to the project, so Drop Ship and Oculus Lounge share a board");
 }
 
-echo "\nthe rule: take or tie the lead, and beat your own\n";
+echo "\nthe rule: take or tie a lead you did not already hold\n";
 $case = function ($prev, $rival) { return array('ok' => true, 'prev' => $prev, 'rival' => $rival); };
 
 /* First into a fresh game. Nothing to beat either way -- rewarding whoever
@@ -95,31 +95,109 @@ $case = function ($prev, $rival) { return array('ok' => true, 'prev' => $prev, '
 ok(dropshipDropEarned($case(null, null), 20) === true,
    'the first player into a new game earns nothing, which removes the reason to be early');
 
-/* THE OWNER'S WORKED EXAMPLE. 20 pays; the 10 that replaces it does not;
-   the 25 after that does. Two traits for well/badly/well, accepted on the
-   grounds that the bad run risked a real position. */
+/*
+ * THE FARM THIS RULE EXISTS TO CLOSE, and it is the ONE case where the
+ * answer changed.
+ *
+ * A standing leader sending escalating squads collects on every run: each
+ * one takes the lead (from themselves -- they are the only one up there)
+ * and each one beats their own previous score. 'cap' => 0 in DHCF_GAMES
+ * means nothing bounded it, so a player with the NFTs to keep playing
+ * could mint traits all week off a board nobody was contesting.
+ *
+ * Asked as "were they already leading" it pays nothing, and the four
+ * assertions below are the same escalation that used to pay four times.
+ */
+ok(dropshipDropEarned($case(6000, 5000), 7000) === false,
+   'the standing leader is paid for improving on themselves, which is the escalating-squad farm');
+ok(dropshipDropEarned($case(7000, 5000), 8000) === false,
+   'and again one rung up, so the farm is unbounded rather than just open');
+ok(dropshipDropEarned($case(20, null), 25) === false,
+   'a player alone on the board is paid for every run that improves, not once for arriving');
 ok(dropshipDropEarned($case(20, null), 10) === false,
    'a worse run still pays, so three quick runs farm three traits');
-ok(dropshipDropEarned($case(10, null), 25) === true,
-   'recovering past your own replaced score does not pay');
+
+/* AND THE TANK-AND-RECLAIM THE OLD RULE KNOWINGLY LEFT OPEN. 1000, then 10
+   (which REPLACES the 1000), then 1000 again: the third run used to count
+   as taking the lead from your own replaced 10 and paid. With no rival on
+   the board the first run made you leader, so nothing after it pays. */
+ok(dropshipDropEarned($case(10, null), 25) === false,
+   'recovering past your own replaced score pays, which is the tank-and-reclaim farm');
+
+/* WHAT MUST STILL PAY: beating a real rival to the top. The owner's words:
+   "if they manage to beat another player's top score and top the
+   leaderboard, that's fine. They should get a trait for that." */
+ok(dropshipDropEarned($case(null, 50), 51) === true, 'beating the lead does not pay');
+ok(dropshipDropEarned($case(null, 50), 50) === true, 'tying the lead does not pay, though the rule says it should');
+ok(dropshipDropEarned($case(7000, 8000), 9000) === true,
+   'a player who was passed and takes the lead back earns nothing, so a contested week pays once');
+/* As often as the rival moves. This is the shape of a real contest and it
+   must not be mistaken for the farm above: the rival bar rises each time,
+   which is precisely what the farm cannot make happen. */
+ok(dropshipDropEarned($case(9000, 10000), 11000) === true,
+   'retaking the lead a second time pays nothing, so only the first exchange is rewarded');
 
 /* Second place pays nothing. This is the rule that makes the whole thing
    different from every other game on the platform. */
 ok(dropshipDropEarned($case(null, 50), 49) === false, 'a run that does not reach the lead still pays');
-ok(dropshipDropEarned($case(null, 50), 50) === true, 'tying the lead does not pay, though the rule says it should');
-ok(dropshipDropEarned($case(null, 50), 51) === true, 'beating the lead does not pay');
-
-/* Equalling your own score is not beating it -- otherwise a replay of the
-   same run pays forever. */
-ok(dropshipDropEarned($case(50, 40), 50) === false,
-   'matching your own previous score pays, so one good run can be repeated for traits');
-
-/* Both gates, together. Leading but not improving, and improving but not
-   leading, each pay nothing. */
-ok(dropshipDropEarned($case(60, 50), 55) === false,
-   'a run that leads the board but not your own best pays');
 ok(dropshipDropEarned($case(10, 90), 20) === false,
    'a run that beats your own but not the board pays');
+
+/* Equalling your own score is not taking a lead -- otherwise a replay of
+   the same run pays forever. */
+ok(dropshipDropEarned($case(50, 40), 50) === false,
+   'matching your own previous score pays, so one good run can be repeated for traits');
+ok(dropshipDropEarned($case(60, 50), 55) === false,
+   'a run that leads the board but not your own best pays');
+
+/* A TIE IS A SHARE OF THE LEAD, so improving out of one pays nothing: the
+   tie already paid, and the rival bar has not moved. Documented in the
+   function as the one line to flip if the owner wants sole possession of a
+   tied lead to pay as well. */
+ok(dropshipDropEarned($case(50, 50), 60) === false,
+   'breaking a tie you already share pays again off one rival score');
+
+/*
+ * THE RULE SUBSUMES THE OLD SECOND GATE RATHER THAN DROPPING IT.
+ *
+ * "Beat your own previous score" is no longer written down anywhere, and
+ * this is why that is safe: reaching the lead test means prev < rival, so
+ * any score clearing the rival bar cleared the player's own score on the
+ * way past. There is no score that takes a lead it did not hold without
+ * also beating its owner's previous, and this sweeps for one.
+ */
+$counter = array();
+for ($prev = 0; $prev <= 40; $prev++) {
+	for ($rival = 0; $rival <= 40; $rival++) {
+		for ($score = 0; $score <= 40; $score++) {
+			if (!dropshipDropEarned($case($prev, $rival), $score)) continue;
+			if ($score <= $prev) $counter[] = "prev $prev rival $rival score $score";
+		}
+	}
+}
+ok(!$counter, 'a run is paid without beating the player\'s own previous score, so dropping that '
+            . 'gate lost a rule instead of absorbing it: ' . implode('; ', array_slice($counter, 0, 5)));
+
+/*
+ * AND NO RUN CAN PAY TWICE OFF ONE RIVAL BAR, which is the farm stated as a
+ * property rather than as the three examples above. Play any rising
+ * sequence of scores against a FIXED rival (the farmer's situation -- they
+ * are unopposed, so nothing above them moves) and at most one run in it may
+ * pay. The old rule paid every run in such a sequence.
+ */
+$worst = 0; $worstAt = '';
+foreach (array(null, 0, 5, 20, 39) as $rival) {
+	for ($start = 0; $start <= 20; $start++) {
+		$paid = 0; $prev = null;
+		for ($score = $start; $score <= 40; $score++) {
+			if (dropshipDropEarned($case($prev, $rival), $score)) $paid++;
+			$prev = $score;   /* logScore() replaces the row with this run */
+		}
+		if ($paid > $worst) { $worst = $paid; $worstAt = 'rival ' . var_export($rival, true) . ", from $start"; }
+	}
+}
+ok($worst <= 1, "an unopposed rising sequence pays $worst traits ($worstAt), so escalating squads "
+              . 'still farm a fixed board');
 
 echo "\nnothing is earned when the read failed\n";
 /* A context that did not complete must never pay: its nulls would read as

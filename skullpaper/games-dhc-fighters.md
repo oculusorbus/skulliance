@@ -66,12 +66,14 @@ genuine attempt qualifies and your result only decides the odds. Here nothing
 drops at all unless your run **takes or ties the lead** of the game currently
 running, and then it rolls the best table in the game.
 
-Two things have to be true. Your score has to reach the top of the current
-board, and it has to beat **your own** previous score in that game. The first
-player into a fresh game clears both by default, which is the point: on a
-quiet board, turning up first is worth something. A new game starts on a fixed
-cadence, so the lead is always back up for grabs and no one score locks it
-away.
+One thing has to be true: your score has to reach the top of the current board
+when it was not already yours. It pays for the lead changing hands, so a
+standing leader who improves on themselves gets nothing, and a player who
+beats you to the top and then holds it gets nothing more until you take it
+back. The first player into a fresh game takes the lead by default, which is
+the point: on a quiet board, turning up first is worth something. A new game
+starts on a fixed cadence, so the lead is always back up for grabs and no one
+score locks it away.
 
 A run that replaces your score with a worse one pays nothing. That is not a
 penalty so much as the shape of the game: Drop Ship keeps your latest run, not

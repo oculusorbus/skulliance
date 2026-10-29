@@ -1103,7 +1103,7 @@ $GLOBALS['DHCF_GAMES'] = array(
 	   player is told that Oculus Lounge, Filthy Mermaid and Dread City pay
 	   the same drop and are reached from inside this one. */
 	'dropship'       => array('label' => 'Drop Ship', 'x_tag' => '@ohh_meed', 'url' => 'dropship/dashboard.php?project_id=1',
-	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead in any theme',
+	                          'category' => 'wildcard', 'trigger' => 'take a lead you did not hold, any theme',
 	                          'base' => 'placement_1',
 	                          'cap' => 0,
 	                          'limit_note' => 'only when you take the lead'),
@@ -1128,7 +1128,7 @@ $GLOBALS['DHCF_GAMES'] = array(
 	 * else -- they pay, count and cap as they always did.
 	 */
 	'oculuslounge'   => array('label' => 'Oculus Lounge', 'x_tag' => '@oculuslounge', 'url' => 'dropship/dashboard.php?project_id=4',
-	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
+	                          'category' => 'wildcard', 'trigger' => 'take a lead you did not hold',
 	                          'base' => 'placement_1',
 	                          'cap' => 0,
 	                          'limit_note' => 'only when you take the lead',
@@ -1138,14 +1138,14 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// what dropshipDropAward() derives -- 'filthy-mermaid' -> 'filthymermaid'.
 	// Get that wrong and the drop silently posts as Drop Ship instead.
 	'filthymermaid'  => array('label' => 'Filthy Mermaid', 'x_tag' => '@ohh_meed', 'url' => 'dropship/dashboard.php?project_id=3',
-	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
+	                          'category' => 'wildcard', 'trigger' => 'take a lead you did not hold',
 	                          'base' => 'placement_1',
 	                          'cap' => 0,
 	                          'limit_note' => 'only when you take the lead',
 	                          'unlisted' => true),
 	// Ohh Meed's as well -- same Shorty Verse collection Filthy Mermaid uses.
 	'dreadcity'      => array('label' => 'Dread City', 'x_tag' => '@ohh_meed', 'url' => 'dropship/dashboard.php?project_id=2',
-	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
+	                          'category' => 'wildcard', 'trigger' => 'take a lead you did not hold',
 	                          'base' => 'placement_1',
 	                          'cap' => 0,
 	                          'limit_note' => 'only when you take the lead',
@@ -1167,7 +1167,7 @@ $GLOBALS['DHCF_GAMES'] = array(
 	 * stranger. Same rule dhc-fighter-modal.php follows for a builder.
 	 */
 	'dhc2fighters'   => array('label' => 'DHC2 Fighters', 'x_tag' => '@MMAXI404', 'url' => 'dropship/dashboard.php?project_id=5',
-	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
+	                          'category' => 'wildcard', 'trigger' => 'take a lead you did not hold',
 	                          'base' => 'placement_1',
 	                          'cap' => 0,
 	                          'limit_note' => 'only when you take the lead',

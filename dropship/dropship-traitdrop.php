@@ -3,19 +3,43 @@
  * TRAIT DROPS FOR DROP SHIP AND OCULUS LOUNGE.
  *
  * THE RULE, which is not the rule the other nine games use: a run drops a
- * trait only when it TAKES OR TIES THE LEAD of the current game, and only
- * when it also beats that player's own previous score in the same game. No
- * drop for a run that places second, and none for a run that does not improve
- * on your own. See the note beside 'dropship' in dhcfighters-config.php for
- * why these two invert the platform's usual "a genuine attempt qualifies".
+ * trait only when it TAKES OR TIES A LEAD IT DID NOT ALREADY HOLD. No drop
+ * for a run that places second, and -- the part that matters -- no drop for
+ * a standing leader who improves on themselves. See the note beside
+ * 'dropship' in dhcfighters-config.php for why these games invert the
+ * platform's usual "a genuine attempt qualifies".
  *
- * WHY BOTH GATES. Taking the lead alone is farmable here, because logScore()
- * REPLACES your row rather than keeping your best: score 1000, then 10 (you
- * are still top of a board with only your own 10 on it), then 1000 again, and
- * the third run has "taken the lead" from yourself. Requiring the run to beat
- * your own previous score closes that. A player who scores well, badly, then
- * well in a rush does collect twice -- the owner's explicit call, since a
- * deliberately bad run risks their actual position, which is deterrent enough.
+ * IT IS A TRAIT PER LEAD CHANGE, NOT PER IMPROVEMENT, and that is the whole
+ * correction. The rule used to be "take or tie the lead AND beat your own
+ * previous score", which reads as two gates and is really one: a player
+ * already on top of the board passes the first gate against nobody, so every
+ * run that improved on their own score paid. Hold the lead, then send
+ * escalating squads -- 6000, 7000, 8000 -- and each one beats the board
+ * (trivially, you are the board) and beats you, so each one pays. These
+ * games carry 'cap' => 0 in DHCF_GAMES, so nothing bounded it.
+ *
+ * Asking instead whether the player WAS ALREADY LEADING closes it, and
+ * subsumes the old second gate rather than keeping it: if you were behind
+ * the rival bar and the run clears it, the run beat your own score too, by
+ * arithmetic. So there is one question, asked once.
+ *
+ * It also closes the hole the old rule knowingly left open. On a board with
+ * only your own row on it, 1000 / 10 / 1000 used to pay twice: the third run
+ * "took the lead" from your own replaced 10. With no rival, your first run
+ * makes you the leader and nothing after it pays.
+ *
+ * WHAT STILL PAYS: arriving first in a new week, reaching a rival's score,
+ * and taking the lead back after a rival passes you -- as often as they
+ * pass you. A week with a real contest in it pays both players repeatedly,
+ * which is the behaviour worth having.
+ *
+ * WHAT IS LEFT, AND IT NEEDS A REAL RIVAL ABOVE YOU: surrender the lead to
+ * somebody (logScore() REPLACES your row, so a bad run really does drop you
+ * to it) and then retake it, and that is a fresh lead change. Closing it
+ * would mean remembering a player's best-ever score for the week, which
+ * `results` does not keep. The cost is giving a rival the actual lead on a
+ * board that stands for a week, and it pays nothing at all on a board you
+ * are alone on, which is where the farming was.
  *
  * NOTHING HERE MAY DISTURB A SCORE SAVE. Every failure path returns quietly:
  * no linked account, Skulliance database unreachable, library missing, a
@@ -88,24 +112,42 @@ function dropshipDropContext($conn) {
 function dropshipDropEarned($ctx, $score) {
 	if (empty($ctx['ok'])) return false;
 	$score = (int)$score;
+	$prev  = $ctx['prev'];
+	$rival = $ctx['rival'];
 
-	/* TOOK OR TIED THE LEAD. An empty board (no rival) is a lead by default,
-	   which is the point: the first player into a new game is rewarded for
-	   turning up first. */
-	if ($ctx['rival'] !== null && $score < $ctx['rival']) return false;
+	/*
+	 * WERE THEY ALREADY LEADING? If so there is no lead for this run to
+	 * take, however much better it is, and it pays nothing.
+	 *
+	 * `$rival === null` means nobody else is on the board, so any score of
+	 * their own puts them on top -- which is why a player alone on a board
+	 * collects exactly once, for arriving, and not once per run.
+	 *
+	 * `>=` because a tie is a share of the lead, and tying already paid
+	 * when it happened. Flip this to `>` to also pay for taking sole
+	 * possession of a tied lead; it would be bounded (the rival bar has
+	 * not moved, so the run after it pays nothing) but it pays twice
+	 * against one rival score.
+	 *
+	 * prev is MAX(score), so a duplicated row reads as the player's best
+	 * and this answers "yes, leading" more readily rather than less. The
+	 * conservative direction: it withholds a trait rather than inventing
+	 * one.
+	 */
+	if ($prev !== null && ($rival === null || $prev >= $rival)) return false;
 
-	/* AND BEAT THEIR OWN. First run of the game has nothing to beat.
-	   A STANDING LEADER WHO IMPROVES DOES EARN ONE -- they beat the board and
-	   they beat themselves, so a day of rising runs pays every time.
-
-	   NOTHING BOUNDS THAT ANY MORE. These four games carry 'cap' => 0 in
-	   DHCF_GAMES: the games run on a WEEKLY cadence, and a player who holds
-	   enough NFTs to battle it out all day was being left with nothing for
-	   the effort after the third. The owner's call, and it reopens the hole
-	   named above -- score well, tank, score well pays each time, now with
-	   no ceiling behind it -- which is deliberate: the tank costs them their
-	   actual position on a board that stands for a week. */
-	if ($ctx['prev'] !== null && $score <= $ctx['prev']) return false;
+	/*
+	 * TOOK OR TIED THE LEAD. An empty board is a lead by default, which is
+	 * the point: the first player into a new week is rewarded for turning
+	 * up first.
+	 *
+	 * NO SEPARATE "BEAT YOUR OWN" GATE, because there cannot be one to
+	 * fail. Reaching here means the player was NOT leading, so either prev
+	 * is null or prev < rival <= score -- the run beat their own score as a
+	 * consequence of clearing the bar. The old explicit check was not wrong,
+	 * it was unreachable, and keeping it would imply a case it can refuse.
+	 */
+	if ($rival !== null && $score < $rival) return false;
 
 	return true;
 }
