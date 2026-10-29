@@ -27,6 +27,12 @@
  * Cardano-specific; it is a hash of a string.
  */
 
+/* The mapped collections. Required here rather than by each caller: this
+   file is the one answer to "what card does this NFT play", and a caller
+   that forgot the include would silently get the hash for a collection
+   that is supposed to read its traits. */
+require_once __DIR__ . '/monstrocity-trait-maps.php';
+
 /**
  * The bytes the stats are hashed from.
  *
@@ -45,8 +51,30 @@ function monstrocity_nft_seed($asset_id) {
  * array(strength, speed, tactics, size, type, powerup), or null when there is
  * no identifier to hash. Ranges are what monstrocity.php's character sheet
  * expects: strength 1-8, speed and tactics 1-7.
+ *
+ * A MAPPED COLLECTION ANSWERS FIRST, AND EVERYTHING ELSE STILL HASHES.
+ *
+ * Some collections' traits mean something -- an Ancestor carrying a Sacred
+ * Golden Sword and a King Crown should not roll the same card as one
+ * holding a chicken leg, and a collector should be able to look at their
+ * NFT and see why it plays the way it does. Those are named by policy in
+ * lib/monstrocity-trait-maps.php.
+ *
+ * Everything unmapped falls through to exactly the hash it always used, by
+ * exactly the same bytes, which is what makes this safe to add: a theme can
+ * be any of thirty-five collections and "what is a trait worth" has no
+ * answer across them. The harness pins four captured baselines on that.
+ *
+ * $traits is nfts.metadata read through nft_metadata_traits(); $policy is
+ * the collection's. Both optional, so every existing caller is unaffected.
  */
-function monstrocity_nft_stats($asset_id) {
+function monstrocity_nft_stats($asset_id, $traits = null, $policy = '') {
+	if ($policy !== '' && is_array($traits) && $traits
+	    && function_exists('monstrocity_trait_stats')) {
+		$mapped = monstrocity_trait_stats($policy, $traits);
+		if (is_array($mapped)) return $mapped;
+	}
+
 	$seed = monstrocity_nft_seed($asset_id);
 	if ($seed === '') return null;
 

@@ -1,0 +1,304 @@
+[
+    {
+        "asset": "The Ancestor #1178",
+        "traits": {
+            "Body": "Nargaroth",
+            "Face": "Nargaroth",
+            "Type": "Legendary Ancient",
+            "Weapon": "Fire Of Destruction",
+            "Background": "Golden Fortress"
+        },
+        "want": {
+            "strength": 6,
+            "speed": 7,
+            "tactics": 2,
+            "size": "Large",
+            "type": "Base",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "asset": "The Ancestor #1493",
+        "traits": {
+            "Body": "Vaelya",
+            "Face": "Vaelya",
+            "Type": "Pure Ancient",
+            "Weapon": "Sam",
+            "Background": "Hidden Castle",
+            "Additional Weapon": "Ancient Magic"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 6,
+            "tactics": 2,
+            "size": "Large",
+            "type": "Base",
+            "powerup": "Regenerate"
+        }
+    },
+    {
+        "asset": "The Ancestor #1647",
+        "traits": {
+            "Body": "Elduren",
+            "Face": "Elduren",
+            "Type": "Pure Ancient",
+            "Weapon": "Revenge Of The Forests",
+            "Background": "Pure Garden",
+            "Additional Weapon": "Forests Spies"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 6,
+            "tactics": 2,
+            "size": "Large",
+            "type": "Base",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "asset": "The Ancestor #1714",
+        "traits": {
+            "Ear": "Warrior",
+            "Body": "Dragon Bone Armor",
+            "Face": "Evil Laugh",
+            "Head": "Bone Crown",
+            "Type": "Orc",
+            "Weapon": "Hunter Spear",
+            "Background": "Coffee",
+            "Additional Weapon": "Sharp Sword"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 2,
+            "tactics": 6,
+            "size": "Large",
+            "type": "Leader",
+            "powerup": "Boost Attack"
+        }
+    },
+    {
+        "asset": "The Ancestor #283",
+        "traits": {
+            "Ear": "Biten Ear With Hoop Earring",
+            "Body": "Farmer Dress",
+            "Face": "Curious Blonde",
+            "Head": "Blonde Braided Hair",
+            "Type": "Human",
+            "Beard": "Blonde Long Beard",
+            "Weapon": "Hunter Pilum",
+            "Back Gear": "Bow",
+            "Background": "Avocado"
+        },
+        "want": {
+            "strength": 6,
+            "speed": 2,
+            "tactics": 2,
+            "size": "Medium",
+            "type": "Battle Damaged",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "asset": "The Ancestor #337",
+        "traits": {
+            "Face": "Warrior Grey",
+            "Type": "Dwarf",
+            "Beard": "Miner Grey Beard",
+            "Background": "Burnt Sienna",
+            "Additional Weapon": "Shovel"
+        },
+        "want": {
+            "strength": 3,
+            "speed": 6,
+            "tactics": 1,
+            "size": "Small",
+            "type": "Base",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "asset": "The Ancestor #520",
+        "traits": {
+            "Ear": "Basic Ear",
+            "Face": "Wink Grey",
+            "Head": "Wayfarer Hair",
+            "Type": "Human",
+            "Beard": "Hunter Beard",
+            "Background": "Avocado"
+        },
+        "want": {
+            "strength": 1,
+            "speed": 7,
+            "tactics": 3,
+            "size": "Medium",
+            "type": "Base",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "asset": "The Ancestor #1018",
+        "traits": {
+            "Ear": "Biten Ear With Hoop Earring",
+            "Body": "Court Guard Leather Suit",
+            "Face": "Serious Grey",
+            "Head": "Golden Helmet",
+            "Type": "Human",
+            "Beard": "Hunter Beard",
+            "Weapon": "Iron Knuckle Duster",
+            "Back Gear": "Bow",
+            "Background": "Avocado",
+            "Additional Weapon": "War Horn"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 1,
+            "tactics": 5,
+            "size": "Medium",
+            "type": "Battle Damaged",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "asset": "The Ancestor #1154",
+        "traits": {
+            "Ear": "Basic Ear",
+            "Body": "Court Guard Leather Suit",
+            "Face": "Critical Blonde",
+            "Head": "Royal Hat",
+            "Type": "Human",
+            "Beard": "Blonde Long Beard",
+            "Weapon": "Iron Knuckle Duster",
+            "Back Gear": "Bow",
+            "Background": "Aero",
+            "Additional Weapon": "Magic Pipe"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 1,
+            "tactics": 2,
+            "size": "Medium",
+            "type": "Leader",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "asset": "The Ancestor #1147",
+        "traits": {
+            "Ear": "Nail Earring",
+            "Body": "Legendary Gladiator Armor",
+            "Face": "Oh Shit",
+            "Head": "Black Prince Crown",
+            "Type": "Dwarf",
+            "Beard": "Chief Miner Black Beard",
+            "Weapon": "Chicken Leg",
+            "Back Gear": "Frixie",
+            "Background": "Orange",
+            "Additional Weapon": "Shovel"
+        },
+        "want": {
+            "strength": 8,
+            "speed": 1,
+            "tactics": 6,
+            "size": "Small",
+            "type": "Leader",
+            "powerup": "Boost Attack"
+        }
+    },
+    {
+        "asset": "The Ancestor #1176",
+        "traits": {
+            "Face": "Tired Red",
+            "Type": "Dwarf",
+            "Beard": "Prince Red Beard",
+            "Background": "Auburn"
+        },
+        "want": {
+            "strength": 1,
+            "speed": 7,
+            "tactics": 1,
+            "size": "Small",
+            "type": "Base",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "asset": "The Ancestor #1482",
+        "traits": {
+            "Ear": "Warrior",
+            "Body": "Arrows",
+            "Face": "Suspicious",
+            "Head": "Hair",
+            "Type": "Orc",
+            "Weapon": "Legendary scythe",
+            "Background": "Saffron"
+        },
+        "want": {
+            "strength": 5,
+            "speed": 4,
+            "tactics": 3,
+            "size": "Large",
+            "type": "Base",
+            "powerup": "Boost Attack"
+        }
+    },
+    {
+        "asset": "The Ancestor #1600",
+        "traits": {
+            "Ear": "Commander Earring",
+            "Body": "Legendary Armor",
+            "Face": "Fierce",
+            "Head": "Legendary Helmet",
+            "Type": "Orc",
+            "Weapon": "Legendary Scythe",
+            "Background": "Legendary Arena"
+        },
+        "want": {
+            "strength": 5,
+            "speed": 4,
+            "tactics": 6,
+            "size": "Large",
+            "type": "Base",
+            "powerup": "Boost Attack"
+        }
+    },
+    {
+        "asset": "The Ancestor #1574",
+        "traits": {
+            "Ear": "Nosy",
+            "Body": "Spiked Heavy Armor",
+            "Face": "Suspicious",
+            "Head": "Fur Hat",
+            "Type": "Orc",
+            "Weapon": "Legendary scythe",
+            "Background": "Sea Green"
+        },
+        "want": {
+            "strength": 5,
+            "speed": 4,
+            "tactics": 2,
+            "size": "Large",
+            "type": "Base",
+            "powerup": "Minor Regen"
+        }
+    },
+    {
+        "asset": "The Ancestor #1620",
+        "traits": {
+            "Ear": "Nosy",
+            "Body": "Metal Armor",
+            "Face": "Peaceful",
+            "Head": "Hair",
+            "Type": "Orc",
+            "Weapon": "Legendary scythe",
+            "Background": "Sea Green"
+        },
+        "want": {
+            "strength": 5,
+            "speed": 4,
+            "tactics": 3,
+            "size": "Large",
+            "type": "Base",
+            "powerup": "Minor Regen"
+        }
+    }
+]

@@ -125,8 +125,19 @@ echo "\nthe endpoint actually calls the library\n";
 $ep = file_get_contents(__DIR__ . '/ajax/get-nft-assets.php');
 ok(strpos($ep, "require_once __DIR__ . '/../lib/monstrocity-stats-lib.php';") !== false,
    'get-nft-assets.php does not include the stats library');
-ok(strpos($ep, 'monstrocity_nft_stats($asset_id)') !== false,
+ok(preg_match('~monstrocity_nft_stats\(\s*\$asset_id\s*,~', $ep) === 1,
    'get-nft-assets.php does not call monstrocity_nft_stats()');
+/* AND HANDS IT THE TRAITS AND THE POLICY. The mapped path cannot run
+   without both, and the failure is silent: a mapped collection would
+   quietly keep hashing and nobody would see anything wrong. */
+ok(strpos($ep, 'nft_metadata_traits($metadata)') !== false,
+   'the endpoint does not pass the NFT metadata, so a mapped collection still hashes');
+ok(preg_match('~monstrocity_nft_stats\([^;]*\$policy\)~s', $ep) === 1,
+   'the endpoint does not pass the policy, so nothing can ever match a map');
+ok(strpos($ep, 'nfts.metadata,') !== false,
+   'the endpoint does not SELECT nfts.metadata');
+ok(preg_match('~bind_result\(\$policy, \$name, \$ipfs, \$asset_id, \$metadata,~', $ep) === 1,
+   'bind_result does not match the SELECT, so every column after it is shifted');
 /* THE GATE IS GONE, not merely bypassed. */
 ok(strpos($ep, "strpos(\$asset_id, 'asset') !== 0") === false,
    'the Cardano-only asset_id gate is still in the endpoint, still dropping other chains');
@@ -137,6 +148,102 @@ foreach (array('strength', 'speed', 'tactics', 'size', 'type', 'powerup') as $k)
 	ok(strpos($ep, "'$k' => \$stats['$k']") !== false,
 	   "the endpoint does not send the derived $k");
 }
+
+/* ------------------------------------------------------------------ *
+ * A MAPPED COLLECTION READS ITS OWN TRAITS
+ * ------------------------------------------------------------------ */
+echo "\nthe Ancestors map\n";
+$ANC = '3966cf1c948109e34f2c5a9f9670445ccc85008e5b8a6e67f913b491';
+$map = monstrocity_trait_map($ANC);
+ok(is_array($map), 'the Ancestors policy is not mapped');
+$cen = $map ? monstrocity_trait_census($map['slug']) : null;
+ok(is_array($cen), 'the Ancestors census is missing or unreadable');
+ok($cen && $cen['policy'] === $ANC,
+   'the census is for a different policy than the map it serves');
+
+/*
+ * REAL ANCESTORS, PINNED. Fifteen of them: one per species, the three
+ * 1-of-1s, the leanest and the most loaded, and both spellings of the
+ * scythe. The whole value of the feature is the exact card a given NFT
+ * plays, so a check that only asserted "some array came back" would pass
+ * through any change to any weight.
+ */
+$fx = json_decode((string)@file_get_contents(__DIR__ . '/monstrocity-ancestors-fixture.json'), true);
+ok(is_array($fx) && count($fx) >= 12, 'the Ancestors fixture is missing');
+$bad = array();
+foreach ((array)$fx as $f) {
+	$got = monstrocity_trait_stats($ANC, $f['traits']);
+	if ($got !== $f['want']) $bad[] = $f['asset'] . ': ' . json_encode($got);
+}
+ok(!$bad, "a pinned Ancestor plays a different card now:\n        " . implode("\n        ", $bad));
+
+/* THE RANGES THE CHARACTER SHEET EXPECTS, for the mapped path too. An
+   out-of-range value does not error; it draws a blank bar or falls through
+   to the default 85 health. */
+$mSizes = array('Small', 'Medium', 'Large');
+$mTypes = array('Base', 'Leader', 'Battle Damaged');
+$mPows  = array('Minor Regen', 'Regenerate', 'Boost Attack', 'Heal');
+$oor = array();
+foreach ((array)$fx as $f) {
+	$g = monstrocity_trait_stats($ANC, $f['traits']);
+	if ($g['strength'] < 1 || $g['strength'] > 8) $oor[] = 'strength ' . $g['strength'];
+	if ($g['speed'] < 1 || $g['speed'] > 7)       $oor[] = 'speed ' . $g['speed'];
+	if ($g['tactics'] < 1 || $g['tactics'] > 7)   $oor[] = 'tactics ' . $g['tactics'];
+	if (!in_array($g['size'], $mSizes, true))     $oor[] = 'size ' . $g['size'];
+	if (!in_array($g['type'], $mTypes, true))     $oor[] = 'type ' . $g['type'];
+	if (!in_array($g['powerup'], $mPows, true))   $oor[] = 'powerup ' . $g['powerup'];
+}
+ok(!$oor, 'a mapped stat is outside what createCharacter() switches on: ' . implode(', ', $oor));
+
+/*
+ * THE MINT TYPO. Ancestors carries both "Legendary Scythe" and "Legendary
+ * scythe". Four owners of the same weapon getting different cards is not a
+ * rarity, so the rarity lookup folds case.
+ */
+$rA = monstrocity_trait_rarity($cen, 'Weapon', 'Legendary Scythe');
+$rB = monstrocity_trait_rarity($cen, 'Weapon', 'legendary SCYTHE');
+ok($rA > 0 && abs($rA - $rB) < 1e-9,
+   "the same weapon spelled differently is priced differently ($rA vs $rB)");
+
+/*
+ * EVERY EAR IS NAMED. The charm decides the powerup, and a value that falls
+ * through to the weapon rule is a trait that quietly stopped meaning
+ * anything -- which is the failure this whole feature exists to fix.
+ */
+$unnamed = array();
+foreach (array_keys($cen['slots']['Ear']['values']) as $v) {
+	$hit = false;
+	foreach ($map['power'] as $k => $_) if (mb_strtolower($k) === mb_strtolower($v)) $hit = true;
+	if (!$hit) $unnamed[] = $v;
+}
+ok(!$unnamed, 'an Ear value has no powerup of its own: ' . implode(', ', $unnamed));
+
+echo "\nand everything unmapped still hashes\n";
+/*
+ * THE WHOLE SAFETY OF THIS CHANGE. A theme can be any of thirty-five
+ * collections and "what is a trait worth" has no answer across them, so
+ * every policy without a map must come out byte-identical to before --
+ * traits present or not.
+ */
+$otherPolicy = str_repeat('ab', 28);
+$ancTraits = $fx[0]['traits'];
+foreach ($chains as $chain => $id) {
+	$plain  = monstrocity_nft_stats($id);
+	$withTr = monstrocity_nft_stats($id, $ancTraits, $otherPolicy);
+	ok($plain === $withTr, "an unmapped policy stopped hashing for $chain");
+}
+/* And a mapped policy with nothing to read falls back too, rather than
+   returning half a card. */
+$fpAnc = 'asset1w8wgpwcnyqzj0r9z0pdwvvnqhpvxjv5zpq0a4s';
+ok(monstrocity_nft_stats($fpAnc, array(), $ANC) === monstrocity_nft_stats($fpAnc),
+   'a mapped NFT the crawl has not reached yet gets something other than the hash');
+ok(monstrocity_nft_stats($fpAnc, null, $ANC) === monstrocity_nft_stats($fpAnc),
+   'null metadata does not fall back to the hash');
+ok(monstrocity_trait_stats($otherPolicy, $ancTraits) === null,
+   'an unmapped policy returns a card from the Ancestors rules');
+/* The mapped path must actually differ, or none of the above proves it ran. */
+ok(monstrocity_nft_stats($fpAnc, $ancTraits, $ANC) !== monstrocity_nft_stats($fpAnc),
+   'the mapped card is identical to the hashed one, so the map is not running');
 
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
 exit($fail ? 1 : 0);

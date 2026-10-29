@@ -2,6 +2,9 @@
 // Include dependencies
 include '../db.php';
 require_once __DIR__ . '/../lib/monstrocity-stats-lib.php';
+/* nft_metadata_traits(): the one place four chains' metadata shapes are
+   turned into a name => value map. See lib/nft-metadata-lib.php. */
+require_once __DIR__ . '/../lib/nft-metadata-lib.php';
 
 // Lightweight session restore — intentionally do NOT include skulliance.php (the
 // login gate). Same fix as get-monstrocity-assets.php: including it made the
@@ -79,7 +82,11 @@ if (isset($_SESSION['userData']['user_id'])) {
         $policy_placeholders = implode(',', array_fill(0, count($policy_ids), '?'));
         // Added collections.project_id + nfts.collection_id so we can build the
         // local-cache path for each NFT image: /staking/images/nfts/{project_id}/{collection_id}/{md5(ipfs)}.{ext}
+        /* nfts.metadata so a mapped collection can read its own traits --
+           see lib/monstrocity-trait-maps.php. Unmapped policies ignore it
+           and hash the identifier exactly as before. */
         $sql = "SELECT collections.policy, nfts.name, nfts.ipfs, nfts.asset_id,
+                       nfts.metadata,
                        nfts.collection_id, collections.project_id
                 FROM nfts
                 INNER JOIN collections ON collections.id = nfts.collection_id
@@ -109,7 +116,7 @@ if (isset($_SESSION['userData']['user_id'])) {
         $asset_id = '';
         $collection_id = 0;
         $project_id = 0;
-        $stmt->bind_result($policy, $name, $ipfs, $asset_id, $collection_id, $project_id);
+        $stmt->bind_result($policy, $name, $ipfs, $asset_id, $metadata, $collection_id, $project_id);
 
         // Cache for the per-(project,collection) directory listings — saves
         // many disk hits when a user owns many NFTs from the same collection.
@@ -134,7 +141,8 @@ if (isset($_SESSION['userData']['user_id'])) {
             /* Stats are hashed from the identifier -- any chain's, see
                lib/monstrocity-stats-lib.php. This used to demand a Cardano
                `asset1...` fingerprint and drop everything else. */
-            $stats = monstrocity_nft_stats($asset_id);
+            $stats = monstrocity_nft_stats($asset_id,
+                nft_metadata_traits($metadata), $policy);
             if ($stats === null) {
                 error_log("get-nft-assets: No asset_id to derive stats from for name=$name, policy_id=$policy");
                 if ($is_debug) {
