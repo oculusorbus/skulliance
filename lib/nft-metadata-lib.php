@@ -199,23 +199,72 @@ function nft_metadata_clean($doc) {
 function nft_metadata_traits($json) {
 	$doc = is_array($json) ? $json : json_decode((string)$json, true);
 	if (!is_array($doc)) return array();
-	/* Metaplex and most EVM collections use attributes[{trait_type,value}];
-	   CIP-25 and XLS-24 use flat keys. Both end up in the same shape. */
-	if (isset($doc['attributes']) && is_array($doc['attributes'])) {
+
+	/*
+	 * FOUR SHAPES, BECAUSE FOUR SHAPES EXIST IN THE WILD.
+	 *
+	 *   attributes: [{trait_type, value}]   Metaplex, most EVM collections
+	 *   attributes: {K: V}                  the same idea, as a map
+	 *   traits:     [{K: V}, {K: V}]        a LIST OF SINGLE-KEY OBJECTS
+	 *   flat keys                           CIP-25, XLS-24
+	 *
+	 * The third one is why this function was rewritten. Wavy Ape Vibe
+	 * Empire writes it, 4,444 assets of it, and this reader returned an
+	 * empty array for every single one -- no error, no warning, just a
+	 * collection that looked like it had no traits. The documents were
+	 * stored correctly all along; only the reading was wrong, which is the
+	 * worst way for it to be wrong because nothing anywhere says so.
+	 */
+	foreach (array('attributes', 'traits') as $container) {
+		if (!isset($doc[$container]) || !is_array($doc[$container])) continue;
 		$out = array();
-		foreach ($doc['attributes'] as $a) {
+		foreach ($doc[$container] as $ck => $a) {
+			/* attributes: {K: V} -- the container is itself the map. */
+			if (is_scalar($a)) { if (!nft_metadata_is_uri($a)) $out[(string)$ck] = $a; continue; }
 			if (!is_array($a)) continue;
-			$k = isset($a['trait_type']) ? $a['trait_type'] : (isset($a['name']) ? $a['name'] : null);
-			if ($k === null || !isset($a['value']) || !is_scalar($a['value'])) continue;
-			$out[(string)$k] = $a['value'];
+			/* {trait_type, value} or {name, value}. */
+			$k = isset($a['trait_type']) ? $a['trait_type']
+			   : (isset($a['name']) ? $a['name'] : null);
+			if ($k !== null && isset($a['value']) && is_scalar($a['value'])) {
+				if (!nft_metadata_is_uri($a['value'])) $out[(string)$k] = $a['value'];
+				continue;
+			}
+			/*
+			 * A SINGLE-KEY OBJECT. Only taken when it does NOT look like a
+			 * {trait_type, value} pair, so the branch above keeps priority
+			 * and a malformed Metaplex row does not get read as a trait
+			 * called "trait_type".
+			 */
+			foreach ($a as $ik => $iv)
+				if (is_scalar($iv) && !nft_metadata_is_uri($iv)
+				    && !in_array((string)$ik, array('trait_type', 'value', 'name'), true))
+					$out[(string)$ik] = $iv;
 		}
 		if ($out) return $out;
 	}
-	$skip = array('name', 'description', 'project', 'collection', 'attributes');
+
+	$skip = array('name', 'description', 'project', 'collection', 'attributes', 'traits');
 	$out = array();
 	foreach ($doc as $k => $v)
-		if (is_scalar($v) && !in_array((string)$k, $skip, true)) $out[(string)$k] = $v;
+		if (is_scalar($v) && !in_array((string)$k, $skip, true) && !nft_metadata_is_uri($v))
+			$out[(string)$k] = $v;
 	return $out;
+}
+
+/**
+ * Is this value a link rather than a trait?
+ *
+ * BY VALUE, NOT BY KEY, and that is the whole point. nft_metadata_clean()
+ * drops `image`, `files` and `mediaType` by name, which catches the keys
+ * this platform has seen -- and a collection that calls it `Image`, `art`,
+ * `hi_res` or `animation` sails straight through and shows up in a trait
+ * list as "Image: ipfs://bafy...". 96 stored documents carry a leaked
+ * ipfs:// under some key or other. A URI is never a trait whatever it is
+ * called.
+ */
+function nft_metadata_is_uri($v) {
+	/* data: carries no slashes, which the one-pattern version missed. */
+	return is_string($v) && preg_match('~^\s*(?:(?:ipfs|https?|ar)://|data:)~i', $v) === 1;
 }
 
 }

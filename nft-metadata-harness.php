@@ -281,5 +281,67 @@ ok(strpos($BF, 'array_chunk($rows, 35)') !== false,
    'the backfill does not batch to 35, which is the free Koios plan limit verify.php '
  . 'already works around');
 
+/* ------------------------------------------------------------------ *
+ * EVERY TRAIT SHAPE THAT IS ACTUALLY OUT THERE
+ * ------------------------------------------------------------------ */
+echo "\nnft_metadata_traits() reads every shape the platform has met\n";
+/*
+ * THE ONE THAT WAS MISSING SHIPPED FOR MONTHS. Wavy Ape Vibe Empire writes
+ * `traits: [{Background: "Blue"}, {Back: "None"}]` -- a list of SINGLE-KEY
+ * objects -- and this reader returned an empty array for all 4,444 of them.
+ * No error. The documents were stored correctly the whole time; only the
+ * reading was wrong, so the collection simply looked as though it had no
+ * traits, and it was found by censusing it for a stat map rather than by
+ * anything noticing.
+ */
+$shapes = array(
+	'cip-25 flat keys' => array(
+		array('name' => 'A', 'Head' => 'Crown', 'Type' => 'Orc'),
+		array('Head' => 'Crown', 'Type' => 'Orc')),
+	'metaplex attributes list' => array(
+		array('attributes' => array(array('trait_type' => 'Fur', 'value' => 'Gold'))),
+		array('Fur' => 'Gold')),
+	'attributes as a map' => array(
+		array('attributes' => array('Fur' => 'Gold', 'Eyes' => 'Laser')),
+		array('Fur' => 'Gold', 'Eyes' => 'Laser')),
+	'traits as single-key objects' => array(
+		array('traits' => array(array('Background' => 'Blue'), array('Back' => 'None'))),
+		array('Background' => 'Blue', 'Back' => 'None')),
+	'name/value pairs' => array(
+		array('attributes' => array(array('name' => 'Fur', 'value' => 'Gold'))),
+		array('Fur' => 'Gold')),
+	/* A MALFORMED METAPLEX ROW IS NOT A SINGLE-KEY OBJECT. Reading one as
+	   though it were produces traits literally called "trait_type" and
+	   "value", which is worse than dropping it -- it looks like data. */
+	'metaplex row with no value' => array(
+		array('attributes' => array(array('trait_type' => 'Fur'),
+		                            array('trait_type' => 'Eyes', 'value' => 'Laser'))),
+		array('Eyes' => 'Laser')),
+);
+foreach ($shapes as $what => $pair) {
+	$got = nft_metadata_traits($pair[0]);
+	ok($got === $pair[1], "$what read as " . json_encode($got) . ', expected ' . json_encode($pair[1]));
+}
+
+echo "\na link is not a trait, whatever it is called\n";
+/*
+ * BY VALUE, NOT BY KEY. nft_metadata_clean() drops `image`, `files` and
+ * `mediaType` by name, so a collection calling it `Image`, `art` or
+ * `hi_res` sails through -- 96 stored documents carry a leaked ipfs://
+ * under some key or other, and every one of them would have shown up in a
+ * trait list as "Image: ipfs://bafy...".
+ */
+ok(nft_metadata_traits(array('Image' => 'ipfs://bafy', 'hi_res' => 'https://x/y.png',
+                             'Head' => 'Crown')) === array('Head' => 'Crown'),
+   'a leaked URI is being read as a trait');
+ok(nft_metadata_traits(array('attributes' => array(
+		array('trait_type' => 'art', 'value' => 'ipfs://z'),
+		array('trait_type' => 'Fur', 'value' => 'Gold')))) === array('Fur' => 'Gold'),
+   'a URI handed over as a trait VALUE is kept');
+foreach (array('ipfs://x', 'https://x', 'http://x', 'ar://x', 'data:image/png;base64,AA', '  IPFS://X')
+         as $u) ok(nft_metadata_is_uri($u), "not recognised as a link: $u");
+foreach (array('Crown', 'Blue', '100', 'ipfsomething', 'http') as $t)
+	ok(!nft_metadata_is_uri($t), "a real trait was thrown away as a link: $t");
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall NFT metadata checks passed\n");
 exit($fail ? 1 : 0);
