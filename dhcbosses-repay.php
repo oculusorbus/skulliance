@@ -62,7 +62,12 @@ printf("\n%d players, %d traits outstanding\n", count($rows), $owedTotal);
 
 if (!$run) { echo "\nRe-run with --run to pay it.\n"; exit(0); }
 
-echo "\nPaying...\n";
-$res = dhcb_settle($conn, $week, false, true);
+printf("\nPaying %d traits, paced at 400ms so Discord takes every announcement\n"
+     . "(about %d seconds)...\n", $owedTotal, (int)ceil($owedTotal * 0.4));
+/* 400ms between awards. Discord's webhook limit is roughly five posts per
+   two seconds and a rejected one is simply lost -- 43 traits at full speed
+   would drop a good share of the announcements. This makes the run take
+   under a minute and arrive complete. */
+$res = dhcb_settle($conn, $week, false, true, 400000);
 printf("paid %d players %d traits on the %s table\n",
 	(int)$res['paid'], (int)$res['traits'], $res['table']);

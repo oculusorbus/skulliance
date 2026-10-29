@@ -1624,7 +1624,7 @@ function dhcb_participants($conn, $day) {
  * IDEMPOTENT, like the settle it mirrors: run twice and the second run
  * finds nothing owed.
  */
-function dhcb_settle($conn, $day = null, $announce = true, $repay = false) {
+function dhcb_settle($conn, $day = null, $announce = true, $repay = false, $paceUs = 0) {
 	if ($day === null) $day = dhcb_week($conn);
 	$state = dhcb_state($conn, $day);
 	$prog  = dhcb_progress($state);
@@ -1674,10 +1674,23 @@ function dhcb_settle($conn, $day = null, $announce = true, $repay = false) {
 				   would be handed out with nothing recording them, and a
 				   second run would hand them out again. */
 				if (!$ok) continue;
+				/*
+				 * PACED, BECAUSE EVERY TRAIT POSTS TO DISCORD.
+				 *
+				 * A repay hands out a whole week in one loop -- 43 traits
+				 * across seven players on the first one -- and discordmsg()
+				 * neither retries nor throttles: a 429 is logged and the
+				 * announcement is gone. webhooks.php already records that
+				 * exact shape of incident, where a job "didn't run" and in
+				 * fact had run, paid out, and lost only its announcements.
+				 * Zero by default, so the weekly cron is unchanged.
+				 */
 				if (function_exists('dhcf_award'))
-					for ($i = 0; $i < $owed; $i++)
+					for ($i = 0; $i < $owed; $i++) {
 						dhcf_award($conn, (int)$uid, 'wildcard', 'dhcbosses',
 						           'the weekly boss crew', $tiers);
+						if ($paceUs > 0) usleep((int)$paceUs);
+					}
 				$paid++; $traits += $owed; $who[] = (int)$uid;
 				continue;
 			}
