@@ -25,12 +25,12 @@ Stats for those characters are worked out from the NFT's own on-chain identifier
 
 ### Your NFT's traits decide its card
 
-**33 collections, 116,105 NFTs**, play by their own traits rather than by a hash
+**28 collections, 101,219 NFTs**, play by their own traits rather than by a hash
 of their identifier. Rarity is measured against the **whole collection on chain**,
 not against whoever happens to be staked, so your card is fixed from the day the
 collection minted and the same NFT plays the same way in everybody's roster.
 
-Most collections get the **general reading**, which makes no claim about what a
+Most of them, 24, get the **general reading**, which makes no claim about what a
 trait *means* — only about how unusual it is:
 
 | Stat | What decides it |
@@ -48,6 +48,14 @@ one, not a worthless one.
 Slots that are **identifiers rather than traits** are ignored: a serial number, or
 a background nobody else has, says nothing about what an NFT *is*, and counting it
 would make almost every holder's rarest trait a one-of-one.
+
+**A collection whose traits cannot tell holders apart keeps the hash**, which is
+the one case where the hash is the better answer. Some collections hand out the
+same handful of trait combinations to everybody — five evenly-split values here,
+four there, and the whole collection comes down to twenty possible cards. Reading
+those traits would give a holder *less* to distinguish their NFT by than its
+identifier already does, so those collections carry on as they were. 23 of the
+51 collections analysed sit in that group for one reason or another.
 
 **Four collections are authored** instead, where the traits say something a
 fighting game can use directly — The Ancestors, Hellknights, Disco Solaris and

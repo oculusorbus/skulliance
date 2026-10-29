@@ -355,6 +355,38 @@ foreach (glob(__DIR__ . '/lib/monstrocity-census-*.json') as $cf) {
 			$degen[] = "$slug/$stat all = " . $cuts[0];
 }
 ok(!$degen, 'an indexed collection bands every NFT the same: ' . implode('; ', $degen));
+
+/*
+ * AND IT HAS TO REACH MOST OF ITS BANDS, not merely more than one.
+ *
+ * The all-identical test above is the extreme case; the real one is
+ * narrower. Muses of the Multiverse passed it and was still wrong:
+ * `multiverse` is five values at exactly 2,960 each, so it carries no
+ * rarity whatever, and `rarity` has four -- twenty trait combinations
+ * across 14,800 NFTs, reaching three strength bands. No mapping can
+ * produce more cards than a collection has combinations.
+ *
+ * Below five reachable bands the identifier hash gives a holder MORE
+ * differentiation than their own traits can, which is the one case where
+ * the thing this feature replaces is the better answer. A cut set with k
+ * distinct thresholds can reach at most k+1 bands, so that is the measure
+ * and it needs no second pass over the collection.
+ */
+$thin = array();
+foreach (glob(__DIR__ . '/lib/monstrocity-census-*.json') as $cf) {
+	$slug = substr(basename($cf), strlen('monstrocity-census-'), -5);
+	if (!monstrocity_generic_policy_slug_indexed($slug)) continue;
+	$doc = json_decode((string)file_get_contents($cf), true);
+	if (!is_array($doc)) continue;
+	$cuts = !empty($doc['authoredCuts']) ? $doc['authoredCuts'] : (isset($doc['cuts']) ? $doc['cuts'] : array());
+	foreach (array('strength', 'speed', 'tactics') as $stat) {
+		if (empty($cuts[$stat])) continue;
+		$reach = count(array_unique($cuts[$stat])) + 1;
+		if ($reach < 5) $thin[] = "$slug/$stat reaches $reach";
+	}
+}
+ok(!$thin, 'an indexed collection cannot reach five bands on a stat, so its own traits tell '
+   . 'a holder less than the hash would: ' . implode('; ', $thin));
 /* And the filter that stops the commonest cause. */
 $ids = array();
 foreach (glob(__DIR__ . '/lib/monstrocity-census-*.json') as $cf) {

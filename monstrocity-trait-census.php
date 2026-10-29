@@ -61,19 +61,33 @@ function mtc_get($url, $hdr, $post = null) {
 	return json_decode($body);
 }
 
-/* 1. every asset name under the policy. Paged: Koios caps a page at 1000
-      and the Ancestors policy holds 1,226 including its reference token. */
+/*
+ * 1. EVERY ASSET NAME UNDER THE POLICY, PAGED WITH AN ORDER.
+ *
+ * `order=asset_name.asc` is load-bearing, not tidiness. Koios is PostgREST
+ * and an unordered offset/limit page has no stable ordering between
+ * requests -- so page 2 could repeat rows from page 1 and miss others
+ * entirely. The count came out right every time and the CONTENTS did not:
+ * two censuses of Moebius Pioneers taken minutes apart read 1,231 assets
+ * each and disagreed on every slot, `suit` coverage 28 against 17.
+ *
+ * It only bites above the 1,000-row page size, which is most of the
+ * collections worth mapping.
+ */
 $names = array(); $off = 0;
 while (true) {
 	$page = mtc_get("https://api.koios.rest/api/v1/policy_asset_list?_asset_policy=$policy"
-	              . "&offset=$off&limit=1000", $hdr);
+	              . "&order=asset_name.asc&offset=$off&limit=1000", $hdr);
 	if (!is_array($page) || !$page) break;
 	/* The empty asset_name is the policy's own reference/royalty token, not
 	   a piece of art, and it carries no traits. */
-	foreach ($page as $a) if (isset($a->asset_name) && $a->asset_name !== '') $names[] = $a->asset_name;
+	/* Keyed, not appended: a duplicate across a page boundary would be
+	   censused twice and weight its traits double. */
+	foreach ($page as $a) if (isset($a->asset_name) && $a->asset_name !== '') $names[$a->asset_name] = true;
 	if (count($page) < 1000) break;
 	$off += 1000;
 }
+$names = array_keys($names);
 if (!$names) { fwrite(STDERR, "no assets under that policy\n"); exit(1); }
 fwrite(STDERR, count($names) . " assets\n");
 
@@ -86,6 +100,14 @@ foreach (array_chunk($names, 35) as $chunk) {
 	foreach ($chunk as $n) $list[] = array($policy, $n);
 	$rows = mtc_get('https://api.koios.rest/api/v1/asset_info', $hdr, array('_asset_list' => $list));
 	if (!is_array($rows)) { fwrite(STDERR, "a batch failed; the census would be wrong -- stopping\n"); exit(1); }
+	/* A SHORT BATCH IS A WRONG CENSUS, not a small one. Koios answering 200
+	   with fewer rows than asked for would quietly drop assets from every
+	   rarity denominator. */
+	if (count($rows) !== count($chunk)) {
+		fwrite(STDERR, "\na batch returned " . count($rows) . " of " . count($chunk)
+		             . " assets; the census would be wrong -- stopping\n");
+		exit(1);
+	}
 	foreach ($rows as $r) {
 		$traits = nft_metadata_traits(nft_metadata_from_koios($r));
 		$seen++;

@@ -1,61 +1,61 @@
 {
     "policy": "8f63e08467bfbbc260a382a80f3297f9a569fca0293f296620d72d17",
-    "assets": 1029,
+    "assets": 1030,
     "taken": "2026-10-29",
     "loadMin": 5,
     "loadMax": 10,
     "slots": {
         "background": {
-            "coverage": 1029,
+            "coverage": 1030,
             "values": {
-                "Cyberframe": 292,
-                "Electric": 244,
-                "Target": 229,
-                "Spark": 155,
-                "Glitch": 101,
+                "Cyberframe": 301,
+                "Electric": 248,
+                "Target": 211,
+                "Spark": 158,
+                "Glitch": 104,
                 "Limited": 8
             }
         },
         "color": {
-            "coverage": 1029,
+            "coverage": 1030,
             "values": {
-                "Scarlet": 231,
-                "Purple": 201,
-                "Green": 199,
-                "Blue": 195,
-                "Red": 195,
+                "Scarlet": 207,
+                "Purple": 205,
+                "Blue": 204,
+                "Green": 204,
+                "Red": 202,
                 "Gold": 7,
                 "Turquoise": 1
             }
         },
         "jaw implant": {
-            "coverage": 714,
+            "coverage": 710,
             "values": {
-                "Falcon Implant": 255,
-                "Shock Booster": 206,
+                "Falcon Implant": 253,
+                "Shock Booster": 204,
                 "BioTech": 146,
                 "Stealth Tech": 101,
                 "None": 6
             }
         },
         "left tech": {
-            "coverage": 1029,
+            "coverage": 1030,
             "values": {
-                "Falcon Tech": 287,
-                "Spike Relay": 226,
+                "Falcon Tech": 280,
+                "Spike Relay": 230,
                 "Mechatronic": 187,
-                "Combat Implant": 120,
-                "Combat Vision": 106,
-                "X-Vision": 60,
+                "Combat Implant": 124,
+                "Combat Vision": 105,
+                "X-Vision": 61,
                 "Quantum Display": 43
             }
         },
         "mask": {
-            "coverage": 269,
+            "coverage": 274,
             "values": {
-                "Gasmask": 87,
-                "Oni": 72,
-                "Apex": 65,
+                "Gasmask": 88,
+                "Oni": 74,
+                "Apex": 67,
                 "StreetPunk": 44,
                 "None": 1
             }
@@ -67,82 +67,82 @@
             }
         },
         "right tech": {
-            "coverage": 1029,
+            "coverage": 1030,
             "values": {
-                "Cyberdeck": 278,
-                "Exo Armor": 227,
-                "Bionic Armor": 177,
-                "Holographic Sensor": 135,
+                "Cyberdeck": 274,
+                "Exo Armor": 221,
+                "Bionic Armor": 186,
+                "Holographic Sensor": 136,
                 "Radar Implant": 106,
-                "Pulse Sensor": 61,
-                "Cybernetic Booster": 45
+                "Pulse Sensor": 64,
+                "Cybernetic Booster": 43
             }
         },
         "skull": {
-            "coverage": 1029,
+            "coverage": 1030,
             "values": {
-                "Termination Droid": 349,
-                "Shadowrunner": 307,
-                "Juggernaut": 205,
-                "Neuromancer": 168
+                "Termination Droid": 358,
+                "Shadowrunner": 306,
+                "Juggernaut": 203,
+                "Neuromancer": 163
             }
         },
         "top": {
-            "coverage": 936,
+            "coverage": 937,
             "values": {
-                "Panzar": 225,
-                "Nova Shield": 166,
-                "Mohawk": 152,
-                "Horns": 127,
-                "Spike": 99,
-                "Panzar Horns": 74,
-                "Nova Enhancer": 59,
+                "Panzar": 223,
+                "Nova Shield": 164,
+                "Mohawk": 153,
+                "Horns": 130,
+                "Spike": 96,
+                "Panzar Horns": 76,
+                "Nova Enhancer": 61,
                 "Core Enhancer": 33,
                 "None": 1
             }
         },
         "vision": {
-            "coverage": 107,
+            "coverage": 106,
             "values": {
-                "Ghost Screen": 101,
+                "Ghost Screen": 100,
                 "None": 6
             }
         }
     },
-    "scored": 1029,
+    "scored": 1030,
     "cuts": {
         "strength": [
-            0.848063,
-            0.98711,
-            1.008094,
-            1.072896,
-            1.155083,
-            1.234264,
-            1.359203
+            0.848484,
+            0.987531,
+            1.008516,
+            1.068355,
+            1.143606,
+            1.227507,
+            1.379369
         ],
         "tactics": [
-            0.65258,
-            0.660233,
-            0.698548,
-            0.713562,
-            0.722381,
-            0.787106
+            0.664532,
+            0.688555,
+            0.703207,
+            0.703207,
+            0.718931,
+            0.797993
         ],
         "speed": [
-            -10.257693,
-            -9.781414,
-            -9.490475,
-            -9.26525,
-            -9.060771,
-            -8.661564
+            -10.251891,
+            -9.774162,
+            -9.485957,
+            -9.281934,
+            -9.084186,
+            -8.667272
         ],
         "size": [
-            4.948684,
-            5.459627
+            4.959616,
+            5.474288
         ],
         "type": [
-            4.654229,
-            5.775968
+            4.667638,
+            5.787581
         ]
     }
 }

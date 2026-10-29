@@ -10,23 +10,23 @@
             "values": {
                 "Gray Dawn": 203,
                 "Faded Ember": 197,
-                "Rosy Tide": 196,
+                "Rosy Tide": 197,
                 "Molten Shore": 191,
-                "Azure Horizon": 185,
+                "Azure Horizon": 184,
                 "Emerald Isle": 168,
                 "Crimson Seas": 138,
                 "Golden Mirage": 133,
-                "Cobalt Waves": 130,
                 "Lost Reef": 130,
+                "Cobalt Waves": 130,
                 "Royal Dusk": 111,
-                "Mystic Lagoon": 106,
-                "Twilight Abyss": 106
+                "Twilight Abyss": 106,
+                "Mystic Lagoon": 106
             }
         },
         "Clothes": {
             "coverage": 1994,
             "values": {
-                "None": 130,
+                "None": 131,
                 "Pirate's Tatter": 123,
                 "Regal Stripe": 116,
                 "Ropebound Rags": 108,
@@ -42,8 +42,8 @@
                 "Violet Buccaneer": 58,
                 "Bluewater Vest": 56,
                 "Vineweave Coat": 54,
-                "Golden Relic": 48,
                 "Olive Marauder": 48,
+                "Golden Relic": 47,
                 "Pirate's Talisman": 46,
                 "Bone Baron": 44,
                 "Crimson Sentinel": 43,
@@ -56,12 +56,12 @@
                 "Grim Raider": 25,
                 "Royal Scoundrel": 23,
                 "Golden Ivory": 23,
-                "Celestial Jewel": 18,
                 "Ruby Warlord": 18,
-                "Emerald Gold": 17,
+                "Celestial Jewel": 18,
                 "Sapphire Warlord": 17,
                 "Ethereal Cloak": 17,
                 "Treasure Crest": 17,
+                "Emerald Gold": 17,
                 "Wings": 16
             }
         },
@@ -70,9 +70,9 @@
             "values": {
                 "Intense": 150,
                 "Gaze": 145,
-                "Focus": 136,
+                "Focus": 135,
                 "Cut": 130,
-                "Patch": 128,
+                "Patch": 129,
                 "Green": 123,
                 "Brown": 116,
                 "Blue": 115,
@@ -88,8 +88,8 @@
                 "Torn": 55,
                 "Chill": 48,
                 "Blind": 45,
-                "Eyeless": 44,
                 "Sewn": 44,
+                "Eyeless": 44,
                 "Coin": 31
             }
         },
@@ -106,23 +106,23 @@
                 "Stapled Skull": 92,
                 "Black Death": 91,
                 "Dusk Sailor": 77,
-                "Vineweave Brim": 76,
+                "Vineweave Brim": 77,
                 "Brain": 63,
                 "Bone Baron": 61,
                 "Horns": 59,
                 "Crimson Sentinel": 55,
                 "Royal Scoundrel": 49,
-                "Golden Bandana": 47,
+                "Golden Bandana": 46,
                 "Majestic Cap": 35,
                 "Golden Regalia": 22,
                 "Sapphire Warlord": 16,
                 "Celestial Jewel": 16,
                 "Divine Halo": 15,
-                "Treasure Crest": 15,
                 "Emerald Gold": 15,
+                "Treasure Crest": 15,
                 "Ethereal Hat": 12,
-                "Golden Crown": 10,
-                "King of the Pirates": 10
+                "King of the Pirates": 10,
+                "Golden Crown": 10
             }
         },
         "Mouth": {
@@ -135,8 +135,8 @@
                 "Light Curl": 143,
                 "Toothpick": 141,
                 "Chops": 129,
-                "Light Mustache": 123,
-                "Pale Mustache": 98,
+                "Light Mustache": 122,
+                "Pale Mustache": 99,
                 "Pipe": 91,
                 "Thick": 88,
                 "Clean": 70,
@@ -153,7 +153,7 @@
         "Nose": {
             "coverage": 1994,
             "values": {
-                "Skinny": 285,
+                "Skinny": 284,
                 "Button": 264,
                 "Square": 232,
                 "Blocky": 224,
@@ -161,7 +161,7 @@
                 "Aquiline": 179,
                 "Subtle": 168,
                 "Tall": 163,
-                "Flat": 157,
+                "Flat": 158,
                 "Lumpy": 136
             }
         },
@@ -169,11 +169,11 @@
             "coverage": 2000,
             "values": {
                 "Swab": 389,
-                "Deckhand": 319,
+                "Deckhand": 320,
                 "Lookout": 280,
                 "Cook": 220,
                 "Sailmaker": 200,
-                "Carpenter": 181,
+                "Carpenter": 180,
                 "Gunner": 160,
                 "Boatswain": 100,
                 "Quartermaster": 60,
@@ -187,7 +187,7 @@
             "coverage": 1994,
             "values": {
                 "Pale": 308,
-                "Tanned": 306,
+                "Tanned": 307,
                 "Ebony": 299,
                 "Scarred": 252,
                 "Inked": 210,
@@ -195,7 +195,7 @@
                 "Frozen": 137,
                 "Crimson": 98,
                 "Ghoul": 78,
-                "Robotic": 55,
+                "Robotic": 54,
                 "Undead": 45,
                 "Golden": 25
             }
@@ -204,7 +204,7 @@
             "coverage": 1994,
             "values": {
                 "None": 188,
-                "Swab's Edge": 184,
+                "Swab's Edge": 183,
                 "Deckhand's Fury": 151,
                 "Plunderer's Pistol": 150,
                 "Corsair's Shot": 148,
@@ -215,7 +215,7 @@
                 "Bone Club": 114,
                 "Reaper's Kiss": 92,
                 "Shark's Hook": 74,
-                "The Gunblade": 70,
+                "The Gunblade": 71,
                 "Golden Knuckles": 51,
                 "Blackbeard's Wrath": 48,
                 "The Royal Shot": 33,
@@ -224,10 +224,10 @@
                 "Ghoul Hunter": 25,
                 "Cosmic Pulse": 13,
                 "The Frost King's Blade": 13,
-                "Dragon's Breath": 12,
                 "Thunderblade": 12,
-                "Soulshot": 11,
+                "Dragon's Breath": 12,
                 "The Revenant's Strike": 11,
+                "Soulshot": 11,
                 "The Burning Vengeance": 10
             }
         }
@@ -244,7 +244,7 @@
             2.045757
         ],
         "tactics": [
-            1.033858,
+            1.036212,
             1.075721,
             1.124939,
             1.145694,
@@ -252,20 +252,20 @@
             1.211125
         ],
         "speed": [
-            -16.825101,
-            -16.34356,
-            -16.005489,
-            -15.718654,
-            -15.432606,
-            -15.099977
+            -16.827507,
+            -16.344031,
+            -16.004337,
+            -15.715988,
+            -15.431246,
+            -15.099162
         ],
         "size": [
-            10.12155,
-            10.834644
+            10.119509,
+            10.832332
         ],
         "type": [
             9.7541,
-            11.174019
+            11.175943
         ]
     }
 }

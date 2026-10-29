@@ -143,7 +143,7 @@
             "chestcover": "Triangle shaped"
         },
         "want": {
-            "strength": 2,
+            "strength": 6,
             "speed": 7,
             "tactics": 7,
             "size": "Small",
@@ -168,7 +168,7 @@
             "eyediscoloration": "Discolouration 3 - Green"
         },
         "want": {
-            "strength": 5,
+            "strength": 4,
             "speed": 3,
             "tactics": 2,
             "size": "Medium",
@@ -196,7 +196,7 @@
             "earjewellery": "Bolt Earrings - Violet #16"
         },
         "want": {
-            "strength": 8,
+            "strength": 7,
             "speed": 6,
             "tactics": 6,
             "size": "Large",
@@ -224,10 +224,10 @@
             "bodydiscoloration": "Body Discoloration 01 - Green"
         },
         "want": {
-            "strength": 2,
+            "strength": 8,
             "speed": 4,
             "tactics": 7,
-            "size": "Small",
+            "size": "Large",
             "type": "Base",
             "powerup": "Boost Attack"
         }
@@ -249,7 +249,7 @@
             "background": "Yellow And Pink 2"
         },
         "want": {
-            "strength": 4,
+            "strength": 1,
             "speed": 3,
             "tactics": 1,
             "size": "Large",

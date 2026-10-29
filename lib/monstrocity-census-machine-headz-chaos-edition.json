@@ -14,10 +14,10 @@
         "background": {
             "coverage": 1045,
             "values": {
-                "Cyberframe": 310,
-                "Electric": 263,
-                "Target": 220,
-                "Spark": 147,
+                "Cyberframe": 314,
+                "Electric": 260,
+                "Target": 214,
+                "Spark": 152,
                 "Glitch": 105
             }
         },
@@ -30,135 +30,135 @@
         "color": {
             "coverage": 1045,
             "values": {
-                "Red": 217,
-                "Scarlet": 207,
-                "Green": 198,
-                "Purple": 196,
-                "Blue": 196,
-                "Gold": 31
+                "Red": 210,
+                "Green": 204,
+                "Scarlet": 203,
+                "Purple": 199,
+                "Blue": 199,
+                "Gold": 30
             }
         },
         "jaw implant": {
-            "coverage": 450,
+            "coverage": 446,
             "values": {
                 "Qiant Jaw": 134,
-                "Jaw Militech": 126,
-                "Berserk": 108,
-                "Netrunner": 82
+                "Jaw Militech": 127,
+                "Berserk": 104,
+                "Netrunner": 81
             }
         },
         "left tech": {
-            "coverage": 757,
+            "coverage": 762,
             "values": {
-                "Core Radar": 150,
-                "Maverick Breacher": 145,
+                "Core Radar": 158,
+                "Maverick Breacher": 147,
                 "Militech Armor": 134,
-                "Laserframe": 116,
-                "Wire Cortex Delta": 84,
-                "Zeta Booster": 82,
-                "WarpDefender Mk.2": 46
+                "Laserframe": 114,
+                "Wire Cortex Delta": 81,
+                "Zeta Booster": 77,
+                "WarpDefender Mk.2": 51
             }
         },
         "mask": {
-            "coverage": 326,
+            "coverage": 328,
             "values": {
-                "USA": 93,
+                "USA": 95,
                 "Prime": 72,
-                "M9 Tactical": 63,
-                "Spikemask": 55,
+                "M9 Tactical": 62,
+                "Spikemask": 56,
                 "Archon": 43
             }
         },
         "right tech": {
-            "coverage": 765,
+            "coverage": 763,
             "values": {
-                "Maverick Defender": 154,
-                "Radar Booster": 151,
-                "Militech Booster": 137,
-                "Ballisticframe": 111,
-                "Wire Cortex Alpha": 84,
+                "Radar Booster": 161,
+                "Maverick Defender": 150,
+                "Militech Booster": 135,
+                "Ballisticframe": 112,
+                "Wire Cortex Alpha": 82,
                 "Zeta Defender": 74,
-                "Warp Launcher Mk.1": 54
+                "Warp Launcher Mk.1": 49
             }
         },
         "skull": {
             "coverage": 1045,
             "values": {
-                "Termination Droid": 193,
-                "Shadowrunner": 169,
-                "Juggernaut": 145,
-                "Neuromancer": 123,
-                "Stinger": 102,
-                "Umbra": 89,
+                "Termination Droid": 190,
+                "Shadowrunner": 172,
+                "Juggernaut": 142,
+                "Neuromancer": 124,
+                "Stinger": 103,
+                "Umbra": 92,
                 "Archangel": 85,
-                "Ghost": 71,
-                "Eternal": 56,
-                "Eternal Gold": 12
+                "Ghost": 74,
+                "Eternal": 53,
+                "Eternal Gold": 10
             }
         },
         "top": {
             "coverage": 795,
             "values": {
-                "Maverick Core": 213,
-                "Hair": 205,
-                "Viper": 160,
-                "Mindwarper": 103,
+                "Maverick Core": 214,
+                "Hair": 201,
+                "Viper": 159,
+                "Mindwarper": 106,
                 "Frontal Militech": 63,
-                "Wolverine": 51
+                "Wolverine": 52
             }
         },
         "under": {
             "coverage": 143,
             "values": {
-                "Ritual Mohawk": 50,
-                "Ritual Crown": 35,
-                "Goat": 34,
-                "Cyberhex": 24
+                "Ritual Mohawk": 47,
+                "Ritual Crown": 39,
+                "Goat": 32,
+                "Cyberhex": 25
             }
         },
         "vision": {
-            "coverage": 124,
+            "coverage": 118,
             "values": {
-                "Laser Optics": 56,
-                "Qiant Vision": 39,
-                "Quantum Rippler": 29
+                "Laser Optics": 54,
+                "Qiant Vision": 37,
+                "Quantum Rippler": 27
             }
         }
     },
     "scored": 1045,
     "cuts": {
         "strength": [
-            1.002475,
-            1.099385,
+            1.006631,
+            1.10985,
             1.154432,
-            1.224323,
-            1.283301,
-            1.324694,
-            1.479596
+            1.231272,
+            1.299388,
+            1.333468,
+            1.455462
         ],
         "tactics": [
-            0.784995,
-            0.819544,
-            0.844687,
-            0.862296,
+            0.780874,
+            0.816838,
+            0.833414,
+            0.857798,
             0.896559,
-            0.960923
+            0.966759
         ],
         "speed": [
-            -10.709105,
-            -10.310665,
-            -9.739653,
-            -9.012181,
-            -8.625566,
-            -7.564279
+            -10.703363,
+            -10.293431,
+            -9.71103,
+            -9.012331,
+            -8.612012,
+            -7.553096
         ],
         "size": [
-            5.171754,
-            6.019417
+            5.158644,
+            6.018562
         ],
         "type": [
-            4.61648,
-            6.379688
+            4.62658,
+            6.359097
         ]
     }
 }

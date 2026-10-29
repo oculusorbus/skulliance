@@ -43,7 +43,7 @@
         "want": {
             "strength": 3,
             "speed": 7,
-            "tactics": 6,
+            "tactics": 4,
             "size": "Large",
             "type": "Leader",
             "powerup": "Minor Regen"
@@ -66,9 +66,9 @@
             "background": "Abstract Orange"
         },
         "want": {
-            "strength": 3,
+            "strength": 2,
             "speed": 7,
-            "tactics": 6,
+            "tactics": 5,
             "size": "Large",
             "type": "Base",
             "powerup": "Heal"
@@ -93,7 +93,7 @@
         "want": {
             "strength": 1,
             "speed": 7,
-            "tactics": 4,
+            "tactics": 6,
             "size": "Medium",
             "type": "Leader",
             "powerup": "Boost Attack"
@@ -116,7 +116,7 @@
             "background": "Abstract Blue"
         },
         "want": {
-            "strength": 4,
+            "strength": 7,
             "speed": 4,
             "tactics": 5,
             "size": "Medium",

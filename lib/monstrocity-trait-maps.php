@@ -254,7 +254,23 @@ function monstrocity_trait_map($policy) {
 		'9874142fc1a8687d0fa4c34140b4c8678e820c91c185cc3c099acb99' => array(
 			'slug'    => 'moebius-pioneers-dressed-dis',
 			'valueTrim' => '~\s*#\d+\s*$~',
-			'arms'    => array('outerwear', 'hand'),
+			/*
+			 * THE WHOLE KIT, NOT JUST THE COAT.
+			 *
+			 * This was outerwear + hand, and Moebius does not put its heavy
+			 * gear in `outerwear`: a Sweeper in full powered armour carries
+			 * it in `suit`, and a worker's helmet is in `helmet`. So 220
+			 * Pioneers had an empty outerwear slot, 203 of them scored the
+			 * bottom strength band, and the most armoured characters in the
+			 * collection read as the weakest and smallest things in the
+			 * game. Reported off a roster screen.
+			 *
+			 * Six slots, which is every one the collection dresses someone
+			 * in. Only four Pioneers out of 1,231 wear none of them.
+			 */
+			'arms'    => array('outerwear', 'suit', 'helmet', 'chestcover', 'innerwear', 'hand'),
+			/* A Sweeper Armor is the whole outfit, not one layer of it. */
+			'armsWeight' => array('suit' => 2.5),
 			'mind'    => array('eyes', 'glasses'),
 			/*
 			 * A FLYING BOARD IS A FLYING BOARD whichever colour it is, so
@@ -286,6 +302,11 @@ function monstrocity_trait_map($policy) {
 			'cuts'    => array(),
 			/* What you are wearing is your silhouette. Nothing at all is a
 			   smaller one, which is 220 of them. */
+			/* ARMOUR FIRST. A Sweeper Armor lives in `suit`, so reading
+			   `outerwear` alone called the bulkiest thing in the collection
+			   Small. Presence of a suit is a Large frame whatever else is
+			   or is not worn. */
+			'sizeBigSlots' => array('suit'),
 			'sizeBy'  => 'outerwear',
 			'size'    => array(),
 			'sizeBig'   => '~suit|armor|coat~i',
@@ -409,14 +430,13 @@ function monstrocity_trait_band($score, $cuts) {
 function monstrocity_generic_index() {
 	static $byPolicy = null;
 	if ($byPolicy === null) $byPolicy = array(
-		'7f95b5948e3efed1171523757b472f24aecfab8303612cfa1b6fec55' => 'muses-of-the-multiverse',
 		'590048dda6a624c887c0466b178c16fff3dedc2aac5651a9e0fc41b6' => 'vampire-invasion',
 		'11ff0e0d9ad037d18e3ed575cd35a0513b8473f83008124db89f1d8f' => 'happyhoppers',
-		'1088b361c41f49906645cedeeb7a9ef0e0b793b1a2d24f623ea74876' => 'havoc-worlds',
 		'da286f15e0de865e3d50fec6fa0484d7e2309671dc4ba8ce6bdd122b' => 'omen',
+		'1088b361c41f49906645cedeeb7a9ef0e0b793b1a2d24f623ea74876' => 'havoc-worlds',
 		'e6ba9c0ff27be029442c32533c6efd956a60d15ecb976acbb64c4de0' => 'perps',
 		'8972aab912aed2cf44b65916e206324c6bdcb6fbd3dc4eb634fdbd28' => 'ug',
-				'637bae5845e801779651d997bedc2dad53ddbe0d5f940b4ff723d769' => 'meltingmoonboy',
+		'637bae5845e801779651d997bedc2dad53ddbe0d5f940b4ff723d769' => 'meltingmoonboy',
 		'a616aab3b18eb855b4292246bd58f9e131d7c8c25d1d1d7c88b666c4' => 'pendulum-order',
 		'd458857ae7d121bfb5af64d78c0454a519133248e030a0225734452b' => 'wavyape',
 		'bcc954e4d0483a292b753df87ab9a72b857f9ee8f61aa4c42e03df8c' => 'meltingmoongirls',
@@ -426,7 +446,7 @@ function monstrocity_generic_index() {
 		'ac9067e22a857ee2e4ea20f77c6c047f78a11511f285d30d81857196' => 'revrs-happy-people',
 		'a4b7f3bbb16b028739efc983967f1e631883f63a2671d508023b5dfb' => 'the-fourth',
 		'93ff51e7dfdf32314fd2f99ff222aa9c92f486b7d2cc0d46b64a9785' => 'apprentices',
-				'f85be1a54efa2607de78a0f8855f9d73c9dd79bfa116f3767c015098' => 'proxy-by-heist-on-alpha',
+		'f85be1a54efa2607de78a0f8855f9d73c9dd79bfa116f3767c015098' => 'proxy-by-heist-on-alpha',
 		'243f0ca18ded6b45ba87655ce3917abc8e04830b23ba1f498de67a8a' => 'machine-headz-carnage-editio',
 		'f4ae899bda2d478baec88620a06108619b231dfc6197be2a3b74a0ea' => 'machine-headz-chaos-edition',
 		'8f63e08467bfbbc260a382a80f3297f9a569fca0293f296620d72d17' => 'machine-headz',
@@ -434,38 +454,40 @@ function monstrocity_generic_index() {
 		'b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5' => 'digital-hell-citizens-2-figh',
 		'43158c3ad95b6c97a6d71138f9ec41a1a46f1156d8db4a92b289e73f' => 'dph-uni2',
 		'89c01dc68d57169d9c02c3f35562d219884bbafa9d9f868c2f39ce67' => 'galactico-2',
-		'106e44f8ce68e28500545dcb68b407331a9d4b6088f11f672c6d07db' => 'dph-amievil',
-		'bedb9383c1ad91247ec2a81fc3841934bbb298530eb99a55e77a0fb8' => 'galactico-1',
-		'9d6ab3f9b103ba734761309e0ce02c1817e27306e4fdbaee60610686' => 'dph-2bdevilgirls',
-		'e935d5dfde8dc7346c6e64ce2997f2cd287c3da7dd807c63af6002ea' => 'dph-demondolls',
 		/*
-		 * NOT INDEXED, AND EACH FOR A STATED REASON.
+		 * NOT INDEXED, AND EACH FOR A STATED REASON. All of these keep
+		 * hashing their identifier, exactly as before.
 		 *
-		 * NOTHING READABLE -- only name, description, image and a website,
-		 * so there is nothing a map could be built from:
+		 * NOTHING READABLE -- only a name, a description, an image and a
+		 * website:
 		 *   fauna-x-nemonium 152, john-doe 57, skada 50, galaxy-of-sons 29,
 		 *   yume 22, beelzebub 16, machine-headz-clan-leaders 14,
 		 *   island-of-the-uncanny-neighbours 4
 		 *
-		 * ONE usable slot. With a single slot strength, tactics and speed
-		 * are the same number wearing three hats and the whole collection
-		 * sits on one line -- worse than the hash, not better:
+		 * ONE usable slot, where strength, tactics and speed are the same
+		 * number wearing three hats:
 		 *   shorty-verse 381, sh4pes-x-nemonium 343, bogeyman 206,
 		 *   dph-genesis1 82, derivative-heroes 19, dph-genesis2 12,
 		 *   dph-uni2-special 8
 		 *
-		 * NO RARITY TO READ. The band cuts come out as one repeated number,
-		 * which means every NFT scores the same and the whole collection
-		 * lands in one band:
-		 *   drop-ship 321      Character is 20 values at ~16 each and Rank
-		 *                      and Level are perfectly even. There is no
-		 *                      rarity in it. It wants an AUTHORED map --
-		 *                      Rank -> type, Level -> strength, Character
-		 *                      -> powerup -- which is a better reading of
-		 *                      that collection than rarity could ever be.
-		 *   dph-genesis3 55, anime-origins 16
+		 * TOO FEW REACHABLE BANDS. A stat must be able to land in at least
+		 * five of its bands or the collection is handing out two or three
+		 * cards to everybody -- the hash gives them MORE differentiation
+		 * than their own traits can, which is the one case where it wins.
 		 *
-		 * All of these keep hashing their identifier, exactly as before.
+		 *   muses-of-the-multiverse 14,800  3/4/5 bands. The biggest
+		 *       collection here and the clearest example: `multiverse` is
+		 *       five values at exactly 2,960 each, so it carries no rarity
+		 *       at all, and `rarity` has four. Twenty trait combinations
+		 *       across 14,800 NFTs -- no mapping can produce more cards
+		 *       than the collection has combinations. It states its own
+		 *       tier ("300 of 700 [Common]"), so an AUTHORED map could at
+		 *       least make those twenty mean something; rarity cannot.
+		 *   drop-ship 321           2/5/3. Character is 20 values at ~16
+		 *       each and Rank and Level are perfectly even. Wants an
+		 *       authored map: Rank -> type, Level -> strength.
+		 *   dph-genesis3 55, galactico-1 30, dph-amievil 32,
+		 *   dph-2bdevilgirls 17, anime-origins 16, dph-demondolls 10
 		 */
 	);
 	return $byPolicy;
@@ -675,8 +697,19 @@ function monstrocity_authored_score($map, $census, $traits) {
 	};
 
 	$trim = isset($map['valueTrim']) ? $map['valueTrim'] : '';
+	/*
+	 * A SLOT CAN BE WORTH MORE THAN ONE GARMENT. Strength sums what you
+	 * are wearing, which rewards layering -- and a Moebius Sweeper Armor
+	 * is a full-body suit, so the one Pioneer wearing it and nothing else
+	 * summed to a single rarity and read as barely dressed. A suit counts
+	 * for what it covers.
+	 */
+	$aw = isset($map['armsWeight']) ? $map['armsWeight'] : array();
 	$arms = 0.0;
-	foreach ($map['arms'] as $s) $arms += monstrocity_trait_rarity($census, $s, $get($s), $trim);
+	foreach ($map['arms'] as $s) {
+		$r = monstrocity_trait_rarity($census, $s, $get($s), $trim);
+		$arms += isset($aw[$s]) ? $r * $aw[$s] : $r;
+	}
 	$mind = 0.0;
 	foreach ($map['mind'] as $s) $mind += monstrocity_trait_rarity($census, $s, $get($s), $trim);
 
@@ -750,10 +783,17 @@ function monstrocity_trait_stats($policy, $traits) {
 	if ($sc === null) return null;
 
 	$frame = $get($map['sizeBy']);
+	/* A slot whose mere presence settles the frame, checked before the
+	   usual one -- see the Moebius `suit` note. */
+	$bigBySlot = false;
+	if (!empty($map['sizeBigSlots']))
+		foreach ($map['sizeBigSlots'] as $sl) if ($get($sl) !== '') $bigBySlot = true;
 	/* ABSENT IS A FRAME TOO. A Pioneer wearing no outerwear at all is a
 	   smaller silhouette than one in a Corpo Suit, and reading "nothing"
 	   as the default middle would throw that away. */
-	if ($frame === '' && isset($map['sizeAbsent'])) {
+	if ($bigBySlot) {
+		$size = 'Large';
+	} elseif ($frame === '' && isset($map['sizeAbsent'])) {
 		$size = $map['sizeAbsent'];
 	} elseif (isset($map['size'][$frame])) {
 		$size = $map['size'][$frame];
