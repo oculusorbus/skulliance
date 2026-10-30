@@ -452,5 +452,120 @@ ok(strpos($src, "include 'admin-css.php'") !== false,
 $tabs = harness_strip_comments(file_get_contents(__DIR__ . '/admin-lib.php'));
 ok(strpos($tabs, "'lapsed'") !== false, 'the Lapsed tab is not in the admin nav');
 
+/* ---------------------------------------------------------------------------
+ * THE FOLLOW-UP, for somebody who took the package and then stalled.
+ *
+ * 17 came back, 8 built a Fighter, 5 signed in again -- so the interesting
+ * question stopped being "will they return" and became "what stopped them".
+ * This message exists to get an answer, which puts two things at risk that
+ * the invite does not have: it must ask the RIGHT question of the right
+ * person, and it must not read like a mail merge to somebody who is being
+ * asked for a personal favour.
+ * ------------------------------------------------------------------------- */
+echo "\nthe follow-up\n";
+$lift_follow = lap_lift($src, 'function lap_followup_text(');
+ok($lift_follow !== '', 'lap_followup_text() could not be lifted, so nothing below ran');
+if ($lift_follow !== '') {
+	eval($lift_follow);
+
+	/* The three situations are three different people. Each has to get its
+	   own question, or two of them are being guessed at. */
+	$cold  = lap_followup_text('n', 40, 9,  false, false);   // took it, vanished
+	$near  = lap_followup_text('n',  3, 12, false, true);    // around, never built
+	$gone  = lap_followup_text('n', 20, 9,  true,  false);   // built, then quiet
+	ok($cold !== $near && $near !== $gone && $cold !== $gone,
+	   'two of the three situations get the same message, so at least one person is being '
+	 . 'asked a question that does not apply to them');
+	ok(strpos($near, 'builder') !== false,
+	   'somebody who is signing in and still has not assembled anything is not asked about '
+	 . 'the builder, which is the only one of the three where the answer is likely a fix');
+	ok(strpos($gone, 'Fighter') !== false,
+	   'somebody who DID build is not told so, and reads a message written for someone who '
+	 . 'did not');
+	ok(strpos($cold, 'not see') !== false,
+	   'the coldest case does not offer "you never saw them" as an out -- that is much '
+	 . 'easier to agree with than to volunteer, and it is the likeliest answer');
+
+	/* IT ASKS AND STOPS. A question with a pitch under it gets the pitch
+	   ignored and the question with it; the invite already does the selling. */
+	foreach (array('cold' => $cold, 'near' => $near, 'gone' => $gone) as $k => $t) {
+		ok(strpos($t, 'http') === false, "the $k follow-up carries a link, so it reads as a "
+		 . 'second invite to somebody who already accepted the first');
+		ok(stripos($t, 'new feature') === false && stripos($t, 'TON of') === false,
+		   "the $k follow-up pitches the platform instead of asking a question");
+		ok(substr_count($t, '?') >= 1, "the $k follow-up never actually asks anything");
+		ok(strpos($t, '  ') === false && strpos($t, " \n") === false,
+		   "the $k follow-up has doubled or trailing whitespace from a concatenation");
+	}
+
+	/*
+	 * PRONOUNS AGREE WITH THE COUNT. "1 trait landed ... do anything with
+	 * them" was in the first version and is exactly the tell that a message
+	 * was generated -- on the one message whose whole purpose is to read as
+	 * though a person wrote it. Caught by reading the output, not by a test,
+	 * so there is a test now.
+	 */
+	foreach (array(0, 1, 2, 11) as $n) {
+		foreach (array(array(false, false), array(false, true), array(true, false)) as $st) {
+			$t = lap_followup_text('n', 10, $n, $st[0], $st[1]);
+			if ($n === 1) {
+				ok(strpos($t, '1 traits') === false, "'1 traits' in the follow-up at n=1");
+				ok(!preg_match('/\b1 trait\b.*\bthem\b/s', $t),
+				   'the follow-up says "1 trait" and then calls it "them"');
+				ok(!preg_match('/\b1 trait\b.*\bthey are\b/s', $t),
+				   'the follow-up says "1 trait" and then "they are"');
+			} elseif ($n > 1) {
+				ok(strpos($t, $n . ' traits') !== false || strpos($t, 'Fighter') !== false,
+				   "the follow-up at n=$n neither counts the traits nor names the Fighter");
+			}
+		}
+	}
+}
+
+echo "\nthe follow-up log is its own\n";
+require_once __DIR__ . '/lib/outreach-log.php';
+/*
+ * A MARK ON ONE LOG MUST NOT SHOW ON THE OTHER. The invite and the
+ * follow-up are different messages to the same person, and the keys are
+ * stripped to digits -- so a namespace prefix would be sanitised straight
+ * back off and both would land in one file.
+ */
+ok(outreach_path() !== outreach_path(OUTREACH_LIST_ASK),
+   'the follow-up log and the invite log are the same file, so marking somebody asked '
+ . 'also marks them written to');
+ok(strpos(basename(outreach_path(OUTREACH_LIST_ASK)), 'ask') !== false,
+   'the follow-up log is not named for what it holds');
+/* It lands in a path, so it cannot be whatever a caller passes. Tested on
+   the BASENAME: the base is __DIR__ . '/../data/', which legitimately
+   contains '..', so searching the whole path for it fails correct code --
+   which is what the first version of this check did. */
+ok(basename(outreach_path('../../etc/passwd')) === 'outreach-etcpasswd.json',
+   'outreach_path() does not strip a traversal out of the suffix: got '
+ . basename(outreach_path('../../etc/passwd')));
+ok(strpos(basename(outreach_path('a/b')), '/') === false,
+   'a slash in the suffix survives into the filename');
+ok(dirname(outreach_path(OUTREACH_LIST_ASK)) === dirname(outreach_path()),
+   'the two logs are not in the same directory');
+/* And the endpoint must refuse a list it does not know, or an unknown name
+   quietly creates a third log nothing ever reads. */
+$oa = harness_strip_comments(file_get_contents(__DIR__ . '/ajax/admin-outreach.php'));
+ok(strpos($oa, 'OUTREACH_LIST_ASK') !== false,
+   'ajax/admin-outreach.php does not know about the follow-up log');
+ok(strpos($oa, 'Unknown list') !== false,
+   'the endpoint accepts any list name, so a typo writes to a file nothing reads');
+
+echo "\nthe button only appears where there is something to ask\n";
+$pg = harness_strip_comments($src);
+ok(strpos($pg, 'lap-askbtn') !== false, 'the Came back table has no follow-up button');
+ok(strpos($pg, "empty(\$al_built[\$uid]) || !\$seen") !== false,
+   'the follow-up button is offered to everybody, including people who built a Fighter AND '
+ . 'came back again -- for whom there is no question');
+ok(strpos($pg, 'outreach_load(OUTREACH_LIST_ASK)') !== false,
+   'the page never loads the follow-up log, so every button reads as un-asked forever');
+/* The dialog writes, so it must send the list name or it marks the invite. */
+ok(preg_match('/list=.{0,40}OUTREACH_LIST_ASK/s', $src) === 1,
+   'the follow-up dialog posts without naming its list, so marking somebody asked marks '
+ . 'them as having had the invite instead');
+
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all lapsed checks passed\n");
 exit($fail ? 1 : 0);

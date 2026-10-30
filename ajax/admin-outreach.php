@@ -36,6 +36,20 @@ if (empty($rights['ok'])) { http_response_code(403); out(array('ok' => false, 'w
 $on = !isset($_POST['off']);
 
 /*
+ * WHICH LOG. The invite and the follow-up are separate messages and
+ * separate files, so a mark on one must not touch the other.
+ *
+ * ALLOW-LISTED RATHER THAN SANITISED. outreach_path() already strips a
+ * suffix to letters and hyphens, but a value arriving from a form has
+ * no business naming a file at all beyond the two that exist -- an
+ * unknown name would quietly create a third log nothing ever reads.
+ */
+$which = isset($_POST['list']) ? (string)$_POST['list'] : '';
+if ($which !== '' && $which !== OUTREACH_LIST_ASK) {
+	out(array('ok' => false, 'why' => 'Unknown list.'));
+}
+
+/*
  * A BATCH IS ONE WRITE, not one request per person. Seventy eight
  * separate calls would be seventy eight read-modify-write cycles on
  * the same file, and overlapping ones lose each other's changes.
@@ -45,7 +59,7 @@ if (isset($_POST['ids'])) {
 	/* A cap, because the body is a form post and the list is a list of
 	   rows on one page -- anything larger is a mistake or a probe. */
 	if (count($ids) > 2000) out(array('ok' => false, 'why' => 'Too many at once.'));
-	$n = outreach_mark_many($ids, $on);
+	$n = outreach_mark_many($ids, $on, $which);
 	if ($n < 0) out(array('ok' => false, 'why' => 'Could not save.'));
 	out(array('ok' => true, 'n' => $n, 'done' => $on));
 }
@@ -53,4 +67,4 @@ if (isset($_POST['ids'])) {
 $id = isset($_POST['discord_id']) ? preg_replace('/[^0-9]/', '', (string)$_POST['discord_id']) : '';
 if ($id === '') out(array('ok' => false, 'why' => 'No id.'));
 
-out(array('ok' => outreach_mark($id, $on), 'done' => $on));
+out(array('ok' => outreach_mark($id, $on, $which), 'done' => $on));

@@ -111,6 +111,13 @@ if ($al_back) {
 	if ($q) while ($x = $q->fetch_assoc()) $al_built[(int)$x['user_id']] = (int)$x['n'];
 }
 
+/*
+ * WHO HAS ALREADY BEEN ASKED. Its own log, not the invite's -- see
+ * outreach_path(). Loaded even on the lapsed view so the headline
+ * figure is the same number on both.
+ */
+$al_asked = function_exists('outreach_load') ? outreach_load(OUTREACH_LIST_ASK) : array();
+
 /* Headline numbers, counted here so the strip reads the same on both views. */
 $al_n_back = count($al_back);
 $al_n_week = $al_n_built = $al_n_again = 0;
@@ -263,6 +270,81 @@ function lap_invite_text($did, $labels, $has_realm, $left_server = false) {
 	 */
 	if ($left_server) $out .= "\n\n" . LAP_DISCORD_INVITE;
 	$out .= "\n\nTake care!";
+	return $out;
+}
+
+/**
+ * The follow-up, for somebody who took the package and then stalled.
+ *
+ * WHY THIS IS A SEPARATE MESSAGE AND NOT A SECOND INVITE. They already
+ * came back -- the invite worked. 17 people took a welcome-back
+ * package, 8 built a Fighter with it and 5 signed in again, so the
+ * question is no longer "will you come back" but "what stopped you",
+ * and those have nothing in common. An invite sent to somebody who
+ * already accepted it reads as not having noticed.
+ *
+ * THREE SITUATIONS, THREE QUESTIONS, because they are three different
+ * people and one message cannot ask all three without guessing wrong
+ * about two of them:
+ *
+ *   took it, never built, never came back   the coldest. Something put
+ *     them off on the day, or they never saw the traits at all.
+ *   took it, came back, still no Fighter    they are around and the
+ *     assembler is what is not landing. The most actionable of the
+ *     three, and the only one where the answer is probably a UI fix.
+ *   built one, then went quiet              the package did its job and
+ *     something after it did not. Worth asking, gently.
+ *
+ * IT ASKS AND STOPS. No link, no pitch, nothing about new features --
+ * this message exists to get an answer, and a question with a sales
+ * paragraph under it gets the paragraph ignored and the question with
+ * it. The invite does the selling; this does not repeat it.
+ *
+ * AND IT NAMES WHAT THEY ACTUALLY HAVE. "Your N traits are still
+ * sitting there" is true, specific, and the one sentence most likely
+ * to make somebody go and look.
+ */
+function lap_followup_text($name, $days, $traits, $built, $seen) {
+	$traits = (int)$traits;
+	$ago = $days <= 1 ? 'the other day'
+	     : ($days <= 14 ? 'a couple of weeks ago'
+	     : ($days <= 45 ? 'a while back' : 'a while ago'));
+
+	$out = "Hey! Quick one, and no pressure to reply.\n\n";
+
+	if ($built && !$seen) {
+		/* The package worked and whatever came next did not. Asking what
+		   they built is a real question, not an opener. */
+		$out .= "You came back " . $ago . ", put a Fighter together and I have not seen "
+		      . "you since. Did it not grab you, or was it just bad timing?";
+	} elseif ($seen) {
+		/* Around, signed in more than once, and still has not assembled
+		   anything. This is the one worth fixing rather than selling. */
+		$out .= "You picked up " . $traits . " trait" . ($traits === 1 ? '' : 's')
+		      . " " . $ago . " and " . ($traits === 1 ? 'it is' : 'they are')
+		      . " still sitting in your account unbuilt. "
+		      . "Was the Fighter builder confusing, or just not your thing?";
+	} else {
+		/* Took the package and vanished. The likeliest answer is that
+		   they never saw it, so that possibility is offered explicitly --
+		   it is much easier to agree with than to volunteer. */
+		/* Pronouns agree with the count: "1 trait landed ... anything with
+		   them" read as a mail merge, which is the one thing a personal
+		   message cannot afford. */
+		$out .= "You stopped by " . $ago . " and " . $traits . " trait"
+		      . ($traits === 1 ? '' : 's') . " landed in your account, but it does not "
+		      . "look like you had a chance to do anything with "
+		      . ($traits === 1 ? 'it' : 'them') . ". Did you not see "
+		      . ($traits === 1 ? 'it' : 'them') . ", or did something not work?";
+	}
+
+	/*
+	 * SAYING THE ANSWER IS USEFUL IS WHAT GETS ONE. "No pressure to
+	 * reply" above makes it easy to ignore; this makes it worth not
+	 * ignoring, and both are true.
+	 */
+	$out .= "\n\nGenuinely just trying to work out what is worth fixing, so anything "
+	      . "you tell me helps.";
 	return $out;
 }
 
@@ -529,6 +611,15 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
    the primary one. The message is the thing being sent; the link is
    support, and should not compete with it. */
 .lap-mc2 { background:#123049; color:#9fd8c8; }
+/* The follow-up trigger on the Came back table. Quiet until pressed,
+   then permanently muted -- the column is a to-do list and a row that
+   is done should stop asking for attention. */
+td.lap-ask { text-align:center; }
+.lap-askbtn { background:#123049; color:#9fd8c8; border:1px solid rgba(255,255,255,.14);
+  border-radius:6px; padding:4px 12px; font-size:.78rem; cursor:pointer; }
+.lap-askbtn:hover { background:#17405f; }
+.lap-askbtn:focus-visible { outline:2px solid #00c8a0; outline-offset:2px; }
+.lap-askbtn.on { background:transparent; color:#5f7d90; border-style:dashed; }
 /* After .lap-mc2 so it is not the one being overridden; the image is a
    primary action, the link is not. */
 .lap-mcimg { background:#00c8a0; color:#06222b; }
@@ -575,7 +666,7 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 <?php else: ?>
 <table class="lap-t">
 	<thead><tr>
-		<th>Member</th><th>Came back</th><th>Got</th><th>Built since</th><th>Since then</th>
+		<th>Member</th><th>Came back</th><th>Got</th><th>Built since</th><th>Since then</th><th>Ask</th>
 	</tr></thead>
 	<tbody>
 	<?php foreach ($al_back as $uid => $b):
@@ -614,6 +705,31 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 		<td class="lap-has"><?php
 			echo $seen ? 'signed in again' : '<span class="none">not since</span>';
 		?></td>
+		<td class="lap-ask"><?php
+			/*
+			 * ONLY WHERE THERE IS SOMETHING TO ASK. Somebody who built a
+			 * Fighter AND came back again is the package working exactly as
+			 * intended -- there is no question to put to them, and a button
+			 * offering one anyway turns a list of 17 into 17 pieces of work
+			 * when only a handful are.
+			 */
+			$ask = $bu && (empty($al_built[$uid]) || !$seen);
+			if (!$ask):
+				echo '<span class="none">&mdash;</span>';
+			else:
+				$done = outreach_done($al_asked, $bu['discord_id']);
+			?>
+			<button type="button" class="lap-askbtn<?php echo $done ? ' on' : ''; ?>"
+			        data-did="<?php echo htmlspecialchars($bu['discord_id'], ENT_QUOTES); ?>"
+			        data-who="<?php echo htmlspecialchars($bu['username'], ENT_QUOTES); ?>"
+			        data-sent="<?php echo $done ? '1' : ''; ?>"
+			        data-msg="<?php echo htmlspecialchars(
+			            lap_followup_text($bu['username'], $days, (int)$b['traits'],
+			                              !empty($al_built[$uid]), $seen), ENT_QUOTES); ?>"
+			        title="<?php echo $done ? 'Already asked' : 'Ask why'; ?>"><?php
+			        echo $done ? 'asked' : 'ask'; ?></button>
+			<?php endif; ?>
+		</td>
 	</tr>
 	<?php endforeach; ?>
 	</tbody>
@@ -895,6 +1011,40 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 		</div>
 	</div>
 </div>
+
+<!--
+	THE FOLLOW-UP DIALOG. Deliberately NOT the package modal with its
+	picture and link hidden: that one exists to hand somebody a gift and
+	this one exists to ask a question, so they share the copy helper and
+	nothing else. Folding both into one would mean every change to either
+	reasoning about the other.
+-->
+<div class="lap-mw" id="lapAsk" hidden>
+	<div class="lap-mb" role="dialog" aria-modal="true" aria-labelledby="lapAskWho">
+		<div class="lap-mh">
+			<h3 id="lapAskWho"></h3>
+			<button type="button" class="lap-mname" id="lapAskCopyName">Copy name</button>
+			<input class="lap-offscreen" id="lapAskName" type="text" readonly aria-hidden="true" tabindex="-1">
+			<button type="button" class="lap-mx" id="lapAskX" aria-label="Close">&times;</button>
+		</div>
+		<div class="lap-mi">
+			<?php /* WHICH OF THE THREE SITUATIONS THIS IS, said plainly above
+			         the message, because the message is written for one of
+			         them and reading it without knowing which is how you send
+			         the wrong one. */ ?>
+			<p class="lap-mt" id="lapAskWhy"></p>
+			<label class="lap-ml" for="lapAskMsg">The message</label>
+			<textarea class="lap-mu lap-mmsg" id="lapAskMsg" rows="7" readonly></textarea>
+			<button type="button" class="lap-mc" id="lapAskCopyMsg">Copy message</button>
+		</div>
+		<div class="lap-mnav">
+			<button type="button" class="lap-mc lap-mc2" id="lapAskPrev">&larr; Prev</button>
+			<span id="lapAskPos"></span>
+			<button type="button" class="lap-mc lap-mdone" id="lapAskDone">Mark asked &amp; next</button>
+			<button type="button" class="lap-mc lap-mc2" id="lapAskNext">Next &rarr;</button>
+		</div>
+	</div>
+</div>
 <script>
 /* ---- the catch-up selection ------------------------------------- *
    Separate from the modal: it runs on the table whether or not the
@@ -1128,6 +1278,128 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 	wire(msg, copyM, 'Copy message');
 	wire(url, copy, 'Copy link');
 	wire(name, copyN, 'Copy name');
+
+	/* ------------------------------------------------------------------
+	 * THE FOLLOW-UP DIALOG.
+	 *
+	 * Same shape as the package one above -- open, step, mark, close --
+	 * against its own button list and its own log. It shares wire(), which
+	 * is why it lives in this scope rather than its own block; everything
+	 * else is separate on purpose, because the two dialogs do different
+	 * jobs and folding them together would make every change to either
+	 * require reasoning about the other.
+	 * ------------------------------------------------------------------ */
+	(function () {
+		var aw   = document.getElementById('lapAsk');
+		if (!aw) return;                       // lapsed view: no Came back table
+		var aWho = document.getElementById('lapAskWho'),
+		    aWhy = document.getElementById('lapAskWhy'),
+		    aMsg = document.getElementById('lapAskMsg'),
+		    aCp  = document.getElementById('lapAskCopyMsg'),
+		    aNm  = document.getElementById('lapAskName'),
+		    aCn  = document.getElementById('lapAskCopyName'),
+		    aPv  = document.getElementById('lapAskPrev'),
+		    aNx  = document.getElementById('lapAskNext'),
+		    aPos = document.getElementById('lapAskPos'),
+		    aDn  = document.getElementById('lapAskDone'),
+		    aAll = Array.prototype.slice.call(document.querySelectorAll('.lap-askbtn')),
+		    aAt  = -1, aLast = null;
+
+		wire(aMsg, aCp, 'Copy message');
+		wire(aNm,  aCn, 'Copy name');
+
+		function why(btn) {
+			/* Read off the row rather than passed down separately: the two
+			   cells are already rendered and a third copy of the same facts
+			   is a third thing that can disagree with them. */
+			var tr = btn.closest ? btn.closest('tr') : null;
+			if (!tr) return '';
+			var td = tr.querySelectorAll('td'),
+			    built = td[3] ? td[3].textContent.trim() : '',
+			    seen  = td[4] ? td[4].textContent.trim() : '';
+			return 'Built since: ' + (built || '?') + '  ·  Since then: ' + (seen || '?');
+		}
+		function aOpen(btn) {
+			aLast = btn;
+			aAt = aAll.indexOf(btn);
+			aPos.textContent = (aAt >= 0) ? (aAt + 1) + ' of ' + aAll.length : '';
+			aPv.disabled = (aAt <= 0);
+			aNx.disabled = (aAt < 0 || aAt >= aAll.length - 1);
+			var sent = btn.getAttribute('data-sent') === '1';
+			aDn.setAttribute('data-on', sent ? '1' : '');
+			aDn.textContent = sent ? 'Asked (undo)' : 'Mark asked & next';
+			aDn.disabled = false;
+			aWho.textContent = btn.getAttribute('data-who') || '';
+			aNm.value        = btn.getAttribute('data-who') || '';
+			aMsg.value       = btn.getAttribute('data-msg') || '';
+			aWhy.textContent = why(btn);
+			aCp.textContent  = 'Copy message';
+			aCn.textContent  = 'Copy name';
+			aw.hidden = false;
+			aCp.focus();
+		}
+		function aClose() {
+			aw.hidden = true; aAt = -1;
+			if (aLast) { aLast.focus(); aLast = null; }
+		}
+		function aStep(by) {
+			if (aAt < 0) return;
+			var n = aAt + by;
+			if (n < 0 || n >= aAll.length) return;
+			if (aAll[n].scrollIntoView) aAll[n].scrollIntoView({ block: 'center' });
+			aOpen(aAll[n]);
+		}
+		document.addEventListener('click', function (e) {
+			var b = e.target.closest ? e.target.closest('.lap-askbtn') : null;
+			if (b) { e.preventDefault(); aOpen(b); return; }
+			if (e.target === aw || e.target.id === 'lapAskX') aClose();
+		});
+		aPv.addEventListener('click', function () { aStep(-1); });
+		aNx.addEventListener('click', function () { aStep(1); });
+		document.addEventListener('keydown', function (e) {
+			if (aw.hidden) return;
+			if (e.key === 'Escape')     { aClose(); return; }
+			if (e.key === 'ArrowLeft')  { e.preventDefault(); aStep(-1); }
+			if (e.key === 'ArrowRight') { e.preventDefault(); aStep(1); }
+		});
+
+		/*
+		 * MARK, THEN MOVE -- and only once the server has confirmed it,
+		 * for the same reason the package dialog does: a row shown as done
+		 * before the write lands quietly drops somebody off a list whose
+		 * whole job is not losing anybody.
+		 */
+		aDn.addEventListener('click', function () {
+			if (aAt < 0) return;
+			var btn = aAll[aAt],
+			    did = btn.getAttribute('data-did'),
+			    on  = aDn.getAttribute('data-on') !== '1',
+			    body = 'discord_id=' + encodeURIComponent(did)
+			         + '&list=' + encodeURIComponent('<?php echo OUTREACH_LIST_ASK; ?>')
+			         + (on ? '' : '&off=1');
+			aDn.disabled = true;
+			aDn.textContent = on ? 'Marking...' : 'Undoing...';
+			fetch('ajax/admin-outreach.php', {
+				method: 'POST', credentials: 'same-origin',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: body
+			}).then(function (r) { return r.json(); }).then(function (j) {
+				if (!j || !j.ok) throw new Error((j && j.why) || 'failed');
+				btn.setAttribute('data-sent', on ? '1' : '');
+				btn.textContent = on ? 'asked' : 'ask';
+				btn.title = on ? 'Already asked' : 'Ask why';
+				btn.classList.toggle('on', on);
+				if (on && aAt < aAll.length - 1) aStep(1); else aOpen(btn);
+			}).catch(function () {
+				aDn.disabled = false;
+				aDn.textContent = 'Could not save';
+				setTimeout(function () {
+					aDn.textContent = aDn.getAttribute('data-on') === '1'
+						? 'Asked (undo)' : 'Mark asked & next';
+				}, 2000);
+			});
+		});
+	})();
 
 	/*
 	 * COPYING THE PICTURE, which is the thing that actually goes in the

@@ -30,13 +30,31 @@
 
 if (!defined('OUTREACH_PATH_NAME')) define('OUTREACH_PATH_NAME', 'outreach.json');
 
-function outreach_path() {
-	return __DIR__ . '/../data/' . OUTREACH_PATH_NAME;
+/* The follow-up log: who has been asked why they came back and then did
+   nothing. A second message, so a second file -- see outreach_path(). */
+if (!defined('OUTREACH_LIST_ASK')) define('OUTREACH_LIST_ASK', 'ask');
+
+/*
+ * TWO LOGS, NOT ONE FILE WITH PREFIXED KEYS.
+ *
+ * The invite and the follow-up are different messages to the same
+ * person, and marking one must never make the other look sent. Keys
+ * here are stripped to digits (see outreach_mark), so a namespace
+ * prefix would be sanitised straight back off -- it has to be a
+ * separate file.
+ *
+ * $which is a plain suffix, allow-listed to letters and hyphens
+ * because it lands in a path.
+ */
+function outreach_path($which = '') {
+	$which = preg_replace('/[^a-z-]/', '', strtolower((string)$which));
+	$name  = $which === '' ? OUTREACH_PATH_NAME : 'outreach-' . $which . '.json';
+	return __DIR__ . '/../data/' . $name;
 }
 
 /** discord_id => unix time contacted. Always an array. */
-function outreach_load() {
-	$p = outreach_path();
+function outreach_load($which = '') {
+	$p = outreach_path($which);
 	if (!is_file($p)) return array();
 	$raw = @file_get_contents($p);
 	if ($raw === false || $raw === '') return array();
@@ -62,9 +80,9 @@ function outreach_done($log, $discord_id) {
  * failed, so a caller can tell "nothing selected" from "nothing
  * saved".
  */
-function outreach_mark_many($ids, $on = true) {
+function outreach_mark_many($ids, $on = true, $which = '') {
 	if (!is_array($ids)) return 0;
-	$log = outreach_load();
+	$log = outreach_load($which);
 	$n = 0;
 	foreach ($ids as $raw) {
 		$id = preg_replace('/[^0-9]/', '', (string)$raw);
@@ -74,12 +92,12 @@ function outreach_mark_many($ids, $on = true) {
 		$n++;
 	}
 	if ($n === 0) return 0;
-	return outreach_write($log) ? $n : -1;
+	return outreach_write($log, $which) ? $n : -1;
 }
 
 /** The single write both paths go through. */
-function outreach_write($log) {
-	$path = outreach_path();
+function outreach_write($log, $which = '') {
+	$path = outreach_path($which);
 	$dir  = dirname($path);
 	if (!is_dir($dir) && !@mkdir($dir, 0775, true)) return false;
 	/* Temp then rename, so a reader never sees half a log and concludes
@@ -98,11 +116,11 @@ function outreach_write($log) {
  * re-reading a few hundred keys is nothing against losing half of
  * them.
  */
-function outreach_mark($discord_id, $on = true) {
+function outreach_mark($discord_id, $on = true, $which = '') {
 	$id = preg_replace('/[^0-9]/', '', (string)$discord_id);
 	if ($id === '') return false;
-	$log = outreach_load();
+	$log = outreach_load($which);
 	if ($on) $log[$id] = time();
 	else     unset($log[$id]);
-	return outreach_write($log);
+	return outreach_write($log, $which);
 }
