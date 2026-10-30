@@ -573,15 +573,44 @@ if ($lift_follow !== '') {
 	ok($cold !== $near && $near !== $gone && $cold !== $gone,
 	   'two of the three situations get the same message, so at least one person is being '
 	 . 'asked a question that does not apply to them');
-	ok(strpos($near, 'builder') !== false,
-	   'somebody who is signing in and still has not assembled anything is not asked about '
-	 . 'the builder, which is the only one of the three where the answer is likely a fix');
-	ok(strpos($gone, 'Fighter') !== false,
+	ok(stripos($near, 'been around since') !== false,
+	   'somebody who is demonstrably active is not told so, and reads a message written for '
+	 . 'someone who vanished');
+	ok(stripos($gone, 'put a fighter together') !== false,
 	   'somebody who DID build is not told so, and reads a message written for someone who '
 	 . 'did not');
-	ok(strpos($cold, 'not see') !== false,
-	   'the coldest case does not offer "you never saw them" as an out -- that is much '
-	 . 'easier to agree with than to volunteer, and it is the likeliest answer');
+	/*
+	 * TWO REASONS OFFERED, NOT AN OPEN QUESTION. The owner's own
+	 * refinement: "what put you off" asks somebody to compose an answer,
+	 * "was it X or was it Y" asks them to pick one, and picking one is a
+	 * reply they actually send.
+	 */
+	foreach (array('cold' => $cold, 'near' => $near, 'gone' => $gone) as $k => $t) {
+		ok(substr_count($t, '?') >= 2,
+		   "the $k follow-up asks one open question instead of offering two reasons to pick "
+		 . 'between, which is the difference between a reply and no reply');
+	}
+	/*
+	 * "INTUITIVE", NEVER "INTERESTING", and the distinction is the whole
+	 * reason for writing: not interesting is a matter of taste and leaves
+	 * nothing to do about it, not intuitive names something fixable.
+	 */
+	ok(stripos($cold, 'not intuitive') !== false,
+	   'the coldest case does not ask whether the games were intuitive, which is the half '
+	 . 'of the question that can actually be acted on');
+	foreach (array('cold' => $cold, 'near' => $near, 'gone' => $gone) as $k => $t) {
+		ok(stripos($t, 'interesting') === false,
+		   "the $k follow-up asks whether something was interesting -- a matter of taste "
+		 . 'that leaves nothing to fix. Ask whether it was intuitive.');
+	}
+	/* It opens on what they DID, not on what they did not. */
+	foreach (array('cold' => $cold, 'near' => $near, 'gone' => $gone) as $k => $t) {
+		$first = substr($t, 0, strpos($t, "\n"));
+		ok(stripos($first, 'awesome') !== false,
+		   "the $k follow-up does not open on what they got right -- somebody who came back "
+		 . 'after months away did the hard part, and leading with the gap reads as a '
+		 . 'telling-off');
+	}
 
 	/* IT ASKS AND STOPS. A question with a pitch under it gets the pitch
 	   ignored and the question with it; the invite already does the selling. */
@@ -612,8 +641,8 @@ if ($lift_follow !== '') {
 				ok(!preg_match('/\b1 trait\b.*\bthey are\b/s', $t),
 				   'the follow-up says "1 trait" and then "they are"');
 			} elseif ($n > 1) {
-				ok(strpos($t, $n . ' traits') !== false || strpos($t, 'Fighter') !== false,
-				   "the follow-up at n=$n neither counts the traits nor names the Fighter");
+				ok(strpos($t, $n . ' traits') !== false || stripos($t, 'fighter together') !== false,
+				   "the follow-up at n=$n neither counts the traits nor says they built one");
 			}
 		}
 	}

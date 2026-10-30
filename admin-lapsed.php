@@ -388,47 +388,61 @@ function lap_followup_text($name, $days, $traits, $built, $seen) {
 	     : ($days <= 14 ? 'a couple of weeks ago'
 	     : ($days <= 45 ? 'a while back' : 'a while ago'));
 
-	$out = "Hey! Quick one, and no pressure to reply.\n\n";
+	/*
+	 * LEAD WITH WHAT THEY DID RIGHT. The owner's own draft opens "I saw
+	 * that you logged in and claimed your traits! That's awesome!" before
+	 * it mentions the gap, and that order is the message: somebody who
+	 * came back after months away did the hard part, and a note that
+	 * opens on what they have NOT done reads as a telling-off.
+	 */
+	$out = "Hey! ";
 
 	if ($built && !$seen) {
-		/* The package worked and whatever came next did not. "Nothing since"
-		   now means no trait, no transaction and no Fighter after the
-		   return, which is a real absence rather than a stale timestamp --
-		   so the message can say so without risking telling an active
-		   member they have been missing. */
-		$out .= "You came back " . $ago . ", put a Fighter together and then it went quiet. "
-		      . "Did it not grab you, or was it just bad timing?";
+		/* The package worked and whatever came next did not. */
+		$out .= "I saw that you came back " . $ago . " and put a fighter together! "
+		      . "That's awesome!\n\n"
+		      . "Looks like you haven't been back since, though. Was there something that "
+		      . "didn't click? Were the games not intuitive enough?";
 	} elseif ($seen) {
-		/* Active since they came back -- earning traits, claiming, buying --
-		   and still has not assembled anything. This is the one worth
-		   fixing rather than selling, and it is only identifiable because
-		   the column measures what they DID rather than whether a
-		   once-a-day last_login moved. */
-		$out .= "You picked up " . $traits . " trait" . ($traits === 1 ? '' : 's')
-		      . " " . $ago . " and " . ($traits === 1 ? 'it is' : 'they are')
-		      . " still sitting in your account unbuilt. "
-		      . "Was the Fighter builder confusing, or just not your thing?";
+		/*
+		 * Around and playing, still has not assembled anything. The only
+		 * one of the three whose answer is probably a fix rather than a
+		 * shrug, so it asks the owner's own question straight out.
+		 */
+		$out .= "I saw that you logged in and claimed your " . $traits . " trait"
+		      . ($traits === 1 ? '' : 's') . "! That's awesome!\n\n"
+		      . "It looks like you've been around since but haven't gotten a chance to "
+		      . "build a fighter yet. Was the Fighter assembly confusing? Is there "
+		      . "something missing that would make it worth doing?";
 	} else {
-		/* Took the package and vanished. The likeliest answer is that
-		   they never saw it, so that possibility is offered explicitly --
-		   it is much easier to agree with than to volunteer. */
-		/* Pronouns agree with the count: "1 trait landed ... anything with
-		   them" read as a mail merge, which is the one thing a personal
-		   message cannot afford. */
-		$out .= "You stopped by " . $ago . " and " . $traits . " trait"
-		      . ($traits === 1 ? '' : 's') . " landed in your account, but it does not "
-		      . "look like you had a chance to do anything with "
-		      . ($traits === 1 ? 'it' : 'them') . ". Did you not see "
-		      . ($traits === 1 ? 'it' : 'them') . ", or did something not work?";
+		/*
+		 * Took the package and vanished -- the owner's own wording for
+		 * this one, verbatim.
+		 *
+		 * TWO REASONS OFFERED, NOT AN OPEN QUESTION, and that is the
+		 * owner's refinement rather than mine. "What put you off" asks
+		 * somebody to compose an answer; "was it X, or was it Y" asks
+		 * them to pick one, and picking one is a reply they will
+		 * actually send.
+		 *
+		 * AND IT IS "INTUITIVE", NOT "INTERESTING" -- also the owner's
+		 * word, and the difference is the whole reason for writing. "Not
+		 * interesting" is a matter of taste and leaves nothing to do
+		 * about it; "not intuitive" names something that can be fixed and
+		 * invites an answer saying what.
+		 */
+		$out .= "I saw that you logged in and claimed your " . $traits . " trait"
+		      . ($traits === 1 ? '' : 's') . " " . $ago . "! That's awesome!\n\n"
+		      . "It looks like you haven't gotten a chance to build a fighter yet or "
+		      . "engage with the platform. Was the Fighter assembly confusing? Were the "
+		      . "games not intuitive enough?";
 	}
 
-	/*
-	 * SAYING THE ANSWER IS USEFUL IS WHAT GETS ONE. "No pressure to
-	 * reply" above makes it easy to ignore; this makes it worth not
-	 * ignoring, and both are true.
-	 */
-	$out .= "\n\nGenuinely just trying to work out what is worth fixing, so anything "
-	      . "you tell me helps.";
+	/* The owner's own closer, and the right one: it turns a question into
+	   an offer, which is what makes answering it feel useful rather than
+	   like being surveyed. */
+	$out .= "\n\nLet me know if there's anything I can assist with to make your "
+	      . "experience better!";
 	return $out;
 }
 
