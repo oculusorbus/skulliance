@@ -402,5 +402,123 @@ if (preg_match('/var TRAITS = (\{.*?\});\s*$/m', $out, $tm3)) {
 	echo "covers: SKIPPED (no TRAITS block in the rendered page)\n";
 }
 
+/* -------------------------------------------------------------------------
+ * TETHERED WEAPONS MUST SPLIT ACROSS THE TWO WEAPON SLOTS, 2026-10-30.
+ *
+ * A tethered pair is one weapon drawn in two places: the weapon behind the
+ * body and the piece it hangs from in front. That only works if exactly one
+ * half is in $dhc_weapon_front -- both in front and the back is empty, both in
+ * back and they are drawn on top of each other.
+ *
+ * AND IT IS HOW THE COUPLE TABLE TELLS THE HALVES APART. That loop used to
+ * test for a '-sash' suffix, which was true of the only two pairs that
+ * existed. The straps delivered on 2026-10-30 end in '-strap', so the suffix
+ * test passed both directions of each new pair through and emitted SIX couple
+ * rows for four pairs -- two of them with back and front swapped, which in the
+ * browser means picking the strap drags the weapon into the front slot. It now
+ * asks this list, so these checks are what keeps the two from drifting.
+ * ------------------------------------------------------------------------- */
+echo "\ntethered weapon halves\n";
+$front = array();
+if (preg_match('/\$dhc_weapon_front = array\((.*?)\);/s', $asm_src, $m)) {
+	preg_match_all("/'([a-z0-9-]+)'/", $m[1], $mm);
+	$front = $mm[1];
+}
+ok(count($front) >= 9, 'could not read $dhc_weapon_front out of the assembler');
+
+$pairs = array();
+foreach (DHCF_TETHERED as $a => $b) {
+	$k = $a < $b ? "$a|$b" : "$b|$a";
+	$pairs[$k] = true;
+	/* Keyed both ways or the assembler only couples in one direction. */
+	ok(isset(DHCF_TETHERED[$b]) && DHCF_TETHERED[$b] === $a,
+	   "DHCF_TETHERED has $a => $b but not the reverse, so the pair only couples one way");
+}
+foreach (array_keys($pairs) as $k) {
+	list($x, $y) = explode('|', $k);
+	$n = (int)in_array($x, $front, true) + (int)in_array($y, $front, true);
+	ok($n === 1, "tethered pair $x / $y has $n halves in the front weapon list, not exactly 1 -- "
+	           . ($n ? 'both draw in front and nothing goes behind the body'
+	                 : 'both draw behind the body, on top of each other'));
+}
+/*
+ * THE ASSEMBLER'S OWN TEST, asserted on its source -- because the loop below
+ * is a REIMPLEMENTATION of it, and a reimplementation cannot notice the
+ * original drifting. Restoring the '-sash' suffix test in dhc-assembler.php
+ * passed every check in this section until these two were added, which is the
+ * exact bug the section exists for.
+ */
+ok(preg_match('/foreach \(DHCF_TETHERED as \$back => \$front\)[^}]*?'
+            . 'in_array\(\$back, \$dhc_weapon_front, true\)/s', $asm_src) === 1,
+   'the COUPLE emission does not tell a tethered pair\'s halves apart by the front-weapon '
+ . 'list, so the two can disagree about which half draws in front');
+ok(!preg_match('/-sash\x27\)?\s*\)?\s*continue/', $asm_src)
+   && strpos($asm_src, "substr(\$back, -5)") === false,
+   'the COUPLE emission still tells front from back by a \'-sash\' suffix. That is true of '
+ . 'the two sashes and false of every strap, so each strap pair is emitted twice -- once '
+ . 'with the halves swapped, which drags the weapon into the front slot');
+
+/* The emission, run here against the same data, so a duplicate or a swapped
+   row fails rather than being inspected. */
+$emitted = array();
+foreach (DHCF_TETHERED as $back => $fr) {
+	if (in_array($back, $front, true)) continue;
+	$emitted[] = array($back, $fr);
+}
+ok(count($emitted) === count($pairs),
+   'the COUPLE table emits ' . count($emitted) . ' mutual rows for ' . count($pairs)
+ . ' tethered pairs; each pair must appear exactly once');
+foreach ($emitted as $e) {
+	ok(!in_array($e[0], $front, true) && in_array($e[1], $front, true),
+	   "COUPLE row back={$e[0]} front={$e[1]} has the halves the wrong way round");
+}
+/* Both halves of a pair must score the same tier. They are one weapon, and the
+   draw awards them together -- a legendary weapon arriving with a common strap
+   would make the pair's real rate the commoner of the two. Guaranteed today by
+   the strap being ALIASed to its weapon's on-chain name in gen-rarity.py. */
+foreach (array_keys($pairs) as $k) {
+	list($x, $y) = explode('|', $k);
+	$a = isset($rarity['weapon'][$x]) ? $rarity['weapon'][$x] : null;
+	$b = isset($rarity['weapon'][$y]) ? $rarity['weapon'][$y] : null;
+	ok($a && $b, "no rarity row for one of $x / $y");
+	if ($a && $b) ok($a[0] === $b[0],
+	   "tethered halves $x ($a[0]) and $y ($b[0]) score different tiers, so the pair's "
+	 . 'real rate is the commoner of the two');
+}
+
+/* -------------------------------------------------------------------------
+ * A BORROWED ARMLESS PLATE HAS TO EXIST, and the borrower must not have one.
+ * ------------------------------------------------------------------------- */
+echo "\nborrowed armless plates\n";
+$plateDir = __DIR__ . '/dhc/web/1000/torso-noarms';
+foreach (DHCF_ARMLESS_ALIAS as $torso => $plate) {
+	ok($torso !== $plate, "$torso aliases itself, which is what no entry already means");
+	ok(dhcf_armless_slug($torso) === $plate, "dhcf_armless_slug($torso) does not return $plate");
+	if (!is_dir($plateDir)) continue;
+	ok(is_file("$plateDir/$plate.png"),
+	   "$torso borrows $plate's armless plate and that plate is not on disk, so the torso "
+	 . 'renders as a missing image the moment an arms trait is picked');
+	ok(!is_file("$plateDir/$torso.png"),
+	   "$torso has an armless plate of its OWN as well as an alias, so the alias is dead "
+	 . 'code and whichever wins is a coin toss');
+}
+/* The renderer must build the PATH from the alias, not merely consult it: the
+   file is named after the plate, so returning "yes there is one" and then
+   asking for <borrower>.png is a 404 the page shows as a hole. */
+ok(strpos($lib_src, 'torso-noarms/\' . $noarms') !== false,
+   'dhcf_layers() still builds the armless path from the torso slug rather than the '
+ . 'plate it resolves to');
+ok(preg_match("/'slug' => \\\$armless \\? \\\$noarms/", $lib_src) === 1,
+   'dhcf_layers() emits the torso slug for the armless layer, so a borrowed plate is '
+ . 'looked up under the wrong filename');
+/* And the sandbox must pass a MAP. As a list, a borrowed plate cannot be
+   expressed at all -- and three readers called indexOf() on it. */
+ok(strpos($asm_src, 'JSON_FORCE_OBJECT') !== false,
+   'the sandbox serialises NOARMS as a list, which cannot name a borrowed plate');
+ok(strpos($asm_c, 'NOARMS.indexOf') === false,
+   'something still calls indexOf() on NOARMS, which is an object now and will throw');
+ok(strpos($asm_c, 'function armlessPlate(') !== false,
+   'the sandbox has no single helper for reading NOARMS, so its three readers can drift');
+
 echo "\n".($fail ? "FAILED: $fail check(s)\n" : "all assembler checks passed\n");
 exit($fail ? 1 : 0);

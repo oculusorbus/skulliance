@@ -210,6 +210,16 @@
    "file": "xlons-building-interior.png",
    "source": "XLONs_Building_Interior.jpg"
   },
+  "xlons-room-entrance": {
+   "name": "XLONs Room Entrance",
+   "file": "xlons-room-entrance.png",
+   "source": "XLONs Room Entrance.png"
+  },
+  "xlons-room-entrance-graffiti": {
+   "name": "XLONs Room Entrance Graffiti",
+   "file": "xlons-room-entrance-graffiti.png",
+   "source": "XLONs Room Entrance Graffiti.png"
+  },
   "xlons-s-complex": {
    "name": "XLONs s Complex",
    "file": "xlons-s-complex.png",
@@ -247,6 +257,11 @@
    "file": "cyber-venom-predator.png",
    "source": "Cyber_Venom_Predator.png"
   },
+  "damaged-dh-cop-1": {
+   "name": "Damaged DH Cop #1",
+   "file": "damaged-dh-cop-1.png",
+   "source": "Damaged DH Cop #1.png"
+  },
   "data-explorer": {
    "name": "Data Explorer",
    "file": "data-explorer.png",
@@ -276,6 +291,11 @@
    "name": "Dynamo",
    "file": "dynamo.png",
    "source": "Dynamo.png"
+  },
+  "failed-immortality-body": {
+   "name": "Failed Immortality Body",
+   "file": "failed-immortality-body.png",
+   "source": "Failed Immortality Body.png"
   },
   "golden-cyborg": {
    "name": "Golden Cyborg",
@@ -432,7 +452,7 @@
   "symbio-flexx": {
    "name": "symbio-flexx",
    "file": "symbio-flexx.png",
-   "source": "symbiō-flexx_.png"
+   "source": "symbio\u0304-flexx_.png"
   },
   "turret-blue-cyborg-limbs": {
    "name": "Turret Blue Cyborg Limbs",
@@ -456,15 +476,15 @@
    "file": "beheaded-cyborg.png",
    "source": "Beheaded_Cyborg.png"
   },
-  "broken-xlon-repeater-1": {
-   "name": "Broken XLON Repeater 1",
-   "file": "broken-xlon-repeater-1.png",
-   "source": "Broken_XLON_Repeater 1.png"
-  },
   "broken-xlon-repeater": {
    "name": "Broken XLON Repeater",
    "file": "broken-xlon-repeater.png",
    "source": "Broken_XLON_Repeater.png"
+  },
+  "broken-xlon-repeater-1": {
+   "name": "Broken XLON Repeater 1",
+   "file": "broken-xlon-repeater-1.png",
+   "source": "Broken_XLON_Repeater 1.png"
   },
   "c73": {
    "name": "C73",
@@ -496,6 +516,16 @@
    "file": "dh-cop-01.png",
    "source": "DH_Cop_#01.png"
   },
+  "dh-cop-03": {
+   "name": "DH Cop #03",
+   "file": "dh-cop-03.png",
+   "source": "Dh_Cop_#03.png"
+  },
+  "dh-cop-03-1": {
+   "name": "DH Cop #03 1",
+   "file": "dh-cop-03-1.png",
+   "source": "Dh_Cop_#03 1.png"
+  },
   "dh-cop-2": {
    "name": "DH Cop #2",
    "file": "dh-cop-2.png",
@@ -511,15 +541,10 @@
    "file": "dh-zombie.png",
    "source": "DH_Zombie.png"
   },
-  "dh-cop-03-1": {
-   "name": "DH Cop #03 1",
-   "file": "dh-cop-03-1.png",
-   "source": "Dh_Cop_#03 1.png"
-  },
-  "dh-cop-03": {
-   "name": "DH Cop #03",
-   "file": "dh-cop-03.png",
-   "source": "Dh_Cop_#03.png"
+  "failed-immortality-head": {
+   "name": "Failed Immortality Head",
+   "file": "failed-immortality-head.png",
+   "source": "Failed Immortality Head.png"
   },
   "gas-mask": {
    "name": "Gas Mask",
@@ -571,15 +596,15 @@
    "file": "planet-1kz-killer-alien.png",
    "source": "Planet_1KZ_Killer_Alien.png"
   },
-  "planet-8tz-specter-1": {
-   "name": "Planet 8TZ Specter 1",
-   "file": "planet-8tz-specter-1.png",
-   "source": "Planet_8TZ_Specter 1.png"
-  },
   "planet-8tz-specter": {
    "name": "Planet 8TZ Specter",
    "file": "planet-8tz-specter.png",
    "source": "Planet_8TZ_Specter.png"
+  },
+  "planet-8tz-specter-1": {
+   "name": "Planet 8TZ Specter 1",
+   "file": "planet-8tz-specter-1.png",
+   "source": "Planet_8TZ_Specter 1.png"
   },
   "predator": {
    "name": "Predator",
@@ -643,6 +668,11 @@
    "file": "bio-circuit-head-port.png",
    "source": "Bio_Circuit_Head_Port.png"
   },
+  "blue-dh-sorceror": {
+   "name": "Blue DH Sorceror",
+   "file": "dh-sorceror.png",
+   "source": "DH_Sorceror.png"
+  },
   "code-prisoner-helmet": {
    "name": "Code Prisoner Helmet",
    "file": "code-prisoner-helmet.png",
@@ -704,14 +734,14 @@
    "source": "DH_Samurai Helmet.PNG"
   },
   "dh-sorceror": {
-   "name": "DH Sorceror",
+   "name": "Dark DH Sorceror",
    "file": "dh-sorceror.png",
-   "source": "DH_Sorceror.png"
+   "source": "Dark DH Sorcerer.png"
   },
   "dm-mask": {
    "name": "DM Mask",
    "file": "dm-mask.png",
-   "source": "DØØM_Mask.png"
+   "source": "D\u00d8\u00d8M_Mask.png"
   },
   "e-pharaoh-head": {
    "name": "E Pharaoh Head",
@@ -753,6 +783,11 @@
    "file": "mk200-cyber-plague-vr-mask.png",
    "source": "MK200_Cyber_Plague_VR_Mask.png"
   },
+  "neural-crown": {
+   "name": "Neural Crown",
+   "file": "neural-crown.png",
+   "source": "Neural crown.png"
+  },
   "red-cyborg-helmet": {
    "name": "Red Cyborg Helmet",
    "file": "red-cyborg-helmet.png",
@@ -767,6 +802,11 @@
    "name": "Skull Collector Helmet",
    "file": "skull-collector-helmet.png",
    "source": "Skull_Collector_Helmet.png"
+  },
+  "skulliance-helmet": {
+   "name": "Skulliance Helmet",
+   "file": "skulliance-helmet.png",
+   "source": "Skulliance Helmet.png"
   },
   "steel-viking-helmet": {
    "name": "Steel Viking Helmet",
@@ -810,10 +850,25 @@
    "file": "axe.png",
    "source": "Axe.png"
   },
+  "bio-weapon-strap": {
+   "name": "Bio Weapon Strap",
+   "file": "bio-weapon-strap.png",
+   "source": "Bio Weapon Strap.png"
+  },
   "bioweapon": {
    "name": "Bioweapon",
    "file": "bioweapon.png",
    "source": "Bioweapon.png"
+  },
+  "bone-blaster-3x": {
+   "name": "Bone Blaster 3X",
+   "file": "bone-blaster-3x.png",
+   "source": "Bone Blaster 3X.png"
+  },
+  "bone-blaster-3x-strap": {
+   "name": "Bone Blaster 3X Strap",
+   "file": "bone-blaster-3x-strap.png",
+   "source": "Bone Blaster 3X Strap.png"
   },
   "dh-raider-equipment": {
    "name": "DH Raider Equipment",
@@ -833,7 +888,7 @@
   "electric-morning-star": {
    "name": "Electric Morning Star",
    "file": "electric-morning-star.png",
-   "source": "Electric_Morning_Star.png"
+   "source": "Electric Morning Star.png"
   },
   "lil-fren": {
    "name": "Lil Fren",
@@ -870,6 +925,11 @@
    "file": "scythe-sash.png",
    "source": "Scythe.png"
   },
+  "skull-and-chains": {
+   "name": "Skull and Chains",
+   "file": "electric-morning-star.png",
+   "source": "Electric_Morning_Star.png"
+  },
   "skull-krusher": {
    "name": "Skull Krusher",
    "file": "skull-krusher.png",
@@ -888,9 +948,9 @@
    "source": "Arachnid_Laser_Cannon.png"
   },
   "code-sea-predator": {
-   "name": "Code Sea Predator",
+   "name": "Green Code Sea Predator",
    "file": "code-sea-predator.png",
-   "source": "Code_Sea_Predator.png"
+   "source": "Green Code Sea Predator.png"
   },
   "demon-companion": {
    "name": "Demon Companion",
@@ -916,6 +976,11 @@
    "name": "Silver Isopunk",
    "file": "silver-isopunk.png",
    "source": "Silver_Isopunk.png"
+  },
+  "steel-code-sea-predator": {
+   "name": "Steel Code Sea Predator",
+   "file": "code-sea-predator.png",
+   "source": "Code_Sea_Predator.png"
   },
   "threat-seeker-antenna": {
    "name": "Threat Seeker Antenna",
@@ -968,6 +1033,11 @@
    "name": "DHC2 Comic Cover #4",
    "file": "dhc2-comic-cover-4.png",
    "source": "DHC2 Comic Cover #4.PNG"
+  },
+  "dhc2-comic-cover-5": {
+   "name": "DHC2 Comic Cover #5",
+   "file": "dhc2-comic-cover-5.png",
+   "source": "Comic Cover #5.png"
   },
   "digi-goo-trap": {
    "name": "Digi Goo Trap",

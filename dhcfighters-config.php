@@ -272,8 +272,17 @@ define('DHCF_COMPANION_UNDER', array());
  * CODE SEA PREDATOR JOINED, off the back of the same report that took it out
  * of DHCF_COMPANION_UNDER: it wants the head and the headgear underneath it,
  * and an arm crossing the body in front of it.
+ *
+ * BOTH CODE SEA PREDATORS, since 2026-10-30. The slug used to hold the piece
+ * that is not in the collection; the collection's own one is green and took
+ * the slug over, so the steel piece is now steel-code-sea-predator. The rule
+ * is a property of where the creature sits, and the two are the same creature
+ * recoloured -- measured at 78,903px vs 77,771px over the same bounding box --
+ * so it applies to both. Leaving the old one off would have changed the
+ * layering of every Fighter already wearing it.
  */
-define('DHCF_ARMS_OVER_COMPANION', array('dh-vision-shoulder-cam', 'code-sea-predator'));
+define('DHCF_ARMS_OVER_COMPANION', array('dh-vision-shoulder-cam',
+	'code-sea-predator', 'steel-code-sea-predator'));
 
 /*
  * ARMS THAT STAY BEHIND A COMPANION THAT OTHERWISE DRAWS OVER IT.
@@ -295,7 +304,10 @@ define('DHCF_ARMS_OVER_COMPANION', array('dh-vision-shoulder-cam', 'code-sea-pre
  * by accident.
  */
 define('DHCF_ARMS_UNDER_COMPANION', array(
-	'code-sea-predator' => array('turret-blue-cyborg-limbs'),
+	'code-sea-predator'       => array('turret-blue-cyborg-limbs'),
+	/* Same creature recoloured, same footprint, same exception -- see the note
+	   on DHCF_ARMS_OVER_COMPANION above. */
+	'steel-code-sea-predator' => array('turret-blue-cyborg-limbs'),
 ));
 
 /*
@@ -352,7 +364,7 @@ define('DHCF_EFFECTS_BEHIND_TORSO', array('xlon-s-black-fire-attack'));
  */
 define('DHCF_COVER_EFFECTS', array(
 	'dhc2-comic-cover-1', 'dhc2-comic-cover-2', 'dhc2-comic-cover-3',
-	'dhc2-comic-cover-4',
+	'dhc2-comic-cover-4', 'dhc2-comic-cover-5',
 ));
 
 /*
@@ -448,6 +460,47 @@ function dhcf_armless_mode($arms) {
 }
 
 /*
+ * ONE TORSO BORROWING ANOTHER'S ARMLESS PLATE.
+ *
+ * The armless variants are hand-edited against the layered source, so each one
+ * is real work. Where two torsos are the SAME BODY and differ only in the arms,
+ * the second needs no plate of its own -- the arms are about to be replaced,
+ * which is the only place they differ.
+ *
+ * MEASURED, NOT ASSUMED, because getting this wrong shows a player the wrong
+ * body. Damaged DH Cop #1 against DH Cop, on the 1000px masters:
+ *
+ *   damage (plain minus damaged)       35,389px
+ *     of that inside the arms region   35,389px  (100%)
+ *     of that on the body                   0px
+ *   armless plate outside the damaged torso    0px of 257,001
+ *
+ * So the two are pixel-identical outside the arms, and DH Cop's plate is a
+ * strict subset of the damaged torso -- erasing the arms cannot open a hole
+ * for the background to come through. Reuse here is exact rather than a
+ * compromise. Re-measure before adding a row; a pair that differs anywhere on
+ * the BODY needs its own plate.
+ *
+ * The hybrid restore layer still uses the torso's OWN art, so a single-sided
+ * arm trait puts the damaged arm back, not a clean one.
+ */
+define('DHCF_ARMLESS_ALIAS', array(
+	'damaged-dh-cop-1' => 'dh-cop',
+));
+
+/**
+ * Whose armless plate a torso uses. Itself, unless it borrows one.
+ *
+ * Callers must use this for the FILENAME as well as the lookup: both the
+ * renderer and the sandbox build the path from the slug, so returning only
+ * "yes there is a plate" would send them looking for a file that is not there.
+ */
+function dhcf_armless_slug($torso) {
+	$a = DHCF_ARMLESS_ALIAS;
+	return isset($a[$torso]) ? $a[$torso] : $torso;
+}
+
+/*
  * TETHERED WEAPON HALVES -- two art files that are one weapon.
  *
  * The scythe and the skull krusher were separated by hand into the weapon
@@ -469,10 +522,29 @@ function dhcf_armless_mode($arms) {
  * which reads its mutual pairs from this constant so the two cannot drift.
  */
 define('DHCF_TETHERED', array(
-	'scythe'             => 'scythe-sash',
-	'scythe-sash'        => 'scythe',
-	'skull-krusher'      => 'skull-krusher-sash',
-	'skull-krusher-sash' => 'skull-krusher',
+	'scythe'                => 'scythe-sash',
+	'scythe-sash'           => 'scythe',
+	'skull-krusher'         => 'skull-krusher-sash',
+	'skull-krusher-sash'    => 'skull-krusher',
+	/*
+	 * THE TWO STRAPS, 2026-10-30. Same shape as the sashes: a back weapon and
+	 * the strap it hangs from, neither of which reads alone. Maxingo sent the
+	 * Bio Weapon's strap as a straggler -- the weapon shipped without it and
+	 * has been drawn unsupported since -- and the Bone Blaster was split into
+	 * its two halves in the same pass.
+	 *
+	 * NOT a '-sash' name, which used to be how the back half was told from the
+	 * front; see the COUPLE table in dhc-assembler.php, which now asks the
+	 * front-weapon list instead of the suffix.
+	 *
+	 * EXISTING HOLDERS OF THE BIO WEAPON OWN NO STRAP, so the tether would
+	 * refuse their weapon at save with a shortfall for a trait they were never
+	 * given. dhc-trait-migrate.php grants it to them once.
+	 */
+	'bioweapon'             => 'bio-weapon-strap',
+	'bio-weapon-strap'      => 'bioweapon',
+	'bone-blaster-3x'       => 'bone-blaster-3x-strap',
+	'bone-blaster-3x-strap' => 'bone-blaster-3x',
 ));
 
 /** The other half of a tethered weapon, or '' when a trait stands alone. */
@@ -640,7 +712,14 @@ function dhcf_companion_two_part($slug) {
 define('DHCF_DEATH_ANCHORED', array('bio-circuit-head-port'));
 
 /** Weapons drawn against the torso's own arms; cannot coexist with MOST Arms. */
-define('DHCF_ARMS_EXCLUSIVE', array('plastic-blaster', 'dh-raider-equipment', 'electric-morning-star'));
+/*
+ * THE CHAINS, NOT THE MACE. This listed 'electric-morning-star' when that slug
+ * held the skull-and-chains art. The chains are the piece posed against the
+ * torso's own arms, so they are what an Arms trait leaves unsupported; the real
+ * Electric Morning Star is the mace, a BACK weapon, and arms do not touch it.
+ * Re-pointed when the two were untangled on 2026-10-30.
+ */
+define('DHCF_ARMS_EXCLUSIVE', array('plastic-blaster', 'dh-raider-equipment', 'skull-and-chains'));
 
 /**
  * DOES THIS ARMS TRAIT ACTUALLY CLASH WITH THIS WEAPON?

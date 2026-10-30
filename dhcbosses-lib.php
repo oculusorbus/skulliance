@@ -41,6 +41,13 @@
 require_once __DIR__ . '/dhcfighters-lib.php';
 require_once __DIR__ . '/dhcarena-lib.php';
 require_once __DIR__ . '/lib/week-start.php';
+/* The Siege map puts a player's avatar on every node. avatar_url() lives in
+   avatar-lib.php, which db.php loads for a page -- but this library is also
+   reached from the settle cron and from ajax endpoints that never touch db.php,
+   and the function_exists() guard at the call site turned that into a map with
+   no faces rather than an error. avatar-lib.php has no dependencies of its own,
+   so requiring it here costs nothing and makes the guard belt-and-braces. */
+require_once __DIR__ . '/avatar-lib.php';
 
 /* ---------- the dials -------------------------------------------------------
    Every one of these is a starting guess, deliberately. See dhcbosses.md: the

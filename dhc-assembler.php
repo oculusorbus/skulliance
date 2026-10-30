@@ -113,10 +113,17 @@ $dhc_tab_order = array('torso', 'head', 'background', 'effects1', 'effects2',
 // the skull krusher are now the weapon alone, behind the body, with the sash
 // that carried them a front piece in its own right. The axe lost its torso
 // chains in the same pass -- another weapon already supplies those.
+/*
+ * 2026-10-30: 'electric-morning-star' LEFT THIS LIST and 'skull-and-chains'
+ * took its place. The slug used to hold the chains art; the real Electric
+ * Morning Star is the mace that hangs from them, and a mace is a back weapon.
+ * The two straps join the two sashes as front halves.
+ */
 $dhc_weapon_front = array(
-	'annihilation-belt', 'dh-raider-equipment', 'dh-spike-blaster-1',
-	'electric-morning-star', 'lil-fren', 'mega-taser-cannon-1', 'plastic-blaster',
-	'scythe-sash', 'skull-krusher-sash',
+	'annihilation-belt', 'bio-weapon-strap', 'bone-blaster-3x-strap',
+	'dh-raider-equipment', 'dh-spike-blaster-1',
+	'lil-fren', 'mega-taser-cannon-1', 'plastic-blaster',
+	'scythe-sash', 'skull-and-chains', 'skull-krusher-sash',
 );
 
 // THE COMIC COVERS ARE EFFECTS 2 ONLY.
@@ -232,10 +239,26 @@ foreach ($dhc_slots as $key => $s) {
  * all-or-nothing, so the set can be filled in one at a time and each one starts
  * working the moment it lands. Nothing breaks while they are missing.
  */
+/*
+ * A MAP, NOT A LIST: torso slug => the slug whose plate it uses. Most map to
+ * themselves; a torso in DHCF_ARMLESS_ALIAS borrows another's, and the JS
+ * builds the filename from the value, so a list of "has a plate" would send it
+ * after a file that does not exist.
+ */
 $dhc_noarms = array();
 if ($dhc_base !== '') {
+	$have = array();
 	foreach ((array)glob(__DIR__ . '/' . $dhc_base . '/1000/torso-noarms/*.png') as $f) {
-		$dhc_noarms[] = basename($f, '.png');
+		$have[basename($f, '.png')] = true;
+	}
+	foreach (array_keys($have) as $slug) $dhc_noarms[$slug] = $slug;
+	/* Only for a torso the sandbox actually offers, and only when the plate it
+	   borrows is really on disk -- an alias pointing at missing art would make
+	   the torso vanish rather than fall back to its own. */
+	foreach (DHCF_ARMLESS_ALIAS as $torso => $plate) {
+		if (isset($dhc_traits['torso'][$torso]) && isset($have[$plate])) {
+			$dhc_noarms[$torso] = $plate;
+		}
 	}
 }
 
@@ -698,7 +721,7 @@ a{color:var(--ochre)}
      it -- so the tabs get their own sequence rather than a reshuffled SLOTS. */
   var TAB_ORDER = <?php echo json_encode($dhc_tab_order); ?>;
   var TRAITS = <?php echo json_encode($dhc_traits); ?>;
-  var NOARMS = <?php echo json_encode($dhc_noarms); ?>;   // torsos with a hand-made armless variant
+  var NOARMS = <?php echo json_encode($dhc_noarms, JSON_FORCE_OBJECT); ?>;   // torso slug => whose armless plate it uses
 
   /*
    * PER-TRAIT VERTICAL NUDGE, in pixels of the 1000px master, positive = down.
@@ -849,7 +872,18 @@ a{color:var(--ochre)}
    * put it there -- if you chose it yourself first, it is yours to keep.
    */
   var COUPLE = [
-    { back: 'axe',           front: 'electric-morning-star', mutual: false },
+    /*
+     * TWO BACK WEAPONS HANG THE SAME CHAINS, which is why this is one-way and
+     * the chains are not tethered to either. Picking the axe or the mace
+     * brings the chains; picking the chains commits you to neither, and they
+     * stay yours when whichever brought them is taken off.
+     *
+     * Two rows may share a `front`. Safe because every branch that looks a
+     * couple up by its front half requires `mutual`, and these are not: the
+     * lookup returning the axe's row for the chains changes nothing.
+     */
+    { back: 'axe',                   front: 'skull-and-chains', mutual: false },
+    { back: 'electric-morning-star', front: 'skull-and-chains', mutual: false },
 <?php
     /*
      * The mutual pairs come from DHCF_TETHERED rather than a second hand-kept
@@ -859,7 +893,12 @@ a{color:var(--ochre)}
      * only (the sash is the front) to emit each pair once.
      */
     foreach (DHCF_TETHERED as $back => $front) {
-        if (substr($back, -5) === '-sash') continue;
+        /* Which half is the front is asked of the front-weapon list, not of
+           the name. It used to test for a '-sash' suffix, and the straps added
+           on 2026-10-30 end in '-strap' -- so both directions of each new pair
+           would have been emitted, giving two COUPLE rows per weapon with back
+           and front swapped in one of them. */
+        if (in_array($back, $dhc_weapon_front, true)) continue;
         printf("    { back: %s, front: %s, mutual: true  },
 ",
             json_encode($back), json_encode($front));
@@ -956,10 +995,17 @@ a{color:var(--ochre)}
     return 'full';
   }
 
+  /* NOARMS is a MAP (torso => whose plate it uses), so membership is a key
+     test, not indexOf. One helper because three places ask. */
+  function armlessPlate(torso) {
+    return (torso && Object.prototype.hasOwnProperty.call(NOARMS, torso))
+         ? NOARMS[torso] : '';
+  }
+
   /** Which half of the normal torso to put back, or '' when not applicable. */
   function oneArmKeep() {
     if (armlessMode() !== 'hybrid') return '';
-    if (!sel.torso || NOARMS.indexOf(sel.torso) === -1) return '';   // no armless variant: nothing was removed
+    if (!armlessPlate(sel.torso)) return '';   // no armless variant: nothing was removed
     return ONE_ARM[sel.arms] || '';
   }
 
@@ -1250,10 +1296,11 @@ a{color:var(--ochre)}
       // body, so the torso must keep its own arms. Swapping in the armless
       // variant would strip them and leave the accent reading as the arms --
       // exactly the full-replacement look it is drawn behind to avoid.
-      if (s.key === 'torso' && armlessMode() !== 'none'
-          && NOARMS.indexOf(sel[s.key]) !== -1)
-        dir = 'torso-noarms';
-      var want = url(dir, sel[s.key], 1000);
+      // A borrowed plate has a different FILENAME to the torso using it.
+      var plate = (s.key === 'torso' && armlessMode() !== 'none')
+                ? armlessPlate(sel[s.key]) : '';
+      if (plate) dir = 'torso-noarms';
+      var want = url(dir, plate || sel[s.key], 1000);
       if (el.getAttribute('src') !== want) el.setAttribute('src', want);
       var n = NUDGE[sel[s.key]] || 0;
       el.style.transform = n ? 'translateY(' + (n / 10) + '%)' : '';
@@ -1464,8 +1511,10 @@ a{color:var(--ochre)}
       if (s.key === 'arms' && chosen && armsBehindTorso())
         tag = ' <em style="color:var(--teal);font-style:normal">behind torso &mdash; accent</em>';
       if (s.key === 'torso' && chosen && sel.arms && armlessMode() !== 'none')
-        tag = NOARMS.indexOf(chosen) !== -1
-            ? ' <em style="color:var(--teal);font-style:normal">armless</em>'
+        tag = armlessPlate(chosen)
+            ? ' <em style="color:var(--teal);font-style:normal">armless'
+              + (armlessPlate(chosen) !== chosen ? ' (' + armlessPlate(chosen) + ')' : '')
+              + '</em>'
             : ' <em style="color:var(--ochre);font-style:normal">arms underneath</em>';
       if (hidden[s.key]) li.classList.add('hid');
       /*

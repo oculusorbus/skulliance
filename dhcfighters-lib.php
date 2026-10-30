@@ -1287,8 +1287,13 @@ function dhcf_layers($traits, $webroot = '') {
 		$cat   = dhcf_slot_category($slot);
 		$nudge = isset(DHCF_NUDGE[$slug]) ? (float)DHCF_NUDGE[$slug] / 10 : 0;
 
+		/* A torso may borrow another's armless plate when the two differ only
+		   in the arms -- see DHCF_ARMLESS_ALIAS. The borrowed slug is what the
+		   path is built from, so it has to be resolved here and not just
+		   tested for. */
+		$noarms  = $slot === 'torso' ? dhcf_armless_slug($slug) : $slug;
 		$armless = ($slot === 'torso' && $mode !== 'none' && $webroot !== ''
-		            && is_file($webroot . '/1000/torso-noarms/' . $slug . '.png'));
+		            && is_file($webroot . '/1000/torso-noarms/' . $noarms . '.png'));
 
 		/*
 		 * THE NECK FILL, IMMEDIATELY UNDER THE TORSO.
@@ -1316,9 +1321,12 @@ function dhcf_layers($traits, $webroot = '') {
 		}
 
 		$out[] = array('cat' => $armless ? 'torso-noarms' : $cat,
-		               'slug' => $slug, 'nudge' => $nudge, 'clip' => '');
+		               'slug' => $armless ? $noarms : $slug,
+		               'nudge' => $nudge, 'clip' => '');
 
-		// put back the arm a single-sided trait does not cover
+		/* put back the arm a single-sided trait does not cover -- from the
+		   torso's OWN art, never the borrowed plate's, so a damaged torso
+		   restores its damaged arm */
 		if ($armless && $mode === 'hybrid') {
 			$out[] = array('cat' => 'torso', 'slug' => $slug, 'nudge' => $nudge,
 			               'clip' => DHCF_ONE_ARM[$arms]);

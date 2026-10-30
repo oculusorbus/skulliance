@@ -236,8 +236,8 @@ it shows, it is held and revealed on the next page you open.
 ## Arms and the torso underneath
 
 Every torso is drawn with its own arms, so an Arms trait has to deal with what
-is already there. Each of the 25 torsos now has a hand-made armless version,
-and which one gets used depends on the trait:
+is already there. Each of the 25 torsos has a hand-made armless version, and
+which one gets used depends on the trait:
 
 - Most Arms **replace both limbs**, so the armless torso is swapped in and the
   trait becomes the character's arms.
@@ -250,6 +250,11 @@ and which one gets used depends on the trait:
 
 All Arms traits are in the drop pool. The six that were paused while the
 armless art was made returned on 15 September 2026.
+
+**Damaged DH Cop #1 uses DH Cop's armless version.** The two are the same body
+and the damage is all in the arms - which is the part an Arms trait replaces
+anyway - so there was nothing for a second version to do differently. A
+single-sided arm still puts the damaged arm back, not a clean one.
 
 ---
 
@@ -654,10 +659,16 @@ letting you build something that renders wrongly. Some of what it handles:
 
 - **Weapons belong in front of or behind the body**, never both — each weapon is
   offered in exactly one slot.
-- **Some weapons are two pieces.** The scythe and the skull krusher each hang
-  from a sash; both halves always appear together, and a sash is never a trait
-  on its own. **Drawing either half awards both**, as a single drop — it counts
-  once against your daily limit, and you can build with it immediately.
+- **Some weapons are two pieces.** The scythe and the skull krusher hang from a
+  sash; the Bio Weapon and the Bone Blaster 3X hang from a strap. Both halves
+  always appear together, and a sash or strap is never a trait on its own.
+  **Drawing either half awards both**, as a single drop — it counts once against
+  your daily limit, and you can build with it immediately. Both halves are
+  always the same rarity, because they are one weapon.
+- **The skull and chains hangs from two different weapons.** The Axe and the
+  Electric Morning Star both carry it, so picking either brings the chains
+  along. It is a trait in its own right though: wear it with neither, and it
+  stays on when the weapon that brought it comes off.
 - **Some weapons cannot be combined with Arms traits** — they are drawn against
   the torso's own arms, which an Arms trait replaces.
 - **Effects sit under the head**, so they cross the Fighter without covering the
@@ -681,14 +692,16 @@ letting you build something that renders wrongly. Some of what it handles:
   character, so it nests over it instead. The pair is the exception: the cam
   still covers every other headgear, and this helmet still goes under every
   other companion.
-- **Code Sea Predator sits over the headgear and under the arms.** It wraps the
-  character, so drawn over the top it looked stuck to the outside — but putting
-  it against the body also put it under the head and the headgear, and a large
-  piece like the Alien Predator or the Alien Skull buried the creature's own
-  head. So it stays in front and the **arms** move forward instead, the same
-  fix the DH Vision Shoulder Cam uses. The one exception is the **Turret Blue
-  Cyborg Limbs**, which are bulky enough to swallow it rather than cross in
-  front of it — the creature draws over those.
+- **Both Code Sea Predators sit over the headgear and under the arms.** The
+  creature wraps the character, so drawn over the top it looked stuck to the
+  outside - but putting it against the body also put it under the head and the
+  headgear, and a large piece like the Alien Predator or the Alien Skull buried
+  the creature's own head. So it stays in front and the **arms** move forward
+  instead, the same fix the DH Vision Shoulder Cam uses. The one exception is
+  the **Turret Blue Cyborg Limbs**, which are bulky enough to swallow it rather
+  than cross in front of it, so the creature keeps the front against those
+  specifically. The green one is the collection's own; the steel one is a
+  variant that never appeared in it. Same creature, same rule.
 - **The DH Vision Shoulder Cam is bolted on, so the arms pass in front of it**
   — but it still needs to be above the head and the headgear, because headgear
   drawn over a shoulder mount looks broken. Nothing in a single stack of layers
