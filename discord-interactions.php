@@ -31,8 +31,60 @@ ini_set('display_errors', '0');
 ini_set('display_startup_errors', '0');
 ini_set('log_errors', '1');
 
+/*
+ * ---------------------------------------------------------------------------
+ * WHERE THE THREE SECONDS WENT.
+ *
+ * Discord gives an interaction a 3000ms budget and shows the member "Skull Bot
+ * didn't respond in time" past it -- reported on the FIRST click, the one that
+ * makes no Discord API call at all and simply renders a question.
+ *
+ * Measured on a dev machine, that path is about 25ms of work end to end: 2ms
+ * of includes (no database connection anywhere in the chain -- checked) and
+ * ~20ms for sodium_compat to lazy-load its 15 files and verify the Ed25519
+ * signature, which is this server's only option since no PHP build here has
+ * ext/sodium. Even ten times slower on a loaded shared host that is ~250ms.
+ * So the work is not the problem and there is nothing here worth optimising.
+ *
+ * Which leaves the host, and this logs enough to tell the two apart.
+ * REQUEST_TIME_FLOAT is when PHP received the request, so:
+ *
+ *   total LARGE   -> PHP itself is slow: CPU throttling, IO wait, opcache
+ *                    cold. The marks say which stage.
+ *   total SMALL   -> the time went BEFORE PHP ever started, in Apache
+ *     and a timeout      accepting the connection -- which on CloudLinux is
+ *     anyway            the LVE entry-process or concurrent-connection cap,
+ *                       visible in cPanel under Resource Usage. Nothing in
+ *                       this file can fix that and no amount of reading it
+ *                       will show it.
+ *
+ * Only logged when it is actually slow, so a healthy endpoint stays silent.
+ * NEVER echoed: display_errors is off above for exactly this reason, and a
+ * byte of timing in the body corrupts the JSON and breaks the interaction.
+ * ---------------------------------------------------------------------------
+ */
+if (!defined('SK_SLOW_MS')) define('SK_SLOW_MS', 1200);
+$sk_marks = array();
+function sk_mark($stage) {
+	global $sk_marks;
+	$t0 = isset($_SERVER['REQUEST_TIME_FLOAT']) ? (float)$_SERVER['REQUEST_TIME_FLOAT'] : null;
+	if ($t0 === null) return;
+	$sk_marks[] = $stage . '=' . round((microtime(true) - $t0) * 1000) . 'ms';
+}
+register_shutdown_function(function () {
+	global $sk_marks;
+	$t0 = isset($_SERVER['REQUEST_TIME_FLOAT']) ? (float)$_SERVER['REQUEST_TIME_FLOAT'] : null;
+	if ($t0 === null) return;
+	$ms = (microtime(true) - $t0) * 1000;
+	if ($ms < SK_SLOW_MS) return;
+	error_log(sprintf(
+		'discord-interactions SLOW %.0fms (Discord gives 3000ms) marks: %s',
+		$ms, $sk_marks ? implode(' ', $sk_marks) : 'none'));
+});
+
 require_once __DIR__ . '/discord-rules-lib.php';
 require_once __DIR__ . '/role.php';       // assignRole()
+sk_mark('includes');
 
 // ---------------------------------------------------------------------------
 // 1. Verify the signature.
@@ -112,6 +164,7 @@ try {
 if (!$sk_signed_ok) {
 	sk_reject('signature did not verify');
 }
+sk_mark('verified');
 
 // ---------------------------------------------------------------------------
 // 2. Respond.
@@ -191,6 +244,7 @@ if (SK_REQUIRE_VISITOR && !in_array($role_visitor, $user_roles, true)) {
 // SK_BTN_START is unchanged, so the posted rules message does not need
 // reposting when the questions behind it change.
 if ($custom_id === SK_BTN_START) {
+	sk_mark('picker');
 	sk_respond(['type' => 4, 'data' => sk_chain_payload()]);
 }
 
@@ -272,7 +326,9 @@ if (strpos($custom_id, 'sk_a:') === 0) {
 	// Add first, then remove. If the second call fails they're left holding
 	// both roles, which is visibly odd but harmless; the other order would
 	// strip Visitor and leave them holding nothing at all.
+	sk_mark('grading-done');
 	$granted = assignRole($user_id, $role_candidate, '', $discord_guild_id);
+	sk_mark('role-added');
 	if (!$granted) {
 		// assignRole() has already logged and alerted with the specific
 		// cause. Don't remove Visitor -- leaving them exactly as they were
@@ -280,6 +336,7 @@ if (strpos($custom_id, 'sk_a:') === 0) {
 		sk_replace("Something went wrong granting your role. A moderator has been notified — please try again shortly.");
 	}
 	assignRole($user_id, $role_visitor, 'delete', $discord_guild_id);
+	sk_mark('visitor-removed');
 
 	// No cleanup step here, unlike BotGhost. Every message in this flow is
 	// ephemeral: nobody but the clicker ever saw the questions or this

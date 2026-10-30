@@ -208,5 +208,33 @@ ok(strpos($int, 'sk_is_correct(') !== false,
  . 'probably being compared as a string and every multi-answer question rejects half its '
  . 'right answers');
 
+echo "\ntiming never reaches the response body\n";
+/*
+ * The file's own header is explicit: a single stray byte printed here
+ * corrupts the JSON and Discord shows the member an error. Timing added to
+ * chase a 3-second budget must not become the thing that breaks the reply.
+ */
+ok(strpos($int, 'register_shutdown_function') !== false,
+   'nothing records how long a slow interaction took, so "did not respond in time" stays '
+ . 'unmeasurable');
+$sd = substr($int, strpos($int, 'register_shutdown_function'));
+$sd = substr($sd, 0, strpos($sd, "\n});") + 4);
+ok(strpos($sd, 'error_log') !== false, 'the slow-request report does not go to the log');
+/* Word-boundaried: a bare strpos for 'printf(' also matches the 'sprintf('
+   inside error_log(sprintf(...)), which is correct code -- the first version
+   of this check failed the very thing it is meant to allow. */
+foreach (array('echo', 'print', 'printf', 'var_dump', 'print_r') as $bad) {
+	ok(preg_match('/(?<![a-z_])' . preg_quote($bad, '/') . '\s*\(?/i', $sd) !== 1,
+	   "the shutdown handler uses $bad, which writes into the response body and corrupts the JSON");
+}
+ok(strpos($sd, 'SK_SLOW_MS') !== false,
+   'the handler logs every request rather than only the slow ones');
+/* sk_mark() is called on paths that exit early, so it has to exist before
+   the first one can reach it -- defined above the includes. */
+ok(strpos($int, 'function sk_mark(') < strpos($int, "require_once __DIR__ . '/discord-rules-lib.php'"),
+   'sk_mark() is defined after the includes it is meant to time');
+ok(substr_count($int, 'sk_mark(') >= 5,
+   'too few timing marks to tell which stage is slow');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all Discord rules checks passed\n");
 exit($fail ? 1 : 0);
