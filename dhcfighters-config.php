@@ -545,6 +545,30 @@ define('DHCF_TETHERED', array(
 	'bio-weapon-strap'      => 'bioweapon',
 	'bone-blaster-3x'       => 'bone-blaster-3x-strap',
 	'bone-blaster-3x-strap' => 'bone-blaster-3x',
+	/*
+	 * THE THREE MAXINGO DELIVERED PRE-SPLIT, and which were never tethered
+	 * because nobody separated them by hand and so nobody thought to.
+	 *
+	 * Each arrived as two files, `X.png` and `X 1.png`, and the suffix is the
+	 * only thing marking them as halves -- LAYER-MANIFEST.json has recorded
+	 * all three as composite pairs since the first pass, and the front/back
+	 * slot partition has always split them correctly. Only the tether was
+	 * missing, so the draw handed out halves on their own and the assembler
+	 * let a bandolier be worn with no gun on the back.
+	 *
+	 * ON CHAIN THERE IS ONE NAME PER WEAPON: DH Spike Blaster (1 Fighter),
+	 * Lil Fren (10), Mega Taser Cannon (3). Weapon is a single slot, so a
+	 * strap by itself was never representable in the collection -- confirmed
+	 * independently by the owner against the minted set. Both halves already
+	 * score the same tier, because variants() in gen-rarity.py strips the
+	 * trailing 1 and resolves them to that one name.
+	 */
+	'dh-spike-blaster'      => 'dh-spike-blaster-1',
+	'dh-spike-blaster-1'    => 'dh-spike-blaster',
+	'lil-fren-1'            => 'lil-fren',
+	'lil-fren'              => 'lil-fren-1',
+	'mega-taser-cannon'     => 'mega-taser-cannon-1',
+	'mega-taser-cannon-1'   => 'mega-taser-cannon',
 ));
 
 /** The other half of a tethered weapon, or '' when a trait stands alone. */

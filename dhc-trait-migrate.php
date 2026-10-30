@@ -6,8 +6,9 @@
  *   php dhc-trait-migrate.php          what it WOULD change
  *   php dhc-trait-migrate.php --run    actually change it
  *
- * TWO THINGS, both one-off, both consequences of art arriving later than the
- * slug that was guessing at it.
+ * THREE PHASES. The first two are one-off repairs from the 2026-10-30
+ * delivery; the third is general and worth re-running whenever a pair is
+ * tethered.
  *
  * 1. THREE SLUGS POINTED AT THE WRONG ART. Maxingo's delivery settled what
  *    the collection actually contains, and in three cases the piece we had
@@ -27,21 +28,28 @@
  *    under, and no assembled Fighter changes appearance. All three move to a
  *    rarer tier, never a commoner one.
  *
- * 2. THE BIO WEAPON SHIPPED WITHOUT ITS STRAP. The strap arrived in this
- *    delivery and the two are now tethered (DHCF_TETHERED), which means the
- *    assembler places both or neither. A player holding the weapon and no
- *    strap would have their Fighter refused at save for a shortfall on a
- *    trait they were never given -- so every bioweapon already in the ledger
- *    gets its strap here, one each.
+ * 2. HALVES HANDED OUT ON THEIR OWN. A tethered pair is one weapon drawn in
+ *    two files, and the draw awards both together -- but only since the pair
+ *    was tethered. Four pairs have gone untethered at some point and the
+ *    ledger carries the orphans:
  *
- *    Bone Blaster 3X needs no equivalent: both halves are new in this same
- *    delivery, so nobody holds one without the other.
+ *      bioweapon / bio-weapon-strap  the strap shipped late, 2026-10-30.
+ *      dh-spike-blaster, lil-fren and mega-taser-cannon  Maxingo delivered
+ *        these pre-split as `X.png` and `X 1.png`. Nobody separated them by
+ *        hand, so nobody thought to tether them, and the draw handed out
+ *        halves for as long as they have existed. A player could wear a
+ *        bandolier with no gun behind it.
+ *
+ *    Now that they are tethered the assembler places both or neither, so a
+ *    player short of one half cannot build with the other: the selection
+ *    pulls the partner in and the save refuses it as a trait they never had.
+ *    Phase 3 settles that in both directions.
  *
  * DRY RUN BY DEFAULT. Nothing is written without --run.
  *
- * SAFE TO RE-RUN. The renames match only the OLD slug, which no longer
- * exists afterwards, and the backfill awards the difference between weapons
- * held and straps held, which is zero on a second pass.
+ * SAFE TO RE-RUN, and phase 3 is MEANT to be. The renames match only the OLD
+ * slug, which no longer exists afterwards; the backfill awards the difference
+ * between the two halves held, which is zero once it has run.
  */
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 error_reporting(E_ALL & ~E_DEPRECATED);
@@ -124,57 +132,92 @@ while ($res && ($row = $res->fetch_assoc())) {
 printf("  %d Fighter(s), %d trait field(s)%s\n\n", $touched, $fields, $run ? ' rewritten' : ' would be rewritten');
 
 /* ------------------------------------------------------------------ *
- * 3. THE MISSING STRAP. One per Bio Weapon held, and the difference only --
- *    a player who somehow already has straps is topped up, not doubled.
+ * 3. ORPHANED HALVES. Every tethered pair, both directions.
+ *
+ * A tethered pair is one weapon drawn in two files, and the draw awards both
+ * halves together -- but only since the pair was tethered. Anything handed
+ * out before that is a half on its own: a bandolier with no gun behind it,
+ * or a gun with nothing holding it on.
+ *
+ *   bioweapon / bio-weapon-strap   the strap shipped late, 2026-10-30
+ *   dh-spike-blaster, lil-fren and mega-taser-cannon   Maxingo delivered
+ *     these pre-split as `X.png` and `X 1.png`, and nobody tethered them
+ *     because nobody had to separate them by hand. The draw handed out
+ *     halves for as long as they have existed.
+ *
+ * NOT HARDCODED TO A PAIR, because this is the third time it has been
+ * needed. It walks DHCF_TETHERED, so tethering a new pair and running this
+ * is the whole repair.
+ *
+ * BOTH DIRECTIONS. The earlier version only granted straps to weapon
+ * holders, which was right for the Bio Weapon because the strap was the new
+ * art. These three have been dropping as either half, so a player can be
+ * short of either one.
+ *
+ * COUNTS, NOT PRESENCE: a player holding two guns and one strap is owed a
+ * second strap, or they can build one Fighter and not the other.
  * ------------------------------------------------------------------ */
-echo "bio-weapon-strap backfill\n";
-$WEAPON = 'bioweapon';
-$STRAP  = dhcf_tethered_partner($WEAPON);
-if ($STRAP === '') {
-	fwrite(STDERR, "  bioweapon has no tethered partner -- is DHCF_TETHERED loaded?\n");
-	exit(1);
-}
-$info = dhcf_trait_info('weapon', $STRAP);
-if (!$info) {
-	fwrite(STDERR, "  no rarity row for weapon/$STRAP -- run dhc/gen-rarity.py first\n");
-	exit(1);
-}
+echo "orphaned tethered halves\n";
 
-$held = array();
-$res = $conn->query(sprintf("SELECT user_id,
-                                    SUM(slug = '%s') AS w,
-                                    SUM(slug = '%s') AS s
-                               FROM dhc_trait_drops
-                              WHERE category = 'weapon' AND slug IN ('%s', '%s')
-                           GROUP BY user_id",
-	$conn->real_escape_string($WEAPON), $conn->real_escape_string($STRAP),
-	$conn->real_escape_string($WEAPON), $conn->real_escape_string($STRAP)));
-while ($res && ($row = $res->fetch_assoc())) {
-	$owe = (int)$row['w'] - (int)$row['s'];
-	if ($owe > 0) $held[(int)$row['user_id']] = $owe;
-}
+/* The category a slug lives in, read off the rarity table rather than
+   assumed to be 'weapon' -- nothing about a tether says it must be. */
+$rar = dhcf_rarity();
+$catOf = array();
+foreach ($rar as $cat => $rows) foreach ($rows as $slug => $_) $catOf[$slug] = $cat;
 
-if (!$held) {
-	echo "  nothing outstanding\n";
-} else {
-	$total = 0;
-	foreach ($held as $uid => $owe) {
+$pairs = array();
+foreach (DHCF_TETHERED as $x => $y) {
+	$k = $x < $y ? "$x|$y" : "$y|$x";
+	$pairs[$k] = true;
+}
+$grandTotal = 0; $people = array();
+foreach (array_keys($pairs) as $k) {
+	list($x, $y) = explode('|', $k);
+	if (!isset($catOf[$x], $catOf[$y])) {
+		fwrite(STDERR, "  no rarity row for $x or $y -- run dhc/gen-rarity.py first\n");
+		exit(1);
+	}
+	$cat = $catOf[$x];
+	$res = $conn->query(sprintf(
+		"SELECT user_id, SUM(slug = '%s') AS a, SUM(slug = '%s') AS b
+		   FROM dhc_trait_drops
+		  WHERE category = '%s' AND slug IN ('%s', '%s')
+		  GROUP BY user_id",
+		$conn->real_escape_string($x), $conn->real_escape_string($y),
+		$conn->real_escape_string($cat),
+		$conn->real_escape_string($x), $conn->real_escape_string($y)));
+	$owed = array();
+	while ($res && ($row = $res->fetch_assoc())) {
+		$d = (int)$row['a'] - (int)$row['b'];
+		if ($d === 0) continue;
+		$owed[(int)$row['user_id']] = $d > 0 ? array($y, $d) : array($x, -$d);
+	}
+	if (!$owed) { printf("  %-24s / %-24s nothing outstanding\n", $x, $y); continue; }
+	$n = 0;
+	foreach ($owed as $uid => $g) $n += $g[1];
+	printf("  %-24s / %-24s %d piece(s) for %d player(s)\n", $x, $y, $n, count($owed));
+	foreach ($owed as $uid => $g) {
+		list($slug, $cnt) = $g;
 		$nm = '';
 		$ur = $conn->query('SELECT username FROM users WHERE id = ' . (int)$uid);
 		if ($ur && ($ux = $ur->fetch_assoc())) $nm = (string)$ux['username'];
-		printf("  user %-6d %-22s %d strap(s)\n", $uid, substr($nm, 0, 22), $owe);
-		$total += $owe;
+		printf("      user %-6d %-22s %d x %s\n", $uid, substr($nm, 0, 22), $cnt, $slug);
+		$people[$uid] = true;
+		$grandTotal += $cnt;
 		if (!$run) continue;
-		for ($i = 0; $i < $owe; $i++) {
+		$info = dhcf_trait_info($cat, $slug);
+		if (!$info) { fwrite(STDERR, "  no rarity row for $cat/$slug\n"); exit(1); }
+		for ($i = 0; $i < $cnt; $i++) {
 			/* The same call the draw makes for a tethered partner, so the row
 			   is shaped identically -- except that it does not announce. A
-			   backfill is not news, and one Discord post per strap for art the
-			   player has effectively been holding all along is noise. */
-			dhcf_commit_drop($conn, (int)$uid, 'weapon', $STRAP, $info,
-				'backfill', DHCF_PAIRED_MARK . $WEAPON, false);
+			   backfill is not news, and one post per piece for art the player
+			   has effectively been holding all along is noise. */
+			dhcf_commit_drop($conn, (int)$uid, $cat, $slug, $info,
+				'backfill', DHCF_PAIRED_MARK . dhcf_tethered_partner($slug), false);
 		}
 	}
-	printf("  %d strap(s) for %d player(s)%s\n", $total, count($held), $run ? ' awarded' : ' would be awarded');
 }
+printf("\n  %d piece(s) for %d player(s)%s\n",
+	$grandTotal, count($people), $run ? ' awarded' : ' would be awarded');
 
 echo $run ? "\nDone.\n" : "\nDry run. Re-run with --run to apply.\n";

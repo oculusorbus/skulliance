@@ -514,6 +514,39 @@ foreach ($emitted as $e) {
 	ok(!in_array($e[0], $front, true) && in_array($e[1], $front, true),
 	   "COUPLE row back={$e[0]} front={$e[1]} has the halves the wrong way round");
 }
+/*
+ * THE MANIFEST AND THE CONSTANT MUST NAME THE SAME PAIRS.
+ *
+ * This is the check that was missing. LAYER-MANIFEST.json has recorded all
+ * seven composite weapons since the first pass -- including dh-spike-blaster,
+ * lil-fren and mega-taser-cannon -- while DHCF_TETHERED enforced four. The
+ * three Maxingo delivered PRE-SPLIT as `X.png` and `X 1.png` were never
+ * tethered, because the pairs that got tethered were the ones somebody had to
+ * separate by hand, and separating them was the moment you noticed. So the
+ * draw handed out lone bandoliers for as long as those weapons have existed,
+ * and the assembler let one be worn with no gun behind it. Reported by the
+ * owner, not by anything here.
+ *
+ * The manifest is the decision record and the constant is what runs, so a
+ * pair in one and not the other is a decision nobody implemented.
+ */
+$manFile = __DIR__ . '/dhc/LAYER-MANIFEST.json';
+if (is_file($manFile)) {
+	$man = json_decode((string)file_get_contents($manFile), true);
+	$manPairs = array();
+	foreach ((array)($man['composite_weapons']['pairs'] ?? array()) as $pr) {
+		if (count($pr) !== 2) continue;
+		$manPairs[$pr[0] < $pr[1] ? "$pr[0]|$pr[1]" : "$pr[1]|$pr[0]"] = true;
+	}
+	ok((bool)$manPairs, 'no composite_weapons.pairs in LAYER-MANIFEST.json to check against');
+	$onlyMan = array_diff_key($manPairs, $pairs);
+	$onlyCfg = array_diff_key($pairs, $manPairs);
+	ok(!$onlyMan, 'LAYER-MANIFEST calls these composite weapons but DHCF_TETHERED does not tether '
+	            . 'them, so the draw hands out halves on their own: ' . implode(', ', array_keys($onlyMan)));
+	ok(!$onlyCfg, 'DHCF_TETHERED tethers these but LAYER-MANIFEST does not record them as composite '
+	            . 'weapons, so the decision record is behind the code: ' . implode(', ', array_keys($onlyCfg)));
+}
+
 /* Both halves of a pair must score the same tier. They are one weapon, and the
    draw awards them together -- a legendary weapon arriving with a common strap
    would make the pair's real rate the commoner of the two. Guaranteed today by

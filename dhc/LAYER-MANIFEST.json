@@ -348,8 +348,12 @@
    "skull-krusher": "skull-krusher-sash",
    "bioweapon": "bio-weapon-strap",
    "bone-blaster-3x": "bone-blaster-3x-strap",
+   "dh-spike-blaster": "dh-spike-blaster-1",
+   "lil-fren-1": "lil-fren",
+   "mega-taser-cannon": "mega-taser-cannon-1",
    "rule": "Two halves of one weapon. Picking either brings both, removing either removes both. A sash or strap is never a trait on its own, and the DROP awards both halves together.",
-   "backfill": "Holders of the Bio Weapon owned no strap, so the tether would have refused their Fighter at save for a trait they were never given. dhc-trait-migrate.php grants one strap per weapon held, once."
+   "backfill": "A half handed out before its pair was tethered is an orphan the player cannot build with. dhc-trait-migrate.php walks DHCF_TETHERED and grants the missing partner, in both directions, and is meant to be re-run whenever a pair is added.",
+   "why_three_were_missed": "Maxingo delivered dh-spike-blaster, lil-fren and mega-taser-cannon PRE-SPLIT as `X.png` and `X 1.png`. The hand-separated pairs got tethered because separating them was the moment you noticed; these needed no separating, so nobody did. composite_weapons.pairs has recorded all three since the first pass and the front/back partition has always been right -- only the tether was missing, for as long as they have existed. On chain there is ONE name per weapon (DH Spike Blaster 1, Lil Fren 10, Mega Taser Cannon 3), so a strap alone was never representable; confirmed against the minted set by the owner."
   },
   "reported_by": "Oculus Orbus, sandbox testing; untangled with Maxingo 2026-10-30"
  },

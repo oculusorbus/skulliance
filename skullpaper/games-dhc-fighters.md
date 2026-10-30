@@ -659,12 +659,18 @@ letting you build something that renders wrongly. Some of what it handles:
 
 - **Weapons belong in front of or behind the body**, never both — each weapon is
   offered in exactly one slot.
-- **Some weapons are two pieces.** The scythe and the skull krusher hang from a
-  sash; the Bio Weapon and the Bone Blaster 3X hang from a strap. Both halves
-  always appear together, and a sash or strap is never a trait on its own.
-  **Drawing either half awards both**, as a single drop — it counts once against
-  your daily limit, and you can build with it immediately. Both halves are
-  always the same rarity, because they are one weapon.
+- **Seven weapons are two pieces.** The scythe and the skull krusher hang from
+  a sash; the Bio Weapon, the Bone Blaster 3X, the DH Spike Blaster, Lil Fren
+  and the Mega Taser Cannon hang from a strap. Both halves always appear
+  together, and a sash or strap is never a trait on its own. **Drawing either
+  half awards both**, as a single drop — it counts once against your daily
+  limit, and you can build with it immediately. Both halves are always the same
+  rarity, because they are one weapon.
+
+  Three of those seven were not linked until 30 October 2026, so straps for the
+  Spike Blaster, Lil Fren and the Mega Taser Cannon had been dropping on their
+  own. If you were holding a half, the other half has been added to your
+  traits. Fighters you already built are untouched.
 - **The skull and chains hangs from two different weapons.** The Axe and the
   Electric Morning Star both carry it, so picking either brings the chains
   along. It is a trait in its own right though: wear it with neither, and it
