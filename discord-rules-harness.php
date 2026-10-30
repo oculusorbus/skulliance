@@ -236,5 +236,46 @@ ok(strpos($int, 'function sk_mark(') < strpos($int, "require_once __DIR__ . '/di
 ok(substr_count($int, 'sk_mark(') >= 5,
    'too few timing marks to tell which stage is slow');
 
+echo "\nthe reply is JSON and nothing but JSON\n";
+/*
+ * THE BUG THAT COST AN AFTERNOON. php.ini here has date.timezone empty, so
+ * PHP emits "PHP Startup: Invalid date.timezone value ''" when a worker
+ * starts. A startup warning is written BEFORE the script is parsed, so the
+ * ini_set('display_errors','0') at the top of the endpoint cannot stop it --
+ * it landed in front of the JSON and Discord could not read the reply. The
+ * member saw "didn't respond in time"; every measurement said the endpoint
+ * was fast and healthy, because it was.
+ *
+ * Intermittent, too: a startup warning fires per worker, not per request, so
+ * the first click failed and the retry worked.
+ */
+ok(strpos($int, 'ob_start()') !== false,
+   'the endpoint does not take over the output buffer, so anything PHP printed before it '
+ . 'ran rides in front of the JSON and Discord cannot parse the reply');
+$respond = substr($int, strpos($int, 'function sk_respond'));
+$respond = substr($respond, 0, strpos($respond, "\n}") + 2);
+ok(strpos($respond, 'ob_get_clean') !== false,
+   'sk_respond() emits JSON without first clearing the buffer, so a stray notice from any '
+ . 'include is sent with it');
+ok(strpos($respond, 'ob_get_clean') < strpos($respond, 'echo json_encode'),
+   'sk_respond() clears the buffer AFTER writing the JSON, which throws away the reply '
+ . 'rather than the warning');
+ok(strpos($respond, 'error_log') !== false,
+   'stray output is discarded silently, so the thing that broke the gate for an afternoon '
+ . 'would leave no trace the next time');
+$reject = substr($int, strpos($int, 'function sk_reject'));
+$reject = substr($reject, 0, strpos($reject, "\n}") + 2);
+ok(strpos($reject, 'ob_end_clean') !== false,
+   'sk_reject() does not clear the buffer -- Discord checks for a CLEAN 401 when the '
+ . 'endpoint URL is saved, so a warning in front of it fails validation too');
+/* And the source fix, so nobody removes it thinking it is unused. */
+/* The ASSIGNMENT, not the word: the comment above it explains the bug at
+   length and mentions date.timezone five times, so a bare strpos passes
+   even with the setting deleted. Lines starting ';' are comments in ini. */
+$ini = @parse_ini_file(__DIR__ . '/.user.ini');
+ok(is_array($ini) && !empty($ini['date.timezone']),
+   '.user.ini does not SET date.timezone, which is where the stray startup warning that '
+ . 'broke the gate comes from');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all Discord rules checks passed\n");
 exit($fail ? 1 : 0);

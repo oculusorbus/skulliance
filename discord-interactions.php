@@ -33,6 +33,51 @@ ini_set('log_errors', '1');
 
 /*
  * ---------------------------------------------------------------------------
+ * A PHP STARTUP WARNING IS PRINTED BEFORE THIS FILE EXISTS.
+ *
+ * The two ini_set() lines above cannot stop one. "PHP Startup" errors are
+ * emitted while PHP initialises its modules, which is before the script is
+ * even parsed -- so with display_errors on in php.ini the warning is written
+ * ahead of our JSON and the response Discord receives is:
+ *
+ *     <br /><b>Warning</b>: PHP Startup: ... <br />{"type":4,...}
+ *
+ * which is not JSON. Discord reports that to the member as "Skull Bot didn't
+ * respond in time", which is why this looked like a timeout for so long while
+ * every measurement said the endpoint was fast.
+ *
+ * THE ONE THIS SERVER EMITS is `Invalid date.timezone value ''`, logged at
+ * 18:10:16 and 18:11:10 on 2026-10-30, the exact minutes a member was failing
+ * to get in. The real fix is date.timezone in php.ini (cPanel's MultiPHP INI
+ * Editor) -- php.ini is not in this repository and a version switch replaces
+ * it, so it cannot be fixed from here and must not be relied on either.
+ *
+ * AND IT IS INTERMITTENT, which is what made it so hard to see: a startup
+ * warning fires when a new PHP worker starts, not on every request. The first
+ * click after a worker spins up is corrupted; the retry lands on the warm
+ * worker and works. "I had to click a couple of times" is that, exactly.
+ *
+ * So the buffer is taken over here and discarded at the point of reply. Any
+ * output already produced is captured where it can be thrown away instead of
+ * sent -- and LOGGED, because output arriving before our own first statement
+ * is worth knowing about rather than silently swallowing.
+ * ---------------------------------------------------------------------------
+ */
+while (ob_get_level() > 0) {
+	/* Anything PHP buffered before us -- a startup warning lands here when
+	   output_buffering is on, which is the usual LiteSpeed default. */
+	$sk_pre = ob_get_clean();
+	if ($sk_pre !== false && trim($sk_pre) !== '') {
+		error_log('discord-interactions: DISCARDED ' . strlen($sk_pre)
+			. ' bytes of output produced before the script ran -- this would have '
+			. 'corrupted the JSON. Fix date.timezone in php.ini. First 200: '
+			. substr(str_replace("\n", ' ', $sk_pre), 0, 200));
+	}
+}
+ob_start();
+
+/*
+ * ---------------------------------------------------------------------------
  * WHERE THE THREE SECONDS WENT.
  *
  * Discord gives an interaction a 3000ms budget and shows the member "Skull Bot
@@ -104,6 +149,9 @@ $signature = $_SERVER['HTTP_X_SIGNATURE_ED25519'] ?? '';
 $timestamp = $_SERVER['HTTP_X_SIGNATURE_TIMESTAMP'] ?? '';
 
 function sk_reject($why) {
+	/* Same reasoning as sk_respond(): Discord checks for a clean 401 when the
+	   endpoint URL is saved, and a warning in front of it fails that too. */
+	while (ob_get_level() > 0) ob_end_clean();
 	http_response_code(401);
 	error_log('discord-interactions: rejected -- ' . $why);
 	exit('invalid request signature');
@@ -173,6 +221,21 @@ $data = json_decode($raw, true);
 if (!is_array($data)) { http_response_code(400); exit; }
 
 function sk_respond(array $payload) {
+	/*
+	 * EVERY REPLY LEAVES FROM HERE, so this is the one place that can
+	 * guarantee the body is nothing but JSON. A notice raised by any include
+	 * between startup and now would otherwise ride along in front of it.
+	 */
+	$stray = '';
+	while (ob_get_level() > 0) {
+		$chunk = ob_get_clean();
+		if ($chunk !== false) $stray = $chunk . $stray;
+	}
+	if (trim($stray) !== '') {
+		error_log('discord-interactions: DISCARDED ' . strlen($stray)
+			. ' bytes of stray output before the reply -- it would have corrupted '
+			. 'the JSON. First 200: ' . substr(str_replace("\n", ' ', $stray), 0, 200));
+	}
 	header('Content-Type: application/json');
 	echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 	exit;
