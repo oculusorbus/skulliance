@@ -212,6 +212,38 @@ ok(strpos($pg, "REQUEST_METHOD'] === 'POST'") !== false,
    'the roster refresh is reachable by GET, so an <img src> can fire it');
 ok(strpos($pg, 'header(\'Location: admin-welcome.php\');') !== false,
    'the refresh does not redirect, so reloading repeats it');
+/*
+ * THE THREE TOTALS DO NOT ADD UP TO THE ARRIVALS, AND THAT MUST BE SAID.
+ * Somebody in the server whose roles we cannot read belongs to no group,
+ * so while the roster has no roles the only bucket that can fill is
+ * Left -- 98 of 98 read as "left", including someone welcomed that
+ * morning, and it looked like a broken lookup. It was not; it was the
+ * page declining to say what it could not see.
+ */
+/* The COUNTING, not the array it counts into: a bare search for
+   $aw_skip passes on the initialiser and on the display block, so it
+   kept passing with the two increments deleted. */
+ok(strpos($pg, "\$aw_skip['noroles']++") !== false,
+   'the page does not count the arrivals it put in no group, so three zeroes look like a '
+ . 'broken lookup rather than a roster with no roles in it');
+ok(strpos($pg, "\$aw_skip['settled']++") !== false,
+   'the page does not count the arrivals who got further than Candidate');
+ok(strpos($pg, 'cannot say what roles they hold') !== false,
+   'the page never explains why the group totals are smaller than the arrivals read');
+ok(strpos($pg, '$aw_found') !== false,
+   'the page does not say how many arrivals it read, so there is nothing to compare the '
+ . 'group totals against');
+ok(strpos($pg, "count((array)\$aw_cache['ids'])") !== false,
+   'the page does not show how big the roster is -- a fetch that got one page of a large '
+ . 'server looks healthy until everybody reads as having left');
+/* The two reasons for falling through mean opposite things. */
+/* And told apart BY THE RIGHT TEST. Merging them into one counter is
+   the failure that matters -- a gap in what we know would then read as
+   good news. */
+ok(preg_match('/\$roles === null\)\s*\$aw_skip/', $pg) === 1,
+   'a member whose roles we cannot read and a member who is doing fine are counted '
+ . 'together, so a gap in what we know is indistinguishable from good news');
+
 /* Every reason the list can be empty has to be on the page. */
 foreach (array('Server Members Intent' => 'the intent that makes the roster possible',
                'Refresh roster'        => 'the button that fixes an empty roster',

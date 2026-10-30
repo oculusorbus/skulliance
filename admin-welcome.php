@@ -97,15 +97,33 @@ if (!empty($aw_arr['people'])) {
 	}
 }
 
-/* Sorted into the three buckets, newest arrival first within each. */
+/*
+ * Sorted into the three buckets, newest arrival first within each.
+ *
+ * AND COUNTED AS THEY FALL THROUGH, because the three totals do NOT add
+ * up to the number of arrivals and that looked like a bug when it was
+ * not. Somebody in the server whose roles we cannot read belongs to no
+ * group, so while the roster has no roles the ONLY bucket that can fill
+ * is Left -- which reads as "everybody left" and is really "we cannot
+ * see anybody's roles". The page says which, below, rather than leaving
+ * it to be inferred from three zeroes.
+ */
 $aw_rows = array('gone' => array(), 'visitor' => array(), 'candidate' => array());
+$aw_skip = array('noroles' => 0, 'settled' => 0);
 foreach ($aw_arr['people'] as $did => $p) {
 	$in    = guild_member_in($aw_cache, $did);
 	$roles = guild_member_roles($aw_cache, $did);
 	$g     = welcome_group($in, $roles, (string)$role_visitor, (string)$role_candidate);
-	if ($g === '' || !isset($aw_rows[$g])) continue;
+	if ($g === '' || !isset($aw_rows[$g])) {
+		/* Told apart because they mean opposite things: one is a gap in
+		   what we know, the other is somebody who is getting on fine. */
+		if ($in && $roles === null) $aw_skip['noroles']++;
+		elseif ($in)                $aw_skip['settled']++;
+		continue;
+	}
 	$aw_rows[$g][$did] = $p;
 }
+$aw_found = count($aw_arr['people']);
 foreach ($aw_rows as $k => $v) {
 	uasort($aw_rows[$k], function ($a, $b) { return (int)$b['at'] <=> (int)$a['at']; });
 }
@@ -203,8 +221,25 @@ td.aw-act { text-align:right; white-space:nowrap; }
 	<?php if (!empty($aw_cache['at'])): ?>
 	Roster <?php echo guild_members_stale($aw_cache) ? '<b style="color:#f5a623">is stale</b>, from'
 	                                                 : 'from'; ?>
-	<?php echo htmlspecialchars(date('j M, H:i', (int)$aw_cache['at'])); ?>.
+	<?php echo htmlspecialchars(date('j M, H:i', (int)$aw_cache['at'])); ?>,
+	<?php /* THE SIZE, because a roster that fetched one page of a large
+	         server looks identical to a healthy one until you notice that
+	         everybody reads as having left. */ ?>
+	<b><?php echo number_format(count((array)$aw_cache['ids'])); ?></b> members.
 	<?php endif; ?>
+	Read <b><?php echo number_format($aw_found); ?></b> arrivals from the channel.</p>
+	<p class="aw-why"><?php
+		/* WHY THE THREE NUMBERS DO NOT ADD UP, said out loud. */
+		if ($aw_skip['noroles']) {
+			echo '<b style="color:#f5a623">' . number_format($aw_skip['noroles']) . '</b> of them '
+			   . 'are in the server but the roster cannot say what roles they hold, so they are '
+			   . 'in none of the groups below. That is what the warning above is about. ';
+		}
+		if ($aw_skip['settled']) {
+			echo number_format($aw_skip['settled']) . ' got further than Candidate and need '
+			   . 'nothing. ';
+		}
+	?>
 	<form method="post" style="display:inline">
 		<button type="submit" name="aw_refresh" value="1" class="aw-refresh">Refresh roster</button>
 	</form>
