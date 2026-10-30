@@ -187,22 +187,48 @@ if (SK_REQUIRE_VISITOR && !in_array($role_visitor, $user_roles, true)) {
 	]]);
 }
 
-// --- The button on the rules message: ask question 1 -----------------------
+// --- The button on the rules message: ask which chain ----------------------
+// SK_BTN_START is unchanged, so the posted rules message does not need
+// reposting when the questions behind it change.
 if ($custom_id === SK_BTN_START) {
-	sk_respond(['type' => 4, 'data' => sk_question_payload(0)]);
+	sk_respond(['type' => 4, 'data' => sk_chain_payload()]);
 }
 
-// --- An answer: "sk_a:<question index>:<answer key>" ------------------------
+// --- A chain pick: "sk_c:<chain>" ------------------------------------------
+// There is no wrong answer here, so nothing in this branch can kick.
+if (strpos($custom_id, 'sk_c:') === 0) {
+	$chain = substr($custom_id, 5);
+	if (!isset($SK_CHAINS[$chain])) { sk_replace('Something went wrong. Please try again.'); }
+	sk_respond(['type' => 7, 'data' => sk_question_payload($chain, 0)]);
+}
+
+// --- An answer: "sk_a:<chain>:<question index>:<answer key>" ---------------
 if (strpos($custom_id, 'sk_a:') === 0) {
 	$parts = explode(':', $custom_id);
-	if (count($parts) !== 3) { sk_replace('Something went wrong. Please try again.'); }
 
-	$index  = (int)$parts[1];
-	$answer = $parts[2];
-	if (!isset($SK_QUESTIONS[$index])) { sk_replace('Something went wrong. Please try again.'); }
+	/*
+	 * A BUTTON FROM BEFORE THE CHAIN PICK EXISTED. The old id was
+	 * "sk_a:<index>:<key>", three parts. Every message in this flow is
+	 * ephemeral and ephemeral messages persist, so somebody part-way through
+	 * the quiz when this deployed still has the old buttons in front of them.
+	 * Send them back to the start rather than grading a question that no
+	 * longer exists -- and above all do not fall through to the wrong-answer
+	 * branch, which would kick them for our deploy timing.
+	 */
+	if (count($parts) === 3) {
+		sk_respond(['type' => 7, 'data' => sk_chain_payload()]);
+	}
+	if (count($parts) !== 4) { sk_replace('Something went wrong. Please try again.'); }
+
+	$chain  = $parts[1];
+	$index  = (int)$parts[2];
+	$answer = $parts[3];
+	if (!isset($SK_CHAINS[$chain]['questions'][$index])) {
+		sk_replace('Something went wrong. Please try again.');
+	}
 
 	// --- Wrong answer -----------------------------------------------------
-	if ($answer !== $SK_QUESTIONS[$index]['correct']) {
+	if (!sk_is_correct($chain, $index, $answer)) {
 		if (!SK_KICK_ON_WRONG) {
 			sk_replace('That was not correct, so no role was granted.');
 		}
@@ -238,8 +264,8 @@ if (strpos($custom_id, 'sk_a:') === 0) {
 	}
 
 	// --- Correct, but more questions to go --------------------------------
-	if (isset($SK_QUESTIONS[$index + 1])) {
-		sk_respond(['type' => 7, 'data' => sk_question_payload($index + 1)]);
+	if (isset($SK_CHAINS[$chain]['questions'][$index + 1])) {
+		sk_respond(['type' => 7, 'data' => sk_question_payload($chain, $index + 1)]);
 	}
 
 	// --- Correct, and that was the last one -------------------------------
