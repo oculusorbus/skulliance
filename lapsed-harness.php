@@ -514,9 +514,25 @@ if ($actBlk !== false) {
 	ok(substr_count($blk, 'g.back_at') >= 3,
 	   'an activity query is not bounded by the member\'s own return date, so it counts '
 	 . 'things they did BEFORE they came back');
-	ok(strpos($blk, "d.source <> 'returngift'") !== false,
-	   'the activity query counts the welcome-back package itself, so every single returner '
-	 . 'reads as active');
+	/*
+	 * MACHINE-WRITTEN ROWS MUST NOT COUNT AS ACTIVITY. The first cut
+	 * excluded only returngift and reported all seventeen returners as
+	 * active TODAY, which is how it was caught -- the nightly staking
+	 * payout writes a transaction for every holder every night, and
+	 * dhc-trait-migrate.php had just written a 'backfill' trait for seven
+	 * people. Each name here is a row somebody did not earn by playing.
+	 */
+	foreach (array('returngift'  => 'the welcome-back package itself',
+	               'backfill'    => 'a tethered half handed out by the migration',
+	               'referral'    => "the INVITER's reward for somebody else arriving",
+	               'digestcache' => 'bookkeeping') as $srcName => $what) {
+		ok(strpos($blk, "'" . $srcName . "'") !== false,
+		   "the activity query counts $what as the member doing something");
+	}
+	/* And the transactions side, which is mostly the nightly payout. */
+	ok(strpos($blk, "t.type = 'debit'") !== false && strpos($blk, 't.bonus = 1') !== false,
+	   'the activity query counts every transaction, and processSubtotals() writes one per '
+	 . 'user per night -- so everybody reads as active every day');
 	/*
 	 * THE SPECIFIC QUERY, not the bare table name. A 1800-character window
 	 * reaches past the block into code that mentions `transactions` for

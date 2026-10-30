@@ -139,8 +139,28 @@ if ($al_back) {
 	 * Fighter is already counted above and folded in so this column
 	 * cannot disagree with the one beside it.
 	 *
-	 * THE returngift ROWS ARE EXCLUDED, or the package itself counts as
-	 * activity and every returner reads as active.
+	 * MACHINE-WRITTEN ROWS ARE THE WHOLE DIFFICULTY, and the first cut of
+	 * this reported ALL SEVENTEEN as active today, which is how it was
+	 * caught. Two separate sources of that:
+	 *
+	 *   transactions IS MOSTLY NOT MEMBER ACTIVITY. processSubtotals() in
+	 *   db.php loops every user in the table and logCredit()s the nightly
+	 *   staking payout, so a row exists for everybody holding anything,
+	 *   every night. Leaderboard payouts do the same weekly. Only three
+	 *   shapes are deliberate acts: a DEBIT (spending, crafting, burning),
+	 *   bonus = 1 (the daily reward, which someone pressed a button for),
+	 *   and a credit carrying a mission_id (they ran a mission).
+	 *
+	 *   AND NOT EVERY TRAIT IS EARNED BY PLAYING. returngift is the
+	 *   package itself; backfill is dhc-trait-migrate.php handing out a
+	 *   tethered half nobody asked for; referral pays the INVITER for
+	 *   somebody else's arrival; digestcache is bookkeeping. All four
+	 *   land in the ledger dated now and none of them means the member
+	 *   did anything.
+	 *
+	 * Get this wrong in the lenient direction and the column says
+	 * everybody is fine, which is worse than the last_login bug it
+	 * replaced -- that one at least failed visibly.
 	 */
 	$al_act = array();
 	$gj = "JOIN (SELECT user_id, MIN(awarded_at) AS back_at FROM dhc_trait_drops
@@ -148,10 +168,13 @@ if ($al_back) {
 	foreach (array(
 		"SELECT d.user_id, MAX(d.awarded_at) AS t FROM dhc_trait_drops d
 		   $gj d.user_id
-		  WHERE d.source <> 'returngift' AND d.awarded_at > g.back_at GROUP BY d.user_id",
+		  WHERE d.source NOT IN ('returngift', 'backfill', 'referral', 'digestcache')
+		    AND d.awarded_at > g.back_at GROUP BY d.user_id",
 		"SELECT t.user_id, MAX(t.date_created) AS t FROM transactions t
 		   $gj t.user_id
-		  WHERE t.date_created > g.back_at GROUP BY t.user_id",
+		  WHERE t.date_created > g.back_at
+		    AND (t.type = 'debit' OR t.bonus = 1 OR t.mission_id > 0)
+		  GROUP BY t.user_id",
 		"SELECT f.user_id, MAX(f.created_at) AS t FROM dhc_fighters f
 		   $gj f.user_id
 		  WHERE f.created_at > g.back_at GROUP BY f.user_id",
