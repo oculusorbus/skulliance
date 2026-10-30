@@ -173,21 +173,52 @@ we found in the metadata:
 
 ---
 
-## Resize pipeline (verified)
+## Resize pipeline
 
-The web derivatives are a straight full-canvas downscale of the 2500x2500
-source — never a crop or a trim, because every trait sharing one canvas is
-exactly what makes the layers stack without nudging:
+**It is a script now: `dhc/make-web.py`.** It was this section, and got retyped
+at every delivery, which is how both rules below came to be applied by hand.
 
-```python
-im = Image.open(src).convert('RGBA').resize((size, size), Image.LANCZOS)
-im.quantize(colors=256, method=Image.FASTOCTREE).save(out, optimize=True)
+```
+python3 dhc/make-web.py --check              report, write nothing
+python3 dhc/make-web.py --run background     write one category
 ```
 
-Confirmed **byte-identical** to the existing `dhc/web/1000` files by
-regenerating `alien-skull.png` and `666-demon-headgear.png` from their sources
-and comparing pixels. BICUBIC does not reproduce them; LANCZOS is the one that
-matches. Sizes are 1000 and 250.
+A straight full-canvas downscale of the 2500x2500 source — never a crop or a
+trim, because every trait sharing one canvas is exactly what makes the layers
+stack without nudging. LANCZOS, not BICUBIC: confirmed byte-identical to the
+existing files by regenerating `alien-skull.png` and `666-demon-headgear.png`
+and comparing pixels. Sizes are 1000 and 250.
+
+**Opaque art is dithered; art with transparency is not.** Both are PNG-8.
+A background is the one layer that is full-frame and carries a smooth gradient
+across hundreds of pixels, and 256 colours with no dithering turns that into
+flat plateaus with a step between them. Over the XLONs Room Entrance glow, the
+fraction of colour changes along a scanline that jump by 3 or more:
+
+| | banding | steps |
+|---|---|---|
+| source | 35.4% | 21,046 |
+| FASTOCTREE, no dither | **100.0%** | 5,994 |
+| MAXCOVERAGE, no dither | **100.0%** | 7,615 |
+| ADAPTIVE + Floyd-Steinberg | 38.1% | 19,181 |
+
+So it is the dither and not a better palette. The test is *opaque*, not
+*background*, because PIL's ADAPTIVE conversion drops the alpha channel —
+dithering a cutout would flatten it onto black. All 45 backgrounds are fully
+opaque and all 176 other traits carry transparency, with no exceptions either
+way, so the property decides it and a future background with a transparent
+corner takes the safe path by itself.
+
+Cost: 66K → 219K average at 1000px, one of which loads at a time; the 45 250px
+thumbnails load together and go from 0.38MB to 0.88MB. The eight solid-colour
+backgrounds get *smaller*, having nothing to dither.
+
+**`source` is provenance, not a build input.** Fourteen pieces on disk are
+hand-edited away from the file they came from — the two sash pairs each name
+one source, the axe lost its chains, eight heads were cut out of larger images
+— so the script refuses a blanket run and keeps a measured `HAND_EDITED` list.
+A rebuild-everything would have replaced all fourteen with a fresh render of
+the original, and made each sash identical to its own weapon.
 
 After adding art: update `dhc/web/trait-index.json` (slug, name, source), add an
 ALIAS in `gen-rarity.py` if the filename differs from the on-chain trait name,

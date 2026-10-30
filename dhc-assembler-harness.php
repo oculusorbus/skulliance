@@ -292,6 +292,48 @@ if (is_dir($artRoot) && is_file($idxFile)) {
 	$nTraits = 0;
 	foreach ($rar as $rows) $nTraits += count($rows);
 	printf("art/rarity/name: %d traits, all three files agree\n", $nTraits);
+
+	/*
+	 * A BACKGROUND MUST NOT BE FLATTENED INTO BANDS.
+	 *
+	 * Backgrounds are the one layer that is full-frame and carries a smooth
+	 * gradient across hundreds of pixels. Quantised to 256 colours with no
+	 * dithering that gradient becomes flat plateaus with a visible step
+	 * between them -- and PIL's FASTOCTREE does not even spend the 256 it is
+	 * given. Reported off a screenshot of the XLONs Room Entrance, whose green
+	 * doorway glow banded into rings, after it had been true of the whole set
+	 * for months with nothing to say so.
+	 *
+	 * COLOURS USED, NOT THE PALETTE DECLARED, and that distinction is the
+	 * whole check. imagecolorstotal() returns 256 for a FASTOCTREE file that
+	 * only ever puts 90 of them on the canvas, so a version of this built on
+	 * it passed the very mutation it existed to catch. Counting the values
+	 * actually present separates the two with room to spare: measured across
+	 * all 45, dithered output uses at least 247 and FASTOCTREE at most 160.
+	 *
+	 * READ AT 250px, where an exact count is 62,500 pixels rather than a
+	 * million, and the two populations are just as far apart.
+	 *
+	 * SOLID BACKGROUNDS ARE EXEMPT BY MEASUREMENT, NOT BY NAME: a flat colour
+	 * has nothing to dither and stays on one or two values. The threshold sits
+	 * in the empty space between that and the 247.
+	 */
+	$banded = array();
+	foreach ((array)glob(__DIR__ . '/dhc/web/250/background/*.png') as $png) {
+		$im = @imagecreatefrompng($png);
+		if (!$im) continue;
+		$seen = array(); $w = imagesx($im); $h = imagesy($im);
+		for ($y = 0; $y < $h; $y++) {
+			for ($x = 0; $x < $w; $x++) $seen[imagecolorat($im, $x, $y)] = 1;
+		}
+		imagedestroy($im);
+		$n = count($seen);
+		if ($n > 2 && $n < 200) $banded[] = basename($png, '.png') . " ($n)";
+	}
+	ok(!$banded,
+	   'these backgrounds put only a handful of colours on the canvas, which renders a '
+	 . 'gradient as visible bands -- rebuild them with dhc/make-web.py, which dithers: '
+	 . implode(', ', $banded));
 } else {
 	echo "art/rarity/name: SKIPPED (no dhc/web art in this checkout)\n";
 }

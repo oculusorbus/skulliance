@@ -61,6 +61,7 @@ dhc/web/*
 # would put two copies of one table in git with nothing keeping them in step,
 # which is the drift the comic-cover lists already taught us once.
 !dhc/gen-rarity.py
+!dhc/make-web.py
 !dhc/onchain-counts.json
 !dhc/LAYER-MANIFEST.json
 !dhc/TRAIT-RECONCILIATION.md
