@@ -100,8 +100,17 @@ $rules = "The Skulliance Server Rules\xF0\x9F\x91\x87\n"
 $payload = [
 	'content' => $rules,
 	'embeds' => [[
-		'description' => "Press the button to agree. You'll be asked **two quick questions** "
-			. "about the chain we're built on.\n\n"
+		/*
+		 * THIS COPY IS HALF THE GATE. The previous wording -- "two quick
+		 * questions about the chain we're built on" -- is what told a Polygon
+		 * holder the questions were about OUR chain, which is exactly the
+		 * confusion that got them kicked. Describing the flow accurately is
+		 * not decoration; it is the instruction that makes it passable.
+		 */
+		'description' => "Press the button to agree. You'll pick the blockchain you know "
+			. "best, then answer **two quick questions** about that chain.\n\n"
+			. "Any chain is fine — Cardano, XRP Ledger, Solana, Polygon or Ethereum. "
+			. "We're multi-chain, so we're not asking you to know ours.\n\n"
 			. "Answer correctly and you'll be welcomed in as a Candidate. "
 			. "**Answer incorrectly and you'll be removed from the server** — so take your time.",
 		'color'       => hexdec('CC0000'),
@@ -118,10 +127,37 @@ $payload = [
 	]],
 ];
 
-$res = sk_discord_api('POST', '/channels/' . $rules_channel_id . '/messages', $payload);
+/*
+ * EDIT THE MESSAGE THAT IS ALREADY THERE, when told which one.
+ *
+ *     php discord-rules-post.php                  post a new message
+ *     php discord-rules-post.php --edit 123456    rewrite that one in place
+ *
+ * Without this the only way to change the copy was to post a second rules
+ * message and delete the first by hand -- which loses its position in the
+ * channel, any pin, and every link anyone has to it. The button's custom_id
+ * never changes (SK_BTN_START), so an edit keeps working immediately.
+ *
+ * The id is on the existing message: right-click it in Discord with Developer
+ * Mode on and Copy Message ID.
+ */
+$sk_edit = '';
+foreach (array_slice($argv, 1) as $i => $a) {
+	if ($a === '--edit') $sk_edit = isset($argv[$i + 2]) ? (string)$argv[$i + 2] : '';
+}
+if ($sk_edit !== '' && !preg_match('/^\d{5,25}$/', $sk_edit)) {
+	sk_say('--edit needs a numeric message id. Right-click the message in Discord');
+	sk_say('with Developer Mode on and Copy Message ID.');
+	exit(1);
+}
+
+$res = $sk_edit !== ''
+	? sk_discord_api('PATCH', '/channels/' . $rules_channel_id . '/messages/' . $sk_edit, $payload)
+	: sk_discord_api('POST',  '/channels/' . $rules_channel_id . '/messages', $payload);
 
 if ($res['ok']) {
-	sk_say('Posted to channel ' . $rules_channel_id . '.');
+	sk_say(($sk_edit !== '' ? 'Edited message ' . $sk_edit . ' in channel '
+	                        : 'Posted to channel ') . $rules_channel_id . '.');
 	sk_say('Message id: ' . ($res['body']['id'] ?? '(unknown)'));
 	sk_say('');
 	sk_say('Now set the Interactions Endpoint URL in the Developer Portal, if you');
