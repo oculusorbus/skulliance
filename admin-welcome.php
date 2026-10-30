@@ -1,0 +1,389 @@
+<?php
+/**
+ * admin-welcome.php — who arrived lately and where they stalled.
+ *
+ * THE MANUAL VERSION OF THIS IS SCROLLING THE WELCOME CHANNEL. That is a
+ * list which only goes one way, with no record of who has already been
+ * written to and no way to tell at a glance whether somebody is still in
+ * the server at all. What it costs most is the people further up, who get
+ * missed because the scroll gets tiring before they do.
+ *
+ * THREE GROUPS, THREE QUESTIONS -- the owner's own split, arrived at by
+ * doing this by hand:
+ *
+ *   Gone       welcomed and no longer here. Ask why they left.
+ *   Visitor    here, never past the rules gate. Ask if the questions
+ *              were the problem.
+ *   Candidate  through the gate and no further. Ask whether the wallet
+ *              or staking is where they stuck.
+ *
+ * Anyone holding more than Candidate got where they were going and is
+ * not on the list.
+ *
+ * READ ONLY against Discord. The only thing this page writes is the
+ * owner's own note of who he has messaged.
+ *
+ * SEE ALSO admin-lapsed.php, which is the same shape of tool pointed at
+ * the other end of the funnel -- people who used to be here. This one is
+ * people who never really started.
+ */
+include 'db.php';
+include 'skulliance.php';
+require_once __DIR__ . '/admin-lib.php';
+admin_require();   // before any output, and before header.php
+require_once __DIR__ . '/avatar-lib.php';
+require_once __DIR__ . '/lib/welcome-channel.php';
+require_once __DIR__ . '/lib/outreach-log.php';
+require_once __DIR__ . '/discord-rules-lib.php';   // $bot_token, $role_visitor, $role_candidate
+
+if (!defined('OUTREACH_LIST_WELCOME')) define('OUTREACH_LIST_WELCOME', 'welcome');
+
+/* Refreshing the roster is a POST so a reload cannot repeat it, and the
+   result is carried in the session rather than the query string -- the
+   same shape admin-lapsed.php uses for the same button. */
+$aw_msg = '';
+if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['aw_msg'])) {
+	$aw_msg = $_SESSION['aw_msg'];
+	unset($_SESSION['aw_msg']);
+}
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST'
+    && isset($_POST['refresh'])) {
+	$r = guild_members_refresh($bot_token);
+	$_SESSION['aw_msg'] = !empty($r['ok'])
+		? 'Roster refreshed: ' . number_format((int)$r['count']) . ' members.'
+		: 'Could not refresh the roster. ' . (string)$r['error'];
+	header('Location: admin-welcome.php');
+	exit;
+}
+
+$aw_cache = guild_members_load();
+$aw_known = !empty($aw_cache['ids']);
+$aw_roles_known = isset($aw_cache['roles']) && is_array($aw_cache['roles']);
+$aw_arr   = welcome_arrivals($bot_token);
+$aw_log   = outreach_load(OUTREACH_LIST_WELCOME);
+
+/*
+ * THE PLATFORM'S OWN ROW FOR THEM, WHERE THERE IS ONE. A Discord id is
+ * enough to write to somebody, but the avatar and the platform username
+ * are what make a list of three hundred recognisable -- and whether they
+ * have an account at all is itself part of the answer for a Candidate
+ * who never staked.
+ */
+$aw_users = array();
+if (!empty($aw_arr['people'])) {
+	$ids = array();
+	foreach (array_keys($aw_arr['people']) as $d) {
+		$d = preg_replace('/[^0-9]/', '', (string)$d);
+		if ($d !== '') $ids[] = "'" . $conn->real_escape_string($d) . "'";
+	}
+	if ($ids) {
+		$q = @$conn->query("SELECT id, username, discord_id, avatar, last_login
+		                      FROM users WHERE discord_id IN (" . implode(',', $ids) . ")");
+		if ($q) while ($x = $q->fetch_assoc()) $aw_users[(string)$x['discord_id']] = $x;
+	}
+}
+
+/* Sorted into the three buckets, newest arrival first within each. */
+$aw_rows = array('gone' => array(), 'visitor' => array(), 'candidate' => array());
+foreach ($aw_arr['people'] as $did => $p) {
+	$in    = guild_member_in($aw_cache, $did);
+	$roles = guild_member_roles($aw_cache, $did);
+	$g     = welcome_group($in, $roles, (string)$role_visitor, (string)$role_candidate);
+	if ($g === '' || !isset($aw_rows[$g])) continue;
+	$aw_rows[$g][$did] = $p;
+}
+foreach ($aw_rows as $k => $v) {
+	uasort($aw_rows[$k], function ($a, $b) { return (int)$b['at'] <=> (int)$a['at']; });
+}
+
+$aw_view = isset($_GET['view']) ? (string)$_GET['view'] : 'visitor';
+if (!isset($aw_rows[$aw_view])) $aw_view = 'visitor';
+
+/* How many of each are still to do, which is the number worth showing:
+   a count that does not come down as you work is not a progress bar. */
+$aw_todo = array();
+foreach ($aw_rows as $k => $v) {
+	$n = 0;
+	foreach (array_keys($v) as $did) if (!outreach_done($aw_log, $did)) $n++;
+	$aw_todo[$k] = $n;
+}
+
+$AW_LABEL = array('gone' => 'Left', 'visitor' => 'Stuck at the rules',
+                  'candidate' => 'Never staked');
+$AW_WHY = array(
+	'gone'      => 'Welcomed, and no longer in the server.',
+	'visitor'   => 'In the server, never got past the rules questions.',
+	'candidate' => 'Through the rules, never connected a wallet or staked.',
+);
+
+include 'header.php';
+admin_chrome('welcome');
+?>
+<?php include 'admin-css.php'; ?>
+<style>
+.aw-score { display:flex; gap:28px; flex-wrap:wrap; margin:0 0 16px; }
+.aw-score div { display:flex; flex-direction:column; }
+.aw-score b { font-size:1.5rem; color:#e8eaed; font-variant-numeric:tabular-nums; line-height:1.1; }
+.aw-score span { font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#5f7d90; margin-top:3px; }
+.aw-views { margin:0 0 10px; display:flex; gap:8px; flex-wrap:wrap; }
+.aw-views a { font-size:.78rem; padding:5px 12px; border-radius:999px; text-decoration:none;
+  background:#0e1c2c; color:#9fd8c8; border:1px solid rgba(255,255,255,.12); }
+.aw-views a.on { background:#123049; color:#e8eaed; border-color:#00c8a0; }
+.aw-why { font-size:.8rem; color:#8fa8b8; margin:0 0 14px; }
+.aw-warn { font-size:.8rem; color:#f5a623; background:rgba(245,166,35,.08);
+  border:1px solid rgba(245,166,35,.3); border-radius:6px; padding:10px 12px; margin:0 0 14px; }
+.aw-ok { color:#00c8a0; border-color:rgba(0,200,160,.3); background:rgba(0,200,160,.08); }
+.aw-t { width:100%; border-collapse:collapse; font-size:.82rem; }
+.aw-t th { text-align:left; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase;
+  color:#5f7d90; border-bottom:1px solid rgba(255,255,255,.12); padding:0 10px 7px; font-weight:600; }
+.aw-t td { padding:9px 10px; border-bottom:1px solid rgba(255,255,255,.06); vertical-align:middle; }
+.aw-who { display:flex; align-items:center; gap:9px; }
+.aw-who img { width:26px; height:26px; border-radius:50%; flex:none; }
+.aw-dim { color:#5f7d90; }
+.aw-none { color:#5f7d90; font-style:italic; }
+td.aw-act { text-align:right; white-space:nowrap; }
+.aw-btn { background:#123049; color:#9fd8c8; border:1px solid rgba(255,255,255,.14);
+  border-radius:6px; padding:4px 12px; font-size:.78rem; cursor:pointer; }
+.aw-btn:hover { background:#17405f; }
+.aw-btn:focus-visible { outline:2px solid #00c8a0; outline-offset:2px; }
+.aw-btn.on { background:transparent; color:#5f7d90; border-style:dashed; }
+.aw-refresh { background:none; border:1px solid rgba(255,255,255,.14); color:#9fd8c8;
+  border-radius:6px; padding:5px 12px; font-size:.78rem; cursor:pointer; }
+</style>
+
+<h2 style="margin:0 0 4px">Newcomers</h2>
+<p class="aw-why">
+	Read from the welcome channel, crossed against the server roster.
+	<?php if (!empty($aw_cache['at'])): ?>
+	Roster <?php echo guild_members_stale($aw_cache) ? '<b style="color:#f5a623">is stale</b>, from'
+	                                                 : 'from'; ?>
+	<?php echo htmlspecialchars(date('j M, H:i', (int)$aw_cache['at'])); ?>.
+	<?php endif; ?>
+	<form method="post" style="display:inline">
+		<button type="submit" name="refresh" value="1" class="aw-refresh">Refresh roster</button>
+	</form>
+</p>
+
+<?php if ($aw_msg !== ''): ?>
+<p class="aw-warn <?php echo strpos($aw_msg, 'Could not') === 0 ? '' : 'aw-ok'; ?>"><?php
+	echo htmlspecialchars($aw_msg); ?></p>
+<?php endif; ?>
+
+<?php /* EVERY REASON THE LIST COULD BE EMPTY, SAID OUT LOUD. An empty
+         page that does not explain itself is indistinguishable from a
+         quiet week, and all three of these are one-line fixes nobody
+         would guess at. */ ?>
+<?php if (!$aw_arr['ok']): ?>
+<p class="aw-warn">Could not read the welcome channel. <?php echo htmlspecialchars($aw_arr['error']); ?></p>
+<?php endif; ?>
+<?php if (!$aw_known): ?>
+<p class="aw-warn">The server roster has never been fetched, so nobody can be placed in a
+	group. Press <b>Refresh roster</b>. If that fails, the bot needs the
+	<b>Server Members Intent</b> switched on in the Developer Portal.</p>
+<?php elseif (!$aw_roles_known): ?>
+<p class="aw-warn">The cached roster predates role capture, so it knows who is here but not
+	what they hold. Press <b>Refresh roster</b> to fill in the Visitor and Candidate groups.</p>
+<?php endif; ?>
+<?php if (empty($role_visitor) || empty($role_candidate)): ?>
+<p class="aw-warn">The Visitor or Candidate role id is not set in
+	<code>credentials/webhooks_credentials.php</code>, so those two groups cannot be told apart.</p>
+<?php endif; ?>
+
+<div class="aw-score">
+	<?php foreach ($AW_LABEL as $k => $label): ?>
+	<div><b><?php echo number_format(count($aw_rows[$k])); ?></b><span><?php
+		echo htmlspecialchars($label); ?></span></div>
+	<?php endforeach; ?>
+	<div><b><?php echo number_format(array_sum($aw_todo)); ?></b><span>still to write to</span></div>
+</div>
+
+<div class="aw-views">
+	<?php foreach ($AW_LABEL as $k => $label): ?>
+	<a href="admin-welcome.php?view=<?php echo urlencode($k); ?>"
+	   class="<?php echo $k === $aw_view ? 'on' : ''; ?>"><?php
+		echo htmlspecialchars($label); ?>
+		<span class="aw-dim">(<?php echo (int)$aw_todo[$k]; ?>)</span></a>
+	<?php endforeach; ?>
+</div>
+<p class="aw-why"><?php echo htmlspecialchars($AW_WHY[$aw_view]); ?></p>
+
+<?php if (!$aw_rows[$aw_view]): ?>
+<p class="aw-none">Nobody in this group.</p>
+<?php else: ?>
+<table class="aw-t">
+	<thead><tr><th>Member</th><th>Welcomed</th><th>Account</th><th></th></tr></thead>
+	<tbody>
+	<?php foreach ($aw_rows[$aw_view] as $did => $p):
+		$u    = isset($aw_users[$did]) ? $aw_users[$did] : null;
+		$name = $p['name'] !== '' ? $p['name']
+		      : ($u ? (string)$u['username'] : guild_member_name($aw_cache, $did));
+		if ($name === '') $name = 'user ' . $did;
+		$done = outreach_done($aw_log, $did);
+	?>
+	<tr>
+		<td>
+			<div class="aw-who">
+				<img loading="lazy" alt=""
+				     src="<?php echo htmlspecialchars(avatar_url($did, $u ? $u['avatar'] : '', 64), ENT_QUOTES); ?>"
+				     onerror="this.src='icons/skull.png'">
+				<span title="<?php echo htmlspecialchars($did, ENT_QUOTES); ?>"><?php
+					echo htmlspecialchars($name); ?></span>
+			</div>
+		</td>
+		<td class="aw-dim"><?php
+			echo $p['at'] ? htmlspecialchars(date('j M Y', (int)$p['at'])) : '&mdash;'; ?></td>
+		<td class="aw-dim"><?php
+			/* WHETHER THEY EVER SIGNED IN AT ALL, which for a Candidate who
+			   never staked is most of the answer: no account means they
+			   never reached the site, and the wallet is not the problem. */
+			echo $u ? 'yes' : '<span class="aw-none">never signed in</span>'; ?></td>
+		<td class="aw-act">
+			<button type="button" class="aw-btn<?php echo $done ? ' on' : ''; ?>"
+			        data-did="<?php echo htmlspecialchars($did, ENT_QUOTES); ?>"
+			        data-who="<?php echo htmlspecialchars($name, ENT_QUOTES); ?>"
+			        data-sent="<?php echo $done ? '1' : ''; ?>"
+			        data-msg="<?php echo htmlspecialchars(welcome_text($aw_view, $name), ENT_QUOTES); ?>"><?php
+				echo $done ? 'written' : 'write'; ?></button>
+		</td>
+	</tr>
+	<?php endforeach; ?>
+	</tbody>
+</table>
+<?php endif; ?>
+
+<div class="lap-mw" id="awModal" hidden>
+	<div class="lap-mb" role="dialog" aria-modal="true" aria-labelledby="awWho">
+		<div class="lap-mh">
+			<h3 id="awWho"></h3>
+			<button type="button" class="lap-mname" id="awCopyName">Copy name</button>
+			<input class="lap-offscreen" id="awName" type="text" readonly aria-hidden="true" tabindex="-1">
+			<button type="button" class="lap-mx" id="awX" aria-label="Close">&times;</button>
+		</div>
+		<div class="lap-mi">
+			<label class="lap-ml" for="awMsg">The message</label>
+			<textarea class="lap-mu lap-mmsg" id="awMsg" rows="8" readonly></textarea>
+			<button type="button" class="lap-mc" id="awCopyMsg">Copy message</button>
+		</div>
+		<div class="lap-mnav">
+			<button type="button" class="lap-mc lap-mc2" id="awPrev">&larr; Prev</button>
+			<span id="awPos"></span>
+			<button type="button" class="lap-mc lap-mdone" id="awDone">Mark written &amp; next</button>
+			<button type="button" class="lap-mc lap-mc2" id="awNext">Next &rarr;</button>
+		</div>
+	</div>
+</div>
+
+<script>
+(function () {
+	var wrap = document.getElementById('awModal');
+	if (!wrap) return;
+	var who  = document.getElementById('awWho'),
+	    msg  = document.getElementById('awMsg'),
+	    cpM  = document.getElementById('awCopyMsg'),
+	    nm   = document.getElementById('awName'),
+	    cpN  = document.getElementById('awCopyName'),
+	    prev = document.getElementById('awPrev'),
+	    next = document.getElementById('awNext'),
+	    pos  = document.getElementById('awPos'),
+	    done = document.getElementById('awDone'),
+	    all  = Array.prototype.slice.call(document.querySelectorAll('.aw-btn')),
+	    at   = -1, last = null;
+
+	/* execCommand is deprecated and is the only thing that works without a
+	   secure context or a permission prompt, so it is the fallback. */
+	function wire(field, btn, label) {
+		btn.addEventListener('click', function () {
+			field.select();
+			field.setSelectionRange(0, field.value.length);   // iOS needs the range
+			function ok() {
+				btn.textContent = 'Copied';
+				setTimeout(function () { btn.textContent = label; }, 1600);
+			}
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(field.value).then(ok, function () {
+					try { document.execCommand('copy'); ok(); } catch (e) {}
+				});
+			} else {
+				try { document.execCommand('copy'); ok(); } catch (e) {}
+			}
+		});
+	}
+	wire(msg, cpM, 'Copy message');
+	wire(nm,  cpN, 'Copy name');
+
+	function open(btn) {
+		last = btn;
+		at = all.indexOf(btn);
+		pos.textContent = (at >= 0) ? (at + 1) + ' of ' + all.length : '';
+		prev.disabled = (at <= 0);
+		next.disabled = (at < 0 || at >= all.length - 1);
+		var sent = btn.getAttribute('data-sent') === '1';
+		done.setAttribute('data-on', sent ? '1' : '');
+		done.textContent = sent ? 'Written (undo)' : 'Mark written & next';
+		done.disabled = false;
+		who.textContent = btn.getAttribute('data-who') || '';
+		nm.value        = btn.getAttribute('data-who') || '';
+		msg.value       = btn.getAttribute('data-msg') || '';
+		cpM.textContent = 'Copy message';
+		cpN.textContent = 'Copy name';
+		wrap.hidden = false;
+		cpM.focus();
+	}
+	function close() {
+		wrap.hidden = true; at = -1;
+		if (last) { last.focus(); last = null; }
+	}
+	function step(by) {
+		if (at < 0) return;
+		var n = at + by;
+		if (n < 0 || n >= all.length) return;
+		if (all[n].scrollIntoView) all[n].scrollIntoView({ block: 'center' });
+		open(all[n]);
+	}
+	document.addEventListener('click', function (e) {
+		var b = e.target.closest ? e.target.closest('.aw-btn') : null;
+		if (b) { e.preventDefault(); open(b); return; }
+		if (e.target === wrap || e.target.id === 'awX') close();
+	});
+	prev.addEventListener('click', function () { step(-1); });
+	next.addEventListener('click', function () { step(1); });
+	document.addEventListener('keydown', function (e) {
+		if (wrap.hidden) return;
+		if (e.key === 'Escape')     { close(); return; }
+		if (e.key === 'ArrowLeft')  { e.preventDefault(); step(-1); }
+		if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+	});
+
+	/* MARK, THEN MOVE, and only once the server has confirmed -- a row
+	   shown as done before the write lands quietly drops somebody off a
+	   list whose whole job is not losing anybody. */
+	done.addEventListener('click', function () {
+		if (at < 0) return;
+		var btn = all[at],
+		    on  = done.getAttribute('data-on') !== '1',
+		    body = 'discord_id=' + encodeURIComponent(btn.getAttribute('data-did'))
+		         + '&list=' + encodeURIComponent('<?php echo OUTREACH_LIST_WELCOME; ?>')
+		         + (on ? '' : '&off=1');
+		done.disabled = true;
+		done.textContent = on ? 'Marking...' : 'Undoing...';
+		fetch('ajax/admin-outreach.php', {
+			method: 'POST', credentials: 'same-origin',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: body
+		}).then(function (r) { return r.json(); }).then(function (j) {
+			if (!j || !j.ok) throw new Error((j && j.why) || 'failed');
+			btn.setAttribute('data-sent', on ? '1' : '');
+			btn.textContent = on ? 'written' : 'write';
+			btn.classList.toggle('on', on);
+			if (on && at < all.length - 1) step(1); else open(btn);
+		}).catch(function () {
+			done.disabled = false;
+			done.textContent = 'Could not save';
+			setTimeout(function () {
+				done.textContent = done.getAttribute('data-on') === '1'
+					? 'Written (undo)' : 'Mark written & next';
+			}, 2000);
+		});
+	});
+})();
+</script>

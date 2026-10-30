@@ -895,6 +895,7 @@ function admin_tabs() {
 		'outreach'    => array('admin-outreach.php',    'Outreach'),
 		'nudges'      => array('admin-nudges.php',      'Nudges'),
 		'lapsed'      => array('admin-lapsed.php',      'Lapsed'),
+		'welcome'     => array('admin-welcome.php',     'Newcomers'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }

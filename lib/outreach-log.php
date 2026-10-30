@@ -34,6 +34,10 @@ if (!defined('OUTREACH_PATH_NAME')) define('OUTREACH_PATH_NAME', 'outreach.json'
    nothing. A second message, so a second file -- see outreach_path(). */
 if (!defined('OUTREACH_LIST_ASK')) define('OUTREACH_LIST_ASK', 'ask');
 
+/* And the newcomer log: who has been written to about being stuck at the
+   rules gate, never staking, or leaving. Third message, third file. */
+if (!defined('OUTREACH_LIST_WELCOME')) define('OUTREACH_LIST_WELCOME', 'welcome');
+
 /*
  * TWO LOGS, NOT ONE FILE WITH PREFIXED KEYS.
  *

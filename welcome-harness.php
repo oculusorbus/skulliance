@@ -1,0 +1,194 @@
+<?php
+/**
+ * welcome-harness.php — the newcomers panel.
+ *
+ *   php welcome-harness.php
+ *
+ * WHAT IS AT RISK HERE. The page sorts real people into three groups and
+ * writes a different message to each, so putting somebody in the wrong
+ * one sends them a message about a problem they do not have -- asking
+ * somebody who is staking happily why they left. The grouping is pure and
+ * is driven directly below; everything touching Discord is checked by
+ * reading the source, because no Discord call is made from a harness.
+ */
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_WARNING);
+if (!isset($bot_token)) $bot_token = '';
+require_once __DIR__ . '/lib/welcome-channel.php';
+require_once __DIR__ . '/lib/outreach-log.php';
+
+$fail = 0;
+function ok($cond, $what) { global $fail; if (!$cond) { $fail++; echo "  FAIL  $what\n"; } }
+
+$VIS = '111'; $CAND = '222'; $OTHER = '333';
+
+echo "who goes in which group\n";
+$cases = array(
+	// in_guild, roles,                     expected, why
+	array(false, array(),                   'gone',      'left the server'),
+	array(false, array($VIS, $CAND),        'gone',      'left, with roles still cached'),
+	array(true,  array($VIS),               'visitor',   'in, holding only Visitor'),
+	array(true,  array($CAND),              'candidate', 'in, holding only Candidate'),
+	array(true,  array($VIS, $CAND),        'candidate', 'holds BOTH -- the gate failed to strip Visitor'),
+	array(true,  array($CAND, $OTHER),      '',          'got further than Candidate'),
+	array(true,  array($OTHER),             '',          'a role we do not track'),
+	array(true,  array(),                   '',          'in the server holding nothing'),
+	array(true,  null,                      '',          'roster cannot say what they hold'),
+);
+foreach ($cases as $c) {
+	$got = welcome_group($c[0], $c[1], $VIS, $CAND);
+	ok($got === $c[2], "somebody who $c[3] is grouped as '"
+	   . ($got === '' ? 'none' : $got) . "', expected '" . ($c[2] === '' ? 'none' : $c[2]) . "'");
+}
+
+/*
+ * NULL IS NOT AN EMPTY ROLE LIST, and this is the one that would do real
+ * damage quietly. A roster cached before roles were captured knows a
+ * member is present and nothing about what they hold. Read as "holds no
+ * roles" that is harmless here -- but read as "holds neither Visitor nor
+ * Candidate, so they must be new" it would write to every long-standing
+ * member in the server.
+ */
+ok(welcome_group(true, null, $VIS, $CAND) === '',
+   'an unknown role list is treated as a known one, so a stale roster puts established '
+ . 'members into a newcomer group');
+/*
+ * AND THE REFRESH HAS TO STORE THEM. Reading roles back is useless if
+ * nothing writes them -- and because every group falls through to ''
+ * when the roles are unknown, that failure is SILENT: the page simply
+ * shows nobody in the Visitor or Candidate buckets, which looks exactly
+ * like a week when nobody got stuck.
+ */
+$gm = file_get_contents(__DIR__ . '/lib/guild-members.php');
+ok(strpos($gm, "'roles' => \$roles") !== false,
+   'guild_members_refresh() no longer writes roles into the cache, so the Visitor and '
+ . 'Candidate groups are permanently empty and look like good news');
+ok(strpos($gm, "\$m['roles']") !== false,
+   'the refresh does not read roles out of the Discord response');
+ok(guild_member_roles(array('ids' => array('5' => true)), '5') === null,
+   'a roster with no roles key reports an empty role list rather than "unknown"');
+ok(guild_member_roles(array('roles' => array('5' => array('9'))), '5') === array('9'),
+   'roles are not read back out of the cache');
+
+/* Order matters: the gate adds Candidate and removes Visitor, so a
+   half-applied change leaves both and the further-along answer is right. */
+ok(welcome_group(true, array($VIS, $CAND), $VIS, $CAND) === 'candidate',
+   'somebody holding both roles is treated as a Visitor, so a member who passed the gate '
+ . 'is asked why they could not pass it');
+
+/* With the role ids unset, nothing may be asserted about anybody. */
+ok(welcome_group(true, array($VIS), '', '') === '',
+   'with no role ids configured, members are still being sorted into groups -- on no '
+ . 'evidence at all');
+
+echo "\nthree groups, three messages\n";
+$gone = welcome_text('gone'); $vis = welcome_text('visitor'); $cand = welcome_text('candidate');
+ok($gone !== '' && $vis !== '' && $cand !== '', 'a group has no message');
+ok($gone !== $vis && $vis !== $cand && $gone !== $cand,
+   'two groups get the same message, so at least one person is asked about a problem they '
+ . 'do not have');
+ok(welcome_text('') === '' && welcome_text('nonsense') === '',
+   'an unknown group still produces a message, which would be sent to somebody arbitrary');
+
+/* Each has to name its own subject, or the split achieves nothing. */
+ok(stripos($vis, 'rules') !== false,  'the Visitor message never mentions the rules questions');
+ok(stripos($cand, 'wallet') !== false && stripos($cand, 'stak') !== false,
+   'the Candidate message never mentions the wallet or staking, which is the only thing '
+ . 'standing between them and being a member');
+ok(stripos($gone, 'left') !== false, 'the message to somebody who left does not acknowledge it');
+
+/*
+ * NO LINK IN ANY OF THEM. Somebody stuck at the rules gate cannot use a
+ * staking link, and somebody who has left is not being sold to again.
+ */
+foreach (array('gone' => $gone, 'visitor' => $vis, 'candidate' => $cand) as $k => $t) {
+	ok(strpos($t, 'http') === false, "the $k message carries a link");
+	ok(substr_count($t, '?') >= 1, "the $k message never actually asks anything");
+	/* The owner's voice: open friendly, offer help, do not scold. */
+	ok(stripos($t, 'Hey!') === 0, "the $k message does not open the way the others do");
+	ok(strpos($t, '  ') === false, "the $k message has a doubled space from a concatenation");
+}
+/* And the one to somebody who left must not read as a complaint. */
+ok(stripos($gone, 'no hard feelings') !== false,
+   'the message to somebody who left reads as a reproach rather than a question');
+
+echo "\nreading the channel\n";
+$src = file_get_contents(__DIR__ . '/lib/welcome-channel.php');
+/*
+ * TWO MESSAGE SHAPES. type 7 is Discord's own join message and its AUTHOR
+ * is the joiner; anything else is a greeting, where the joiner is the
+ * first MENTION and the author is the greeter. A reader that knows only
+ * the second builds a list of one name repeated -- whoever does the
+ * welcoming -- and a reader that knows only the first returns nothing at
+ * all on a server that uses a bot.
+ */
+ok(strpos($src, '$type === 7') !== false, 'the reader does not understand a Discord join message');
+ok(strpos($src, "mentions'][0]") !== false, 'the reader cannot read a bot or human welcome');
+ok(strpos($src, "empty(\$who['bot'])") !== false,
+   'bots welcomed in the channel are listed as arrivals');
+ok(strpos($src, 'isset($people[$id])') !== false,
+   'somebody welcomed twice appears twice, and gets written to twice');
+/* Every refusal says what to do about it, or an empty page is
+   indistinguishable from a quiet week. */
+foreach (array('403', '404', '429') as $code) {
+	ok(strpos($src, $code) !== false, "an HTTP $code from Discord is not explained");
+}
+ok(stripos($src, 'Read Message History') !== false,
+   'a 403 does not name the permission that fixes it');
+
+echo "\nthe page\n";
+$pg = file_get_contents(__DIR__ . '/admin-welcome.php');
+ok(strpos($pg, 'admin_require();') !== false, 'the newcomers panel is not behind the admin gate');
+ok(strpos($pg, "admin_require();   // before any output") !== false
+   || strpos($pg, 'admin_require()') < strpos($pg, "include 'header.php'"),
+   'admin_require() runs after output has started, so the redirect cannot fire');
+/*
+ * SCOPED TO THE POST BODY. A bare search for the constant passes on its
+ * own define() and on the outreach_load() call, so it kept passing with
+ * the list dropped from the request -- which would mark newcomers on the
+ * LAPSED invite log instead.
+ */
+ok(strpos($pg, 'OUTREACH_LIST_WELCOME') !== false,
+   'the page does not name its own outreach log at all');
+$fetchAt = strpos($pg, "fetch('ajax/admin-outreach.php'");
+ok($fetchAt !== false, 'the page never posts a mark');
+if ($fetchAt !== false) {
+	/* The body is assembled just above the fetch. */
+	$bodyAt = strpos($pg, "body = 'discord_id=");
+	ok($bodyAt !== false && strpos(substr($pg, $bodyAt, 400), 'OUTREACH_LIST_WELCOME') !== false,
+	   'the mark is posted without naming its list, so writing to a newcomer marks them as '
+	 . 'having had the lapsed invite');
+}
+/* The refresh writes, so it must not be a GET. */
+ok(strpos($pg, "REQUEST_METHOD'] === 'POST'") !== false,
+   'the roster refresh is reachable by GET, so an <img src> can fire it');
+ok(strpos($pg, 'header(\'Location: admin-welcome.php\');') !== false,
+   'the refresh does not redirect, so reloading repeats it');
+/* Every reason the list can be empty has to be on the page. */
+foreach (array('Server Members Intent' => 'the intent that makes the roster possible',
+               'Refresh roster'        => 'the button that fixes an empty roster',
+               'predates role capture' => 'a cache too old to hold roles',
+               'webhooks_credentials'  => 'the file the role ids live in') as $needle => $what) {
+	ok(strpos($pg, $needle) !== false,
+	   "the page never mentions $what, so an empty list looks like a quiet week");
+}
+
+echo "\nthe three logs stay apart\n";
+$paths = array(outreach_path(), outreach_path(OUTREACH_LIST_ASK), outreach_path(OUTREACH_LIST_WELCOME));
+ok(count(array_unique($paths)) === 3,
+   'two of the three outreach logs are the same file, so marking one message sent marks '
+ . 'another: ' . implode(', ', array_map('basename', $paths)));
+$oa = file_get_contents(__DIR__ . '/ajax/admin-outreach.php');
+ok(strpos($oa, 'OUTREACH_LIST_WELCOME') !== false,
+   'the endpoint does not know about the newcomer log, so every mark from this page is '
+ . 'refused as an unknown list');
+ok(strpos($oa, 'Unknown list') !== false,
+   'the endpoint accepts any list name, so a typo writes to a file nothing reads');
+
+echo "\nthe tab exists\n";
+$lib = file_get_contents(__DIR__ . '/admin-lib.php');
+ok(strpos($lib, "'welcome'") !== false && strpos($lib, 'admin-welcome.php') !== false,
+   'the Newcomers tab is not in the admin nav, so the page can only be reached by typing '
+ . 'the URL');
+
+echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all newcomer checks passed\n");
+exit($fail ? 1 : 0);

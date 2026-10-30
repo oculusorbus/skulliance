@@ -76,6 +76,28 @@ function guild_members_stale($cache) {
  * Returns true, false, or null for "we do not know" -- the third
  * answer is the whole reason this does not return a bool.
  */
+/**
+ * The role ids this member holds, or null when the roster cannot say.
+ *
+ * NULL IS NOT AN EMPTY ROLE LIST, and the difference decides whether a
+ * page may draw a conclusion. A cache written before roles were captured
+ * knows the member is present and nothing about their roles; reading
+ * that as "holds no roles" would put every long-standing member into
+ * whichever bucket means "brand new and stuck".
+ */
+function guild_member_roles($cache, $discord_id) {
+	$id = preg_replace('/[^0-9]/', '', (string)$discord_id);
+	if ($id === '' || !isset($cache['roles']) || !is_array($cache['roles'])) return null;
+	return isset($cache['roles'][$id]) ? $cache['roles'][$id] : null;
+}
+
+/** Their display name as Discord knows it, or '' -- the platform may not have one. */
+function guild_member_name($cache, $discord_id) {
+	$id = preg_replace('/[^0-9]/', '', (string)$discord_id);
+	if ($id === '' || !isset($cache['names'][$id])) return '';
+	return (string)$cache['names'][$id];
+}
+
 function guild_member_in($cache, $discord_id) {
 	if (!$cache) return null;
 	$id = preg_replace('/[^0-9]/', '', (string)$discord_id);
@@ -102,7 +124,9 @@ function guild_members_refresh($bot_token, $guild_id = null) {
 	   local server instead of Discord. Production never defines it. */
 	$api = defined('SKULL_DISCORD_API') ? SKULL_DISCORD_API : 'https://discord.com';
 
-	$ids = array(); $after = '0'; $pages = 0;
+	$ids = array();
+
+	$roles = $names = array(); $after = '0'; $pages = 0;
 	while ($pages < GUILD_MEMBERS_MAX_PAGES) {
 		$pages++;
 		$url = $api . '/api/v10/guilds/' . $guild . '/members?limit=1000&after=' . rawurlencode($after);
@@ -137,6 +161,26 @@ function guild_members_refresh($bot_token, $guild_id = null) {
 			if (empty($m['user']['id'])) continue;
 			$uid = (string)$m['user']['id'];
 			$ids[$uid] = true;
+			/*
+			 * ROLES AND NAMES COME FREE. They are already in this response
+			 * and were being thrown away, so capturing them costs no extra
+			 * call -- and without them "is this person a Visitor or a
+			 * Candidate" needs one request per member.
+			 *
+			 * Stored alongside rather than inside $ids, so guild_member_in()
+			 * and every existing caller are untouched by the change and an
+			 * older cache file still answers the question it was written to
+			 * answer.
+			 */
+			$roles[$uid] = isset($m['roles']) && is_array($m['roles'])
+				? array_values(array_map('strval', $m['roles'])) : array();
+			$nm = '';
+			if (isset($m['user']['global_name']) && $m['user']['global_name'] !== '') {
+				$nm = (string)$m['user']['global_name'];
+			} elseif (isset($m['user']['username'])) {
+				$nm = (string)$m['user']['username'];
+			}
+			if ($nm !== '') $names[$uid] = $nm;
 			$lastId = $uid;
 		}
 		if (count($rows) < 1000) break;          // short page means the end
@@ -146,7 +190,8 @@ function guild_members_refresh($bot_token, $guild_id = null) {
 
 	if (!$ids) { $out['error'] = 'Discord returned no members.'; return $out; }
 
-	$payload = json_encode(array('ids' => $ids, 'at' => time(), 'count' => count($ids)));
+	$payload = json_encode(array('ids' => $ids, 'roles' => $roles, 'names' => $names,
+	                             'at' => time(), 'count' => count($ids)));
 	$path = guild_members_path();
 	$dir  = dirname($path);
 	if (!is_dir($dir) && !@mkdir($dir, 0775, true)) { $out['error'] = 'Cache directory is missing.'; return $out; }

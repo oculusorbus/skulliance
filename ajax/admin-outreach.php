@@ -45,7 +45,7 @@ $on = !isset($_POST['off']);
  * unknown name would quietly create a third log nothing ever reads.
  */
 $which = isset($_POST['list']) ? (string)$_POST['list'] : '';
-if ($which !== '' && $which !== OUTREACH_LIST_ASK) {
+if ($which !== '' && !in_array($which, array(OUTREACH_LIST_ASK, OUTREACH_LIST_WELCOME), true)) {
 	out(array('ok' => false, 'why' => 'Unknown list.'));
 }
 
