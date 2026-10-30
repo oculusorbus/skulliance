@@ -108,6 +108,7 @@ echo "timeline tail: ok (keeps ".DHCAL_TL_KEEP.", drops the rest)\n";
    This plays both seats as people -- never calling dhca_ai_move() -- and
    demands the match reach a winner with both sides having moved. */
 $games = 0; $hostWins = 0; $turnsTot = 0; $stuck = 0; $bothMoved = 0; $viewBad = 0;
+$oneSided = array(); $turnStuck = 0; $againBad = 0;
 for ($g = 0; $g < 25; $g++) {
 	$sd = $g * 977 + 5;
 	$hc = crew3($rarity, $sd); $gc = crew3($rarity, $sd);
@@ -125,6 +126,29 @@ for ($g = 0; $g < 25; $g++) {
 		dhcal_record_move($b, $mv[0], $mv[1]);
 		if ($side === 'mine') $byHost++; else $byGuest++;
 
+		/*
+		 * THE TURN MUST PASS UNLESS THE GAME SAID IT DOES NOT.
+		 *
+		 * Tested per move rather than inferred from the final score, because
+		 * inference cannot tell the two apart. The earlier version of this
+		 * section demanded both seats move in every match and failed on a
+		 * legitimate first-round blowout; the obvious repair -- allow a
+		 * one-sided match if it ended in round 1 -- is WORSE THAN USELESS,
+		 * since a turn stuck on one seat never advances the round either
+		 * (dhca_play only increments it when the turn passes to 'mine'), so
+		 * the stuck case satisfies it too.
+		 *
+		 * dhca_play() resets fx at the top of every move, so an 'again' in
+		 * there belongs to THIS move and nothing earlier. Either the engine
+		 * announced an extra turn, or the seat changed hands.
+		 */
+		if ($b['over'] === null) {
+			$again = false;
+			foreach ($b['fx'] as $e) if (isset($e['k']) && $e['k'] === 'again') $again = true;
+			if (!$again && $b['turn'] === $side) $turnStuck++;
+			if ($again && $e !== null && $b['turn'] !== $side) $againBad++;
+		}
+
 		// every intermediate state must survive the flip in both seats
 		$p = dhca_public($b);
 		$g1 = dhcal_view($p, 'guest');
@@ -136,13 +160,48 @@ for ($g = 0; $g < 25; $g++) {
 	$games++; $turnsTot += $b['round'];
 	if ($b['over'] === 'mine') $hostWins++;
 	if ($byHost > 0 && $byGuest > 0) $bothMoved++;
+	else $oneSided[] = sprintf('g%d host=%d guest=%d round=%d', $g, $byHost, $byGuest, $b['round']);
 }
 ok($stuck === 0, 'no match failed to finish');
-ok($bothMoved === $games, 'both seats moved in every match');
+
+/*
+ * A SEAT THAT NEVER MOVES IS ONLY A BUG IF THE MATCH WAS STILL GOING.
+ *
+ * This asserted `$bothMoved === $games` and failed on 1 of 25 -- seed g13,
+ * where the host chained four matches of five or more and wiped the crew
+ * before the guest ever had the board. That is DHCA_EXTRA_TURN working: a
+ * five goes again, and a good enough opening can end it inside one round.
+ * The check was asserting that the game's own rule never fires hard enough
+ * to matter, which it is entitled to do.
+ *
+ * What it was REACHING for is a turn that never comes back, and the honest
+ * test of that is the round count. The host always opens, so only the guest
+ * can finish on zero moves -- and if that happens the round counter must
+ * still read 1, because the round only advances when the turn passes to
+ * 'mine'. A one-sided match that got to round 3 means the turn is stuck on
+ * one seat, which IS the bug this was written for.
+ */
+ok($turnStuck === 0,
+   "the turn stayed with the same seat after $turnStuck move(s) that earned no extra turn -- "
+ . 'a seat that keeps the board forever is the failure this section exists for');
+ok($againBad === 0,
+   "the turn changed hands on $againBad move(s) that DID earn an extra turn, so the extra "
+ . 'turn is announced and then not given');
+
+foreach ($oneSided as $d) {
+	ok(strpos($d, 'round=1') !== false,
+	   "a seat never moved and the match was still running: $d -- the turn is stuck on one "
+	 . 'side, which is not DHCA_EXTRA_TURN ending it early');
+	ok(strpos($d, 'host=0') === false,
+	   "the HOST never moved: $d -- the host opens every match, so zero host moves means the "
+	 . 'opening turn never happened');
+}
 ok($viewBad === 0, 'every intermediate state flipped cleanly');
-printf("match: %d played, host won %d (%.0f%%), avg %.1f rounds, %d stuck, %d bad views\n",
+printf("match: %d played, host won %d (%.0f%%), avg %.1f rounds, %d stuck, %d bad views, "
+     . "%d first-round blowout%s\n",
 	$games, $hostWins, $games ? $hostWins / $games * 100 : 0,
-	$games ? $turnsTot / $games : 0, $stuck, $viewBad);
+	$games ? $turnsTot / $games : 0, $stuck, $viewBad,
+	count($oneSided), count($oneSided) === 1 ? '' : 's');
 
 /* No seat advantage beyond going first. Not a balance rule -- just a check that
    'mine' and 'foes' are not accidentally asymmetric in a mode where a person
