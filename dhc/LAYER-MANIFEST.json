@@ -1,0 +1,398 @@
+{
+ "note": "Layer manifest for the Skulliance trait assembler. Derived from the art plus the on-chain metadata of the 226 minted Fighters. Items marked needs_confirmation are pending Maxingo.",
+ "layer_order": [
+  {
+   "slot": "Background",
+   "dir": "Backgrounds",
+   "required": true
+  },
+  {
+   "slot": "Effects1",
+   "dir": "Effects",
+   "required": false,
+   "note": "scene atmosphere -- drawn on the background, behind the character"
+  },
+  {
+   "slot": "Effects2",
+   "dir": "Effects",
+   "required": false,
+   "note": "second atmosphere layer, also behind the character"
+  },
+  {
+   "slot": "WeaponBack",
+   "dir": "Weapons",
+   "required": false,
+   "note": "companion half of a composite weapon -- drawn BEHIND the torso"
+  },
+  {
+   "slot": "Torso",
+   "dir": "Torsos",
+   "required": true
+  },
+  {
+   "slot": "Weapon",
+   "dir": "Weapons",
+   "required": false,
+   "note": "drawn BEFORE Arms -- a weapon is gripped, so the hand and forearm sit in front of it"
+  },
+  {
+   "slot": "Arms",
+   "dir": "Augmented Arms",
+   "required": false
+  },
+  {
+   "slot": "Head",
+   "dir": "Heads",
+   "required": true
+  },
+  {
+   "slot": "Headgear",
+   "dir": "Headpieces",
+   "required": false
+  },
+  {
+   "slot": "Companion",
+   "dir": "Pets",
+   "required": false
+  }
+ ],
+ "composite_weapons": {
+  "pairs": [
+   [
+    "scythe-sash",
+    "scythe"
+   ],
+   [
+    "skull-krusher-sash",
+    "skull-krusher"
+   ],
+   [
+    "bio-weapon-strap",
+    "bioweapon"
+   ],
+   [
+    "bone-blaster-3x-strap",
+    "bone-blaster-3x"
+   ],
+   [
+    "dh-spike-blaster-1",
+    "dh-spike-blaster"
+   ],
+   [
+    "lil-fren",
+    "lil-fren-1"
+   ],
+   [
+    "mega-taser-cannon-1",
+    "mega-taser-cannon"
+   ]
+  ],
+  "note": "front <-> back halves of one on-chain weapon. The two sashes were hand-separated by Oculus Orbus; the two STRAPS arrived from Maxingo on 2026-10-30 (the Bio Weapon had shipped without its strap and had been drawn unsupported; the Bone Blaster was split in the same pass). A strap or sash inherits its parent weapon's rarity rather than scoring mythic for being absent from the collection under its own name -- done by ALIASing it to the parent's on-chain name in gen-rarity.py, so the two halves cannot end up on different tiers.",
+  "shared_front": {
+   "trait": "skull-and-chains",
+   "hangs_from": [
+    "axe",
+    "electric-morning-star"
+   ],
+   "note": "NOT a tethered half, because it has two parents. It used to hold the slug 'electric-morning-star' -- we had been calling the chains by the mace's name. Maxingo sent the actual Electric Morning Star (the mace) on 2026-10-30 and it is a BACK weapon; the chains are the front piece it hangs from, and the Axe hangs the same chains. So both maces couple to it ONE-WAY: picking either brings the chains, picking the chains commits you to neither, and they stay yours when whichever brought them comes off.",
+   "rarity": "uncommon on a DERIVED count of 8 -- axe 5 + electric morning star 3, disjoint because Weapon is one slot on chain. Scoring it 0 would make a piece worn by 8 of 226 the rarest class of drop; inheriting one parent's tier would ignore the other."
+  }
+ },
+ "single_weapons_front": [
+  "Annihilation_Belt",
+  "Axe",
+  "Bioweapon",
+  "DH_Raider_Equipment",
+  "Plastic_Blaster",
+  "Scythe",
+  "Skull_Krusher_"
+ ],
+ "single_weapons_note": "Tested each rendered both in front of and behind a torso. Behind hides most of the weapon in every case -- the Morning Star and Axe lose their chain and pendant entirely. Weapons are a trait people collect, so hiding them defeats the purpose. No splitting required for these. Electric_Morning_Star left this list on 2026-10-30: the file under that name was the chains, and the real mace is a back weapon.",
+ "corrections": [
+  "2026-09-13: Weapon moved to draw before Arms. The original guess had Arms first, which put a weapon's grip over the knuckles. Confirmed visually in dhcsandbox.php. Question 4 to Maxingo still stands for the rest of the order.",
+  "2026-09-13: Effects moved from the top of the stack to just above the Background. They are scene atmosphere, and drawing them last painted flames and sparks across the Fighter's face. If any individual effect is meant to overlay the character, it needs its own slot -- ask Maxingo.",
+  "2026-09-13: weapons split 7/7 between the front and behind slots. Each weapon appears in one slot only. This also fixes front/back for all three composite weapons, so it is no longer an open question for Maxingo.",
+  "2026-09-13: DH Vision Shoulder Cam drawn before Arms instead of last -- it is shoulder-mounted, so arms and headgear belong over it. Every other companion is unaffected and still draws last.",
+  {
+   "date": "2026-09-13",
+   "change": "Plastic Blaster and DH Raider Equipment can no longer be combined with any Arms trait; the sandbox greys out whichever side conflicts and explains why.",
+   "source": "Oculus Orbus, sandbox testing"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "Electric Morning Star added to the Arms-exclusive weapons alongside Plastic Blaster and DH Raider Equipment.",
+   "source": "Oculus Orbus, sandbox testing"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "Code Sea Predator joins DH Vision Shoulder Cam as a companion that draws behind Arms.",
+   "source": "Oculus Orbus, sandbox testing"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "TEMPORARY: Perforator Arm Replacement draws behind the torso until armless torso variants exist. Self-retiring per torso.",
+   "source": "Oculus Orbus, sandbox testing"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "The three DHC2 Comic Cover effects draw just below Head rather than behind the character.",
+   "source": "Oculus Orbus, sandbox testing"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "All effects moved to just below Head (Effects 2 over Effects 1), superseding the comic-cover-only exception. Comic covers removed from the Effects 1 category.",
+   "source": "Oculus Orbus, sandbox testing"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "Xlon's Black Fire Attack drops behind the torso rather than drawing below the head with the other effects.",
+   "source": "Oculus Orbus, sandbox testing"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "Rarity tiers and per-category drop rates added to every trait, derived from on-chain frequency in the original 226 fighters.",
+   "source": "Oculus Orbus request"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "Randomise now uses measured per-slot fill rates instead of a flat 45% guess, gates Effects 2 behind Effects 1, and rolls one weapon across both slots.",
+   "source": "Oculus Orbus request"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "Solid colour backgrounds pinned common (were mythic by the absence rule). Also fixed count summing across case typos in the mint metadata, which had mis-tiered 5 traits.",
+   "source": "Oculus Orbus"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "Scythe and Skull Krusher split into weapon (back) + sash (front); axe stripped of its torso chains. Sashes added to the front slot and aliased to their parent weapon's rarity.",
+   "source": "Oculus Orbus, art edit"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "Weapon couplings: Axe brings Electric Morning Star one-way; Scythe and Skull Krusher are tethered to their sashes. Cache-busting removed (caching resolved on its own).",
+   "source": "Oculus Orbus"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "Assembly offsets: skull krusher nudged down 10px, axe 2px, to meet the torso.",
+   "source": "Oculus Orbus, sandbox testing"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "Assembly offsets tuned: skull krusher 10 -> 13px, axe 2 -> 3px.",
+   "source": "Oculus Orbus, sandbox testing"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "Skull Krusher Sash given the same 13px assembly offset as its weapon.",
+   "source": "Oculus Orbus, sandbox testing"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "Assembly offsets raised again after testing more torsos: skull krusher (and sash) 13 -> 23px, axe 3 -> 13px.",
+   "source": "Oculus Orbus, sandbox testing"
+  },
+  {
+   "date": "2026-09-13",
+   "change": "Skull Krusher Sash held at 13px while its weapon went to 23px -- the halves meet the body at different points.",
+   "source": "Oculus Orbus, sandbox testing"
+  },
+  {
+   "date": "2026-09-14",
+   "change": "Six Arms traits suspended from drops pending armless torsos.",
+   "source": "Oculus Orbus"
+  },
+  {
+   "date": "2026-10-30",
+   "change": "Maxingo delivery: 5 new traits and 9 missing ones. Three slugs were re-pointed at the art the chain actually names -- electric-morning-star (was the chains, now the mace), code-sea-predator (was a piece absent from the collection, now the green one), dh-sorceror (was blue, now dark). The displaced art keeps its own entry under a new slug and dhc-trait-migrate.php renames what players hold, so no saved Fighter changes appearance. All three displaced pieces score rarer than before, never commoner.",
+   "source": "Maxingo, via Oculus Orbus"
+  },
+  {
+   "date": "2026-10-30",
+   "change": "damaged-dh-cop-1 borrows DH Cop's armless plate (DHCF_ARMLESS_ALIAS) rather than needing its own. Measured, not assumed: 100% of the damage (35,389px) lies inside the arms region and 0px on the body, and DH Cop's plate is a strict subset of the damaged torso, so nothing can show through. The hybrid restore layer still uses the torso's own art, so a single-sided arm puts the damaged arm back.",
+   "source": "Oculus Orbus"
+  }
+ ],
+ "weapon_slots": {
+  "front": [
+   "annihilation-belt",
+   "bio-weapon-strap",
+   "bone-blaster-3x-strap",
+   "dh-raider-equipment",
+   "dh-spike-blaster-1",
+   "lil-fren",
+   "mega-taser-cannon-1",
+   "plastic-blaster",
+   "scythe-sash",
+   "skull-and-chains",
+   "skull-krusher-sash"
+  ],
+  "back": [
+   "axe",
+   "bioweapon",
+   "bone-blaster-3x",
+   "dh-spike-blaster",
+   "electric-morning-star",
+   "lil-fren-1",
+   "mega-taser-cannon",
+   "scythe",
+   "skull-krusher"
+  ],
+  "note": "A partition: each weapon file is offered in exactly one slot. This list is also how the COUPLE table tells a tethered pair's halves apart -- it used to test for a '-sash' suffix, which is false of every strap."
+ },
+ "companion_exceptions": {
+  "companions": [
+   "dh-vision-shoulder-cam",
+   "code-sea-predator",
+   "steel-code-sea-predator"
+  ],
+  "rule": "Drawn below Arms instead of last, so Arms and Headgear sit over them.",
+  "why": "Both sit against the body rather than in front of it -- the shoulder cam mounts on the shoulder, Code Sea Predator wraps the body. Drawn last, either one looks stuck to the outside of the character. Both Code Sea Predators: the collection's own one is GREEN and took the slug on 2026-10-30, so the piece we had is now steel-code-sea-predator. Same creature recoloured -- 78,903px vs 77,771px over the same bounding box -- so the same rule."
+ },
+ "arms_exclusive_weapons": {
+  "weapons": [
+   "plastic-blaster",
+   "dh-raider-equipment",
+   "skull-and-chains"
+  ],
+  "rule": "Mutually exclusive with any Arms trait, enforced both ways.",
+  "why": "All three are drawn against the torso's own arms -- held in them, or posed to rest on them. An Arms trait reposes those arms, leaving the weapon floating with nothing supporting it. This is a property of the art, not of draw order, so reordering the stack cannot fix it. 2026-10-30: this listed 'electric-morning-star' when that slug held the chains. The CHAINS are the piece posed against the torso's own arms; the mace is a back weapon and arms do not touch it.",
+  "reported_by": "Oculus Orbus, sandbox testing"
+ },
+ "temporary_workarounds": {
+  "arms_behind_torso": {
+   "arms": [
+    "perforator-arm-replacement"
+   ],
+   "rule": "Drawn before the torso instead of after it.",
+   "why": "The torso's own arms are still present underneath, so drawing the replacement over the top leaves two sets of arms. Behind the torso is not correct either -- it hides the seam better while the armless torsos are pending.",
+   "retires_when": "Automatically, per torso: skipped as soon as that torso has an entry in torso-noarms/, which is the real fix.",
+   "reported_by": "Oculus Orbus, sandbox testing"
+  }
+ },
+ "effects_exceptions": {
+  "rule": "All effects draw just below Head; Effects 2 draws over Effects 1.",
+  "why": "Behind the character kept effects off the face but buried them behind the body. Below the head they cross the Fighter and stop short of the face.",
+  "comic_covers": {
+   "traits": [
+    "dhc2-comic-cover-1",
+    "dhc2-comic-cover-2",
+    "dhc2-comic-cover-3",
+    "dhc2-comic-cover-4",
+    "dhc2-comic-cover-5"
+   ],
+   "rule": "Offered in Effects 2 only -- omitted from the Effects 1 list entirely.",
+   "why": "A cover is a full-frame treatment, so nothing may draw over it and two at once is meaningless. Effects 2 is the upper slot and holds one trait, so confining them there makes both guarantees structural rather than a renderer rule."
+  },
+  "reported_by": "Oculus Orbus, sandbox testing",
+  "behind_torso": {
+   "traits": [
+    "xlon-s-black-fire-attack"
+   ],
+   "rule": "Drawn just behind the torso instead of below the head -- over the background and rear weapon, under the body.",
+   "why": "It reads as something the Fighter is standing in rather than something happening in front of them.",
+   "applies": "Per effects slot, in either Effects 1 or Effects 2."
+  }
+ },
+ "order": [
+  "background",
+  "weaponBack",
+  "torso",
+  "weapon",
+  "arms",
+  "effects1",
+  "effects2",
+  "head",
+  "headgear",
+  "companion"
+ ],
+ "rarity": {
+  "source": "CIP-25 metadata for the 226 minted DHC2 Fighters under policy b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5, read via Koios.",
+  "tiers": {
+   "common": "worn by 10+ fighters",
+   "uncommon": "6-9",
+   "epic": "3-5",
+   "legendary": "1-2",
+   "mythic": "0 - art exists but no minted fighter uses it"
+  },
+  "drop_rates": "Designed curve 44/28/17/9/2 per tier, split evenly among a category's traits of that tier, normalised so each category sums to 100%.",
+  "generated_by": "dhc/gen-rarity.py -> dhcrarity.php (committed; the art folder is not)",
+  "aliases": "Traits renamed between the mint and the file delivery are mapped explicitly in the generator. Two were left unmapped as too uncertain to guess: 'Eon Raider Spacecraft Window' (chain has ...Interior) and 'Steel Viking Helmet' (chain has Code Viking Helmet); both currently score mythic.",
+  "solid_backgrounds": "Black, White, Red, Bright Red and the four Lights are pinned common despite appearing in no minted Fighter. Their absence reflects hand-assembly -- Maxingo picked interesting scenes for every mint -- not scarcity, and the absence test would otherwise make a flat colour the rarest drop in the game."
+ },
+ "slot_fill_rates": {
+  "measured_across": "the 226 minted DHC2 Fighters",
+  "rates": {
+   "background": "66.8% on chain, forced to 100% in the sandbox",
+   "torso": "97.8%, forced to 100%",
+   "head": "97.8%, forced to 100%",
+   "arms": "29.6%",
+   "weapon": "24.8% (one weapon across both slots)",
+   "headgear": "44.7%",
+   "companion": "17.7%",
+   "effects1": "52.2%",
+   "effects2": "13.3% overall, and never without Effects 1 - not once in 226"
+  },
+  "note": "Randomise rolls against these so a shuffle looks like a real Fighter. A two-part weapon fills both weapon slots with its matching halves; the seven back-only weapons are now reachable, which they were not when Randomise skipped the rear slot."
+ },
+ "coupled_weapons": {
+  "one_way": {
+   "axe": "skull-and-chains",
+   "electric-morning-star": "skull-and-chains",
+   "rule": "Selecting either back weapon also brings the skull-and-chains. The chains are a trait in their own right and can be worn without either; if chosen directly they are not removed when the weapon is.",
+   "arms": "If an Arms trait is on, both are selectable on their own and simply do not bring the chains -- the chains are what arms rule out, not the weapon. Neither mace is ever blocked by arms."
+  },
+  "tethered": {
+   "scythe": "scythe-sash",
+   "skull-krusher": "skull-krusher-sash",
+   "bioweapon": "bio-weapon-strap",
+   "bone-blaster-3x": "bone-blaster-3x-strap",
+   "rule": "Two halves of one weapon. Picking either brings both, removing either removes both. A sash or strap is never a trait on its own, and the DROP awards both halves together.",
+   "backfill": "Holders of the Bio Weapon owned no strap, so the tether would have refused their Fighter at save for a trait they were never given. dhc-trait-migrate.php grants one strap per weapon held, once."
+  },
+  "reported_by": "Oculus Orbus, sandbox testing; untangled with Maxingo 2026-10-30"
+ },
+ "assembly_offsets": {
+  "units": "pixels of the 1000px master, positive = down",
+  "offsets": {
+   "skull-krusher": 23,
+   "skull-krusher-sash": 13,
+   "axe": 13
+  },
+  "why": "Both sit too high to meet the body. Tuned by eye over several passes and against more than one torso -- the values grew once torsos beyond the usual test one were checked.",
+  "applied": "At assembly time, as a percentage of rendered height so it holds at any canvas size. The source art is untouched; thumbnails are not offset.",
+  "reported_by": "Oculus Orbus, sandbox testing",
+  "note": "Tethered halves are tuned independently -- the sash lies on the chest while the weapon hangs behind, so they do not necessarily share an offset."
+ },
+ "known_issues": {
+  "nebula-demon-torso": {
+   "torso": "nebula-demon",
+   "conflicts_with": [
+    "axe",
+    "mega-taser-cannon",
+    "scythe",
+    "skull-krusher",
+    "lil-fren-1"
+   ],
+   "slot": "weaponBack",
+   "symptom": "The torso is a wide robed silhouette filling the lower canvas, so a rear weapon is almost entirely hidden behind it -- the blade floats at the top with no visible connection to the body.",
+   "status": "REPORTED, NOT ENFORCED. Recorded for whoever builds the real assembler; the sandbox still allows the combination.",
+   "reported_by": "Oculus Orbus, sandbox testing"
+  }
+ },
+ "suspended_from_drops": {
+  "traits": [
+   "deteriorated-mk100-blaster-arms",
+   "dh-pilot",
+   "head-chopper",
+   "influenza-blaster-3k",
+   "mk100-blaster-arms",
+   "perforator-arm-replacement"
+  ],
+  "why": "These arms do not cover the torso's own arms, so they read as two sets of limbs until armless torso variants exist.",
+  "scope": "Removed from the draw only. Already-owned copies remain usable and scoring.",
+  "lift_when": "torso-noarms/ is populated; empty DHCF_SUSPENDED in dhcfighters-config.php.",
+  "reported_by": "Oculus Orbus"
+ }
+}

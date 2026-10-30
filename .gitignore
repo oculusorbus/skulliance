@@ -40,6 +40,32 @@ dhc/*
 dhc/web/*
 !dhc/web/trait-index.json
 
+# THE FIVE FILES THAT DECIDE WHAT A TRAIT IS WORTH, which were ignored along
+# with the art they sit beside and should not have been. dhcrarity.php is
+# tracked, so the OUTCOME was in git -- but gen-rarity.py is what produces it
+# and onchain-counts.json is what it reads, so the reasoning behind every tier
+# in the game existed on one laptop. The manifest and the two Maxingo
+# documents are the record of decisions taken with the artist, which is worse
+# to lose than the table.
+#
+# SAFE AGAINST THE ONE-CHANNEL RULE ABOVE, and that is the test each of these
+# had to pass rather than being small and useful. None of them is ever written
+# outside the repo: gen-rarity.py is run locally, onchain-counts.json is
+# written by the census tooling next to it, and the other three are edited
+# here. Nothing on the live server touches any of them, so a pull cannot find
+# a local modification to refuse. Art and anything FTP-deployed stays ignored.
+#
+# dhc/rarity.json is DELIBERATELY STILL IGNORED. gen-rarity.py writes it and
+# nothing reads it -- dhcrarity.php is the file the platform loads and it is
+# already tracked, carrying the same data one line per trait. Tracking both
+# would put two copies of one table in git with nothing keeping them in step,
+# which is the drift the comic-cover lists already taught us once.
+!dhc/gen-rarity.py
+!dhc/onchain-counts.json
+!dhc/LAYER-MANIFEST.json
+!dhc/TRAIT-RECONCILIATION.md
+!dhc/MAXINGO-QUESTIONS.md
+
 # Generated Fighter composites -- rebuilt on demand, never source.
 dhcrenders/
 # Marquee-sized derivatives of those, for digihellcorps.php. Same rule.
