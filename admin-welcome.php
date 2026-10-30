@@ -46,8 +46,22 @@ if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['aw_msg'])) {
 	$aw_msg = $_SESSION['aw_msg'];
 	unset($_SESSION['aw_msg']);
 }
+/*
+ * NAMED aw_refresh, NOT refresh, AND THAT IS NOT FUSSINESS.
+ *
+ * skulliance.php is included by every signed-in page and reads $_POST at
+ * include time: `if(isset($_POST['refresh']))` is its WALLET refresh,
+ * which calls verifyNFTs() from verify.php -- a file this page does not
+ * include. Posting a field called `refresh` from here reached that branch
+ * and took the page down with
+ *
+ *   Fatal error: Call to undefined function verifyNFTs()
+ *
+ * before a line of this file ran. Any form field on any admin page shares
+ * a namespace with that one, so prefix them.
+ */
 if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST'
-    && isset($_POST['refresh'])) {
+    && isset($_POST['aw_refresh'])) {
 	$r = guild_members_refresh($bot_token);
 	$_SESSION['aw_msg'] = !empty($r['ok'])
 		? 'Roster refreshed: ' . number_format((int)$r['count']) . ' members.'
@@ -149,6 +163,38 @@ td.aw-act { text-align:right; white-space:nowrap; }
 .aw-btn.on { background:transparent; color:#5f7d90; border-style:dashed; }
 .aw-refresh { background:none; border:1px solid rgba(255,255,255,.14); color:#9fd8c8;
   border-radius:6px; padding:5px 12px; font-size:.78rem; cursor:pointer; }
+
+/* THE DIALOG'S OWN STYLING, not borrowed from admin-lapsed.php.
+   Those .lap-m* rules live in that page's inline <style>, not in
+   admin-css.php, so reusing the class names here produced a dialog with
+   no styling at all -- the backdrop had no position, so removing
+   [hidden] revealed an unstyled block at the foot of the page and the
+   button looked dead. Self-contained, with its own prefix. */
+.aw-mw { position:fixed; inset:0; background:rgba(4,10,16,.82); z-index:9000;
+  display:flex; align-items:center; justify-content:center; padding:20px; }
+.aw-mw[hidden] { display:none; }
+.aw-mp { background:#0b1b26; border:1px solid rgba(255,255,255,.14); border-radius:10px;
+  padding:16px; width:min(560px,100%); max-height:90vh; overflow:auto; }
+.aw-mh { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:0 0 12px; }
+.aw-mh h3 { margin:0; font-size:1rem; color:#e8eaed; }
+.aw-mx { background:none; border:0; color:#8fa8b8; font-size:1.4rem; line-height:1;
+  cursor:pointer; padding:0 2px; }
+.aw-mname { background:#123049; color:#9fd8c8; border:1px solid rgba(255,255,255,.14);
+  border-radius:6px; padding:3px 10px; font-size:.72rem; cursor:pointer; margin-left:auto; }
+.aw-offscreen { position:absolute; left:-9999px; width:1px; height:1px; }
+.aw-mi { display:flex; flex-direction:column; gap:7px; }
+.aw-ml { font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#5f7d90; }
+.aw-mu { width:100%; background:#07131c; border:1px solid rgba(255,255,255,.12);
+  border-radius:6px; color:#e8eaed; font:inherit; font-size:.82rem; padding:9px 10px;
+  box-sizing:border-box; }
+.aw-mmsg { resize:vertical; line-height:1.5; }
+.aw-mc { background:#00c8a0; color:#04141c; border:0; border-radius:6px; padding:7px 14px;
+  font-size:.8rem; font-weight:600; cursor:pointer; }
+.aw-mc2 { background:#123049; color:#9fd8c8; }
+.aw-mdone { background:#f5a623; color:#2a1a00; }
+.aw-mnav { display:flex; align-items:center; gap:8px; margin-top:14px; }
+.aw-mnav span { font-size:.72rem; color:#5f7d90; margin:0 auto; }
+.aw-mc:disabled, .aw-mnav button:disabled { opacity:.4; cursor:default; }
 </style>
 
 <h2 style="margin:0 0 4px">Newcomers</h2>
@@ -160,7 +206,7 @@ td.aw-act { text-align:right; white-space:nowrap; }
 	<?php echo htmlspecialchars(date('j M, H:i', (int)$aw_cache['at'])); ?>.
 	<?php endif; ?>
 	<form method="post" style="display:inline">
-		<button type="submit" name="refresh" value="1" class="aw-refresh">Refresh roster</button>
+		<button type="submit" name="aw_refresh" value="1" class="aw-refresh">Refresh roster</button>
 	</form>
 </p>
 
@@ -251,24 +297,24 @@ td.aw-act { text-align:right; white-space:nowrap; }
 </table>
 <?php endif; ?>
 
-<div class="lap-mw" id="awModal" hidden>
-	<div class="lap-mb" role="dialog" aria-modal="true" aria-labelledby="awWho">
-		<div class="lap-mh">
+<div class="aw-mw" id="awModal" hidden>
+	<div class="aw-mp" role="dialog" aria-modal="true" aria-labelledby="awWho">
+		<div class="aw-mh">
 			<h3 id="awWho"></h3>
-			<button type="button" class="lap-mname" id="awCopyName">Copy name</button>
-			<input class="lap-offscreen" id="awName" type="text" readonly aria-hidden="true" tabindex="-1">
-			<button type="button" class="lap-mx" id="awX" aria-label="Close">&times;</button>
+			<button type="button" class="aw-mname" id="awCopyName">Copy name</button>
+			<input class="aw-offscreen" id="awName" type="text" readonly aria-hidden="true" tabindex="-1">
+			<button type="button" class="aw-mx" id="awX" aria-label="Close">&times;</button>
 		</div>
-		<div class="lap-mi">
-			<label class="lap-ml" for="awMsg">The message</label>
-			<textarea class="lap-mu lap-mmsg" id="awMsg" rows="8" readonly></textarea>
-			<button type="button" class="lap-mc" id="awCopyMsg">Copy message</button>
+		<div class="aw-mi">
+			<label class="aw-ml" for="awMsg">The message</label>
+			<textarea class="aw-mu aw-mmsg" id="awMsg" rows="8" readonly></textarea>
+			<button type="button" class="aw-mc" id="awCopyMsg">Copy message</button>
 		</div>
-		<div class="lap-mnav">
-			<button type="button" class="lap-mc lap-mc2" id="awPrev">&larr; Prev</button>
+		<div class="aw-mnav">
+			<button type="button" class="aw-mc aw-mc2" id="awPrev">&larr; Prev</button>
 			<span id="awPos"></span>
-			<button type="button" class="lap-mc lap-mdone" id="awDone">Mark written &amp; next</button>
-			<button type="button" class="lap-mc lap-mc2" id="awNext">Next &rarr;</button>
+			<button type="button" class="aw-mc aw-mdone" id="awDone">Mark written &amp; next</button>
+			<button type="button" class="aw-mc aw-mc2" id="awNext">Next &rarr;</button>
 		</div>
 	</div>
 </div>

@@ -158,6 +158,55 @@ if ($fetchAt !== false) {
 	   'the mark is posted without naming its list, so writing to a newcomer marks them as '
 	 . 'having had the lapsed invite');
 }
+/*
+ * NO FORM FIELD MAY COLLIDE WITH skulliance.php, which is included by
+ * every signed-in page and reads $_POST AT INCLUDE TIME. Its
+ * `if(isset($_POST['refresh']))` is the WALLET refresh and calls
+ * verifyNFTs() out of verify.php, which this page does not include -- so
+ * a button named `refresh` took the whole page down with "Call to
+ * undefined function verifyNFTs()" before a line of it ran. Reported on
+ * the first press.
+ */
+$skl = file_get_contents(__DIR__ . '/skulliance.php');
+/*
+ * ONLY THE BARE ONES. A field is dangerous when the WHOLE condition is
+ * `if (isset($_POST['x'])) {` -- that fires on any page that happens to
+ * post it. $_POST['name'] appears in skulliance.php too, but inside a
+ * compound condition precisely because it caused this once before: it
+ * used to engage on the name alone and the Monstrocity boss form started
+ * reporting an item-submission error on a save that worked. Matching
+ * every mention would flag three admin pages that are already fine.
+ */
+preg_match_all('/if\s*\(\s*isset\(\$_POST\[\x27([a-z_]+)\x27\]\)\s*\)\s*\{/i', $skl, $sm);
+$taken = array_unique($sm[1]);
+preg_match_all('/name="([a-z_]+)"/i', $pg, $pm);
+$clash = array_intersect(array_unique($pm[1]), $taken);
+ok(!$clash,
+   'this page posts field(s) that skulliance.php also reads at include time, so pressing '
+ . 'the button runs ITS handler and not ours: ' . implode(', ', $clash)
+ . '. Prefix them (aw_).');
+ok(in_array('refresh', $taken, true),
+   'the collision check found no $_POST reads in skulliance.php at all, so it is passing '
+ . 'vacuously -- the pattern has probably rotted');
+
+/*
+ * AND THE DIALOG MUST CARRY ITS OWN STYLING. The .lap-m* rules live in
+ * admin-lapsed.php's inline <style>, not in admin-css.php, so borrowing
+ * the class names gave a backdrop with no position: removing [hidden]
+ * revealed an unstyled block at the foot of the page and the button
+ * looked dead. Reported as "the write button doesn't work".
+ */
+ok(!preg_match('/class="[^"]*\blap-/', $pg),
+   'the dialog uses .lap-* classes, which are defined in admin-lapsed.php and not on this '
+ . 'page, so it opens unstyled and reads as a dead button');
+foreach (array('.aw-mw', '.aw-mp', '.aw-mu', '.aw-mc') as $cls) {
+	ok(strpos($pg, $cls . ' {') !== false || strpos($pg, $cls . '[') !== false,
+	   "the dialog markup uses $cls and the page never defines it");
+}
+ok(strpos($pg, 'position:fixed') !== false,
+   'the dialog backdrop is not positioned, so it renders inline at the foot of the page '
+ . 'instead of over it');
+
 /* The refresh writes, so it must not be a GET. */
 ok(strpos($pg, "REQUEST_METHOD'] === 'POST'") !== false,
    'the roster refresh is reachable by GET, so an <img src> can fire it');
