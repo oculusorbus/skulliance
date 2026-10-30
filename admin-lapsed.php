@@ -109,6 +109,62 @@ if ($al_back) {
 		  WHERE f.created_at >= g.back_at
 		  GROUP BY f.user_id");
 	if ($q) while ($x = $q->fetch_assoc()) $al_built[(int)$x['user_id']] = (int)$x['n'];
+
+	/*
+	 * DID THEY DO ANYTHING, which is not the same question as did they
+	 * sign in.
+	 *
+	 * This column used to read last_login, and the owner caught it saying
+	 * "not since" for people who were visibly active. Two reasons, and
+	 * the first is enough on its own:
+	 *
+	 *   last_login IS WRITTEN AT MOST ONCE A DAY, and the package is
+	 *   granted on the very sign-in that sets it -- so back_at and
+	 *   last_login start life as the same timestamp. Somebody returning
+	 *   23 hours later trips the "less than a day old" guard on that
+	 *   UPDATE and their last_login does not move at all.
+	 *
+	 *   AND IT COUNTS PAGE LOADS, NOT PLAY. Signing in and reading the
+	 *   dashboard advances it; an hour of actually doing things does not
+	 *   advance it again until tomorrow.
+	 *
+	 * So activity is read from what they actually DID, against each
+	 * member's OWN return date -- the same join shape as Built since
+	 * above, because one global cutoff cannot answer a per-member
+	 * question.
+	 *
+	 * THREE TABLES, CHOSEN FOR COVERAGE PER QUERY. A trait drop catches
+	 * every game that pays one, which is most of the platform; a
+	 * transaction catches the daily reward, missions and the store; a
+	 * Fighter is already counted above and folded in so this column
+	 * cannot disagree with the one beside it.
+	 *
+	 * THE returngift ROWS ARE EXCLUDED, or the package itself counts as
+	 * activity and every returner reads as active.
+	 */
+	$al_act = array();
+	$gj = "JOIN (SELECT user_id, MIN(awarded_at) AS back_at FROM dhc_trait_drops
+	              WHERE source = 'returngift' GROUP BY user_id) g ON g.user_id = ";
+	foreach (array(
+		"SELECT d.user_id, MAX(d.awarded_at) AS t FROM dhc_trait_drops d
+		   $gj d.user_id
+		  WHERE d.source <> 'returngift' AND d.awarded_at > g.back_at GROUP BY d.user_id",
+		"SELECT t.user_id, MAX(t.date_created) AS t FROM transactions t
+		   $gj t.user_id
+		  WHERE t.date_created > g.back_at GROUP BY t.user_id",
+		"SELECT f.user_id, MAX(f.created_at) AS t FROM dhc_fighters f
+		   $gj f.user_id
+		  WHERE f.created_at > g.back_at GROUP BY f.user_id",
+	) as $sql) {
+		/* Suppressed per query, not per batch: a table missing on one
+		   install must not take the other two down with it. */
+		$r = @$conn->query($sql);
+		if (!$r) continue;
+		while ($x = $r->fetch_assoc()) {
+			$uid = (int)$x['user_id'];
+			if (!isset($al_act[$uid]) || $x['t'] > $al_act[$uid]) $al_act[$uid] = $x['t'];
+		}
+	}
 }
 
 /*
@@ -124,11 +180,10 @@ $al_n_week = $al_n_built = $al_n_again = 0;
 foreach ($al_back as $uid => $b) {
 	if ((int)$b['days_ago'] <= 7)  $al_n_week++;
 	if (!empty($al_built[$uid]))   $al_n_built++;
-	/* Both sides of THIS comparison are MySQL timestamps, so the offset
-	   cancels and strtotime is safe here. last_login is written at most
-	   once a day, so "came back on a later day" is the honest reading. */
-	if (isset($al_bu[$uid])
-	    && strtotime($al_bu[$uid]['last_login']) > strtotime($b['back_at']) + 86400) $al_n_again++;
+	/* DID SOMETHING, not signed in -- see the $al_act block above for why
+	   last_login cannot answer this. Any activity at all after their own
+	   return date counts; the query already excluded the package itself. */
+	if (!empty($al_act[$uid])) $al_n_again++;
 }
 
 /**
@@ -313,13 +368,19 @@ function lap_followup_text($name, $days, $traits, $built, $seen) {
 	$out = "Hey! Quick one, and no pressure to reply.\n\n";
 
 	if ($built && !$seen) {
-		/* The package worked and whatever came next did not. Asking what
-		   they built is a real question, not an opener. */
-		$out .= "You came back " . $ago . ", put a Fighter together and I have not seen "
-		      . "you since. Did it not grab you, or was it just bad timing?";
+		/* The package worked and whatever came next did not. "Nothing since"
+		   now means no trait, no transaction and no Fighter after the
+		   return, which is a real absence rather than a stale timestamp --
+		   so the message can say so without risking telling an active
+		   member they have been missing. */
+		$out .= "You came back " . $ago . ", put a Fighter together and then it went quiet. "
+		      . "Did it not grab you, or was it just bad timing?";
 	} elseif ($seen) {
-		/* Around, signed in more than once, and still has not assembled
-		   anything. This is the one worth fixing rather than selling. */
+		/* Active since they came back -- earning traits, claiming, buying --
+		   and still has not assembled anything. This is the one worth
+		   fixing rather than selling, and it is only identifiable because
+		   the column measures what they DID rather than whether a
+		   once-a-day last_login moved. */
 		$out .= "You picked up " . $traits . " trait" . ($traits === 1 ? '' : 's')
 		      . " " . $ago . " and " . ($traits === 1 ? 'it is' : 'they are')
 		      . " still sitting in your account unbuilt. "
@@ -615,6 +676,7 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
    then permanently muted -- the column is a to-do list and a row that
    is done should stop asking for attention. */
 td.lap-ask { text-align:center; }
+.lap-dim { color:#5f7d90; }
 .lap-askbtn { background:#123049; color:#9fd8c8; border:1px solid rgba(255,255,255,.14);
   border-radius:6px; padding:4px 12px; font-size:.78rem; cursor:pointer; }
 .lap-askbtn:hover { background:#17405f; }
@@ -644,7 +706,7 @@ td.lap-ask { text-align:center; }
 		echo number_format($al_n_back); ?></b><span>came back</span></div>
 	<div><b><?php echo number_format($al_n_week); ?></b><span>in the last 7 days</span></div>
 	<div><b><?php echo number_format($al_n_built); ?></b><span>built a Fighter</span></div>
-	<div><b><?php echo number_format($al_n_again); ?></b><span>came back again</span></div>
+	<div><b><?php echo number_format($al_n_again); ?></b><span>did something since</span></div>
 </div>
 
 <div class="lap-range lap-views">
@@ -666,7 +728,7 @@ td.lap-ask { text-align:center; }
 <?php else: ?>
 <table class="lap-t">
 	<thead><tr>
-		<th>Member</th><th>Came back</th><th>Got</th><th>Built since</th><th>Since then</th><th>Ask</th>
+		<th>Member</th><th>Came back</th><th>Got</th><th>Built since</th><th>Active since</th><th>Ask</th>
 	</tr></thead>
 	<tbody>
 	<?php foreach ($al_back as $uid => $b):
@@ -676,7 +738,10 @@ td.lap-ask { text-align:center; }
 		   Clamped anyway: a clock that drifts the other way must not
 		   render a negative. */
 		$days = max(0, (int)$b['days_ago']);
-		$seen = ($bu && strtotime($bu['last_login']) > $bt + 86400);
+		/* What they DID since their own return, not whether a once-a-day
+		   last_login happened to move. */
+		$act  = isset($al_act[$uid]) ? $al_act[$uid] : '';
+		$seen = ($act !== '');
 	?>
 	<tr>
 		<td>
@@ -703,7 +768,11 @@ td.lap-ask { text-align:center; }
 				: '<span class="none">not yet</span>';
 		?></td>
 		<td class="lap-has"><?php
-			echo $seen ? 'signed in again' : '<span class="none">not since</span>';
+			/* The DATE, not just a yes: "active, 3 Oct" tells you whether to
+			   write to them, and "active" on its own does not. */
+			echo $seen
+				? 'active <span class="lap-dim">' . htmlspecialchars(date('j M', strtotime($act))) . '</span>'
+				: '<span class="none">nothing yet</span>';
 		?></td>
 		<td class="lap-ask"><?php
 			/*

@@ -115,7 +115,20 @@ echo "\nthe panel can show who actually came back\n";
 $parts = explode('dhc_trait_drops', $src);
 $loose = 0;
 for ($qi = 1; $qi < count($parts); $qi++) {
-	if (strpos(substr($parts[$qi], 0, 300), "source = 'returngift'") === false) $loose++;
+	$look = substr($parts[$qi], 0, 300);
+	/* The package rows themselves. */
+	if (strpos($look, "source = 'returngift'") !== false) continue;
+	/*
+	 * OR SCOPED BY THE PACKAGE, which is a second legitimate shape and was
+	 * not possible when this check was written. The activity column reads
+	 * every trait that is NOT the package (source <> 'returngift') but
+	 * only after each member's own back_at, so it is bounded by the
+	 * returngift rows through the join rather than by its own WHERE.
+	 * Mentioning back_at is what distinguishes that from an unbounded
+	 * count of every trait ever dropped, which is what this guards.
+	 */
+	if (strpos($look, 'back_at') !== false) continue;
+	$loose++;
 }
 ok(count($parts) - 1 >= 2, 'the ledger queries have gone, so the returns view reads nothing');
 ok($loose === 0,
@@ -132,9 +145,27 @@ ok(strpos($src, "view=back") !== false && strpos($src, "'back'") !== false,
  */
 ok(strpos($src, 'f.created_at >= g.back_at') !== false,
    'Fighters are not counted from each member\'s own return date, so the headline number is meaningless');
-/* One query for everybody, not one per returning member. */
-ok(substr_count($src, 'FROM dhc_fighters') <= 1,
-   'the Fighter count is being asked per member, which is a query per row');
+/*
+ * ONE QUERY FOR EVERYBODY, NOT ONE PER RETURNING MEMBER.
+ *
+ * Counting the occurrences was the proxy for that and stopped being one:
+ * the activity column adds a SECOND dhc_fighters query, which is also a
+ * single grouped query for the whole list. The property is that each one
+ * is a batch -- joined to each member's own back_at and grouped by user --
+ * not that there is only one of them.
+ */
+$fparts = explode('FROM dhc_fighters', $src);
+$perRow = array();
+for ($qi = 1; $qi < count($fparts); $qi++) {
+	$look = substr($fparts[$qi], 0, 300);
+	if (strpos($look, 'back_at') === false || stripos($look, 'GROUP BY') === false) {
+		$perRow[] = trim(preg_replace('/\s+/', ' ', substr($look, 0, 90)));
+	}
+}
+ok(!$perRow,
+   'a dhc_fighters query is not joined to each member\'s own back_at and grouped by user, '
+ . 'so it is either counting the wrong window or being asked once per row: '
+ . implode(' | ', $perRow));
 
 /*
  * The two views must not share a filter that only makes sense on one
@@ -462,6 +493,56 @@ ok(strpos($tabs, "'lapsed'") !== false, 'the Lapsed tab is not in the admin nav'
  * person, and it must not read like a mail merge to somebody who is being
  * asked for a personal favour.
  * ------------------------------------------------------------------------- */
+echo "\nactive since is measured from what they DID\n";
+/*
+ * NOT last_login, WHICH IS WRITTEN AT MOST ONCE A DAY. The package is
+ * granted on the very sign-in that sets it, so back_at and last_login
+ * start out identical; somebody returning 23 hours later trips the
+ * "less than a day old" guard on that UPDATE and their last_login does
+ * not move. The column then reports a member who is visibly playing as
+ * never having come back -- reported by the owner, exactly that.
+ *
+ * ASSERTED DIRECTLY RATHER THAN THROUGH THE $loose WALK ABOVE, which
+ * reads a 300-character window and happily finds a back_at belonging to
+ * the NEXT query in the list. Three mutations escaped it before these
+ * were added.
+ */
+$actBlk = strpos($src, '$al_act = array();');
+ok($actBlk !== false, 'the activity block is gone, so Active since has nothing to read');
+if ($actBlk !== false) {
+	$blk = substr($src, $actBlk, 1800);
+	ok(substr_count($blk, 'g.back_at') >= 3,
+	   'an activity query is not bounded by the member\'s own return date, so it counts '
+	 . 'things they did BEFORE they came back');
+	ok(strpos($blk, "d.source <> 'returngift'") !== false,
+	   'the activity query counts the welcome-back package itself, so every single returner '
+	 . 'reads as active');
+	/*
+	 * THE SPECIFIC QUERY, not the bare table name. A 1800-character window
+	 * reaches past the block into code that mentions `transactions` for
+	 * CARBON, so searching for the word passed with the query deleted.
+	 */
+	foreach (array('FROM dhc_trait_drops d' => 'any game that pays a trait',
+	               'FROM transactions t'    => 'the daily reward, missions and the store',
+	               'FROM dhc_fighters f'    => 'a Fighter built after the return') as $q => $what) {
+		ok(strpos($blk, $q) !== false,
+		   "the activity sweep no longer reads $q, so $what counts as nothing and a member "
+		 . 'doing exactly that reads as absent');
+	}
+}
+/* And the column must actually use it. */
+ok(strpos($src, "\$seen = (\$act !== '')") !== false,
+   'the Came back column is back on last_login, which cannot tell an active member from an '
+ . 'absent one');
+ok(strpos($src, "\$al_n_again++") !== false && strpos($src, "!empty(\$al_act[\$uid])") !== false,
+   'the headline figure is not counted from real activity');
+/* last_login may still be SELECTed for other columns, but must not decide this one. */
+$cb = strpos($src, '<th>Member</th>');
+if ($cb !== false) {
+	ok(strpos(substr($src, $cb, 2600), "strtotime(\$bu['last_login'])") === false,
+	   'the Came back table still decides activity from last_login');
+}
+
 echo "\nthe follow-up\n";
 $lift_follow = lap_lift($src, 'function lap_followup_text(');
 ok($lift_follow !== '', 'lap_followup_text() could not be lifted, so nothing below ran');
