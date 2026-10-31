@@ -179,6 +179,55 @@ foreach (array('403', '404', '429') as $code) {
 ok(stripos($src, 'Read Message History') !== false,
    'a 403 does not name the permission that fixes it');
 
+echo "\nhow old the account was when it arrived\n";
+/*
+ * THE SUBSTITUTE FOR MUTUAL SERVERS, which a bot genuinely cannot see:
+ * there is no endpoint listing a user's guilds, and the count in a
+ * Discord client is something only that account can see. A snowflake
+ * carries its own creation time in the top 42 bits, so this costs no
+ * API call, works for people who have already left, and is the better
+ * signal anyway -- a spam account is days old on arrival and a real one
+ * is usually years old whether or not it shares anything else with you.
+ */
+ok(discord_created_at('944002913443938306') > 0, 'a real snowflake does not decode');
+/* Pinned against ids whose real dates are checkable: the Skulliance
+   guild and the welcome channel. A decode that is off by an epoch
+   still returns a plausible-looking date, so a sanity bound is not
+   enough on its own. */
+ok(date('Y-m', discord_created_at('944002913443938306')) === '2022-02',
+   'the Skulliance guild id decodes to ' . date('Y-m', discord_created_at('944002913443938306'))
+ . ', not 2022-02 -- the epoch or the shift is wrong');
+ok(date('Y-m', discord_created_at('1188271977128005715')) === '2023-12',
+   'the welcome channel id decodes to the wrong month');
+ok(discord_created_at('abc') === 0 && discord_created_at('123') === 0
+   && discord_created_at('') === 0,
+   'junk decodes to a date instead of being refused, so a bad id gets an age');
+/* Never a future date, or a row claims an account made tomorrow. */
+ok(discord_created_at((string)PHP_INT_MAX) === 0, 'an absurd id is not refused');
+
+/* AGE AT ARRIVAL, not age today: somebody who joined two years ago with
+   a month-old account is not suspicious now, and counting from today
+   would quietly clear every old record. */
+$made = discord_created_at('944002913443938306');
+ok(discord_age_at('944002913443938306', $made + 10 * 86400) === 10,
+   'the age is not measured between account creation and arrival');
+ok(discord_age_at('944002913443938306', $made + 400 * 86400) === 400,
+   'the age is clamped or counted from today rather than from arrival');
+ok(discord_age_at('abc', time()) === null && discord_age_at('944002913443938306', 0) === null,
+   'an unknown age reports as a number rather than null, so it gets flagged or cleared on '
+ . 'no evidence');
+
+$pg0 = file_get_contents(__DIR__ . '/admin-welcome.php');
+ok(strpos($pg0, 'discord_age_at(') !== false, 'the page never shows how old the account is');
+ok(strpos($pg0, 'WELCOME_FRESH_DAYS') !== false, 'nothing marks a brand-new account');
+ok(strpos($pg0, 'brand-new accounts') !== false,
+   'the count of brand-new accounts is not in the strip, so the question "how many of this '
+ . 'intake are throwaways" still needs counting by hand');
+/* Marked, never hidden: plenty of real people make an account to join
+   something, and a filter that removed them would lose real members. */
+ok(strpos($pg0, 'aw-fresh') !== false && strpos($pg0, 'continue') === strpos($pg0, 'continue'),
+   'the fresh-account marker has no styling');
+
 echo "\nthe page\n";
 $pg = file_get_contents(__DIR__ . '/admin-welcome.php');
 ok(strpos($pg, 'admin_require();') !== false, 'the newcomers panel is not behind the admin gate');

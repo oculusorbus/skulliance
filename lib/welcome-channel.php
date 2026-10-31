@@ -132,6 +132,62 @@ function welcome_arrivals($bot_token, $channel_id = null, $max_pages = null) {
 	return $out;
 }
 
+/*
+ * HOW OLD THE ACCOUNT IS, FROM THE ID ITSELF.
+ *
+ * WHAT THIS IS INSTEAD OF. The obvious way to spot a throwaway is how
+ * many servers they share with you, and a bot CANNOT SEE THAT -- there
+ * is no endpoint that lists a user's guilds, deliberately, and the
+ * count in your own client is something only your account can see. A
+ * bot can ask "is this user in a guild I am also in", which for this
+ * application is two guilds and tells you nothing.
+ *
+ * So this uses the one thing every Discord id carries for free: a
+ * Discord snowflake is a 64-bit integer whose top 42 bits are the
+ * milliseconds since 2015-01-01 at which it was created. No API call,
+ * no rate limit, no permission, and it works for people who have
+ * already left.
+ *
+ * AND IT IS THE BETTER SIGNAL ANYWAY. A spam account is usually days
+ * old when it arrives; a real person's account is usually years old
+ * whether or not they happen to share other servers with you.
+ *
+ * Needs 64-bit PHP, which this host is -- but a 32-bit build would
+ * silently produce nonsense rather than fail, so it is checked.
+ */
+if (!defined('WELCOME_SNOWFLAKE_EPOCH')) define('WELCOME_SNOWFLAKE_EPOCH', 1420070400000);
+
+/** Unix seconds the account was created, or 0 when it cannot be read. */
+function discord_created_at($discord_id) {
+	if (PHP_INT_SIZE < 8) return 0;
+	$id = preg_replace('/[^0-9]/', '', (string)$discord_id);
+	if ($id === '' || strlen($id) < 17) return 0;
+	$ms = intdiv((int)$id, 4194304) + WELCOME_SNOWFLAKE_EPOCH;
+	$s  = intdiv($ms, 1000);
+	/* Anything before Discord existed or in the future is a bad read, and
+	   returning it would put a nonsense age on the row. */
+	if ($s < 1420070400 || $s > time() + 86400) return 0;
+	return $s;
+}
+
+/**
+ * How many days old the account was WHEN THEY ARRIVED, or null if unknown.
+ *
+ * Measured at arrival rather than today on purpose: somebody who joined
+ * two years ago with a month-old account is not suspicious now, and an
+ * age counted from today would quietly clear every old record.
+ */
+function discord_age_at($discord_id, $arrived_at) {
+	$made = discord_created_at($discord_id);
+	if (!$made || !$arrived_at) return null;
+	return (int)floor(($arrived_at - $made) / 86400);
+}
+
+/* Younger than this when they turned up is worth a second look. Not an
+   accusation -- plenty of real people make an account to join something
+   -- which is why it marks the row rather than hiding it. */
+if (!defined('WELCOME_FRESH_DAYS')) define('WELCOME_FRESH_DAYS', 30);
+
 /**
  * Which of the three groups somebody is in, or '' when they are none of
  * them and need no message.

@@ -184,6 +184,10 @@ admin_chrome('welcome');
 .aw-who { display:flex; align-items:center; gap:9px; }
 .aw-who img { width:26px; height:26px; border-radius:50%; flex:none; }
 .aw-dim { color:#5f7d90; }
+/* An account made days before it turned up. Amber, not red: it is a
+   reason to look, not a verdict -- real people make accounts to join
+   things. */
+.aw-fresh { color:#f5a623; }
 .aw-none { color:#5f7d90; font-style:italic; }
 td.aw-act { text-align:right; white-space:nowrap; }
 .aw-btn { background:#123049; color:#9fd8c8; border:1px solid rgba(255,255,255,.14);
@@ -329,6 +333,17 @@ td.aw-act { text-align:right; white-space:nowrap; }
 		echo htmlspecialchars($label); ?></span></div>
 	<?php endforeach; ?>
 	<div><b><?php echo number_format(array_sum($aw_todo)); ?></b><span>still to write to</span></div>
+	<?php
+	/* Counted across every group, not just the visible one: the question
+	   "how many of these are throwaways" is about the whole intake. */
+	$aw_fresh = 0;
+	foreach ($aw_rows as $grp) foreach ($grp as $d2 => $p2) {
+		$a2 = discord_age_at($d2, (int)$p2['at']);
+		if ($a2 !== null && $a2 < WELCOME_FRESH_DAYS) $aw_fresh++;
+	}
+	?>
+	<div><b class="<?php echo $aw_fresh ? 'aw-fresh' : ''; ?>"><?php
+		echo number_format($aw_fresh); ?></b><span>brand-new accounts</span></div>
 </div>
 
 <div class="aw-views">
@@ -345,7 +360,7 @@ td.aw-act { text-align:right; white-space:nowrap; }
 <p class="aw-none">Nobody in this group.</p>
 <?php else: ?>
 <table class="aw-t">
-	<thead><tr><th>Member</th><th>Welcomed</th><th>Account</th><th></th></tr></thead>
+	<thead><tr><th>Member</th><th>Welcomed</th><th>Discord account</th><th>Platform</th><th></th></tr></thead>
 	<tbody>
 	<?php foreach ($aw_rows[$aw_view] as $did => $p):
 		$u    = isset($aw_users[$did]) ? $aw_users[$did] : null;
@@ -368,6 +383,30 @@ td.aw-act { text-align:right; white-space:nowrap; }
 		</td>
 		<td class="aw-dim"><?php
 			echo $p['at'] ? htmlspecialchars(date('j M Y', (int)$p['at'])) : '&mdash;'; ?></td>
+		<td class="aw-dim"><?php
+			/*
+			 * HOW OLD THE ACCOUNT WAS WHEN THEY ARRIVED. The closest thing
+			 * available to "how many servers do they share with me", which
+			 * a bot cannot see at all -- and a better signal regardless: a
+			 * spam account is days old on arrival, a real one is usually
+			 * years old whether or not you share anything else.
+			 *
+			 * Marked, never hidden. Plenty of real people make an account
+			 * to join something.
+			 */
+			$age = discord_age_at($did, (int)$p['at']);
+			$made = discord_created_at($did);
+			if ($age === null) { echo '<span class="aw-none">&mdash;</span>'; }
+			elseif ($age < WELCOME_FRESH_DAYS) {
+				echo '<b class="aw-fresh">' . ($age <= 1 ? 'new that day' : $age . ' days old')
+				   . '</b><br><span class="aw-none">made '
+				   . htmlspecialchars(date('j M Y', $made)) . '</span>';
+			} else {
+				$yrs = $age / 365;
+				echo $yrs >= 1 ? number_format($yrs, 1) . ' yrs' : $age . ' days';
+				echo '<br><span class="aw-none">made ' . htmlspecialchars(date('M Y', $made)) . '</span>';
+			}
+		?></td>
 		<td class="aw-dim"><?php
 			/* WHETHER THEY EVER SIGNED IN AT ALL, which for a Candidate who
 			   never staked is most of the answer: no account means they
