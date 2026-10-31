@@ -277,5 +277,52 @@ ok(is_array($ini) && !empty($ini['date.timezone']),
    '.user.ini does not SET date.timezone, which is where the stray startup warning that '
  . 'broke the gate comes from');
 
+/* ---------------------------------------------------------------------- *
+ * THE GATE MESSAGE, AGAINST DISCORD'S OWN LIMITS.
+ *
+ * Every limit below REJECTS THE WHOLE MESSAGE rather than truncating it, so
+ * overrunning one does not produce a slightly wrong rules post -- it
+ * produces no rules post, a 400 in the log, and a channel nobody can get in
+ * through. The message is edited from an admin page now, by someone on a
+ * phone at one in the morning, so "be careful" is not the control.
+ * ---------------------------------------------------------------------------- */
+$pay = sk_rules_payload();
+$btn = $pay['components'][0]['components'][0];
+
+ok(mb_strlen($btn['label']) <= 80,
+   'the button label is ' . mb_strlen($btn['label']) . ' characters; Discord caps it at 80 and '
+ . 'refuses the entire message past it');
+ok(mb_strlen($pay['content']) <= 2000,
+   'the rules content is ' . mb_strlen($pay['content']) . ' characters; Discord caps a message '
+ . 'at 2000');
+ok(mb_strlen($pay['embeds'][0]['description']) <= 4096,
+   'the embed description is ' . mb_strlen($pay['embeds'][0]['description']) . '; Discord caps '
+ . 'it at 4096');
+ok(strlen($btn['custom_id']) <= 100, 'the button custom_id is over Discord\'s 100 bytes');
+
+/*
+ * THE TWO THINGS A STUCK MEMBER NEEDS, and they are on the message because
+ * measurement said so: every press that reaches the endpoint is answered in
+ * 3ms, and the presses reported as failures never arrive at all. The retry
+ * instruction and the way to reach a human are the only help this server can
+ * actually give, so losing either silently is worth failing over.
+ */
+ok(stripos($btn['label'], 'CLICK MULTIPLE TIMES') !== false,
+   'the button no longer tells a member to press again, which is the only workaround there is '
+ . 'for a press that never reaches Discord');
+ok(stripos($pay['embeds'][0]['description'], 'persistent error') !== false,
+   'the rules message no longer says who to contact when the button will not work');
+
+/* The mention is built from the id, so it is one tap rather than a search. */
+$GLOBALS['discordid_oculusorbus'] = '772831523899965440';
+ok(sk_rules_owner_mention() === '<@772831523899965440>',
+   'the owner is not rendered as a clickable mention: ' . sk_rules_owner_mention());
+$GLOBALS['discordid_oculusorbus'] = '';
+ok(sk_rules_owner_mention() === '@Oculus Orbus',
+   'with no id configured the message would read "Contact <@>" rather than a plain name');
+$GLOBALS['discordid_oculusorbus'] = '<@772831523899965440>';
+ok(sk_rules_owner_mention() === '<@772831523899965440>',
+   'an id that already carries its own angle brackets produces a broken double mention');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all Discord rules checks passed\n");
 exit($fail ? 1 : 0);

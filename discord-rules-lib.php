@@ -252,6 +252,21 @@ define('SK_BTN_START', 'sk_rules_start');
 // The button's custom_id never changes (SK_BTN_START), so a message posted
 // by either caller works immediately and an edit keeps working.
 // ---------------------------------------------------------------------------
+/**
+ * The owner, as something clickable.
+ *
+ * FROM CREDENTIALS, NOT HARDCODED -- $discordid_oculusorbus is already the
+ * id every alert in this codebase routes to. Falls back to the plain name
+ * when it is unset, because a rules message reading "Contact <@>" would be
+ * worse than one with no link in it at all.
+ */
+function sk_rules_owner_mention() {
+	global $discordid_oculusorbus;
+	$id = isset($discordid_oculusorbus)
+		? preg_replace('/[^0-9]/', '', (string)$discordid_oculusorbus) : '';
+	return $id !== '' ? '<@' . $id . '>' : '@Oculus Orbus';
+}
+
 function sk_rules_payload() {
 	// Through the bot, not discordmsg(). Incoming webhooks can't carry
 	// interactive components, so a webhook-posted message simply cannot have a
@@ -286,7 +301,24 @@ function sk_rules_payload() {
 				. "Any chain is fine — Cardano, XRP Ledger, Solana, Polygon or Ethereum. "
 				. "We're multi-chain, so we're not asking you to know ours.\n\n"
 				. "Answer correctly and you'll be welcomed in as a Candidate. "
-				. "**Answer incorrectly and you'll be removed from the server** — so take your time.",
+				. "**Answer incorrectly and you'll be removed from the server** — so take your time.\n\n"
+				/*
+				 * A WAY OUT THAT IS NOT THE BUTTON.
+				 *
+				 * Measured 2026-10-31: every press that reaches the endpoint is
+				 * answered in 3ms, and the presses members report as failures
+				 * never arrive at all -- they are lost between their client and
+				 * Discord. Nothing on this server can fix that, so the gate has
+				 * to carry its own way out, or the people it loses are exactly
+				 * the ones with no way to say so.
+				 *
+				 * A MENTION, NOT A NAME: rendered from the id so it is one tap
+				 * rather than a search, for somebody who is stuck outside the
+				 * server and out of patience. A mention inside an EMBED does not
+				 * ping, which is how it sits here without breaking rule 4 above.
+				 */
+				. "Contact " . sk_rules_owner_mention() . " if you encounter a persistent error "
+				. "or have difficulty with the rules.",
 			'color'       => hexdec('CC0000'),
 		]],
 		'components' => [[
@@ -294,7 +326,20 @@ function sk_rules_payload() {
 			'components' => [[
 				'type'      => 2,
 				'style'     => 1,              // primary/blurple
-				'label'     => 'I Agree to the Rules',
+				/*
+			 * THE WORKAROUND IS ON THE BUTTON, because the button is the one
+			 * thing somebody stuck outside the server is certain to read.
+			 * Shouted on purpose: it is an instruction, not a caption, and
+			 * it is the difference between a member retrying and a member
+			 * giving up. It is here because presses are being lost before
+			 * they reach Discord -- see the embed note above.
+			 *
+			 * Discord caps a label at 80 characters and REJECTS THE WHOLE
+			 * MESSAGE past it: the post fails outright, it does not
+			 * truncate. So the harness measures this rather than trusting
+			 * whoever edits it next.
+			 */
+			'label'     => 'I Agree to the Rules - CLICK MULTIPLE TIMES IF ERRORING OUT',
 				'emoji'     => ['name' => '💀'],
 				'custom_id' => SK_BTN_START,
 			]],
