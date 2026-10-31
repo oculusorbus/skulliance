@@ -13,10 +13,22 @@ installed, because this repo has no Composer and the server has no `ext/sodium`.
 every interaction request. Normally that's `sodium_crypto_sign_verify_detached()`
 from `ext/sodium`, bundled with PHP since 7.2.
 
-This server doesn't have it. Not "it's off for the selected version" — every PHP
-build on the box was checked, all 18 CloudLinux `alt-php` versions and both
-EasyApache ones, and none of them ship the extension. So there was no PHP
-selector checkbox to tick.
+This server didn't have it, and the survey that established that was wrong about
+why. Every PHP build on the box was checked by RUNNING it — all 18 CloudLinux
+`alt-php` versions and both EasyApache ones — and none of them had the function.
+That measures what is **enabled in each build's ini**, not what is available to
+enable, and it was read as the second. The CloudLinux PHP Selector's Extensions
+tab did have a `sodium` checkbox all along; it was ticked on **2026-10-31** and
+the extension is now present (confirmed over HTTP on Admin → Front Door).
+
+**This library stays, and is not dead code.** Selector extension choices are per
+PHP version and reset on a version switch — the same trap that emptied
+`date.timezone` and broke the rules gate for an afternoon. Every caller is
+written `function_exists('sodium_…') ? native : ParagonIE_Sodium_Compat::…`, so
+native wins while it is there and nothing breaks the day it is not. The two
+implementations were checked against each other on the one call this platform
+makes outside the Discord gate (`Bech32::hashNativeAsset`, BLAKE2b-160): byte
+identical.
 
 Verification is not optional: an interactions endpoint that skips it will accept
 forged requests, and Discord won't even let you save the endpoint URL unless it

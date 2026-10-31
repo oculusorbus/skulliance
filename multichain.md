@@ -1622,8 +1622,10 @@ carry their own browsers and the provider *is* injected there, so the path
 exists; the grid says so rather than showing an empty box.
 
 **Server-side signature verification is available here and was not on XRPL.**
-Solana signatures are ed25519 and nothing else, and `lib/sodium_compat` is
-already vendored because no PHP build on this server has `ext/sodium`. §4f
+Solana signatures are ed25519 and nothing else, and ed25519 verification is
+available here either way — `ext/sodium` was enabled in the PHP Selector on
+2026-10-31, and `lib/sodium_compat` is vendored behind it for the day a PHP
+version change resets the extension list. §4f
 settled for "the browser reports the address" because XRPL keys can be
 secp256k1 and there is no pure-PHP verifier for that half. Sign-In-With-Solana
 is therefore a later, purely additive change: a new `via` value and a

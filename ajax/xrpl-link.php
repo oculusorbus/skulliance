@@ -27,7 +27,7 @@
  * wants to treat them differently can, without asking anybody to re-link.
  *
  * Verifying server-side would mean checking an XRPL signature in PHP. The
- * keys are secp256k1 or ed25519, this server has no ext/sodium on any of its
+ * keys are secp256k1 or ed25519, and this server had no ext/sodium on any of its
  * PHP builds, and a CLI probe cannot answer what the web SAPI has. Left
  * undone deliberately rather than half-done: see multichain.md §4f.
  */

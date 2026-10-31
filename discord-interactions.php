@@ -91,8 +91,9 @@ ob_start();
  * Measured on a dev machine, that path is about 25ms of work end to end: 2ms
  * of includes (no database connection anywhere in the chain -- checked) and
  * ~20ms for sodium_compat to lazy-load its 15 files and verify the Ed25519
- * signature, which is this server's only option since no PHP build here has
- * ext/sodium. Even ten times slower on a loaded shared host that is ~250ms.
+ * signature -- which was this server's only option until ext/sodium was
+ * enabled on 2026-10-31; native is 0.023ms. Even ten times slower on a
+ * loaded shared host that is ~250ms.
  * So the work is not the problem and there is nothing here worth optimising.
  *
  * Which leaves the host, and this logs enough to tell the two apart.
@@ -226,19 +227,32 @@ function sk_reject($why) {
 	exit('invalid request signature');
 }
 
-// This server has no ext/sodium. Checked every PHP build present -- all 18
-// CloudLinux alt-php versions and both EasyApache ones -- and none of them
-// ship it, so this is not a "flip a switch in the PHP selector" situation.
+// EITHER IMPLEMENTATION, AND THE CODE DOES NOT CARE WHICH.
 //
-// Hence the vendored pure-PHP implementation in lib/sodium_compat (see the
-// VENDOR.md there for version and provenance). Its autoload defines the
-// sodium_* functions as polyfills when the extension is absent, so the call
-// below is unchanged either way and a server that later gains the real
-// extension silently starts using it instead -- the native one is always
-// preferred, this only fills a gap.
+// For a year this server had no ext/sodium and the vendored pure-PHP
+// lib/sodium_compat was the only option (see VENDOR.md there for version and
+// provenance). It was switched on in the PHP Selector on 2026-10-31, so the
+// native path is live -- and the fallback below is what keeps that from
+// being a decision anybody has to remember, because Selector extensions are
+// per PHP version and a version switch resets them.
 //
-// Ed25519 in pure PHP costs ~25ms per verification against an interaction
-// budget of 3000ms, so the cost is irrelevant here.
+// sodium_compat's autoload defines the sodium_* functions as polyfills only
+// when the extension is absent, so the native one is always preferred and
+// this only ever fills a gap.
+//
+// ext/sodium IS PRESENT NOW, as of 2026-10-31. It was ticked on in the
+// CloudLinux PHP Selector's extension list -- a checkbox the earlier survey
+// could not see, because that survey ran each alt-php BINARY and asked
+// function_exists(), which reports what is ENABLED in a build's ini rather
+// than what is available to enable. Native is 0.023ms against pure PHP's
+// 21.3ms; both are irrelevant against 3000ms, and this is not what was
+// making members wait.
+//
+// THE FALLBACK STAYS, AND IS NOT DEAD CODE. Extension choices in the
+// Selector are PER PHP VERSION, exactly like date.timezone -- a version
+// switch empties them, which is how the timezone bug arrived. The day that
+// happens this file keeps working and the Front Door page's ext/sodium row
+// turns amber.
 if (!function_exists('sodium_crypto_sign_verify_detached')) {
 	$sk_compat = __DIR__ . '/lib/sodium_compat/autoload.php';
 	if (is_file($sk_compat)) require_once $sk_compat;

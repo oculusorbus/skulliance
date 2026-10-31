@@ -17,7 +17,8 @@
  *
  * AND UNLIKE XRPL, THE STRONGER VERSION IS ACTUALLY AVAILABLE HERE. Solana
  * signatures are ed25519 and nothing else, this repo already vendors
- * lib/sodium_compat (because no PHP build on this server has ext/sodium), and
+ * lib/sodium_compat when ext/sodium is absent -- it was switched on in the
+ * PHP Selector 2026-10-31, but that resets on a PHP version change -- and
  * sodium_crypto_sign_verify_detached() is all a Sign-In-With-Solana check
  * needs. XRPL could not do that -- its keys are secp256k1 OR ed25519 and the
  * secp256k1 half has no pure-PHP verifier here.

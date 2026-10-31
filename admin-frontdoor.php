@@ -210,11 +210,24 @@ $fd_checks = array(
 	        . 'and with buffering off there is no buffer to take over -- the warning is '
 	        . 'already gone down the wire. The timezone row above is then the only defence.'
 	        : 'On, so a startup warning lands in a buffer the endpoint can discard.'),
+	/*
+	 * ABSENT IS NOW A REGRESSION, NOT THE NORMAL STATE.
+	 *
+	 * This row used to say "expected on this host", because no PHP build
+	 * here appeared to have ext/sodium -- a survey that ran each alt-php
+	 * binary and so measured what was ENABLED rather than what could be
+	 * switched on. It was ticked on in the PHP Selector on 2026-10-31. So
+	 * from here, absent means something turned it off, and the likeliest
+	 * something is a PHP version change: Selector extensions reset on one,
+	 * exactly like the timezone row above.
+	 */
 	array('ext/sodium', $fd_ini['sodium'] ? 'present' : 'absent', $fd_ini['sodium'] ? 'ok' : 'warn',
 	      $fd_ini['sodium']
 	        ? 'Native Ed25519, so signature checks are microseconds.'
-	        : 'Expected on this host -- no PHP build here has it. lib/sodium_compat does it in '
-	        . 'pure PHP, about 25ms, which is nothing against 3000ms.'),
+	        : 'It was enabled in the PHP Selector on 31 Oct 2026, so absent means something '
+	        . 'turned it off -- most likely a PHP version change, which resets the extension '
+	        . 'list the same way it resets the timezone. Nothing breaks: lib/sodium_compat '
+	        . 'does it in pure PHP at about 21ms. Re-tick it when convenient.'),
 );
 foreach ($fd_checks as $c):
 	$cls = $c[2] === 'ok' ? 'fd-good' : ($c[2] === 'bad' ? 'fd-bad' : 'fd-warn'); ?>
