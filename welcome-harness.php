@@ -368,5 +368,51 @@ ok(strpos($lib, "'welcome'") !== false && strpos($lib, 'admin-welcome.php') !== 
    'the Newcomers tab is not in the admin nav, so the page can only be reached by typing '
  . 'the URL');
 
+/* ---------------------------------------------------------------------------
+ * THE WALLET REFRESH MUST NOT CLEAR WHAT IT CANNOT RESTORE.
+ *
+ * Checked from here because this page is where it was found, and because
+ * the trap is not in this page: header.php puts Refresh Connected
+ * Wallet(s) on EVERY page and posts it to whichever one you are on, while
+ * verifyNFTs() lives in verify.php, which most pages do not load. The
+ * handler cleared the member's Cardano NFTs and then died trying to put
+ * them back. It cost the owner his own holdings on 2026-10-30, and the
+ * same press from activity.php would have done it to any member.
+ * ------------------------------------------------------------------------- */
+echo "\nthe wallet refresh cannot half-run\n";
+$sk = file_get_contents(__DIR__ . '/skulliance.php');
+$blk = substr($sk, strpos($sk, "if(isset(\$_POST['refresh'])){"));
+$blk = substr($blk, 0, 3000);
+$guardAt  = strpos($blk, "!function_exists('verifyNFTs')");
+$clearAt  = strpos($blk, 'removeUser(');
+ok($guardAt !== false, 'the wallet refresh does not check that verifyNFTs() exists');
+ok($clearAt !== false, 'could not find removeUser() in the refresh block');
+ok($guardAt !== false && $clearAt !== false && $guardAt < $clearAt,
+   'the verifyNFTs() check runs AFTER removeUser(), so the member is cleared first and the '
+ . 'guard is decoration -- that ordering is the whole bug');
+ok(strpos($blk, "require_once __DIR__ . '/verify.php'") !== false,
+   'the handler does not load verify.php on demand, so the refresh stays broken on every '
+ . 'page that does not happen to include it');
+ok(strpos($blk, 'Nothing has changed') !== false,
+   'a refused refresh does not tell the member nothing was changed, which is the one thing '
+ . 'they need to know before pressing it again');
+
+/*
+ * AND THE SCALE OF IT, so nobody narrows the guard later thinking it is
+ * for one admin page. Most pages carrying that button cannot restore.
+ */
+$withBtn = $withVerify = 0;
+foreach (glob(__DIR__ . '/*.php') as $f) {
+	$src2 = file_get_contents($f);
+	if (strpos($src2, "include 'header.php'") === false
+	    && strpos($src2, "include __DIR__ . '/header.php'") === false) continue;
+	$withBtn++;
+	if (preg_match('/(include|require)(_once)?[^;]*verify\.php/', $src2)) $withVerify++;
+}
+ok($withBtn > 0, 'no page renders header.php, so this check is passing vacuously');
+ok($withVerify < $withBtn,
+   'every page that shows the wallet refresh now loads verify.php, so this guard may be '
+ . 'removable -- check before you do, and count again');
+
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all newcomer checks passed\n");
 exit($fail ? 1 : 0);

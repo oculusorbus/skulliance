@@ -585,6 +585,42 @@ if(isset($_POST['stakeaddress'])){
 // Refresh User Wallets
 if(isset($_POST['refresh'])){
 	if(isset($_SESSION['userData']['user_id'])){ 
+		/*
+		 * NEVER CLEAR WHAT WE CANNOT PUT BACK.
+		 *
+		 * This block drops the user's Cardano NFT associations and then
+		 * restores them from their wallets. Those two statements are a
+		 * transaction in everything but name: if the second does not run,
+		 * the member is left holding nothing, their rewards stop, and
+		 * nothing in the interface says why.
+		 *
+		 * AND THE SECOND ONE COULD NOT ALWAYS RUN. verifyNFTs() lives in
+		 * verify.php, and the Refresh Connected Wallet(s) button is in
+		 * header.php -- on EVERY page -- posting to whatever page it is
+		 * currently on. 42 of the 63 pages that render that button do not
+		 * load verify.php, so on any of them the clear committed and the
+		 * restore died with
+		 *
+		 *   Fatal error: Call to undefined function verifyNFTs()
+		 *
+		 * Found on 2026-10-30 when an admin page posted a field of its own
+		 * called `refresh` and the owner's NFTs came off the platform. The
+		 * same press from activity.php or collections.php would have done
+		 * it to any member.
+		 *
+		 * So: load it, and if it still is not there, REFUSE. A refresh
+		 * that does nothing is a nuisance; one that half-runs costs
+		 * somebody their holdings.
+		 */
+		if (!function_exists('verifyNFTs') && is_file(__DIR__ . '/verify.php')) {
+			require_once __DIR__ . '/verify.php';
+		}
+		if (!function_exists('verifyNFTs')) {
+			error_log('wallet refresh refused on ' . basename($_SERVER['PHP_SELF'] ?? '?')
+				. ': verifyNFTs() is unavailable, so nothing was cleared.');
+			alert("Your wallets could not be refreshed from this page. Nothing has changed — "
+				. "please try again from the Wallets page.");
+		} else {
 		// Get all NFT asset IDs to determine whether to update DB records, saves on DB resources instead of individual DB calls to check NFT presence
 		$asset_ids = array();
 		$asset_ids = getNFTAssetIDs($conn);
@@ -593,6 +629,7 @@ if(isset($_POST['refresh'])){
 		// Verify all NFTs from wallets in the DB for a specific user
 		verifyNFTs($conn, getAddresses($conn), getPolicies($conn), $asset_ids);
 		alert("Your wallet(s) have been successfully refreshed. Any newly acquired qualifying NFTs have been accounted for in your wallet and will automatically begin accruing rewards nightly. You can connect additional wallets as well. They will not replace the wallets you have already connected. Enjoy Skulliance staking!");
+		}
 	}
 }
 
