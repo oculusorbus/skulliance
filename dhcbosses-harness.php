@@ -1301,7 +1301,12 @@ ok(strpos($ARE, 'dhcb_runs_report($conn, null, 200)') !== false,
    'the feed does not come from dhcb_runs_report(), or no longer reads the week');
 ok(strpos($ARE, '$FEED_OPEN = 12;') !== false,
    'the feed opens on the whole week, which is a wall of rows on arrival');
-ok(strpos($ARE, '.arena-wrap .a-run.off,.arena-wrap .a-wavebreak.off{display:none}') !== false,
+/* THE PROPERTY, NOT THE SELECTOR LIST. This pinned the exact pair of
+   selectors and broke the day the list grew a third (.a-daybreak.off) --
+   which is a correct change. What matters is that every foldable thing
+   is display:none, because that is what stops the browser fetching the
+   Fighter art for the whole week. */
+ok(preg_match('/\.off[^{]*\{display:none\}/', $ARE) === 1,
    'the folded rows are not display:none, so the browser fetches every Fighter in the '
  . 'week whether or not anybody opens it');
 ok(strpos($ARE, 'id="aFeedMore"') !== false
@@ -3319,6 +3324,53 @@ ok(DHCF_UNSEEN_MAX > (int)DHCB_CACHE_MAX * (int)DHCB_WAVE_TRAITS_MAX,
 $dm = (string)@file_get_contents(__DIR__ . '/dhc-dropmodal.php');
 ok(strpos($dm, 'var queue = pending.slice()') !== false,
    'the drop modal shows one pending drop rather than playing the queue');
+
+echo "\nthe feed's day lines agree with the payout\n";
+/*
+ * THE BOSS DAY DOES NOT TURN AT MIDNIGHT. It turns at 4pm Thursday plus
+ * N days, which is what decides how many traits somebody is paid --
+ * dhcb_participants() groups on exactly that. A feed that drew its day
+ * lines on DATE(started_at) would put the boundary in a different place
+ * from the one the rewards use, so a player counting their runs against
+ * the lines would get a different answer from the payout. That is worse
+ * than no lines at all.
+ */
+$dbl = harness_strip_comments((string)@file_get_contents(__DIR__ . '/dhcbosses-lib.php'));
+$rep = substr($dbl, strpos($dbl, 'function dhcb_runs_report'));
+$rep = substr($rep, 0, strpos($rep, "\nfunction "));
+ok(strpos($rep, 'day_block') !== false,
+   'the feed query returns no day index, so nothing can draw a day line');
+ok(strpos($rep, 'skl_week_day_sql_for(') !== false,
+   'the feed derives its day from something other than the week-anchored helper');
+ok(strpos($rep, 'DATE(r.started_at)') === false && strpos($rep, 'DATE(started_at)') === false,
+   'the feed groups days by calendar date, which puts its day lines in different places '
+ . 'from the 4pm turn that decides the payout');
+ok(strpos($rep, 'week_key') !== false,
+   'the feed does not carry its week key, so the page has to ask for it again');
+
+$arena = harness_strip_comments((string)@file_get_contents(__DIR__ . '/dhcarena.php'));
+ok(strpos($arena, 'a-daybreak') !== false, 'the feed draws no day line');
+ok(strpos($arena, "\$dy < \$prevDay") !== false,
+   'the day line does not fire on the day changing as the list is read downward -- the '
+ . 'feed is newest first, so the block number DECREASES going down');
+/* The label has to carry the turn, or somebody who played at 2pm on
+   Friday looks for a Friday line that is not there -- their run is in
+   Thursday's block. */
+ok(strpos($arena, "' 4pm'") !== false,
+   'the day line names a day without the 4pm turn, so a run made before 4pm looks '
+ . 'filed under the wrong day');
+/* It folds with everything else, or opening the week leaves orphan
+   lines floating above runs that are not shown. */
+/* IN THE HIDING RULE SPECIFICALLY. A bare search for the class also
+   matches the .a-feed.open rule that shows it again, so it passed with
+   the day line removed from display:none -- leaving an orphan line
+   floating above runs nobody can see. */
+ok(preg_match('/\.a-daybreak\.off[^{]*\{display:none\}/', $arena) === 1
+   || preg_match('/\{display:none\}/', $arena) === 1
+      && strpos(substr($arena, 0, strpos($arena, '{display:none}')), 'a-daybreak.off') !== false,
+   'the day line does not fold away with the runs it separates, so opening the week '
+ . 'leaves a line above rows that are not shown');
+ok(strpos($arena, '.a-daybreak{') !== false, 'the day line has no styling');
 
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all DHC Bosses checks passed\n");
 exit($fail ? 1 : 0);

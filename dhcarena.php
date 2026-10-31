@@ -1614,14 +1614,25 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-wavebreak:before,.arena-wrap .a-wavebreak:after{content:'';flex:1 1 auto;
   height:1px;background:linear-gradient(90deg,transparent,rgba(0,200,160,.45),transparent)}
 .arena-wrap .a-wavebreak span{flex:0 0 auto;white-space:nowrap}
+/* THE DAY LINE, HEAVIER THAN THE WAVE LINE. Both divide the same column
+   and they mean different sizes of thing: a wave break is an event
+   inside a day, a day break is the boundary that resets everybody's
+   trait slot. Quieter colour, solid rule, more air -- so when the two
+   land together the reading order is obvious. */
+.arena-wrap .a-daybreak{display:flex;align-items:center;gap:10px;margin:14px 0 6px;
+  font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim,#5f7d90)}
+.arena-wrap .a-daybreak:before,.arena-wrap .a-daybreak:after{content:'';flex:1 1 auto;
+  height:1px;background:rgba(255,255,255,.14)}
+.arena-wrap .a-daybreak span{flex:0 0 auto;white-space:nowrap}
 .arena-wrap .a-run{display:flex;align-items:center;gap:14px;padding:8px 0;
   border-bottom:1px solid var(--line)}
 .arena-wrap .a-run:last-child{border-bottom:0}
 /* Folded away: display:none rather than height 0, because a browser does
    not fetch images inside a display:none subtree -- so the rest of the
    week costs DOM nodes and no requests until it is opened. */
-.arena-wrap .a-run.off,.arena-wrap .a-wavebreak.off{display:none}
-.arena-wrap .a-feed.open .a-run.off,.arena-wrap .a-feed.open .a-wavebreak.off{display:flex}
+.arena-wrap .a-run.off,.arena-wrap .a-wavebreak.off,.arena-wrap .a-daybreak.off{display:none}
+.arena-wrap .a-feed.open .a-run.off,.arena-wrap .a-feed.open .a-wavebreak.off,
+.arena-wrap .a-feed.open .a-daybreak.off{display:flex}
 /* .btn supplies the look; this only makes it span the panel and shrinks
    the label to the size of the other things in this row. */
 .arena-wrap .a-feedmore{display:block;width:100%;margin:10px 0 0;border-radius:3px;
@@ -2578,6 +2589,32 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
          * is also the point where wave N-1 died.
          */
         $prevWave = null;
+        /*
+         * AND A LINE WHERE THE DAY TURNED.
+         *
+         * The feed is the whole week in one column, so without this a run
+         * from Thursday sits directly under one from Tuesday and reads as
+         * the same session. The wave break below only fires when a crew
+         * actually fell, which can be days apart or never.
+         *
+         * day_block is the week-anchored day index from the query -- NOT a
+         * calendar date. The boss day turns at 4pm Thursday, so a midnight
+         * boundary would draw these lines in different places from the
+         * ones that decide how many traits a player is paid, which is the
+         * one thing a day line on this page must not do.
+         *
+         * Named rather than numbered: "Thursday" is what somebody
+         * remembers about when they played, "day 3" is not.
+         */
+        $prevDay = null;
+        /* The week key rides along on every row rather than being asked
+           for again -- dhcb_runs_report() has already resolved it, and a
+           second dhcb_week() here would be a query for a value the feed
+           is holding. It is the DATE of a Thursday, and 16:00 on it is
+           the turn, exactly as skl_week_start_sql_for() builds it. */
+        $wk0 = isset($dhcb_feed[0]['week_key']) ? (string)$dhcb_feed[0]['week_key'] : '';
+        $dhcb_weekStart = preg_match('/^\d{4}-\d{2}-\d{2}$/', $wk0)
+          ? strtotime($wk0 . ' 16:00:00') : null;
         /* The newest dozen are open; the rest of the week folds away. A
            wave break inside the folded part folds with it. */
         $shown = 0;
@@ -2586,7 +2623,25 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <?php foreach ($dhcb_feed as $rn):
         $wv = max(1, (int)$rn['wave']);
         $off = ($shown >= $FEED_OPEN) ? ' off' : '';
-        if ($prevWave !== null && $wv < $prevWave): ?>
+        $dy = isset($rn['day_block']) ? (int)$rn['day_block'] : null;
+        if ($prevDay !== null && $dy !== null && $dy < $prevDay):
+          /* The day being LEFT as you read downward, which is the older
+             one -- same reading as the wave break directly below. */
+          $dlabel = '';
+          if ($dhcb_weekStart) {
+            /* NAMED WITH THE TURN IN IT. A block runs 4pm to 4pm, so
+               "Thursday" alone would have somebody who played at 2pm on
+               Friday looking for a Friday line that is not there. */
+            $dlabel = date('l j M', strtotime('+' . (int)$prevDay . ' day', $dhcb_weekStart)) . ' 4pm';
+          }
+        ?>
+        <div class="a-daybreak<?php echo $off; ?>">
+          <span><?php echo $dlabel !== ''
+            ? htmlspecialchars($dlabel)
+            : 'Day ' . ((int)$prevDay + 1); ?></span>
+        </div>
+      <?php endif; if ($dy !== null) $prevDay = $dy; ?>
+      <?php if ($prevWave !== null && $wv < $prevWave): ?>
         <div class="a-wavebreak<?php echo $off; ?>">
           <span>Wave <?php echo (int)$prevWave; ?> stood up
             &middot; wave <?php echo (int)$wv; ?> had fallen</span>

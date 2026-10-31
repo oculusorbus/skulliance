@@ -2372,9 +2372,24 @@ function dhcb_runs_report($conn, $day = null, $limit = 200) {
 	$rows = array();
 	/* discord_id and avatar come along for the player face on the public
 	   feed; the admin table ignores them. One query either way. */
+	/*
+	 * THE DAY BLOCK, FROM THE SAME EXPRESSION THE PAYOUT USES.
+	 *
+	 * `r.day` is the WEEK key -- every row here shares it -- so it cannot
+	 * say which day of the week a run happened on. That is
+	 * skl_week_day_sql_for(), which measures from the 4pm Thursday turn,
+	 * and it has to be THAT and not DATE(started_at): the boss day does
+	 * not change at midnight, so a calendar date would draw the feed's
+	 * day lines in different places from the ones that decide how many
+	 * traits somebody is paid. A separator that disagrees with the payout
+	 * is worse than no separator.
+	 */
+	$dayCol = function_exists('skl_week_day_sql_for')
+		? skl_week_day_sql_for($day, 'r.started_at') : '0';
 	$res = @$conn->query("SELECT r.id, r.user_id, u.username, u.discord_id, u.avatar,
 	                             r.dealt, r.crew_size, r.wave,
-	                             r.outcome, r.killed, r.rounds, r.started_at, r.ended_at
+	                             r.outcome, r.killed, r.rounds, r.started_at, r.ended_at,
+	                             $dayCol AS day_block, '$esc' AS week_key
 	                        FROM dhc_boss_runs r
 	                        LEFT JOIN users u ON u.id = r.user_id
 	                       WHERE r.day = '$esc'
