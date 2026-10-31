@@ -29,6 +29,23 @@ function ok($cond, $what) { global $fail; if (!$cond) { $fail++; echo "  FAIL  $
 require_once __DIR__ . '/harness-strip.php';
 require_once __DIR__ . '/lib/frontdoor-lib.php';
 
+/*
+ * THE ONE SEAM. lib/frontdoor-lib.php reaches Discord only through
+ * sk_discord_api(), and that function lives in discord-rules-lib.php, which
+ * this file does not load -- so declaring it here is both the stub and the
+ * proof that the library has no other way out to the network.
+ */
+function sk_discord_api($method, $path, $payload = null) {
+	$f = isset($GLOBALS['fd_fixture']) ? $GLOBALS['fd_fixture'] : array();
+	if (strpos($path, '/roles') !== false) {
+		return array('ok' => true, 'status' => 200, 'body' => isset($f['roles']) ? $f['roles'] : array());
+	}
+	if (strpos($path, '/channels/') === 0) {
+		return array('ok' => true, 'status' => 200, 'body' => isset($f['channel']) ? $f['channel'] : array());
+	}
+	return array('ok' => false, 'status' => 404, 'body' => null);
+}
+
 /* The log writes to data/, so point it somewhere disposable first -- before
    the library is loaded, because the path is a define(). */
 $tmp = sys_get_temp_dir() . '/sk-ilog-harness-' . getmypid() . '.log';
@@ -444,6 +461,111 @@ echo "\nthe log tail is seeked, not swallowed\n";
 	   'a short file is being trimmed as though it were long');
 	ok(frontdoor_tail($big . '-missing', 4096) === '', 'a missing file returns something');
 	@unlink($big);
+}
+
+echo "\npermission bits are read the way Discord reads them\n";
+{
+	/* The handful that matter, by their documented bit positions. Getting
+	   one of these wrong prints a confident wrong answer about why somebody
+	   cannot get into the server. */
+	$bits = frontdoor_perm_bits();
+	ok($bits['VIEW_CHANNEL'][0] === 10, 'VIEW_CHANNEL is not bit 10');
+	ok($bits['SEND_MESSAGES'][0] === 11, 'SEND_MESSAGES is not bit 11');
+	ok($bits['READ_MESSAGE_HISTORY'][0] === 16, 'READ_MESSAGE_HISTORY is not bit 16');
+	ok($bits['USE_APPLICATION_COMMANDS'][0] === 31, 'USE_APPLICATION_COMMANDS is not bit 31');
+	ok($bits['USE_EXTERNAL_APPS'][0] === 50, 'USE_EXTERNAL_APPS is not bit 50');
+
+	/* Discord sends these as a DECIMAL STRING, not a number, because they
+	   outgrew 32 bits years ago. */
+	ok(frontdoor_has_perm('1024', 10) === true,  'bit 10 is not found in "1024"');
+	ok(frontdoor_has_perm('1024', 11) === false, 'bit 11 is found in "1024"');
+	/* Above bit 31 is where a 32-bit read silently returns nonsense, and
+	   USE_APPLICATION_COMMANDS is bit 31 exactly -- the boundary case. */
+	ok(frontdoor_has_perm((string)(1 << 31), 31) === true,
+	   'bit 31 is not readable, so the one permission most likely to be the cause reads as denied');
+	ok(frontdoor_has_perm((string)(1 << 50), 50) === true, 'bit 50 is not readable');
+	ok(frontdoor_has_perm((string)(1 << 50), 31) === false, 'a high bit leaks into a lower one');
+	ok(frontdoor_has_perm('0', 10) === false, 'an empty permission set grants something');
+}
+
+echo "\nthe overwrites are applied in Discord's order, which is not a union\n";
+{
+	/*
+	 * THE PART MOST LIKELY TO BE WRONG, AND THE FIRST VERSION OF THIS FILE
+	 * DID NOT TEST IT AT ALL -- it checked the bit numbers and the helper
+	 * and left the actual calculation unrun, which two mutations walked
+	 * straight through.
+	 *
+	 * Discord resolves channel permissions as an ORDER, not a union: the
+	 * guild roles, then the channel's @everyone overwrite, then the role
+	 * overwrites, with deny before allow at each step. Applied in any other
+	 * order it still produces a plausible-looking answer, and gets the one
+	 * case that matters backwards -- a permission denied for @everyone in
+	 * the channel and allowed back for a specific role, which is how every
+	 * locked-down rules channel on Discord is actually built.
+	 */
+	$GLOBALS['fd_fixture'] = array('roles' => array(), 'channel' => array());
+	$G = '944002913443938306';
+	$V = '111111111111111111';
+	$APP = 1 << 31;                // USE_APPLICATION_COMMANDS
+	$VIEW = 1 << 10;               // VIEW_CHANNEL
+
+	$set = function ($everyone_perms, $visitor_perms, $overwrites) use ($G, $V) {
+		$GLOBALS['fd_fixture'] = array(
+			'roles' => array(
+				array('id' => $G, 'name' => '@everyone', 'permissions' => (string)$everyone_perms),
+				array('id' => $V, 'name' => 'Visitor',   'permissions' => (string)$visitor_perms),
+			),
+			'channel' => array('permission_overwrites' => $overwrites),
+		);
+	};
+
+	/* Allowed at the guild, DENIED for @everyone in the channel, ALLOWED
+	   back for Visitor. The role overwrite is applied last, so: allowed. */
+	$set($APP | $VIEW, 0, array(
+		array('id' => $G, 'deny' => (string)$APP, 'allow' => '0'),
+		array('id' => $V, 'deny' => '0',          'allow' => (string)$APP),
+	));
+	$r = frontdoor_role_channel_perms($G, '1008121821721272481', $V);
+	ok($r['ok'], 'the permission read failed: ' . $r['error']);
+	ok(frontdoor_has_perm($r['bits'], 31) === true,
+	   'a permission denied for @everyone and allowed back for Visitor comes out DENIED -- the '
+	 . 'overwrites are being applied in the wrong order, and that is how every locked-down '
+	 . 'rules channel is built');
+	ok(frontdoor_has_perm($r['bits'], 10) === true, 'VIEW_CHANNEL was lost along the way');
+
+	/* Denied for @everyone and NOT allowed back: denied. Otherwise the
+	   panel would report every channel as wide open. */
+	$set($APP | $VIEW, 0, array(array('id' => $G, 'deny' => (string)$APP, 'allow' => '0')));
+	$r = frontdoor_role_channel_perms($G, '1', $V);
+	ok(frontdoor_has_perm($r['bits'], 31) === false,
+	   'a channel-level deny with no role allow still reads as allowed');
+
+	/*
+	 * DENY BEFORE ALLOW WITHIN ONE OVERWRITE. Discord's own algorithm is
+	 * `&= ~deny` then `|= allow`, and the only fixture that can tell the two
+	 * spellings apart is one overwrite carrying the same bit in both -- so
+	 * that is what this is, pathological on purpose.
+	 */
+	$set($VIEW, 0, array(array('id' => $G, 'deny' => (string)$APP, 'allow' => (string)$APP)));
+	$r = frontdoor_role_channel_perms($G, '1', $V);
+	ok(frontdoor_has_perm($r['bits'], 31) === true,
+	   'allow is being applied before deny inside one overwrite, so an explicit allow loses');
+
+	/* The role's own guild permissions count, not only @everyone's. */
+	$set(0, $VIEW, array());
+	$r = frontdoor_role_channel_perms($G, '1', $V);
+	ok(frontdoor_has_perm($r['bits'], 10) === true, "the Visitor role's own permissions are ignored");
+	ok($r['role_name'] === 'Visitor', 'the role was not named: "' . $r['role_name'] . '"');
+
+	/*
+	 * ADMINISTRATOR SHORT-CIRCUITS, because it does in Discord -- and that
+	 * is the whole reason this panel exists, since the person testing the
+	 * gate has it and never meets a single overwrite.
+	 */
+	$set(1 << 3, 0, array(array('id' => $G, 'deny' => (string)($APP | $VIEW), 'allow' => '0')));
+	$r = frontdoor_role_channel_perms($G, '1', $V);
+	ok($r['admin'] === true, 'Administrator does not short-circuit the overwrites');
 }
 
 echo "\nDiscord's stored endpoint url is judged by host, not by string\n";

@@ -137,6 +137,11 @@ $fd_me   = frontdoor_me($bot_token);
 /* What DISCORD has stored, which the Developer Portal is only a form over.
    The one check here that can see a problem on their side. */
 $fd_app  = frontdoor_app();
+/* What a Visitor can actually do in that channel. The owner has
+   Administrator, which bypasses every overwrite, so this is the one class
+   of cause that cannot be reproduced from the owner's own account. */
+$fd_perm = frontdoor_role_channel_perms($discord_guild_id,
+	isset($rules_channel_id) ? $rules_channel_id : '', $role_visitor);
 $fd_msgs = frontdoor_gate_messages($bot_token, isset($rules_channel_id) ? $rules_channel_id : '');
 $fd_live = 0;
 foreach ($fd_msgs['messages'] as $m) {
@@ -321,6 +326,35 @@ foreach ($fd_msgs['messages'] as $m) {
 	<span class="fd-say">Buttons posted by this application are the only ones that can reach
 	here &mdash; see the channel above.</span>
 </div>
+<?php endif; ?>
+
+<?php /* ---------------- 1c. what a Visitor may do in that channel ---------------- */ ?>
+<p class="fd-sect">What the Visitor role can do in the rules channel</p>
+<p class="fd-why">You have Administrator, which <b>bypasses every channel overwrite</b> &mdash; so
+this is the one kind of cause you cannot reproduce from your own account, and it is invisible in
+the settings dialog for the same reason. Computed the way Discord computes it: the @everyone
+role, then Visitor, then the channel's @everyone overwrite, then Visitor's.</p>
+<?php if (!$fd_perm['ok']): ?>
+	<p class="fd-row"><span class="fd-tag fd-warn">cannot read</span>
+		<span class="fd-say"><?php echo htmlspecialchars($fd_perm['error'], ENT_QUOTES); ?></span></p>
+<?php elseif ($fd_perm['admin']): ?>
+	<p class="fd-row"><span class="fd-tag fd-warn">administrator</span>
+		<span class="fd-say">The Visitor role itself carries Administrator, so every overwrite is
+		bypassed for them too and nothing below would apply. That is worth knowing on its own.</span></p>
+<?php else: ?>
+	<?php foreach (frontdoor_perm_bits() as $name => $spec):
+		$has = frontdoor_has_perm($fd_perm['bits'], $spec[0]);
+		/* Only VIEW_CHANNEL and USE_APPLICATION_COMMANDS being off are worth
+		   alarm; a rules channel is SUPPOSED to deny Send Messages. */
+		$matters = ($name === 'VIEW_CHANNEL' || $name === 'USE_APPLICATION_COMMANDS');
+		$cls = $has === null ? 'fd-warn' : ($has ? 'fd-good' : ($matters ? 'fd-bad' : 'fd-warn')); ?>
+	<div class="fd-row">
+		<span class="fd-k"><?php echo htmlspecialchars(str_replace('_', ' ', $name), ENT_QUOTES); ?></span>
+		<span class="fd-v <?php echo $cls; ?>"><?php
+			echo $has === null ? 'unknown' : ($has ? 'allowed' : 'denied'); ?></span>
+		<span class="fd-say"><?php echo htmlspecialchars($spec[1], ENT_QUOTES); ?></span>
+	</div>
+	<?php endforeach; ?>
 <?php endif; ?>
 
 <?php /* ---------------- 2. this PHP, over HTTP ---------------- */ ?>

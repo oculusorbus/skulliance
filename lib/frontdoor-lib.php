@@ -539,3 +539,106 @@ function frontdoor_app_url_verdict($stored, $host, $path) {
 	}
 	return array('ok', 'Delivery is configured and points here.');
 }
+
+/*
+ * ---------------------------------------------------------------------------
+ * WHAT AN ORDINARY MEMBER CAN ACTUALLY DO IN THE RULES CHANNEL.
+ *
+ * THE ASYMMETRY THIS EXISTS TO EXPLAIN. The gate works every time for the
+ * owner and fails for newcomers, and the owner has Administrator --
+ * which BYPASSES EVERY CHANNEL OVERWRITE. So the one class of cause that
+ * cannot be reproduced from the owner's own account is a permission the
+ * Visitor role is missing in that channel, and it is invisible in testing
+ * for exactly the reason it is invisible in the settings dialog: the
+ * person checking is never subject to it.
+ *
+ * Discord does not publish a permission named "may press a button", so
+ * nothing here declares a verdict it cannot support. What it does is put
+ * the effective bits on screen, computed the way Discord computes them,
+ * so the question stops being a guess.
+ * ---------------------------------------------------------------------------
+ */
+
+/** The permission bits worth looking at here, in the order worth reading. */
+function frontdoor_perm_bits() {
+	return array(
+		'VIEW_CHANNEL'             => array(10, 'See the channel at all. Without it there is no button to press.'),
+		'USE_APPLICATION_COMMANDS' => array(31, 'Use an app in this channel. The closest thing Discord has to a '
+		                                      . '"may press a button" permission, and the usual cause of a button '
+		                                      . 'that works for an admin and does nothing for everyone else.'),
+		'SEND_MESSAGES'            => array(11, 'Post here. Normal to deny in a rules channel, and denying it is '
+		                                      . 'not supposed to stop a button working.'),
+		'READ_MESSAGE_HISTORY'     => array(16, 'See messages posted before they arrived -- including the gate '
+		                                      . 'message itself, which was posted once and never again.'),
+		'USE_EXTERNAL_APPS'        => array(50, 'Use apps that are not installed to this server. Not how this bot '
+		                                      . 'is installed, so it should not matter here.'),
+	);
+}
+
+/** Does this permission bitfield (a decimal string from Discord) carry $bit? */
+function frontdoor_has_perm($bits, $bit) {
+	if (PHP_INT_SIZE < 8) return null;          // 64-bit only; a guess is worse than nothing
+	$n = (int)$bits;
+	return ($n & (1 << (int)$bit)) !== 0;
+}
+
+/**
+ * The permissions a role effectively has IN one channel.
+ *
+ * COMPUTED THE WAY DISCORD COMPUTES THEM, which is an order and not a
+ * union: the @everyone role's guild permissions, then the role's own, then
+ * the channel's @everyone overwrite, then the role's channel overwrite --
+ * deny before allow at each step. Doing it in any other order gives an
+ * answer that looks plausible and is wrong for the one case that matters,
+ * which is a permission allowed at the guild and denied in the channel.
+ *
+ * ADMINISTRATOR SHORT-CIRCUITS, because it does in Discord. That is the
+ * whole reason this page is needed: the person testing has it.
+ *
+ * Returns array(ok, error, bits, admin, role_name).
+ */
+function frontdoor_role_channel_perms($guild_id, $channel_id, $role_id) {
+	$out = array('ok' => false, 'error' => '', 'bits' => 0, 'admin' => false, 'role_name' => '');
+	if (!function_exists('sk_discord_api')) { $out['error'] = 'sk_discord_api() is not loaded.'; return $out; }
+	$gid = preg_replace('/[^0-9]/', '', (string)$guild_id);
+	$cid = preg_replace('/[^0-9]/', '', (string)$channel_id);
+	$rid = preg_replace('/[^0-9]/', '', (string)$role_id);
+	if ($gid === '' || $cid === '') { $out['error'] = 'No guild or channel id.'; return $out; }
+
+	$rr = sk_discord_api('GET', '/guilds/' . $gid . '/roles');
+	if (empty($rr['ok']) || !is_array($rr['body'])) {
+		$out['error'] = 'Could not read the roles (HTTP ' . (int)$rr['status'] . ').'; return $out;
+	}
+	$cr = sk_discord_api('GET', '/channels/' . $cid);
+	if (empty($cr['ok']) || !is_array($cr['body'])) {
+		$out['error'] = 'Could not read the channel (HTTP ' . (int)$cr['status'] . ').'; return $out;
+	}
+
+	$base = 0;
+	foreach ($rr['body'] as $r) {
+		if (!isset($r['id'])) continue;
+		/* The @everyone role's id IS the guild id. */
+		if ((string)$r['id'] === $gid || ($rid !== '' && (string)$r['id'] === $rid)) {
+			$base |= (int)$r['permissions'];
+			if ((string)$r['id'] === $rid) $out['role_name'] = isset($r['name']) ? (string)$r['name'] : '';
+		}
+	}
+	if (frontdoor_has_perm($base, 3)) {          // ADMINISTRATOR
+		$out['ok'] = true; $out['admin'] = true; $out['bits'] = $base; return $out;
+	}
+
+	$ow = isset($cr['body']['permission_overwrites']) ? $cr['body']['permission_overwrites'] : array();
+	/* @everyone's channel overwrite first, then the role's -- in that order,
+	   because a role allow is meant to win over the everyone deny. */
+	foreach (array($gid, $rid) as $want) {
+		if ($want === '') continue;
+		foreach ((array)$ow as $o) {
+			if (!isset($o['id']) || (string)$o['id'] !== $want) continue;
+			$base &= ~((int)(isset($o['deny']) ? $o['deny'] : 0));
+			$base |=   (int)(isset($o['allow']) ? $o['allow'] : 0);
+		}
+	}
+	$out['ok'] = true;
+	$out['bits'] = $base;
+	return $out;
+}
