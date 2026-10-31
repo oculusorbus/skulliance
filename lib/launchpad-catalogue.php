@@ -22,6 +22,26 @@
  */
 
 /*
+ * A FIFTH ELEMENT, OPTIONAL: what the account must already have.
+ *
+ *   array(url, emoji, name, one-line description [, requirement])
+ *
+ * Read by player_need_met() in lib/player-state.php, which the Launchpad
+ * groups by and the nav marks by. Readers that only want the names --
+ * admin-outreach.php builds a partner post from this list -- index 0 to 3
+ * and are unaffected.
+ *
+ * ONLY VERIFIED GATES CARRY ONE. A tile wrongly marked ready costs a click;
+ * a tile wrongly marked "needs a Fighter" tells somebody a door is shut
+ * that was open, and they believe it. So each requirement below was read
+ * out of the destination page, and everything unchecked stays open. Realm
+ * Guardians is the case that proves it -- it reads like it needs a realm
+ * and explicitly does not: "You have no realm, so you hold the wall with
+ * conscripts." The four Drop Ship themes are unmarked for the same reason:
+ * nobody has established what they do with an empty roster.
+ */
+
+/*
  * The platform, as a player sees it. Mirrors the nav's own grouping (Play /
  * NFTs / Stats / Account) rather than inventing a second taxonomy, so someone
  * who learns this page can still find things in the menu afterwards.
@@ -45,16 +65,16 @@ $lp_sections = array(
 			 * an alphabet.
 			 */
 			array('dhcfighters.php',     '🧬', 'DHC Fighters',    'Earn traits, assemble Fighters, top the board'),
-			array('dhcarena.php',        '🏟️', 'DHC Arena',       'Send a Crew of three against a rival'),
-			array('dhcbosses.php',       '☠️', 'DHC Bosses',      'Three shared bosses, one health bar each'),
+			array('dhcarena.php',        '🏟️', 'DHC Arena',       'Send a Crew of three against a rival', 'fighter'),   // dhcarena.php's own empty state is "No Fighters yet"
+			array('dhcbosses.php',       '☠️', 'DHC Bosses',      'Three shared bosses, one health bar each', 'fighter'),   // its header: a Crew of three, same as Arena
 			/* ?project_id=5 for the same reason every Drop Ship entry below
 			   carries one: they are a single codebase switched by a session
 			   value, so without it each tile opens whichever game the session
 			   was last left on. */
 			array('dropship/dashboard.php?project_id=5', '🚀', 'DHC Drop Ship', 'Field your Fighters as soldiers'),
 
-			array('missions.php',        '🗺️', 'Missions',        'Send NFTs on timed runs for points'),
-			array('realms.php',          '🏰', 'Realms',          'Build a realm, raid your rivals'),
+			array('missions.php',        '🗺️', 'Missions',        'Send NFTs on timed runs for points', 'nft'),   // missions send NFTs; an item-only load-out still needs some at home
+			array('realms.php',          '🏰', 'Realms',          'Build a realm, raid your rivals', 'nft'),   // "You must own at least 1 NFT from ..."
 			array('guardians.php',       '🛡️', 'Realm Guardians', 'Hold your realm against the horde'),
 			array('cryptcrawl.php',      '💀', 'Crypt Crawl',     'Solo dungeon card game'),
 			array('cryptconquest.php',   '👑', 'Crypt Conquest',  'Regicide-style card game'),
@@ -62,7 +82,7 @@ $lp_sections = array(
 			array('monstrocity.php#boss', '🐉', 'Boss Battles',    'Co-op community boss fights'),
 			array('skullswap.php',       '🔄', 'Skull Swap',      'Match 3 score chase'),
 			array('skullracer.php',      '🏁', 'Skull Racer',     'Pseudo-3D arcade racer'),
-			array('gauntlets.php',       '🥊', 'Gauntlets',       'NFT roguelike run'),
+			array('gauntlets.php',       '🥊', 'Gauntlets',       'NFT roguelike run', 'nft'),   // every run is keyed on an nft_id
 			array('obscura.php',         '🔍', 'Obscura',         'Name the collection from a sliver'),
 
 			// dashboard.php, NOT the bare directory. `dropship/` serves index.php,
@@ -113,3 +133,50 @@ $lp_sections = array(
 		),
 	),
 );
+
+/**
+ * The requirement declared for a URL, or '' when there is none.
+ *
+ * HERE SO THE NAV AND THE LAUNCHPAD CANNOT DISAGREE. The nav's link list
+ * lives in header.php and is written out by hand; this is the lookup that
+ * lets it mark the same things this page marks, without a second table of
+ * requirements that would drift from the first one inside a month.
+ *
+ * Matched on the path only -- the nav carries query strings and anchors
+ * that the catalogue does not, and vice versa.
+ */
+function lp_need_for_url($url) {
+	global $lp_sections;
+	static $map = null;
+	if ($map === null) {
+		$map = array();
+		foreach ((array)$lp_sections as $sec) {
+			foreach ($sec['items'] as $it) {
+				if (empty($it[4])) continue;
+				$map[strtok((string)$it[0], '?#')] = $it[4];
+			}
+		}
+	}
+	$path = strtok((string)$url, '?#');
+	return isset($map[$path]) ? $map[$path] : '';
+}
+
+/**
+ * Catalogue items split into what this account can do and what it cannot.
+ *
+ * READY FIRST, LOCKED AFTER, ORIGINAL ORDER WITHIN EACH. Not three new
+ * sections: the Play / Collect / Progress grouping mirrors the nav, which
+ * is the thing somebody learns and then uses for the next year, and
+ * replacing it with buckets that collapse into one the moment an account is
+ * set up would be churn rather than design.
+ */
+function lp_split_items($items, $state) {
+	$ready = array();
+	$later = array();
+	foreach ((array)$items as $it) {
+		$need = isset($it[4]) ? $it[4] : '';
+		if (player_need_met($need, $state)) $ready[] = $it;
+		else                                $later[] = $it;
+	}
+	return array($ready, $later);
+}

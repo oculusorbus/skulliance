@@ -40,6 +40,30 @@ Two things can leave the list empty, and the panel says which:
   assets as they first appear, so already-staked ones are filled in by a
   separate pass.
 
+## The Launchpad knows what you have
+
+The first page after login lists everything on the platform, and some of it
+needs something before you can use it: Missions and Realms need a staked NFT,
+DHC Arena and DHC Bosses need a Fighter.
+
+Those are now marked rather than left for you to discover by clicking. A tile
+you cannot use yet sits after the ones you can, dimmed, with a short note
+saying what it wants - **needs a staked NFT**, **needs a Fighter**. The same
+marks appear in the menu, as a small amber dot.
+
+Two things worth knowing about how that behaves:
+
+* **Nothing is hidden and nothing is blocked.** A marked tile is still a link
+  and still goes where it says. The mark is information, not a gate - and
+  several of those pages are worth a look before you qualify for them.
+* **Only confirmed requirements are marked.** If a game is not marked, that is
+  either because anyone can play it or because nobody has confirmed otherwise.
+  Realm Guardians is the one that surprises people: it looks like it needs a
+  realm and does not, so it is never marked.
+
+Once your account has what the platform asks for, the marks disappear and the
+page is exactly what it was.
+
 ## Saving the artwork
 
 The panel says whether the artwork is **saved on Skulliance** or still loading from IPFS. A saved copy loads faster and survives a gateway going down.

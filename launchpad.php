@@ -38,6 +38,15 @@ $lp_avatar_url = ($lp_discord && $lp_avatar)
 
 // Three cheap signals, all from helpers that already exist. Each is wrapped
 // so a failure degrades that one number rather than the page.
+/*
+ * WHAT THIS ACCOUNT CAN ACTUALLY DO. Two indexed COUNTs, memoised, and a
+ * failure reads as "unknown", which renders exactly like the page did
+ * before any of this existed. See lib/player-state.php for why unknown
+ * resolves to AVAILABLE rather than locked.
+ */
+require_once __DIR__ . '/lib/player-state.php';
+$lp_state = player_state($conn);
+
 $lp_wallets = 0;
 $lp_streak  = 0;
 $lp_balance = 0;
@@ -246,16 +255,61 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	</script>
 	<?php endif; ?>
 
+	<?php
+	/*
+	 * THE REMEDIES, ONCE, AT THE TOP -- not a link inside every locked tile.
+	 *
+	 * Two reasons. A tile is already an <a>, and an <a> inside an <a> is the
+	 * bug that hoisted the body out of every card on the Activity wall
+	 * (recorded in MAINTENANCE.md); and five tiles each repeating "Connect a
+	 * wallet" is noise where one line is an instruction.
+	 *
+	 * The remedy depends on the account -- somebody with no wallet and
+	 * somebody with a wallet and nothing staked are told different things --
+	 * which is the whole reason this is computed rather than written out.
+	 */
+	$lp_unmet = array();
+	foreach ($lp_sections as $lp_sec_scan) {
+		foreach ($lp_sec_scan['items'] as $it_scan) {
+			$need = isset($it_scan[4]) ? $it_scan[4] : '';
+			if ($need === '' || player_need_met($need, $lp_state)) continue;
+			$lp_unmet[$need] = player_need_fix($need, $lp_state);
+		}
+	}
+	?>
+	<?php if ($lp_unmet): ?>
+	<p class="lp-unmet">Some of these need something first.
+		<?php foreach ($lp_unmet as $need => $fix): ?>
+		<a href="<?php echo htmlspecialchars($fix[0], ENT_QUOTES); ?>"><?php
+			echo htmlspecialchars($fix[1], ENT_QUOTES); ?> &rarr;</a>
+		<?php endforeach; ?>
+	</p>
+	<?php endif; ?>
+
 	<?php foreach ($lp_sections as $lp_name => $lp_sec): ?>
+	<?php list($lp_ready, $lp_later) = lp_split_items($lp_sec['items'], $lp_state); ?>
 	<div class="lp-section" style="--lp-accent:<?php echo $lp_sec['accent']; ?>">
 		<h3 class="lp-section-head"><?php echo htmlspecialchars($lp_name); ?></h3>
 		<div class="lp-section-blurb"><?php echo htmlspecialchars($lp_sec['blurb']); ?></div>
 		<div class="lp-grid">
-			<?php foreach ($lp_sec['items'] as $it): ?>
-				<a class="lp-tile" href="<?php echo htmlspecialchars($it[0]); ?>">
+			<?php
+			/* Ready first, then the rest in their original order. A locked
+			   tile is STILL A LINK -- every one of these pages has an empty
+			   state that explains itself better than a disabled tile could,
+			   and refusing the click would be the brick wall this is meant
+			   to remove. The chip is information, not a gate. */
+			foreach (array_merge($lp_ready, $lp_later) as $it):
+				$lp_need = isset($it[4]) ? $it[4] : '';
+				$lp_ok   = player_need_met($lp_need, $lp_state); ?>
+				<a class="lp-tile<?php echo $lp_ok ? '' : ' lp-tile-later'; ?>"
+				   href="<?php echo htmlspecialchars($it[0]); ?>">
 					<span class="lp-tile-icon"><?php echo $it[1]; ?></span>
 					<span class="lp-tile-name"><?php echo htmlspecialchars($it[2]); ?></span>
 					<span class="lp-tile-desc"><?php echo htmlspecialchars($it[3]); ?></span>
+					<?php if (!$lp_ok): ?>
+					<span class="lp-tile-need"><?php
+						echo htmlspecialchars(player_need_label($lp_need), ENT_QUOTES); ?></span>
+					<?php endif; ?>
 				</a>
 			<?php endforeach; ?>
 		</div>
@@ -345,6 +399,36 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 .lp-tile-icon { font-size: 1.6rem; line-height: 1; margin-bottom: 8px; }
 .lp-tile-name { font-weight: bold; font-size: 0.95rem; }
 .lp-tile-desc { font-size: 0.73rem; color: rgba(255,255,255,0.45); margin-top: 4px; }
+
+/*
+ * NOT YET, RATHER THAN NOT FOR YOU.
+ *
+ * Quieter, not disabled: the tile is still a link, still hovers, still goes
+ * where it says. The only change is that it stops competing for attention
+ * with the things this account can do today, which is the entire job -- a
+ * new member reads thirty-six equal tiles as a wall and five as a start.
+ *
+ * The chip carries the sentence. Colour alone would say "different" without
+ * saying what, and on a phone at a glance that reads as broken.
+ */
+.lp-tile-later { opacity: 0.55; border-top-color: rgba(255,255,255,0.18); }
+.lp-tile-later:hover { opacity: 1; }
+.lp-tile-need {
+	margin-top: 8px; align-self: flex-start;
+	font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase;
+	color: #f5a623; border: 1px solid rgba(245,166,35,0.45);
+	border-radius: 999px; padding: 2px 8px;
+}
+/* The remedies, once, above the sections. Amber to match the chips it
+   explains, and it is the only place a fix is linked -- a link inside a
+   tile would be an <a> inside an <a>, which is the bug that hoisted the
+   body out of every card on the Activity wall. */
+.lp-unmet {
+	margin: 0 4px 18px; font-size: 0.82rem; color: rgba(255,255,255,0.6);
+	display: flex; flex-wrap: wrap; gap: 14px; align-items: baseline;
+}
+.lp-unmet a { color: #f5a623; text-decoration: none; font-weight: 600; text-align: left; }
+.lp-unmet a:hover { text-decoration: underline; }
 </style>
 
 </body>

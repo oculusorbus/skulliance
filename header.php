@@ -397,6 +397,28 @@
 		</div>
 		<!-- Navigation Bar -->
 		<div class="navbar" id="navbar">
+		  <?php
+		  /*
+		   * WHAT THIS ACCOUNT HAS, FOR THE MENU. Only inside the signed-in
+		   * branch, so a logged-out visitor costs nothing, and memoised so
+		   * the Launchpad's own read below is free.
+		   *
+		   * Three indexed COUNTs on user_id. Every one of them is wrapped
+		   * and a failure yields "unknown", which marks NOTHING -- this is
+		   * the navigation on sixty-three pages and it must never be the
+		   * reason one of them does not draw. $conn is checked rather than
+		   * assumed: header.php includes nothing of its own and relies on
+		   * the page having loaded db.php first, which is true today and is
+		   * not a promise.
+		   */
+		  $sk_nav_state = array('known' => false, 'wallets' => 0, 'nfts' => 0, 'fighters' => 0);
+		  if (isset($name) && isset($conn) && is_object($conn)
+		      && is_file(__DIR__ . '/lib/player-state.php')) {
+		  	require_once __DIR__ . '/lib/player-state.php';
+		  	require_once __DIR__ . '/lib/launchpad-catalogue.php';
+		  	$sk_nav_state = player_state($conn);
+		  }
+		  ?>
 		  <?php if(isset($name)){?>
 		  <?php if(isset($avatar_url)){?>
 	      <img class="rounded-full" src="<?php echo $avatar_url?>" onerror="this.src='icons/skull.png'" />
@@ -443,8 +465,29 @@
 		           lose nothing. They are still reached from the homepage, from
 		           site-header.php on every public page, and from search, which
 		           is who they were written for. -->
-		      <a href="missions.php">Missions</a>
-		      <a href="realms.php">Realms</a>
+		      <?php
+		      /*
+		       * THE MENU KNOWS WHAT YOU HAVE.
+		       *
+		       * Five of these go somewhere that needs a staked NFT or a
+		       * Fighter first, and until now nothing said so until you had
+		       * clicked. For a new member that turns a menu into a series
+		       * of small refusals, which is the thing reported as the site
+		       * being hard to understand.
+		       *
+		       * MARKED, NEVER HIDDEN, and still clickable: every one of
+		       * these pages explains itself better than a missing menu
+		       * entry could, and an entry that vanishes teaches somebody
+		       * the platform is smaller than it is.
+		       *
+		       * THE REQUIREMENTS ARE THE LAUNCHPAD'S, looked up by URL --
+		       * not a second list. $sk_nav_state is set just above the
+		       * navbar and is false-y for anyone we cannot read, which
+		       * marks nothing. See lib/player-state.php.
+		       */
+		      ?>
+		      <a href="missions.php"<?php echo player_nav_attrs('missions.php', $sk_nav_state); ?>>Missions</a>
+		      <a href="realms.php"<?php echo player_nav_attrs('realms.php', $sk_nav_state); ?>>Realms</a>
 		      <!-- Listed under Realms deliberately: it reads that realm's
 		           locations, soldiers and gear to build its starting position. -->
 		      <a href="guardians.php">Guardians</a>
@@ -455,14 +498,14 @@
 		           dhcarena-prototype.php, deliberately unlisted -- it keeps no
 		           state and pays nothing, so a player finding it would only be
 		           confused about which one counts. See dhcarena.md. -->
-		      <a href="dhcarena.php">DHC Arena</a>
+		      <a href="dhcarena.php"<?php echo player_nav_attrs('dhcarena.php', $sk_nav_state); ?>>DHC Arena</a>
 		      <!-- DHC Bosses has its own address and its own ladder, but it is
 		           not a second implementation: dhcbosses.php is dhcarena.php with
 		           $DHC_MODE set, so the board, the client and the Crew picker are
 		           the same code. It is a page rather than a panel because each
 		           Fighter has a separate recovery clock for the two games, and
 		           one picker showing both clocks at once could not be read. -->
-		      <a href="dhcbosses.php">DHC Bosses</a>
+		      <a href="dhcbosses.php"<?php echo player_nav_attrs('dhcbosses.php', $sk_nav_state); ?>>DHC Bosses</a>
 		      <!-- WITH THE OTHER TWO DHC ENTRIES, not down with the Drop Ship
 		           themes, because what a player is picking here is DHC and not
 		           a battler. Every Fighter they have assembled fields in this
@@ -480,7 +523,7 @@
 		      <a href="monstrocity.php#boss">Boss Battles</a>
 		      <a href="skullswap.php">Skull Swap</a>
 		      <a href="skullracer.php">Skull Racer</a>
-              <a href="gauntlets.php">Gauntlets</a>		
+              <a href="gauntlets.php"<?php echo player_nav_attrs('gauntlets.php', $sk_nav_state); ?>>Gauntlets</a>		
 		      <!-- Obscura has no public page at all; it is internal. It used
 		           to be the exception to a rule that no longer exists. -->
 		      <a href="obscura.php">Obscura</a>
