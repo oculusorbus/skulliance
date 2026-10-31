@@ -57,11 +57,29 @@ function guild_members_load() {
 	if ($raw === false || $raw === '') return null;
 	$d = json_decode($raw, true);
 	if (!is_array($d) || empty($d['ids']) || !is_array($d['ids'])) return null;
-	return array(
+	/*
+	 * ROLES AND NAMES MUST SURVIVE THIS, and they did not: this rebuilt
+	 * the array from three named keys, so the refresh stored roles and
+	 * the loader threw them away on the way out. Every member then read
+	 * as "roles unknown", the Visitor and Candidate groups stayed empty
+	 * on a roster of 456, and the page kept advising a refresh that had
+	 * already worked.
+	 *
+	 * Not an is_array() default either: a MISSING roles key has to stay
+	 * missing, because guild_member_roles() returns null for it and null
+	 * is what stops an old cache being read as "holds no roles". An empty
+	 * array here would turn every member of a pre-role cache into
+	 * somebody we are confident holds nothing.
+	 */
+	$out = array(
 		'ids'   => $d['ids'],
 		'at'    => isset($d['at']) ? (int)$d['at'] : 0,
 		'count' => isset($d['count']) ? (int)$d['count'] : count($d['ids']),
 	);
+	foreach (array('roles', 'names') as $k) {
+		if (isset($d[$k]) && is_array($d[$k])) $out[$k] = $d[$k];
+	}
+	return $out;
 }
 
 /** Is this roster old enough to mention? */

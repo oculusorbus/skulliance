@@ -64,6 +64,50 @@ ok(strpos($gm, "'roles' => \$roles") !== false,
  . 'Candidate groups are permanently empty and look like good news');
 ok(strpos($gm, "\$m['roles']") !== false,
    'the refresh does not read roles out of the Discord response');
+/*
+ * A REAL ROUND TRIP, WRITE THEN LOAD, because the two halves were each
+ * checked on their own and the bug sat exactly between them:
+ * guild_members_refresh() stored roles correctly and guild_members_load()
+ * rebuilt the array from three named keys, dropping them on the way out.
+ * Every member then read as "roles unknown", Visitor and Candidate stayed
+ * empty on a roster of 456, and the page went on advising a refresh that
+ * had already succeeded. Source checks on either side both passed.
+ */
+$gmPath = __DIR__ . '/dhcrenders/guild-members.json';
+$gmKeep = @file_get_contents($gmPath);
+@mkdir(dirname($gmPath), 0775, true);
+file_put_contents($gmPath, json_encode(array(
+	'ids'   => array('7' => true),
+	'roles' => array('7' => array('1009474801317974016')),
+	'names' => array('7' => 'nich'),
+	'at' => time(), 'count' => 1)));
+$rt = guild_members_load();
+ok(guild_member_in($rt, '7') === true,  'a written member does not load back');
+ok(guild_member_roles($rt, '7') === array('1009474801317974016'),
+   'roles do not survive the write-then-load round trip, so every member reads as '
+ . '"roles unknown" however often the roster is refreshed');
+ok(guild_member_name($rt, '7') === 'nich', 'names do not survive the round trip');
+/* And a cache written before roles existed must still say UNKNOWN. An
+   empty array here would make every member of it somebody we are
+   confident holds nothing. */
+file_put_contents($gmPath, json_encode(array('ids' => array('7' => true), 'at' => time(), 'count' => 1)));
+$pre = guild_members_load();
+ok(guild_member_roles($pre, '7') === null,
+   'a cache with no roles key reports an empty role list rather than "unknown", so every '
+ . 'member of it is treated as holding nothing');
+/*
+ * AND THE KEY MUST STAY ABSENT, not be defaulted to an empty array.
+ * guild_member_roles() returns null either way, so this looks like a
+ * distinction without a difference -- it is not. The page decides
+ * whether to show the "this roster has no roles in it" warning with
+ * isset($cache['roles']), so defaulting it would silently remove the
+ * one message that explains two empty groups.
+ */
+ok(!isset($pre['roles']),
+   'the loader invents an empty roles key for a cache that has none, which switches off '
+ . 'the warning that explains why the Visitor and Candidate groups are empty');
+if ($gmKeep === false) @unlink($gmPath); else file_put_contents($gmPath, $gmKeep);
+
 ok(guild_member_roles(array('ids' => array('5' => true)), '5') === null,
    'a roster with no roles key reports an empty role list rather than "unknown"');
 ok(guild_member_roles(array('roles' => array('5' => array('9'))), '5') === array('9'),
