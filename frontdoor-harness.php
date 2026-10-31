@@ -569,17 +569,80 @@ echo "\nthe diagnostic is read only, and is not a public page\n";
 	$adm  = harness_strip_comments((string)file_get_contents(__DIR__ . '/admin-lib.php'));
 
 	/*
-	 * A DIAGNOSTIC THAT DELETES THINGS IS ONE NOBODY DARES RUN -- and the
-	 * thing it would be deleting is a message in a public channel. Removing
-	 * a stale gate message is one tap in Discord; it does not need to be
-	 * here, and having it here means every future reader has to check.
+	 * STILL NO DELETE, AND THAT IS THE LINE.
+	 *
+	 * The page gained one write -- posting or rewriting the gate message --
+	 * because the only way to do it before was a shell script, and the
+	 * moment you need it is the moment you are on a phone in a DM with
+	 * somebody who cannot get in. Deleting is different: it removes a
+	 * message from a public channel, it is one tap in Discord anyway, and a
+	 * tool that can do it is one nobody dares press.
+	 *
+	 * The LIBRARY stays read only regardless -- everything in it runs on
+	 * page load, where a write would fire by being looked at.
 	 */
 	foreach (array('POST', 'PATCH', 'PUT', 'DELETE') as $verb) {
-		ok(strpos($page, "sk_discord_api('" . $verb) === false,
-		   "admin-frontdoor.php makes a $verb call to Discord; it is supposed to be read only");
 		ok(strpos($lib, "sk_discord_api('" . $verb) === false,
-		   "lib/frontdoor-lib.php makes a $verb call to Discord; it is supposed to be read only");
+		   "lib/frontdoor-lib.php makes a $verb call to Discord, and everything in it runs on "
+		 . 'page load -- a write there fires by being looked at');
 	}
+	ok(strpos($page, "sk_discord_api('DELETE'") === false,
+	   'admin-frontdoor.php can delete a message from the rules channel');
+
+	/*
+	 * THE WRITE IS A POST, CONFIRMED, AND REDIRECTS AFTERWARDS. A GET would
+	 * post the rules every time a link was followed or prefetched; no
+	 * confirm makes it a mis-tap; no redirect makes a reload post it twice.
+	 */
+	/*
+	 * SCOPED TO THE GATE HANDLER, NOT SEARCHED FOR ANYWHERE IN THE FILE.
+	 * The first spelling of this looked for the REQUEST_METHOD test and the
+	 * fd_gate test as two separate strings, and PASSED with the method test
+	 * removed from the gate branch -- because the PROBE handler further up
+	 * has one of its own. Fifth time in this repo that a bare string search
+	 * has matched somewhere other than the place it was about.
+	 */
+	$at_gate = strpos($page, "isset(\$_POST['fd_gate'])");
+	ok($at_gate !== false, 'the gate write handler is gone');
+	if ($at_gate !== false) {
+		$cond = substr($page, 0, $at_gate);
+		$cond = substr($cond, strrpos($cond, 'if ('));
+		ok(strpos($cond, "\$_SERVER['REQUEST_METHOD'] === 'POST'") !== false,
+		   'the gate write is not fenced on a POST in its own condition');
+	}
+	ok(strpos($page, "\$_GET['fd_gate']") === false,
+	   'the gate can be posted from a GET, so following or prefetching a link writes to a '
+	 . 'public channel');
+	ok(strpos($page, "empty(\$_POST['fd_confirm'])") !== false,
+	   'the gate can be posted without confirming, so a mis-tap writes to a public channel');
+	$at_write = strpos($page, "isset(\$_POST['fd_gate'])");
+	$at_redir = strpos($page, "header('Location: admin-frontdoor.php')", $at_write);
+	ok($at_redir !== false,
+	   'the gate write does not redirect afterwards, so a reload posts it again');
+
+	/*
+	 * ONE COPY OF THE RULES. Two things post this message now, and a second
+	 * copy of a six-point rules list plus an embed that has to describe the
+	 * quiz accurately WILL drift -- and the embed copy is half the gate: it
+	 * is what tells a Polygon holder the questions are not about OUR chain,
+	 * which is the fix that stopped the gate ejecting people for being
+	 * right.
+	 */
+	$script = (string)file_get_contents(__DIR__ . '/discord-rules-post.php');
+	$rules  = (string)file_get_contents(__DIR__ . '/discord-rules-lib.php');
+	ok(strpos($rules, 'function sk_rules_payload(') !== false,
+	   'sk_rules_payload() is gone from discord-rules-lib.php');
+	ok(strpos($rules, 'Keep Calm and Have Fun') !== false,
+	   'the rules text is not in the library any more; where did it go?');
+	foreach (array('admin-frontdoor.php' => $page, 'discord-rules-post.php' => $script) as $who => $src) {
+		ok(strpos($src, 'sk_rules_payload()') !== false,
+		   "$who does not build the gate message from sk_rules_payload()");
+		ok(strpos($src, 'Keep Calm and Have Fun') === false,
+		   "$who carries its own copy of the rules text, which will drift from the library's");
+	}
+	/* And the button on it must be the one the endpoint answers. */
+	ok(strpos($rules, "'custom_id' => SK_BTN_START") !== false,
+	   'the gate message no longer carries SK_BTN_START, so the endpoint will not answer it');
 
 	/* The gate, and BEFORE header.php -- admin_require() exits, and an exit
 	   after output has already drawn the page around the refusal. */

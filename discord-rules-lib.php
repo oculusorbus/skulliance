@@ -239,6 +239,71 @@ define('SK_EPHEMERAL', 64);           // message flag: only the clicker sees it
 define('SK_BTN_START', 'sk_rules_start');
 
 // ---------------------------------------------------------------------------
+// THE GATE MESSAGE ITSELF.
+//
+// ONE COPY OF THE RULES, because there are now two things that post them:
+// discord-rules-post.php from the shell, and the Front Door admin page from
+// a phone. Two copies of a six-point rules list and an embed that has to
+// describe the quiz accurately WILL drift, and the half that drifts is the
+// one nobody reads -- the embed copy is half the gate (see below), so a
+// stale second copy would quietly undo the fix that stopped a Polygon
+// holder being ejected for knowing Polygon.
+//
+// The button's custom_id never changes (SK_BTN_START), so a message posted
+// by either caller works immediately and an edit keeps working.
+// ---------------------------------------------------------------------------
+function sk_rules_payload() {
+	// Through the bot, not discordmsg(). Incoming webhooks can't carry
+	// interactive components, so a webhook-posted message simply cannot have a
+	// button on it -- this has to go through the bot token.
+	// The rules text, verbatim as it reads in the channel today. Kept as the
+	// message CONTENT rather than inside the embed so it renders exactly as
+	// before -- the embed underneath is only the quiz warning.
+	$rules = "The Skulliance Server Rules\xF0\x9F\x91\x87\n"
+		. "1\xEF\xB8\x8F\xE2\x83\xA3 Keep Calm and Have Fun.\n\n"
+		. "2\xEF\xB8\x8F\xE2\x83\xA3 Respect Others\n"
+		. "Treat each other with respect and kindness. In other words don't be a dick! Any form of harassment, spamming, threatening, FUD, trolling, sexism, racism, hating on any person or group, and or any rude/offensive actions or words will not be tolerated.\n\n"
+		. "3\xEF\xB8\x8F\xE2\x83\xA3 NSFW Content\n"
+		. "Posting any form of NSFW (Not safe for work) content is prohibited. This includes but is not limited to pornographic, sexual, violent, harmful content in the form of text, images, Discord handle, and Discord profile picture.\n\n"
+		. "4\xEF\xB8\x8F\xE2\x83\xA3 DMs\n"
+		. "No unnecessary pings / mentions / DMs of any of the crew members.\n\n"
+		. "5\xEF\xB8\x8F\xE2\x83\xA3 Data Breach/Phishing Attacks\n"
+		. "No personal information is to be published. This includes email addresses, passwords, bank account information, credit card information, addresses, etc.\n\n"
+		. "6\xEF\xB8\x8F\xE2\x83\xA3 Follow the Discord Community Guidelines (https://discordapp.com/guidelines)";
+
+	$payload = [
+		'content' => $rules,
+		'embeds' => [[
+			/*
+			 * THIS COPY IS HALF THE GATE. The previous wording -- "two quick
+			 * questions about the chain we're built on" -- is what told a Polygon
+			 * holder the questions were about OUR chain, which is exactly the
+			 * confusion that got them kicked. Describing the flow accurately is
+			 * not decoration; it is the instruction that makes it passable.
+			 */
+			'description' => "Press the button to agree. You'll pick the blockchain you know "
+				. "best, then answer **two quick questions** about that chain.\n\n"
+				. "Any chain is fine — Cardano, XRP Ledger, Solana, Polygon or Ethereum. "
+				. "We're multi-chain, so we're not asking you to know ours.\n\n"
+				. "Answer correctly and you'll be welcomed in as a Candidate. "
+				. "**Answer incorrectly and you'll be removed from the server** — so take your time.",
+			'color'       => hexdec('CC0000'),
+		]],
+		'components' => [[
+			'type' => 1,
+			'components' => [[
+				'type'      => 2,
+				'style'     => 1,              // primary/blurple
+				'label'     => 'I Agree to the Rules',
+				'emoji'     => ['name' => '💀'],
+				'custom_id' => SK_BTN_START,
+			]],
+		]],
+	];
+	return $payload;
+}
+
+// ---------------------------------------------------------------------------
 // Minimal Discord REST helper.
 //
 // Deliberately NOT MakeRequest() from message.php, for two reasons: that one

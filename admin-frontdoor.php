@@ -47,6 +47,72 @@ require_once __DIR__ . '/lib/discord-interaction-log.php';
 $fd_ini = frontdoor_ini();
 
 /*
+ * ---------------------------------------------------------------------------
+ * POSTING THE GATE, WITHOUT A TERMINAL.
+ *
+ * This page is otherwise read only and the harness holds it to that. This
+ * one write earns its exception: until now the ONLY way to put the rules
+ * message back was discord-rules-post.php over SSH, and the moment you need
+ * it is the moment somebody is telling you in a DM that they cannot get in
+ * -- away from a desk, on a phone. A front door you cannot reopen from where
+ * you are standing is the whole complaint this page exists for.
+ *
+ * TWO ACTIONS, AND EDIT IS THE DEFAULT. A new post loses the message's
+ * position in the channel, its pin, and every link anyone has to it; an edit
+ * keeps all three, and the button's custom_id never changes (SK_BTN_START),
+ * so an edited message keeps working with no gap. Posting a second one is
+ * offered, because a channel with no gate at all needs it, and the panel
+ * above will then say there is more than one.
+ *
+ * STILL NO DELETE. Removing a stale message is one tap in Discord, and a
+ * tool that can delete from a public channel is one nobody dares press.
+ *
+ * The message itself is sk_rules_payload() in discord-rules-lib.php, shared
+ * with the shell script -- two copies of the rules would drift, and the half
+ * that drifts is the embed, which IS half the gate.
+ * ---------------------------------------------------------------------------
+ */
+$fd_msg = '';
+if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['fd_msg'])) {
+	$fd_msg = (string)$_SESSION['fd_msg'];
+	unset($_SESSION['fd_msg']);
+}
+if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST'
+    && isset($_POST['fd_gate'])) {
+	/* The confirm is a checkbox rather than a JavaScript dialog: it works
+	   with no script, it is visible before the press rather than after, and
+	   it survives a mis-tap on a phone. */
+	if (empty($_POST['fd_confirm'])) {
+		$_SESSION['fd_msg'] = 'Nothing was posted -- tick the confirm box first.';
+	} else {
+		$fd_act = $_POST['fd_gate'] === 'edit' ? 'edit' : 'post';
+		$fd_mid = preg_replace('/[^0-9]/', '', (string)($_POST['fd_gate_id'] ?? ''));
+		if ($fd_act === 'edit' && $fd_mid === '') {
+			$_SESSION['fd_msg'] = 'Nothing was edited -- no message id came through.';
+		} else {
+			$r = $fd_act === 'edit'
+				? sk_discord_api('PATCH', '/channels/' . $rules_channel_id . '/messages/' . $fd_mid,
+				                 sk_rules_payload())
+				: sk_discord_api('POST',  '/channels/' . $rules_channel_id . '/messages',
+				                 sk_rules_payload());
+			if (!empty($r['ok'])) {
+				$_SESSION['fd_msg'] = $fd_act === 'edit'
+					? 'Rewritten in place. Same message, same position, same button.'
+					: 'Posted. Message id ' . (isset($r['body']['id']) ? $r['body']['id'] : '?') . '.';
+			} else {
+				$_SESSION['fd_msg'] = 'Discord refused it: HTTP ' . (int)$r['status']
+					. (isset($r['body']['message']) ? ' -- ' . $r['body']['message'] : '')
+					. ((int)$r['status'] === 403
+						? ' (the bot cannot see or post in that channel)' : '');
+			}
+		}
+	}
+	/* Redirect so a reload cannot post the gate a second time. */
+	header('Location: admin-frontdoor.php');
+	exit;
+}
+
+/*
  * THE SELF-PROBE IS BEHIND A BUTTON, not run on load.
  *
  * It fetches this host from this host three times, and a page that does that
@@ -123,6 +189,14 @@ admin_chrome('frontdoor');
 .fd-btn { background:#123049; color:#9fd8c8; border:1px solid rgba(255,255,255,.14);
   border-radius:6px; padding:6px 14px; font-size:.8rem; cursor:pointer; }
 .fd-btn:hover { background:#17405f; }
+/* The write controls. Quiet by default and never adjacent to a refresh:
+   this is the only thing on the page that changes anything. */
+.fd-gate { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:14px 0 4px;
+  padding:12px 14px; border:1px solid rgba(255,255,255,.1); border-radius:4px; }
+.fd-confirm { font-size:.8rem; color:#8fa8b8; display:flex; align-items:center; gap:7px;
+  cursor:pointer; }
+.fd-btn-quiet { background:none; color:#7a9eb0; border-style:dashed; }
+.fd-btn-quiet:hover { background:none; color:#e8eaed; }
 .fd-t { width:100%; border-collapse:collapse; font-size:.8rem; }
 .fd-t th { text-align:left; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase;
   color:#5f7d90; border-bottom:1px solid rgba(255,255,255,.12); padding:0 9px 7px; font-weight:600; }
@@ -195,6 +269,35 @@ somewhere else.</p>
 		of one.</span></p>
 	<?php endif; ?>
 <?php endif; ?>
+
+<?php if ($fd_msg !== ''): ?>
+	<p class="fd-row"><span class="fd-tag fd-good">done</span>
+		<span class="fd-say"><?php echo htmlspecialchars($fd_msg, ENT_QUOTES); ?></span></p>
+<?php endif; ?>
+
+<?php
+/* The id of the live gate, if there is one -- an edit needs it and this is
+   the only place that knows it without anybody copying it out of Discord. */
+$fd_live_id = '';
+foreach ($fd_msgs['messages'] as $m) {
+	list($st,) = frontdoor_classify($m, $fd_me['id'], SK_BTN_START);
+	if ($st === 'live') { $fd_live_id = $m['id']; break; }
+}
+?>
+<form method="post" action="admin-frontdoor.php" class="fd-gate">
+	<label class="fd-confirm"><input type="checkbox" name="fd_confirm" value="1">
+		Yes, write to the rules channel</label>
+	<?php if ($fd_live_id !== ''): ?>
+	<input type="hidden" name="fd_gate_id" value="<?php echo htmlspecialchars($fd_live_id, ENT_QUOTES); ?>">
+	<button class="fd-btn" type="submit" name="fd_gate" value="edit">Rewrite the gate message</button>
+	<button class="fd-btn fd-btn-quiet" type="submit" name="fd_gate" value="post">Post a second one</button>
+	<span class="fd-say">Rewriting keeps the message where it is, with its pin and its links.
+	Posting adds another; both would work, but newcomers only see one.</span>
+	<?php else: ?>
+	<button class="fd-btn" type="submit" name="fd_gate" value="post">Post the gate message</button>
+	<span class="fd-say">There is no working gate in that channel, so nobody can get in at all.</span>
+	<?php endif; ?>
+</form>
 
 <?php /* ---------------- 1b. what Discord has stored ---------------- */ ?>
 <p class="fd-sect">Discord's own record of where to deliver</p>
