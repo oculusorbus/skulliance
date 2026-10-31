@@ -201,6 +201,35 @@ register_shutdown_function(function () {
 		));
 	}
 
+	/*
+	 * -------------------------------------------------------------------
+	 * THE LAST SEGMENT NOTHING MEASURES.
+	 *
+	 * LiteSpeed holds the response until the script TERMINATES -- recorded
+	 * in skullpaper/MAINTENANCE.md from when fastcgi_finish_request failed
+	 * to defer work past the response on this host. So everything in this
+	 * shutdown handler happens between our reply and the wire.
+	 *
+	 * And `$ms` above is sampled at the TOP of this function, before the
+	 * log write, its LOCK_EX, and the rotation check. So the 3ms this
+	 * endpoint reports is honest about the work and silent about the tail,
+	 * which is exactly the shape of thing that hides for a month. On
+	 * CloudLinux an account that is over its IO allowance has small writes
+	 * block, and nothing above would show it.
+	 *
+	 * Measured rather than assumed, and only reported when it is big
+	 * enough to matter against a 3000ms budget.
+	 * -------------------------------------------------------------------
+	 */
+	$tail = ((microtime(true) - $t0) * 1000) - $ms;
+	if ($tail > 150) {
+		error_log(sprintf(
+			'discord-interactions: %.0fms of SHUTDOWN work AFTER the reply was written '
+			. '(interaction log write and rotate). LiteSpeed does not release the response '
+			. 'until the script ends, so Discord waited %.0fms, not %.0fms.',
+			$tail, $ms + $tail, $ms));
+	}
+
 	if ($ms < SK_SLOW_MS) return;
 	error_log(sprintf(
 		'discord-interactions SLOW %.0fms (Discord gives 3000ms) outcome=%s lag=%s marks: %s',

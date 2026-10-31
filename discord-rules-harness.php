@@ -336,6 +336,23 @@ $body = sk_fn_body($ep_src, 'function sk_respond(');
 ok(strpos($body, 'is_string($out)') !== false,
    'a json_encode failure sends an empty 200, which Discord reports as a timeout');
 
+/*
+ * THE SHUTDOWN TAIL IS MEASURED, because it is the one segment the
+ * endpoint's own numbers cannot see: LiteSpeed holds the response until the
+ * script terminates, and `work` is sampled at the TOP of the shutdown
+ * handler -- before the log write, its lock, and the rotation check.
+ * Reporting 3ms while an unknown amount of IO sits between the reply and
+ * the wire is how a problem hides for a month.
+ */
+$shut = substr($ep_src, strpos($ep_src, 'register_shutdown_function'));
+$shut = substr($shut, 0, strpos($shut, "\n});") + 4);
+$at_write = strpos($shut, 'sk_ilog(');
+$at_tail  = strpos($shut, '$tail');
+ok($at_tail !== false, 'the shutdown handler does not measure its own tail, so the time between '
+ . 'the reply being written and the script ending is invisible');
+ok($at_write !== false && $at_tail !== false && $at_tail > $at_write,
+   'the tail is measured BEFORE the log write it is supposed to be measuring');
+
 /* ---------------------------------------------------------------------- *
  * THE GATE MESSAGE, AGAINST DISCORD'S OWN LIMITS.
  *
