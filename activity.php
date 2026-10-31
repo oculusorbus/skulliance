@@ -23,6 +23,13 @@
  * analytics endpoints, and skullpaper/MAINTENANCE.md already records how
  * they drifted. Weights and queries are read, never restated.
  *
+ * TWO TABS OVER ONE QUERY. Players is the default and is the page as it
+ * was; Games asks the same data the other way round -- which games the
+ * platform turns up for -- and answers it with the avatars of everybody
+ * who played, because a bar whose length is a count of people reads worse
+ * than the people themselves. The pivot is activity_games() in the lib and
+ * costs nothing: no second query, no second definition of a play.
+ *
  * THE WINDOW IS IN DAYS, which the leaderboard's periods are not: it
  * offers all-time, calendar month and calendar week, and "this month" on
  * the 1st is a different question from "the last 30 days". Rivalries
@@ -38,6 +45,13 @@ require_once __DIR__ . '/activity-sources-lib.php';
 $ac_days = isset($_GET['days']) ? (int)$_GET['days'] : 30;
 if (!in_array($ac_days, array(7, 30, 90), true)) $ac_days = 30;
 
+/* Which reading. Same data either way, so this only picks a renderer --
+   and it is in the query string for the same reason the window is. */
+/* is_string, not a cast: ?view[]=games casts to the string "Array" and
+   prints a PHP warning at the top of the page on the way. */
+$ac_view = isset($_GET['view']) && is_string($_GET['view']) ? $_GET['view'] : 'players';
+if (!in_array($ac_view, array('players', 'games'), true)) $ac_view = 'players';
+
 $ac_rows   = activity_totals($conn, $ac_days);
 $ac_labels = activity_labels();
 $ac_max    = 0;
@@ -50,6 +64,9 @@ foreach ($ac_rows as $r) {
 	$ac_points += $r['total'];
 	foreach ($r['by'] as $n) $ac_actions += $n;
 }
+
+/* Pivoted only when it is going to be rendered. */
+$ac_games = $ac_view === 'games' ? activity_games($ac_rows) : array();
 
 include 'header.php';
 ?>
@@ -84,6 +101,17 @@ include 'header.php';
 .aca-sum { font-size:.78rem; color:#8fa8b8; }
 .aca-sum b { color:#00c8a0; }
 
+/* ---- the two tabs ----
+   Deliberately NOT the same control as the window: the window filters what
+   you are looking at and the tabs change what the page is, so one is a
+   segmented button and the other an underlined tab. Giving them the same
+   look made the row read as five choices of one thing. */
+.aca-tabs { display:flex; gap:22px; margin:0 0 14px; border-bottom:1px solid rgba(255,255,255,.08); }
+.aca-tabs a { padding:0 0 9px; font-size:.9rem; color:#8fa8b8; text-decoration:none;
+  border-bottom:2px solid transparent; margin-bottom:-1px; }
+.aca-tabs a.on { color:#e8eaed; border-bottom-color:#00c8a0; }
+.aca-tabs a:hover:not(.on) { color:#e8eaed; }
+
 /* ---- the ranked bars ---- */
 .aca-rows { display:flex; flex-direction:column; gap:2px; margin:0 0 30px; }
 .aca-row { display:grid; grid-template-columns:28px 34px minmax(0,1fr) auto; align-items:center;
@@ -116,27 +144,95 @@ include 'header.php';
   color:#8fa8b8; }
 .aca-bit em { font-style:normal; color:#5f7d90; font-variant-numeric:tabular-nums; }
 .aca-none { color:#8fa8b8; font-size:.82rem; }
+
+/* ---- the games view ----
+ * THE AVATARS ARE THE BAR. They wrap, they are all the same size, and
+ * there is no track behind them: the length of the row IS the number of
+ * people, which is what the rows are sorted by, so the ordering and the
+ * picture cannot disagree. A bar would have had to be scaled against the
+ * biggest game and would then have said nothing a reader could count.
+ *
+ * Nothing is truncated either -- a game fifty people played is meant to
+ * take fifty avatars' worth of room. That is the measurement.
+ */
+.aca-games { display:flex; flex-direction:column; gap:14px; }
+.aca-game { background:#07111d; border:1px solid rgba(255,255,255,.06); padding:13px 14px 14px; }
+.aca-game-head { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:0 0 11px; }
+.aca-game-head b { font-size:.92rem; color:#e8eaed; }
+.aca-game-n { font-size:.76rem; color:#00c8a0; font-variant-numeric:tabular-nums; }
+.aca-game-a { font-size:.72rem; color:#4f7488; font-variant-numeric:tabular-nums;
+  margin-left:auto; font-style:normal; }
+.aca-faces { display:flex; flex-wrap:wrap; gap:5px; }
+/* The wrapper carries the title so a hover names the player and their
+   count; the image itself would lose it to the onerror swap. */
+.aca-f { display:block; line-height:0; }
+.aca-f img { width:32px; height:32px; border-radius:50%; object-fit:cover; display:block;
+  background:#0d2030; border:1px solid rgba(255,255,255,.07); }
+.aca-f:hover img { border-color:#00c8a0; }
+
 @media (max-width:620px) {
   .aca-row { grid-template-columns:22px 28px minmax(0,1fr) auto; gap:8px; }
   .aca-face { width:28px; height:28px; }
+  .aca-f img { width:28px; height:28px; }
+  .aca-tabs { gap:16px; }
 }
 </style>
+
+	<?php /* Each control carries the other one's state, so switching tabs
+	         keeps your window and switching windows keeps your tab. */ ?>
+	<div class="aca-tabs">
+		<a href="activity.php?days=<?php echo $ac_days; ?>&amp;view=players"
+		   class="<?php echo $ac_view === 'players' ? 'on' : ''; ?>">Players</a>
+		<a href="activity.php?days=<?php echo $ac_days; ?>&amp;view=games"
+		   class="<?php echo $ac_view === 'games' ? 'on' : ''; ?>">Games</a>
+	</div>
 
 	<div class="aca-tools">
 		<?php /* Rolling windows, not calendar periods -- see the file header. */ ?>
 		<div class="aca-range">
 			<?php foreach (array(7, 30, 90) as $d): ?>
-			<a href="activity.php?days=<?php echo $d; ?>"
+			<a href="activity.php?days=<?php echo $d; ?>&amp;view=<?php echo $ac_view; ?>"
 			   class="<?php echo $d === $ac_days ? 'on' : ''; ?>"><?php echo $d; ?> days</a>
 			<?php endforeach; ?>
 		</div>
-		<span class="aca-sum"><b><?php echo number_format($ac_people); ?></b> active ·
+		<span class="aca-sum"><?php if ($ac_view === 'games'): ?><b><?php
+			echo number_format(count($ac_games)); ?></b> games ·
+			<?php endif; ?><b><?php echo number_format($ac_people); ?></b> active ·
 			<b><?php echo number_format($ac_actions); ?></b> actions ·
 			<b><?php echo number_format($ac_points); ?></b> weighted</span>
 	</div>
 
 <?php if (!$ac_rows): ?>
 	<p class="aca-none">No activity recorded in the last <?php echo $ac_days; ?> days.</p>
+
+<?php elseif ($ac_view === 'games'): ?>
+	<?php /* MOST PLAYED MEANS MOST PLAYERS -- activity_games() says why.
+	         The count is printed as well as drawn, because an avatar row is
+	         something you read at a glance and not something you count. */ ?>
+	<div class="aca-games">
+		<?php foreach ($ac_games as $g): $n = count($g['players']); ?>
+		<div class="aca-game">
+			<div class="aca-game-head">
+				<b><?php echo htmlspecialchars(isset($ac_labels[$g['key']])
+					? $ac_labels[$g['key']] : $g['key'], ENT_QUOTES); ?></b>
+				<span class="aca-game-n"><?php echo number_format($n); ?>
+					player<?php echo $n === 1 ? '' : 's'; ?></span>
+				<em class="aca-game-a"><?php echo number_format($g['actions']); ?></em>
+			</div>
+			<div class="aca-faces">
+				<?php foreach ($g['players'] as $p): ?>
+				<span class="aca-f" title="<?php echo htmlspecialchars($p['username']
+					. ' · ' . number_format($p['cnt']), ENT_QUOTES); ?>">
+					<img loading="lazy" alt="<?php echo htmlspecialchars($p['username'], ENT_QUOTES); ?>"
+					     src="<?php echo htmlspecialchars(avatar_url($p['discord_id'], $p['avatar'], 64), ENT_QUOTES); ?>"
+					     onerror="this.src='icons/skull.png'">
+				</span>
+				<?php endforeach; ?>
+			</div>
+		</div>
+		<?php endforeach; ?>
+	</div>
+
 <?php else: ?>
 	<div class="aca-rows">
 		<?php foreach ($ac_rows as $i => $r):

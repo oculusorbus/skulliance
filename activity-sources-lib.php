@@ -282,3 +282,68 @@ function activity_totals($conn, $days = 30) {
 	});
 	return $out;
 }
+
+/**
+ * THE SAME DATA, TURNED INSIDE OUT: one row per game, not per player.
+ *
+ * Takes what activity_totals() returned and pivots it. NO QUERY OF ITS
+ * OWN, deliberately -- a player's 'by' map already names every source
+ * they touched, so the participants of a game are exactly the players
+ * whose count for it is above zero. Going back to the database for a
+ * per-game roster would be a SECOND definition of a play, which is the
+ * one mistake this whole file exists to stop (see the header).
+ *
+ * ORDERED BY HOW MANY PEOPLE PLAYED IT, not by how much was played.
+ * That is the question the games view asks: which games the platform
+ * actually turns up for. Ordering by actions instead would let one
+ * player with four hundred races put the racer above a game fifty
+ * people played once, and the row of avatars -- which IS the bar -- would
+ * then disagree with the order it was sorted into.
+ *
+ * Within a game the players are heaviest first, so the front of the row
+ * is who plays it most.
+ *
+ * A GAME NOBODY TOUCHED DOES NOT APPEAR. 'by' is filled from a blank map
+ * of every source, so every source is present on every player's row at
+ * zero; without the > 0 test the view would list every game on the
+ * platform with an empty line beside it.
+ *
+ * Returns an array of array(key, players, actions), where each player is
+ * their activity_totals() row minus 'by', plus 'cnt' -- their count for
+ * THAT game, not their platform total.
+ */
+function activity_games($rows) {
+	$games = array();
+	foreach ($rows as $r) {
+		if (empty($r['by']) || !is_array($r['by'])) continue;
+		foreach ($r['by'] as $key => $n) {
+			$n = (int)$n;
+			if ($n <= 0) continue;
+			if (!isset($games[$key])) {
+				$games[$key] = array('key' => $key, 'players' => array(), 'actions' => 0);
+			}
+			$p = $r;
+			unset($p['by']);
+			$p['cnt'] = $n;
+			$games[$key]['players'][] = $p;
+			$games[$key]['actions']  += $n;
+		}
+	}
+	foreach ($games as $k => $g) {
+		usort($games[$k]['players'], function ($a, $b) {
+			if ($b['cnt'] !== $a['cnt']) return $b['cnt'] - $a['cnt'];
+			return strcasecmp((string)$a['username'], (string)$b['username']);
+		});
+	}
+	$out = array_values($games);
+	/* Players, then actions, then the key -- the last one only so that two
+	   equally played games do not swap places between page loads. */
+	usort($out, function ($a, $b) {
+		$pa = count($a['players']);
+		$pb = count($b['players']);
+		if ($pb !== $pa) return $pb - $pa;
+		if ($b['actions'] !== $a['actions']) return $b['actions'] - $a['actions'];
+		return strcmp((string)$a['key'], (string)$b['key']);
+	});
+	return $out;
+}

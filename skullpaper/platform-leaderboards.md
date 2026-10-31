@@ -52,3 +52,24 @@ purpose: the period switcher is right beside it, so stepping back to
 all-time is one press, and it keeps the list to one entry per board
 instead of one per board per period. There is no hub entry in it, because
 the link next to it already is that.
+
+## The Activity page: who is playing, and what
+
+The **Activity** page in the nav is a different question from the Activity
+leaderboard above. The leaderboard ranks all-time, monthly and weekly and
+pays nothing; this page is a rolling window - the **last 7, 30 or 90 days**
+- and reads two ways.
+
+**Players** is the default: everybody who did anything in that window,
+heaviest first, with a bar against the leader and a card underneath showing
+what they actually played.
+
+**Games** asks it the other way round. Each game is one row, and instead of
+a bar the row carries the **avatars of everybody who played it** - so the
+length of the row is the number of people. The rows are ordered by how many
+players a game had, not by how many times it was played: a single player
+with four hundred races does not outrank a game fifty people played once.
+Hovering an avatar names that player and how much of that game they played.
+
+Both tabs count a play exactly the way the Activity leaderboard counts it,
+including Drop Ship, where the unit is a completed game rather than a run.
