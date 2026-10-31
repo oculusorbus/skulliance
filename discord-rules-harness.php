@@ -350,6 +350,16 @@ $at_write = strpos($shut, 'sk_ilog(');
 $at_tail  = strpos($shut, '$tail');
 ok($at_tail !== false, 'the shutdown handler does not measure its own tail, so the time between '
  . 'the reply being written and the script ending is invisible');
+/*
+ * THE ASSIGNMENT HAS TO BE A MEASUREMENT, not merely present. Anchored on
+ * the name alone this passed with the body replaced by `$tail = 0;` -- a
+ * check that survives its own subject being gutted, which is the failure
+ * mode this file has now hit five times. It must read a clock.
+ */
+$tail_line = substr($shut, $at_tail, strpos($shut, ';', $at_tail) - $at_tail);
+ok(strpos($tail_line, 'microtime(') !== false && strpos($tail_line, '$ms') !== false,
+   'the shutdown tail is assigned without reading a clock, so it reports zero however long '
+ . 'the write took: ' . trim($tail_line));
 ok($at_write !== false && $at_tail !== false && $at_tail > $at_write,
    'the tail is measured BEFORE the log write it is supposed to be measuring');
 
