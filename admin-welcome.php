@@ -163,6 +163,7 @@ include 'header.php';
 admin_chrome('welcome');
 ?>
 <?php include 'admin-css.php'; ?>
+<?php include 'admin-copy.php';   /* click a name to copy it */ ?>
 <style>
 .aw-score { display:flex; gap:28px; flex-wrap:wrap; margin:0 0 16px; }
 .aw-score div { display:flex; flex-direction:column; }
@@ -359,7 +360,9 @@ td.aw-act { text-align:right; white-space:nowrap; }
 				<img loading="lazy" alt=""
 				     src="<?php echo htmlspecialchars(avatar_url($did, $u ? $u['avatar'] : '', 64), ENT_QUOTES); ?>"
 				     onerror="this.src='icons/skull.png'">
-				<span title="<?php echo htmlspecialchars($did, ENT_QUOTES); ?>"><?php
+				<span class="adm-copy" tabindex="0" role="button"
+				      data-copy="<?php echo htmlspecialchars($name, ENT_QUOTES); ?>"
+				      title="<?php echo htmlspecialchars($did, ENT_QUOTES); ?> — click to copy"><?php
 					echo htmlspecialchars($name); ?></span>
 			</div>
 		</td>

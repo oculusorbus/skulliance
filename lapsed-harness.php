@@ -648,6 +648,89 @@ if ($lift_follow !== '') {
 	}
 }
 
+echo "\nthe ones who built, played, and drifted\n";
+/*
+ * A FOURTH SITUATION, and until it existed these people were in the
+ * "nothing to ask" column beside members who were playing that morning.
+ * Somebody who assembled a Fighter and was last seen a week ago is not
+ * the package failing -- it worked -- they are drifting, which is a
+ * different question and the only one of the four where nothing
+ * obviously went wrong.
+ */
+if ($lift_follow !== '') {
+	if (!defined('LAP_QUIET_DAYS')) {
+		preg_match('/LAP_QUIET_DAYS\x27,\s*(\d+)/', $src, $qm);
+		define('LAP_QUIET_DAYS', isset($qm[1]) ? (int)$qm[1] : 5);
+	}
+	$drift = lap_followup_text('n', 20, 8, true, true, LAP_QUIET_DAYS + 1);
+	ok($drift !== '' && $drift !== $gone && $drift !== $near && $drift !== $cold,
+	   'somebody who built a Fighter and then went quiet gets one of the other three '
+	 . 'messages, each of which is written for a different problem');
+	/* It has to say how long, or it reads as a form letter to somebody
+	   who was on the site last week. */
+	ok(preg_match('/\b(days|week|weeks)\b/', $drift) === 1,
+	   'the drifting message does not say how long it has been, so it reads as a form '
+	 . 'letter to somebody who was here recently');
+	ok(stripos($drift, 'built a fighter') !== false,
+	   'the drifting message does not acknowledge that they built one');
+	ok(substr_count($drift, '?') >= 2, 'the drifting message asks one open question');
+	ok(stripos($drift, 'interesting') === false, 'the drifting message asks about interest');
+	/* And somebody still active must NOT get it. */
+	$fresh = lap_followup_text('n', 20, 8, true, true, 1);
+	ok($fresh !== $drift,
+	   'a member active yesterday gets the same message as one gone a week, so the only '
+	 . 'thing the quiet threshold changes is nothing');
+
+	/* The gate has to let them through, and only them. */
+	/* $src, not $pg -- the stripped copy is built further down this file,
+	   and reading it here gets an empty string and a vacuous pass. */
+	ok(strpos($src, '$al_quiet[$uid] >= LAP_QUIET_DAYS') !== false,
+	   'the Came back table never consults the quiet threshold, so a member who built and '
+	 . 'drifted still has no ask button');
+	ok(strpos($src, '|| $quiet)') !== false,
+	   'the ask gate does not include the drifting case');
+	/* Counted by MySQL, like every other age on this page: the box runs
+	   MySQL and PHP on different clocks. */
+	ok(strpos($src, 'DATEDIFF(NOW(), MAX(') !== false,
+	   'days since last activity are computed in PHP against a MySQL timestamp, which is '
+	 . 'the clock mismatch this page already documents twice');
+}
+
+echo "\nclick a name to copy it\n";
+/*
+ * EVERY OUTREACH PANEL IS A LIST OF PEOPLE TO GO AND FIND IN DISCORD,
+ * and the first move for each is getting the username into a search
+ * box. Drag-selecting is fiddly on a desktop and barely possible on a
+ * phone. One shared implementation, because the clipboard dance has a
+ * real trap in it (select() does nothing on a hidden element) that is
+ * not worth getting right twice.
+ */
+ok(is_file(__DIR__ . '/admin-copy.php'), 'the shared copy helper is missing');
+$cp = file_get_contents(__DIR__ . '/admin-copy.php');
+ok(strpos($cp, 'navigator.clipboard') !== false && strpos($cp, 'execCommand') !== false,
+   'the copy helper has no fallback, so it does nothing without a secure context');
+/* The STYLE it actually sets, not the whole file: the comment above that
+   line says "NOT display:none" and a bare search found its own
+   explanation. Same trap as the .user.ini timezone check. */
+preg_match('/cssText\s*=\s*\x27([^\x27]*)\x27/', $cp, $cm);
+ok(isset($cm[1]) && strpos($cm[1], 'position:fixed') !== false
+   && strpos($cm[1], 'display:none') === false,
+   'the legacy path hides its textarea with display:none, and select() does nothing on a '
+ . 'hidden element -- it has to be off-screen instead. Got: ' . (isset($cm[1]) ? $cm[1] : 'no cssText'));
+ok(strpos($cp, 'setSelectionRange') !== false, 'iOS needs an explicit range, not select()');
+ok(strpos($cp, "addEventListener('keydown'") !== false,
+   'the copy control cannot be reached from the keyboard');
+foreach (array('admin-lapsed.php', 'admin-welcome.php') as $panel) {
+	$ps = file_get_contents(__DIR__ . '/' . $panel);
+	ok(strpos($ps, "include 'admin-copy.php'") !== false, "$panel does not load the copy helper");
+	ok(strpos($ps, 'class="adm-copy"') !== false, "$panel has no clickable name");
+	ok(strpos($ps, 'data-copy="<?php echo htmlspecialchars($') !== false,
+	   "$panel copies something other than the username, or does not escape it");
+}
+/* Both tables in the lapsed panel, not just the one that was reported. */
+ok(substr_count(file_get_contents(__DIR__ . '/admin-lapsed.php'), 'class="adm-copy"') >= 2,
+   'only one of the two tables in the lapsed panel has a clickable name');
+
 echo "\nthe follow-up log is its own\n";
 require_once __DIR__ . '/lib/outreach-log.php';
 /*

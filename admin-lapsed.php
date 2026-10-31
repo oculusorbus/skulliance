@@ -162,20 +162,20 @@ if ($al_back) {
 	 * everybody is fine, which is worse than the last_login bug it
 	 * replaced -- that one at least failed visibly.
 	 */
-	$al_act = array();
+	$al_act = array(); $al_quiet = array();
 	$gj = "JOIN (SELECT user_id, MIN(awarded_at) AS back_at FROM dhc_trait_drops
 	              WHERE source = 'returngift' GROUP BY user_id) g ON g.user_id = ";
 	foreach (array(
-		"SELECT d.user_id, MAX(d.awarded_at) AS t FROM dhc_trait_drops d
+		"SELECT d.user_id, MAX(d.awarded_at) AS t, DATEDIFF(NOW(), MAX(d.awarded_at)) AS d FROM dhc_trait_drops d
 		   $gj d.user_id
 		  WHERE d.source NOT IN ('returngift', 'backfill', 'referral', 'digestcache')
 		    AND d.awarded_at > g.back_at GROUP BY d.user_id",
-		"SELECT t.user_id, MAX(t.date_created) AS t FROM transactions t
+		"SELECT t.user_id, MAX(t.date_created) AS t, DATEDIFF(NOW(), MAX(t.date_created)) AS d FROM transactions t
 		   $gj t.user_id
 		  WHERE t.date_created > g.back_at
 		    AND (t.type = 'debit' OR t.bonus = 1 OR t.mission_id > 0)
 		  GROUP BY t.user_id",
-		"SELECT f.user_id, MAX(f.created_at) AS t FROM dhc_fighters f
+		"SELECT f.user_id, MAX(f.created_at) AS t, DATEDIFF(NOW(), MAX(f.created_at)) AS d FROM dhc_fighters f
 		   $gj f.user_id
 		  WHERE f.created_at > g.back_at GROUP BY f.user_id",
 	) as $sql) {
@@ -186,6 +186,14 @@ if ($al_back) {
 		while ($x = $r->fetch_assoc()) {
 			$uid = (int)$x['user_id'];
 			if (!isset($al_act[$uid]) || $x['t'] > $al_act[$uid]) $al_act[$uid] = $x['t'];
+			/* DAYS COUNTED BY MYSQL, for the reason the back_at query gives:
+			   this box runs MySQL and PHP on different clocks, and anything
+			   comparing a stored timestamp against the current time has to
+			   ask the database that wrote it. Smallest wins -- the most
+			   recent source is the one that says how long they have been
+			   quiet. */
+			$d = (int)$x['d'];
+			if (!isset($al_quiet[$uid]) || $d < $al_quiet[$uid]) $al_quiet[$uid] = $d;
 		}
 	}
 }
@@ -351,6 +359,15 @@ function lap_invite_text($did, $labels, $has_realm, $left_server = false) {
 	return $out;
 }
 
+/*
+ * HOW LONG COUNTS AS GONE QUIET, for somebody who did build a Fighter.
+ * Five days: long enough that a busy week does not trigger it, short
+ * enough to still be about this visit rather than a fresh lapse. The
+ * lapsed view's own threshold is thirty days, which is a different
+ * question -- that one is "have they stopped coming at all".
+ */
+if (!defined('LAP_QUIET_DAYS')) define('LAP_QUIET_DAYS', 5);
+
 /**
  * The follow-up, for somebody who took the package and then stalled.
  *
@@ -382,7 +399,7 @@ function lap_invite_text($did, $labels, $has_realm, $left_server = false) {
  * sitting there" is true, specific, and the one sentence most likely
  * to make somebody go and look.
  */
-function lap_followup_text($name, $days, $traits, $built, $seen) {
+function lap_followup_text($name, $days, $traits, $built, $seen, $quietDays = 0) {
 	$traits = (int)$traits;
 	$ago = $days <= 1 ? 'the other day'
 	     : ($days <= 14 ? 'a couple of weeks ago'
@@ -397,7 +414,20 @@ function lap_followup_text($name, $days, $traits, $built, $seen) {
 	 */
 	$out = "Hey! ";
 
-	if ($built && !$seen) {
+	if ($built && $seen && $quietDays >= LAP_QUIET_DAYS) {
+		/*
+		 * BUILT ONE, PLAYED, AND DRIFTED. The package worked and so did
+		 * the thing after it, which makes this the only one of the four
+		 * where nothing obviously went wrong -- so it asks about the
+		 * games rather than about getting started, and says how long it
+		 * has been so the message cannot read as a form letter.
+		 */
+		$ago2 = $quietDays >= 14 ? 'a couple of weeks'
+		      : ($quietDays >= 7 ? 'about a week' : $quietDays . ' days');
+		$out .= "I saw that you came back and built a fighter! That's awesome!\n\n"
+		      . "Looks like it's been " . $ago2 . " since you were last on, though. Did you "
+		      . "run out of things to do? Were the games not intuitive enough?";
+	} elseif ($built && !$seen) {
 		/* The package worked and whatever came next did not. */
 		$out .= "I saw that you came back " . $ago . " and put a fighter together! "
 		      . "That's awesome!\n\n"
@@ -588,6 +618,7 @@ include 'header.php';
 admin_chrome('lapsed');
 ?>
 <?php include 'admin-css.php'; ?>
+<?php include 'admin-copy.php';   /* click a name to copy it */ ?>
 <style>
 /* The scoreboard. Four numbers, not a chart: the question is "is this
    working", and a sparkline over two data points would be decoration. */
@@ -787,7 +818,12 @@ td.lap-ask { text-align:center; }
 				<img loading="lazy" alt=""
 				     src="<?php echo htmlspecialchars(avatar_url($bu['discord_id'], $bu['avatar'], 64), ENT_QUOTES); ?>"
 				     onerror="this.src='icons/skull.png'">
-				<span title="<?php echo htmlspecialchars($bu['discord_id'], ENT_QUOTES); ?>"><?php
+				<?php /* The name IS the copy control -- see admin-copy.php. Finding
+				         them in Discord is the step before any of this, and a
+				         drag-select is the worst part of it on a phone. */ ?>
+				<span class="adm-copy" tabindex="0" role="button"
+				      data-copy="<?php echo htmlspecialchars($bu['username'], ENT_QUOTES); ?>"
+				      title="<?php echo htmlspecialchars($bu['discord_id'], ENT_QUOTES); ?> — click to copy"><?php
 					echo htmlspecialchars($bu['username'], ENT_QUOTES); ?></span>
 				<?php else: ?><span style="color:#5f7d90">user <?php echo (int)$uid; ?></span><?php endif; ?>
 			</div>
@@ -819,7 +855,16 @@ td.lap-ask { text-align:center; }
 			 * offering one anyway turns a list of 17 into 17 pieces of work
 			 * when only a handful are.
 			 */
-			$ask = $bu && (empty($al_built[$uid]) || !$seen);
+			/*
+			 * AND THE ONES WHO BUILT, PLAYED, AND THEN STOPPED. Somebody
+			 * who assembled a Fighter and was active a week ago is not the
+			 * package failing -- it worked -- but they are drifting, and
+			 * that is a different question from either of the other two.
+			 * Without this they fell into the "nothing to ask" column
+			 * alongside people who are playing today.
+			 */
+			$quiet = $seen && isset($al_quiet[$uid]) && $al_quiet[$uid] >= LAP_QUIET_DAYS;
+			$ask = $bu && (empty($al_built[$uid]) || !$seen || $quiet);
 			if (!$ask):
 				echo '<span class="none">&mdash;</span>';
 			else:
@@ -831,7 +876,8 @@ td.lap-ask { text-align:center; }
 			        data-sent="<?php echo $done ? '1' : ''; ?>"
 			        data-msg="<?php echo htmlspecialchars(
 			            lap_followup_text($bu['username'], $days, (int)$b['traits'],
-			                              !empty($al_built[$uid]), $seen), ENT_QUOTES); ?>"
+			                              !empty($al_built[$uid]), $seen,
+			                              $quiet ? (int)$al_quiet[$uid] : 0), ENT_QUOTES); ?>"
 			        title="<?php echo $done ? 'Already asked' : 'Ask why'; ?>"><?php
 			        echo $done ? 'asked' : 'ask'; ?></button>
 			<?php endif; ?>
@@ -959,7 +1005,9 @@ td.lap-ask { text-align:center; }
 				         Discord. But a display name can change and the id
 				         cannot, so it stays reachable for the one case where
 				         the name no longer finds them. */ ?>
-				<span title="<?php echo htmlspecialchars($u['discord_id'], ENT_QUOTES); ?>"><?php
+				<span class="adm-copy" tabindex="0" role="button"
+				      data-copy="<?php echo htmlspecialchars($u['username'], ENT_QUOTES); ?>"
+				      title="<?php echo htmlspecialchars($u['discord_id'], ENT_QUOTES); ?> — click to copy"><?php
 					echo htmlspecialchars($u['username'], ENT_QUOTES); ?></span>
 			</div>
 		</td>
