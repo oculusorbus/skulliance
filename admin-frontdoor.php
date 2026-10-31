@@ -68,6 +68,9 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST'
 /* Who Discord thinks we are, and what is sitting in the rules channel. Two
    calls, both cheap; the channel read is one page of fifty. */
 $fd_me   = frontdoor_me($bot_token);
+/* What DISCORD has stored, which the Developer Portal is only a form over.
+   The one check here that can see a problem on their side. */
+$fd_app  = frontdoor_app();
 $fd_msgs = frontdoor_gate_messages($bot_token, isset($rules_channel_id) ? $rules_channel_id : '');
 $fd_live = 0;
 foreach ($fd_msgs['messages'] as $m) {
@@ -191,6 +194,30 @@ somewhere else.</p>
 		there goes to another application and times out. This is the whole bug, not a symptom
 		of one.</span></p>
 	<?php endif; ?>
+<?php endif; ?>
+
+<?php /* ---------------- 1b. what Discord has stored ---------------- */ ?>
+<p class="fd-sect">Discord's own record of where to deliver</p>
+<?php if (!$fd_app['ok']): ?>
+	<p class="fd-row"><span class="fd-tag fd-warn">cannot read</span>
+		<span class="fd-say"><?php echo htmlspecialchars($fd_app['error'], ENT_QUOTES); ?></span></p>
+<?php else:
+	$fd_self = isset($_SERVER['PHP_SELF']) ? rtrim(dirname($_SERVER['PHP_SELF']), '/') : '';
+	list($st, $say) = frontdoor_app_url_verdict($fd_app['url'], $fd_host,
+		$fd_self . '/discord-interactions.php');
+	$cls = $st === 'ok' ? 'fd-good' : ($st === 'bad' ? 'fd-bad' : 'fd-warn'); ?>
+<div class="fd-row">
+	<span class="fd-k">Endpoint URL</span>
+	<span class="fd-v fd-mono <?php echo $cls; ?>"><?php
+		echo htmlspecialchars($fd_app['url'] !== '' ? $fd_app['url'] : '(empty)', ENT_QUOTES); ?></span>
+	<span class="fd-say"><?php echo htmlspecialchars($say, ENT_QUOTES); ?></span>
+</div>
+<div class="fd-row">
+	<span class="fd-k">Application</span>
+	<span class="fd-v"><?php echo htmlspecialchars($fd_app['name'], ENT_QUOTES); ?></span>
+	<span class="fd-say">Buttons posted by this application are the only ones that can reach
+	here &mdash; see the channel above.</span>
+</div>
 <?php endif; ?>
 
 <?php /* ---------------- 2. this PHP, over HTTP ---------------- */ ?>

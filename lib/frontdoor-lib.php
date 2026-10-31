@@ -464,3 +464,78 @@ function frontdoor_retry_counts($rows) {
 	}
 	return $n;
 }
+
+/**
+ * WHAT DISCORD ITSELF HAS RECORDED AS OUR INTERACTIONS ENDPOINT.
+ *
+ * The Developer Portal is a form; this is the stored value, read back
+ * through the API, and the two can disagree. It is the only check here that
+ * can see a delivery problem on DISCORD's side rather than ours:
+ *
+ *   EMPTY        nothing is delivered to HTTP at all, whatever the portal
+ *                appears to show. Discord CLEARS this field when an endpoint
+ *                fails often enough, and this one was returning corrupted
+ *                bodies for an afternoon.
+ *   WRONG HOST   www and the apex are different origins, and Discord does
+ *                not follow a redirect for an interaction -- it takes the
+ *                3xx as the answer and the member sees a failure.
+ *   RIGHT        delivery is configured, and a click that never arrived was
+ *                never sent.
+ *
+ * Returns array(ok, error, url, name, id).
+ */
+function frontdoor_app() {
+	$out = array('ok' => false, 'error' => '', 'url' => '', 'name' => '', 'id' => '');
+	if (!function_exists('sk_discord_api')) { $out['error'] = 'sk_discord_api() is not loaded.'; return $out; }
+	$r = sk_discord_api('GET', '/applications/@me');
+	if (empty($r['ok']) || !is_array($r['body'])) {
+		$out['error'] = 'Discord returned HTTP ' . (int)$r['status'] . ' for /applications/@me.';
+		return $out;
+	}
+	$out['ok']   = true;
+	$out['url']  = isset($r['body']['interactions_endpoint_url'])
+		? (string)$r['body']['interactions_endpoint_url'] : '';
+	$out['name'] = isset($r['body']['name']) ? (string)$r['body']['name'] : '';
+	$out['id']   = isset($r['body']['id']) ? (string)$r['body']['id'] : '';
+	return $out;
+}
+
+/**
+ * Does the URL Discord has stored point at THIS endpoint?
+ *
+ * COMPARED BY HOST AND PATH, NOT BY STRING. A trailing slash or a different
+ * scheme is not a mismatch worth alarming anybody about; a different HOST
+ * is, because www.skulliance.io and skulliance.io are different origins and
+ * one of them redirects -- which Discord does not follow.
+ *
+ * Returns array(state, say) where state is ok, warn or bad.
+ */
+function frontdoor_app_url_verdict($stored, $host, $path) {
+	$stored = trim((string)$stored);
+	if ($stored === '') {
+		return array('bad',
+			'EMPTY. Discord is not delivering interactions over HTTP at all, whatever the '
+		  . 'Developer Portal appears to show -- and Discord CLEARS this field itself when an '
+		  . 'endpoint fails often enough. Re-save the URL in the portal.');
+	}
+	$p = @parse_url($stored);
+	if (!is_array($p) || empty($p['host'])) {
+		return array('bad', 'Discord has stored something that is not a URL: ' . $stored);
+	}
+	$theirs = strtolower($p['host']);
+	$ours   = strtolower((string)$host);
+	if ($theirs !== $ours) {
+		/* www and the apex are different origins here, and one redirects. */
+		return array('bad',
+			'Points at ' . $theirs . ', and you are reading this on ' . $ours . '. Those are '
+		  . 'different origins, one of them redirects, and Discord does NOT follow a redirect '
+		  . 'for an interaction -- it takes the 3xx as the answer and the member sees a failure.');
+	}
+	$theirpath = isset($p['path']) ? $p['path'] : '';
+	if (rtrim($theirpath, '/') !== rtrim((string)$path, '/')) {
+		return array('warn',
+			'Points at ' . $theirpath . ' on this host, not ' . $path . '. If that is another '
+		  . 'copy of the endpoint, its log is the one to read.');
+	}
+	return array('ok', 'Delivery is configured and points here.');
+}

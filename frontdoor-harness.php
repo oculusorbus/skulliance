@@ -446,6 +446,51 @@ echo "\nthe log tail is seeked, not swallowed\n";
 	@unlink($big);
 }
 
+echo "\nDiscord's stored endpoint url is judged by host, not by string\n";
+{
+	$host = 'skulliance.io';
+	$path = '/staking/discord-interactions.php';
+
+	list($st,) = frontdoor_app_url_verdict('https://skulliance.io/staking/discord-interactions.php', $host, $path);
+	ok($st === 'ok', "the correct url is judged '$st'");
+
+	/*
+	 * EMPTY IS THE ONE THAT MATTERS MOST. Discord CLEARS this field itself
+	 * when an endpoint fails often enough, and this one was returning
+	 * corrupted bodies for an afternoon -- so an empty value here is not a
+	 * configuration oversight, it is Discord having switched us off, and
+	 * the Developer Portal's form can still look populated.
+	 */
+	list($st, $say) = frontdoor_app_url_verdict('', $host, $path);
+	ok($st === 'bad', 'an empty stored url is not flagged');
+	ok(stripos($say, 'clears') !== false || stripos($say, 'empty') !== false,
+	   'the empty verdict does not say what an empty value means');
+
+	/*
+	 * www AND THE APEX ARE DIFFERENT ORIGINS HERE, one of them redirects,
+	 * and DISCORD DOES NOT FOLLOW A REDIRECT for an interaction -- it takes
+	 * the 3xx as the answer. A string comparison would call this a
+	 * mismatch too, but so would a trailing slash, and only one of those is
+	 * worth waking somebody up for.
+	 */
+	list($st,) = frontdoor_app_url_verdict('https://www.skulliance.io/staking/discord-interactions.php', $host, $path);
+	ok($st === 'bad', "a url on the www host reads as '$st' when we are on the apex");
+
+	/* Cosmetic differences are not alarms. */
+	list($st,) = frontdoor_app_url_verdict('https://SKULLIANCE.IO/staking/discord-interactions.php', $host, $path);
+	ok($st === 'ok', 'a difference in letter case is reported as a mismatch');
+	list($st,) = frontdoor_app_url_verdict('https://skulliance.io/staking/discord-interactions.php/', $host, $path);
+	ok($st === 'ok', 'a trailing slash is reported as a mismatch');
+
+	/* A different path on the right host is a different copy of the
+	   endpoint, which is worth saying but is not the same failure. */
+	list($st,) = frontdoor_app_url_verdict('https://skulliance.io/old/discord-interactions.php', $host, $path);
+	ok($st === 'warn', "another path on this host reads as '$st'");
+
+	list($st,) = frontdoor_app_url_verdict('not a url', $host, $path);
+	ok($st === 'bad', 'a stored value that is not a url is accepted');
+}
+
 echo "\nthe log files are found by the names cPanel actually uses\n";
 {
 	/*
