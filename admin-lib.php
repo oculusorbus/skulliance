@@ -896,6 +896,10 @@ function admin_tabs() {
 		'nudges'      => array('admin-nudges.php',      'Nudges'),
 		'lapsed'      => array('admin-lapsed.php',      'Lapsed'),
 		'welcome'     => array('admin-welcome.php',     'Newcomers'),
+		/* Next to Newcomers, because it is the same funnel one step earlier:
+		   Newcomers is people who got in and stalled, Front Door is people
+		   who could not get in at all. */
+		'frontdoor'   => array('admin-frontdoor.php',   'Front Door'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }

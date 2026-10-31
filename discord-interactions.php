@@ -68,6 +68,10 @@ while (ob_get_level() > 0) {
 	   output_buffering is on, which is the usual LiteSpeed default. */
 	$sk_pre = ob_get_clean();
 	if ($sk_pre !== false && trim($sk_pre) !== '') {
+		/* Carried into the interaction log as well: a byte count here is the
+		   fingerprint of a startup warning, and the log is the surface the
+		   owner can actually reach from a phone. */
+		$GLOBALS['sk_ilog_ctx']['stray'] = strlen($sk_pre) . 'b-before-script';
 		error_log('discord-interactions: DISCARDED ' . strlen($sk_pre)
 			. ' bytes of output produced before the script ran -- this would have '
 			. 'corrupted the JSON. Fix date.timezone in php.ini. First 200: '
@@ -116,15 +120,78 @@ function sk_mark($stage) {
 	if ($t0 === null) return;
 	$sk_marks[] = $stage . '=' . round((microtime(true) - $t0) * 1000) . 'ms';
 }
+require_once __DIR__ . '/lib/discord-interaction-log.php';
+
+/*
+ * WHAT HAPPENED, RECORDED FOR EVERY INTERACTION AND NOT ONLY THE SLOW ONES.
+ *
+ * The old handler logged only past SK_SLOW_MS, which cannot tell the two
+ * causes of "the application didn't respond in time" apart: a silent log
+ * means either a healthy gate or a gate Discord is NEVER CALLING -- because
+ * the button belongs to another application, or the endpoint URL is not
+ * saved -- and for most of a day it was read as the first while it was the
+ * second. A line per interaction makes "did the click even arrive" a
+ * question somebody can answer by pressing the button and reloading a page.
+ *
+ * $sk_outcome is set at each exit so the line says which branch answered.
+ * In a shutdown function rather than at the reply, so a fatal, a kick path
+ * that exits by hand, and an ordinary reply all leave the same record.
+ *
+ * LAG IS MEASURED FROM DISCORD'S OWN CLOCK, not ours: the interaction id is
+ * a snowflake carrying the millisecond Discord created it, so lag is time
+ * spent before PHP ever saw the request -- transit plus whatever the host
+ * did with it -- and `work` is the part that is ours. Which half is eating
+ * the 3000ms decides who can fix it.
+ */
+$sk_outcome = 'started';
+$sk_ilog_ctx = array();
+function sk_out($what) { global $sk_outcome; $sk_outcome = $what; }
+
 register_shutdown_function(function () {
-	global $sk_marks;
+	global $sk_marks, $sk_outcome, $sk_ilog_ctx;
 	$t0 = isset($_SERVER['REQUEST_TIME_FLOAT']) ? (float)$_SERVER['REQUEST_TIME_FLOAT'] : null;
 	if ($t0 === null) return;
 	$ms = (microtime(true) - $t0) * 1000;
+
+	/* A fatal is the one outcome nothing else can report, so it is read off
+	   the error itself rather than from a flag somebody has to remember. */
+	$err = error_get_last();
+	if ($err && ($err['type'] & (E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR))) {
+		$sk_outcome = 'fatal';
+		$sk_ilog_ctx['note'] = $err['message'] . ' (' . basename($err['file']) . ':' . $err['line'] . ')';
+	}
+
+	$lag = null;
+	if (!empty($sk_ilog_ctx['iid'])) {
+		$made = sk_ilog_snowflake_ms($sk_ilog_ctx['iid']);
+		if ($made) $lag = max(0, (int)round($t0 * 1000 - $made));
+	}
+
+	/*
+	 * ONLY SIGNED TRAFFIC IS WRITTEN TO THE FILE. The endpoint is a public
+	 * URL and a port scanner that finds it would otherwise fill the log with
+	 * its own noise, pushing out the lines somebody needs. Unsigned hits are
+	 * still reported, by sk_reject(), into the PHP error log.
+	 */
+	if (!empty($_SERVER['HTTP_X_SIGNATURE_ED25519'])) {
+		sk_ilog(array(
+			'outcome' => $sk_outcome,
+			'type'    => isset($sk_ilog_ctx['type'])   ? $sk_ilog_ctx['type']   : null,
+			'custom'  => isset($sk_ilog_ctx['custom']) ? $sk_ilog_ctx['custom'] : null,
+			'user'    => isset($sk_ilog_ctx['user'])   ? $sk_ilog_ctx['user']   : null,
+			'lag'     => $lag === null ? null : $lag . 'ms',
+			'work'    => round($ms) . 'ms',
+			'stray'   => isset($sk_ilog_ctx['stray']) ? $sk_ilog_ctx['stray'] : null,
+			'marks'   => $sk_marks ? implode(' ', $sk_marks) : null,
+			'note'    => isset($sk_ilog_ctx['note']) ? $sk_ilog_ctx['note'] : null,
+		));
+	}
+
 	if ($ms < SK_SLOW_MS) return;
 	error_log(sprintf(
-		'discord-interactions SLOW %.0fms (Discord gives 3000ms) marks: %s',
-		$ms, $sk_marks ? implode(' ', $sk_marks) : 'none'));
+		'discord-interactions SLOW %.0fms (Discord gives 3000ms) outcome=%s lag=%s marks: %s',
+		$ms, $sk_outcome, $lag === null ? '?' : $lag . 'ms',
+		$sk_marks ? implode(' ', $sk_marks) : 'none'));
 });
 
 require_once __DIR__ . '/discord-rules-lib.php';
@@ -151,6 +218,8 @@ $timestamp = $_SERVER['HTTP_X_SIGNATURE_TIMESTAMP'] ?? '';
 function sk_reject($why) {
 	/* Same reasoning as sk_respond(): Discord checks for a clean 401 when the
 	   endpoint URL is saved, and a warning in front of it fails that too. */
+	sk_out('rejected');
+	$GLOBALS['sk_ilog_ctx']['note'] = $why;
 	while (ob_get_level() > 0) ob_end_clean();
 	http_response_code(401);
 	error_log('discord-interactions: rejected -- ' . $why);
@@ -218,7 +287,17 @@ sk_mark('verified');
 // 2. Respond.
 // ---------------------------------------------------------------------------
 $data = json_decode($raw, true);
-if (!is_array($data)) { http_response_code(400); exit; }
+if (!is_array($data)) { sk_out('unreadable-body'); http_response_code(400); exit; }
+
+/* The id is a snowflake, so this is also the only thing that can say how
+   long the request spent getting here. Filled in before any branch runs, so
+   even an outcome nobody anticipated is logged with its timings. */
+$sk_ilog_ctx['iid']    = isset($data['id']) ? (string)$data['id'] : '';
+$sk_ilog_ctx['type']   = isset($data['type']) ? (int)$data['type'] : 0;
+$sk_ilog_ctx['custom'] = isset($data['data']['custom_id']) ? (string)$data['data']['custom_id'] : '';
+$sk_ilog_ctx['user']   = isset($data['member']['user']['id'])
+	? (string)$data['member']['user']['id']
+	: (isset($data['user']['id']) ? (string)$data['user']['id'] : '');
 
 function sk_respond(array $payload) {
 	/*
@@ -232,6 +311,7 @@ function sk_respond(array $payload) {
 		if ($chunk !== false) $stray = $chunk . $stray;
 	}
 	if (trim($stray) !== '') {
+		$GLOBALS['sk_ilog_ctx']['stray'] = strlen($stray) . 'b-before-reply';
 		error_log('discord-interactions: DISCARDED ' . strlen($stray)
 			. ' bytes of stray output before the reply -- it would have corrupted '
 			. 'the JSON. First 200: ' . substr(str_replace("\n", ' ', $stray), 0, 200));
@@ -252,6 +332,7 @@ $type = $data['type'] ?? 0;
 // PING. Discord sends this to check the endpoint is alive, including during
 // setup. Must answer PONG.
 if ($type === 1) {
+	sk_out('ping');
 	sk_respond(['type' => 1]);
 }
 
@@ -269,6 +350,7 @@ if ($sk_missing) {
 			'rulesConfig|' . implode(',', $sk_missing)
 		);
 	}
+	sk_out('not-configured');
 	sk_respond(['type' => 4, 'data' => [
 		'content' => 'The rules gate is not set up yet. A moderator has been notified.',
 		'flags'   => SK_EPHEMERAL,
@@ -277,6 +359,7 @@ if ($sk_missing) {
 
 // Anything that isn't a button click is not ours.
 if ($type !== 3) {
+	sk_out('not-a-button');
 	sk_respond(['type' => 4, 'data' => ['content' => 'Unsupported interaction.', 'flags' => SK_EPHEMERAL]]);
 }
 
@@ -288,6 +371,7 @@ $user_roles  = $member['roles'] ?? [];
 if ($user_id === '') {
 	// A guild interaction always carries member.user.id. No member object
 	// means this was clicked in a DM, where there is no role to grant.
+	sk_out('no-member');
 	sk_respond(['type' => 4, 'data' => [
 		'content' => 'This only works inside the server.', 'flags' => SK_EPHEMERAL,
 	]]);
@@ -297,6 +381,7 @@ if ($user_id === '') {
 // so an existing member who clicks the button out of curiosity can never be
 // kicked by it. Checked before any Discord call.
 if (SK_REQUIRE_VISITOR && !in_array($role_visitor, $user_roles, true)) {
+	sk_out('already-verified');
 	sk_respond(['type' => 4, 'data' => [
 		'content' => "You're already verified — nothing to do here.",
 		'flags'   => SK_EPHEMERAL,
@@ -308,6 +393,7 @@ if (SK_REQUIRE_VISITOR && !in_array($role_visitor, $user_roles, true)) {
 // reposting when the questions behind it change.
 if ($custom_id === SK_BTN_START) {
 	sk_mark('picker');
+	sk_out('chain-picker');
 	sk_respond(['type' => 4, 'data' => sk_chain_payload()]);
 }
 
@@ -315,7 +401,8 @@ if ($custom_id === SK_BTN_START) {
 // There is no wrong answer here, so nothing in this branch can kick.
 if (strpos($custom_id, 'sk_c:') === 0) {
 	$chain = substr($custom_id, 5);
-	if (!isset($SK_CHAINS[$chain])) { sk_replace('Something went wrong. Please try again.'); }
+	if (!isset($SK_CHAINS[$chain])) { sk_out('unknown-chain'); sk_replace('Something went wrong. Please try again.'); }
+	sk_out('question-1');
 	sk_respond(['type' => 7, 'data' => sk_question_payload($chain, 0)]);
 }
 
@@ -333,22 +420,26 @@ if (strpos($custom_id, 'sk_a:') === 0) {
 	 * branch, which would kick them for our deploy timing.
 	 */
 	if (count($parts) === 3) {
+		sk_out('legacy-button-restart');
 		sk_respond(['type' => 7, 'data' => sk_chain_payload()]);
 	}
-	if (count($parts) !== 4) { sk_replace('Something went wrong. Please try again.'); }
+	if (count($parts) !== 4) { sk_out('bad-custom-id'); sk_replace('Something went wrong. Please try again.'); }
 
 	$chain  = $parts[1];
 	$index  = (int)$parts[2];
 	$answer = $parts[3];
 	if (!isset($SK_CHAINS[$chain]['questions'][$index])) {
+		sk_out('unknown-question');
 		sk_replace('Something went wrong. Please try again.');
 	}
 
 	// --- Wrong answer -----------------------------------------------------
 	if (!sk_is_correct($chain, $index, $answer)) {
 		if (!SK_KICK_ON_WRONG) {
+			sk_out('wrong-not-kicked');
 			sk_replace('That was not correct, so no role was granted.');
 		}
+		sk_out('wrong-kicked');
 
 		// Answer the interaction BEFORE kicking. Once the member is gone
 		// Discord may not deliver a response to them at all, and an
@@ -365,6 +456,12 @@ if (strpos($custom_id, 'sk_a:') === 0) {
 		@ob_flush(); @flush();
 
 		$res = sk_discord_api('DELETE', '/guilds/' . $discord_guild_id . '/members/' . $user_id);
+		if (!$res['ok']) {
+			/* The member is still in the server holding Visitor, which from
+			   the outside looks exactly like a gate nobody is failing. */
+			sk_out('wrong-kick-failed');
+			$sk_ilog_ctx['note'] = 'kick HTTP ' . $res['status'];
+		}
 		if (!$res['ok'] && function_exists('alertAdmin')) {
 			// Same reasoning as the role alerts: a gate that silently stops
 			// gating looks identical to a gate nobody is failing.
@@ -382,6 +479,7 @@ if (strpos($custom_id, 'sk_a:') === 0) {
 
 	// --- Correct, but more questions to go --------------------------------
 	if (isset($SK_CHAINS[$chain]['questions'][$index + 1])) {
+		sk_out('question-' . ($index + 2));
 		sk_respond(['type' => 7, 'data' => sk_question_payload($chain, $index + 1)]);
 	}
 
@@ -393,6 +491,7 @@ if (strpos($custom_id, 'sk_a:') === 0) {
 	$granted = assignRole($user_id, $role_candidate, '', $discord_guild_id);
 	sk_mark('role-added');
 	if (!$granted) {
+		sk_out('role-grant-failed');
 		// assignRole() has already logged and alerted with the specific
 		// cause. Don't remove Visitor -- leaving them exactly as they were
 		// means retrying the button is all it takes once it's fixed.
@@ -400,6 +499,7 @@ if (strpos($custom_id, 'sk_a:') === 0) {
 	}
 	assignRole($user_id, $role_visitor, 'delete', $discord_guild_id);
 	sk_mark('visitor-removed');
+	sk_out('passed');
 
 	// No cleanup step here, unlike BotGhost. Every message in this flow is
 	// ephemeral: nobody but the clicker ever saw the questions or this
@@ -407,4 +507,5 @@ if (strpos($custom_id, 'sk_a:') === 0) {
 	sk_replace($SK_WELCOME);
 }
 
+sk_out('unknown-action');
 sk_respond(['type' => 4, 'data' => ['content' => 'Unknown action.', 'flags' => SK_EPHEMERAL]]);
