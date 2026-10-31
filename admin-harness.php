@@ -384,6 +384,36 @@ foreach ($PAGES as $f) {
 }
 
 /* And the stylesheet keeps the override, in case one comes back. */
+/*
+ * AND THE EXEMPTIONS HAVE TO EARN IT. A name on that list skips every
+ * rights and layout check in this file, so each one must actually be a
+ * shared include: it may not render chrome, and at least one real admin
+ * page must include it. Otherwise the list becomes the place a panel
+ * goes to stop being checked.
+ */
+foreach (array('admin-lib.php', 'admin-css.php', 'admin-copy.php') as $inc) {
+	$incSrc = @file_get_contents(__DIR__ . '/' . $inc);
+	ok($incSrc !== false, "$inc is exempted from the admin page checks but does not exist");
+	if ($incSrc === false) continue;
+	/* CALLS it, in code -- not its own declaration in admin-lib.php, and
+	   not the comment three lines above that declaration explaining what
+	   it does. Both of those matched before the stripper went in; the
+	   second is the same trap as every other bare search in this repo. */
+	$incCode = harness_strip_comments($incSrc);
+	$callsChrome = preg_match('/(?<!function )\badmin_chrome\s*\(/', $incCode) === 1;
+	ok(!$callsChrome,
+	   "$inc is exempted as a shared include but renders admin chrome, so it is a page and "
+	 . 'must be checked like one');
+	$usedBy = 0;
+	foreach (glob(__DIR__ . '/admin-*.php') as $apf2) {
+		if (basename($apf2) === $inc || substr(basename($apf2), -12) === '-harness.php') continue;
+		if (strpos((string)file_get_contents($apf2), $inc) !== false) $usedBy++;
+	}
+	ok($usedBy > 0,
+	   "$inc is exempted from the admin page checks and no admin page includes it, so it is "
+	 . 'either dead or a panel hiding from the sweep');
+}
+
 $css_src = file_get_contents(__DIR__ . '/admin-css.php');
 ok(preg_match('/\.adm section\s*\{[^}]*opacity:\s*1/', $css_src) === 1,
    'admin-css.php no longer forces .adm section back to opacity 1; a stray <section> would be invisible again');
@@ -410,7 +440,14 @@ ok(strpos($lib_src, "include __DIR__ . '/header.php'") === false,
 $ALL_ADMIN = array();
 foreach (glob(__DIR__ . '/admin-*.php') as $apf) {
 	$bn = basename($apf);
-	if (in_array($bn, array('admin-lib.php', 'admin-css.php'), true)) continue;
+	/* SHARED INCLUDES, NOT PANELS. These are pulled INTO admin pages and
+	   have no layout, no chrome and no rights check of their own, because
+	   the page including them already did all three. Named explicitly
+	   rather than detected: "has no admin_require()" is exactly what a
+	   real panel that forgot one looks like, so a property test here
+	   would hide the thing this sweep exists to catch. Each one is proved
+	   to be an include further down. */
+	if (in_array($bn, array('admin-lib.php', 'admin-css.php', 'admin-copy.php'), true)) continue;
 	/* A HARNESS IS NOT AN ADMIN PAGE. This excluded admin-harness.php by
 	   name, which worked until a harness FOR an admin page was written
 	   and matched the glob -- it was then told off for not opening the
