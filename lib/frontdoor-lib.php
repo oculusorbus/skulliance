@@ -419,3 +419,26 @@ function frontdoor_status_say($status) {
 	if ($status === 408 || $status === 499) return array('bad', 'Discord gave up waiting.');
 	return array('warn', 'Unexpected for this endpoint.');
 }
+
+/**
+ * How many times each interaction id appears in a set of log rows.
+ *
+ * ONE PRESS, DELIVERED TWICE, IS NOT TWO PRESSES. Discord re-sends an
+ * interaction it does not consider answered and the re-send carries the same
+ * id, so a repeated id in this log means our reply was made and REFUSED --
+ * which is a completely different bug from the endpoint being slow, and
+ * reads identically in a list of timestamps.
+ *
+ * Rows with no id (an older line, or a request that never parsed) are not
+ * counted: they would all collide on the empty string and report themselves
+ * as one interaction retried many times, which is the exact wrong answer.
+ */
+function frontdoor_retry_counts($rows) {
+	$n = array();
+	foreach ((array)$rows as $r) {
+		if (!is_array($r) || empty($r['iid'])) continue;
+		$id = (string)$r['iid'];
+		$n[$id] = isset($n[$id]) ? $n[$id] + 1 : 1;
+	}
+	return $n;
+}

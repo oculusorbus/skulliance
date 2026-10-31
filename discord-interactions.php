@@ -177,6 +177,19 @@ register_shutdown_function(function () {
 	if (!empty($_SERVER['HTTP_X_SIGNATURE_ED25519'])) {
 		sk_ilog(array(
 			'outcome' => $sk_outcome,
+			/*
+			 * THE INTERACTION ID, WHICH IS HOW A RETRY IS TOLD FROM A CLICK.
+			 *
+			 * Discord re-delivers an interaction it does not consider
+			 * answered, and the re-delivery carries the SAME id. Five lines
+			 * with five ids are five people pressing a button; five lines
+			 * with one id are one press that Discord would not accept, and
+			 * those are opposite problems. The lag says it too -- it is
+			 * measured from the id's own creation time, so a retry's lag
+			 * grows by the retry interval each time -- but the id says it
+			 * outright.
+			 */
+			'iid'     => isset($sk_ilog_ctx['iid']) ? $sk_ilog_ctx['iid'] : null,
 			'type'    => isset($sk_ilog_ctx['type'])   ? $sk_ilog_ctx['type']   : null,
 			'custom'  => isset($sk_ilog_ctx['custom']) ? $sk_ilog_ctx['custom'] : null,
 			'user'    => isset($sk_ilog_ctx['user'])   ? $sk_ilog_ctx['user']   : null,

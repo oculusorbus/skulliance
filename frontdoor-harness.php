@@ -212,6 +212,47 @@ echo "\nthe log keeps what it is given, newest first\n";
 	ok(sk_ilog(array()) === false, 'an empty write is attempted anyway');
 }
 
+echo "\none press delivered twice is not two presses\n";
+{
+	/*
+	 * THIS IS THE DISTINCTION THE WHOLE LOG EXISTS FOR, SECOND EDITION.
+	 *
+	 * Discord re-sends an interaction it does not consider answered, and the
+	 * re-send carries the SAME id. Five lines five seconds apart are either
+	 * five people pressing a button -- fine -- or one press whose reply
+	 * Discord refused, which is a bug and is invisible in a list of
+	 * timestamps. The id tells them apart outright.
+	 */
+	$rows = array(
+		array('iid' => '111', 'outcome' => 'chain-picker'),
+		array('iid' => '111', 'outcome' => 'chain-picker'),
+		array('iid' => '111', 'outcome' => 'chain-picker'),
+		array('iid' => '222', 'outcome' => 'chain-picker'),
+	);
+	$n = frontdoor_retry_counts($rows);
+	ok(isset($n['111']) && $n['111'] === 3, 'a re-sent interaction is not counted as re-sent');
+	ok(isset($n['222']) && $n['222'] === 1, 'a single delivery is counted as more than one');
+
+	/*
+	 * A ROW WITH NO ID MUST NOT COUNT. Older lines carry none, and they
+	 * would all collide on the empty string -- reporting a quiet log as one
+	 * interaction retried forty times, which is the exact wrong answer and
+	 * the most alarming one the page could print.
+	 */
+	$n = frontdoor_retry_counts(array(
+		array('outcome' => 'ping'), array('outcome' => 'ping'),
+		array('iid' => '', 'outcome' => 'ping'),
+	));
+	ok($n === array(), 'rows with no interaction id are being counted together as retries');
+	ok(frontdoor_retry_counts(array()) === array(), 'an empty log produces counts');
+	ok(frontdoor_retry_counts('nonsense') === array(), 'a non-array is not handled');
+
+	/* And the endpoint has to write the id, or none of the above can fire. */
+	$src = harness_strip_comments((string)file_get_contents(__DIR__ . '/discord-interactions.php'));
+	ok(preg_match("/'iid'\s*=>/", $src) === 1,
+	   'the endpoint does not log the interaction id, so a retry cannot be told from a click');
+}
+
 echo "\nthe log cannot grow without bound, and trims to whole lines\n";
 {
 	@unlink($tmp);

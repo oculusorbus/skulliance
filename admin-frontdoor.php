@@ -76,6 +76,10 @@ foreach ($fd_msgs['messages'] as $m) {
 }
 
 $fd_log = sk_ilog_read(40);
+/* An id that appears twice is ONE interaction Discord re-sent, not two
+   clicks -- and that is the difference between "we were slow" and "our
+   reply was refused". See frontdoor_retry_counts(). */
+$fd_retry = frontdoor_retry_counts($fd_log);
 
 /*
  * THE LAYER BELOW PHP. $fd_log can only hold requests that reached PHP; the
@@ -284,7 +288,10 @@ fires per worker, not per request, so one of three failing is the signature of i
 <p class="fd-why"><b>lag</b> is how long the request took to get here, measured from Discord's
 own clock &mdash; the interaction id carries the millisecond it was created, so no clock of ours
 is involved. <b>work</b> is the part that is ours. Together they run against Discord's 3000ms,
-and whichever half is eating it decides who can fix it.</p>
+and whichever half is eating it decides who can fix it. A row tagged <b>sent N&times;</b> is one
+interaction Discord delivered more than once &mdash; not N clicks, but one press whose reply
+Discord would not accept, which is a different bug from being slow and looks the same in a list
+of times.</p>
 <?php if (!$fd_log): ?>
 <p class="fd-none">Nothing logged yet. Either nobody has pressed the button since this was
 deployed, or Discord is not calling this endpoint at all &mdash; which is what a dead button in
@@ -312,6 +319,10 @@ the channel above, or an unsaved Interactions Endpoint URL, looks like from here
 		echo $work === null ? '?' : $work . 'ms'; ?></td>
 	<td class="fd-wrap"><?php
 		$note = array();
+		if (!empty($r['iid']) && !empty($fd_retry[$r['iid']]) && $fd_retry[$r['iid']] > 1) {
+			echo '<span class="fd-tag fd-bad">sent ' . (int)$fd_retry[$r['iid']] . '&times;</span> ';
+			$note[] = 'Discord re-sent this same interaction, so it did not accept our reply.';
+		}
 		if (!empty($r['stray'])) $note[] = 'output discarded: ' . $r['stray'];
 		if (!empty($r['note']))  $note[] = $r['note'];
 		echo htmlspecialchars(implode(' · ', $note), ENT_QUOTES); ?></td>
