@@ -21,6 +21,7 @@
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_WARNING);
 if (!isset($bot_token)) $bot_token = '';
 require_once __DIR__ . '/discord-rules-lib.php';
+require_once __DIR__ . '/harness-strip.php';
 
 $fail = 0;
 function ok($cond, $what) { global $fail; if (!$cond) { $fail++; echo "  FAIL  $what\n"; } }
@@ -257,7 +258,14 @@ $respond = substr($respond, 0, strpos($respond, "\n}") + 2);
 ok(strpos($respond, 'ob_get_clean') !== false,
    'sk_respond() emits JSON without first clearing the buffer, so a stray notice from any '
  . 'include is sent with it');
-ok(strpos($respond, 'ob_get_clean') < strpos($respond, 'echo json_encode'),
+/* ANCHORED ON THE WRITE, NOT ON HOW THE BODY HAPPENS TO BE BUILT. This read
+   `echo json_encode` until the body was encoded into a variable first so its
+   length could be declared -- at which point strpos() returned false, false
+   compared as 0, and a correct file failed. The property is "cleared before
+   written", so find the write. */
+$sk_write = strpos($respond, 'echo $out');
+ok($sk_write !== false, 'sk_respond() no longer writes the body it built');
+ok($sk_write !== false && strpos($respond, 'ob_get_clean') < $sk_write,
    'sk_respond() clears the buffer AFTER writing the JSON, which throws away the reply '
  . 'rather than the warning');
 ok(strpos($respond, 'error_log') !== false,
@@ -276,6 +284,57 @@ $ini = @parse_ini_file(__DIR__ . '/.user.ini');
 ok(is_array($ini) && !empty($ini['date.timezone']),
    '.user.ini does not SET date.timezone, which is where the stray startup warning that '
  . 'broke the gate comes from');
+
+/* ---------------------------------------------------------------------- *
+ * EVERY REPLY DECLARES ITS LENGTH.
+ *
+ * Measured 2026-10-31: seven presses, all seven delivered to the endpoint
+ * and answered in 3ms with sub-quarter-second lag, and the member still saw
+ * "the application didn't respond in time" on most of them. The request
+ * arrived and the reply was written; the three seconds went somewhere
+ * between writing it and Discord considering the body FINISHED.
+ *
+ * Without Content-Length the body goes out chunked and is only complete at
+ * the terminating chunk -- a client on a keep-alive connection has nothing
+ * else to tell it the response ended. The kick branch always declared its
+ * length, for the flush, and is the one reply on this endpoint nobody ever
+ * reported failing.
+ * ---------------------------------------------------------------------- */
+$ep_src  = harness_strip_comments((string)file_get_contents(__DIR__ . '/discord-interactions.php'));
+function sk_fn_body($src, $sig) {
+	$a = strpos($src, $sig);
+	if ($a === false) return '';
+	$b = strpos($src, "\n}\n", $a);
+	return $b === false ? '' : substr($src, $a, $b - $a);
+}
+foreach (array('function sk_respond(' => 'the reply', 'function sk_reject(' => 'the 401') as $sig => $what) {
+	$body = sk_fn_body($ep_src, $sig);
+	ok($body !== '', "$sig is gone from discord-interactions.php");
+	ok(strpos($body, 'Content-Length') !== false,
+	   "$what does not declare its length, so it is only complete at the terminating chunk and "
+	 . 'a client on a keep-alive connection waits for one');
+	/*
+	 * BYTES, NOT CHARACTERS. The payloads carry em dashes and a skull
+	 * emoji; a character count declares the body SHORTER than it is and
+	 * Discord reads a truncated, unparseable JSON document -- which is a
+	 * worse failure than the one this fixes, because it would be constant
+	 * rather than intermittent.
+	 */
+	ok(strpos($body, 'mb_strlen(') === false,
+	   "$what measures its length in characters, not bytes");
+	ok(strpos($body, 'strlen(') !== false, "$what does not measure its length at all");
+}
+/* And that distinction is not hypothetical for this payload. */
+$emdash = json_encode(array('content' => "You're already verified \u{2014} nothing to do here."),
+                      JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+ok(strlen($emdash) !== mb_strlen($emdash),
+   'the check above is vacuous: this payload has no multi-byte characters in it');
+
+/* An encode failure used to echo `false` -- a 200 with an empty body, which
+   Discord reports to the member as a timeout. */
+$body = sk_fn_body($ep_src, 'function sk_respond(');
+ok(strpos($body, 'is_string($out)') !== false,
+   'a json_encode failure sends an empty 200, which Discord reports as a timeout');
 
 /* ---------------------------------------------------------------------- *
  * THE GATE MESSAGE, AGAINST DISCORD'S OWN LIMITS.

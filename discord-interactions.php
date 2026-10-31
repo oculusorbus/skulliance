@@ -237,7 +237,16 @@ function sk_reject($why) {
 	while (ob_get_level() > 0) ob_end_clean();
 	http_response_code(401);
 	error_log('discord-interactions: rejected -- ' . $why);
-	exit('invalid request signature');
+	/* Declared length here too: this is the reply Discord reads when the
+	   endpoint URL is saved, and a reply it cannot see the end of is a
+	   reply it will not accept. */
+	$out = 'invalid request signature';
+	header('Content-Type: text/plain');
+	header('Content-Length: ' . strlen($out));
+	echo $out;
+	@ob_flush();
+	@flush();
+	exit;
 }
 
 // EITHER IMPLEMENTATION, AND THE CODE DOES NOT CARE WHICH.
@@ -343,8 +352,50 @@ function sk_respond(array $payload) {
 			. ' bytes of stray output before the reply -- it would have corrupted '
 			. 'the JSON. First 200: ' . substr(str_replace("\n", ' ', $stray), 0, 200));
 	}
+	/*
+	 * -------------------------------------------------------------------
+	 * CONTENT-LENGTH, AND IT IS NOT A FORMALITY.
+	 *
+	 * Measured 2026-10-31: seven presses in forty-six seconds, every one of
+	 * them delivered to this endpoint and answered in 3ms with a lag under
+	 * a quarter second -- and the member still saw "the application didn't
+	 * respond in time" on most of them. The request arrived. The reply was
+	 * written. Something between writing it and Discord considering it
+	 * FINISHED was costing the three seconds.
+	 *
+	 * Without a declared length, PHP's output goes out chunked under
+	 * HTTP/1.1 and the response is only complete when the terminating chunk
+	 * arrives. A client holding a keep-alive connection has nothing else to
+	 * tell it the body ended. That matches the symptom exactly, including
+	 * the part nothing else explained: it clears up once a connection has
+	 * carried one good response ("it's like it's primed"), and the first
+	 * press after a quiet spell is the one that fails.
+	 *
+	 * The kick branch below has always set this, for the flush it does --
+	 * so the one reply on this endpoint that was already explicit about its
+	 * length is the one nobody ever reported failing.
+	 *
+	 * strlen(), NOT mb_strlen(). This is a byte count, and the payloads
+	 * carry em dashes and emoji; a character count would declare the body
+	 * shorter than it is and Discord would read a truncated, unparseable
+	 * JSON document.
+	 * -------------------------------------------------------------------
+	 */
+	$out = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+	if (!is_string($out) || $out === '') {
+		/* An encode failure used to echo `false`, which is an EMPTY BODY --
+		   a 200 with nothing in it, which Discord reports to the member as
+		   a timeout. A wrong answer beats no answer here. */
+		error_log('discord-interactions: json_encode failed -- ' . json_last_error_msg());
+		$out = '{"type":4,"data":{"content":"Something went wrong. Please try again.","flags":64}}';
+	}
 	header('Content-Type: application/json');
-	echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+	header('Content-Length: ' . strlen($out));
+	echo $out;
+	/* Pushed out now rather than at script end, so the few milliseconds of
+	   shutdown logging happen AFTER Discord has the whole body. */
+	@ob_flush();
+	@flush();
 	exit;
 }
 /** Replace the ephemeral message in place, dropping its buttons. */
