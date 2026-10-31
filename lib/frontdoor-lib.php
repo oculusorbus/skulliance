@@ -285,19 +285,41 @@ function frontdoor_access_paths($host = '') {
 	}
 	if ($home === '') return array();
 
-	$names = array();
+	/*
+	 * MATCHED BY PREFIX, NOT BY EXACT NAME, AND THAT IS NOT BELT AND BRACES.
+	 *
+	 * The first version of this looked for ~/access-logs/<domain> and
+	 * ~/access-logs/<domain>-ssl_log and found NEITHER, because cPanel names
+	 * them after the domain AND the account's main domain:
+	 *
+	 *     ~/access-logs/skulliance.io.jeremiahbarber.com-ssl_log
+	 *
+	 * The page then reported "no readable access log" on an account where
+	 * the log was right there, 5.3MB of it -- which is the worst answer this
+	 * panel can give, because "no log to read" and "no requests" are
+	 * opposite findings and the whole point of the panel is not confusing
+	 * them. So: list the directory and take anything that STARTS with the
+	 * host, which covers the bare name, the -ssl_log suffix, and whatever
+	 * the next cPanel version decides to append.
+	 */
+	$names = array($host);
 	if ($host !== '') {
-		$names[] = $host;
-		$names[] = $host . '-ssl_log';
-		/* www. and the bare domain are separate logs on cPanel. */
 		if (strpos($host, 'www.') === 0) $names[] = substr($host, 4);
 		else                             $names[] = 'www.' . $host;
 	}
 	$out = array();
 	foreach (array('/access-logs/', '/logs/') as $dir) {
-		foreach ($names as $n) {
-			$p = $home . $dir . $n;
-			if (is_file($p) && is_readable($p)) $out[$p] = true;
+		$found = @scandir($home . $dir);
+		if (!is_array($found)) continue;
+		foreach ($found as $f) {
+			if ($f === '.' || $f === '..') continue;
+			/* Rotated archives are gzipped and cannot be tailed as text. */
+			if (substr($f, -3) === '.gz') continue;
+			foreach ($names as $n) {
+				if ($n === '' || strpos($f, $n) !== 0) continue;
+				$p = $home . $dir . $f;
+				if (is_file($p) && is_readable($p)) $out[$p] = true;
+			}
 		}
 	}
 	return array_keys($out);

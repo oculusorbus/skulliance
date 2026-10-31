@@ -446,6 +446,53 @@ echo "\nthe log tail is seeked, not swallowed\n";
 	@unlink($big);
 }
 
+echo "\nthe log files are found by the names cPanel actually uses\n";
+{
+	/*
+	 * THE BUG THIS REPLACES. The first version looked for
+	 * ~/access-logs/<domain> and <domain>-ssl_log and found neither,
+	 * because cPanel names them after the domain AND the account's main
+	 * domain:  skulliance.io.jeremiahbarber.com-ssl_log
+	 *
+	 * The page reported "no readable access log" on an account holding
+	 * 5.3MB of exactly that log -- and "no log to read" versus "no
+	 * requests" are opposite findings, which is the one confusion this
+	 * whole panel exists to prevent.
+	 */
+	$home = sys_get_temp_dir() . '/sk-fd-home-' . getmypid();
+	@mkdir($home . '/access-logs', 0777, true);
+	@mkdir($home . '/logs', 0777, true);
+	$put = function ($rel) use ($home) { file_put_contents($home . $rel, "x\n"); };
+	$put('/access-logs/skulliance.io.jeremiahbarber.com');
+	$put('/access-logs/skulliance.io.jeremiahbarber.com-ssl_log');
+	$put('/access-logs/madballs.jeremiahbarber.com-ssl_log');
+	$put('/logs/skulliance.io.jeremiahbarber.com-Sep-2026.gz');
+
+	$keep = isset($_SERVER['HOME']) ? $_SERVER['HOME'] : null;
+	$_SERVER['HOME'] = $home;
+	$found = frontdoor_access_paths('skulliance.io');
+	$base  = array_map('basename', $found);
+	sort($base);
+
+	ok(in_array('skulliance.io.jeremiahbarber.com-ssl_log', $base, true),
+	   'the https access log is not found under the name cPanel gives it: '
+	 . implode(', ', $base));
+	ok(in_array('skulliance.io.jeremiahbarber.com', $base, true),
+	   'the plain-http access log is not found');
+	/* ANOTHER DOMAIN ON THE SAME ACCOUNT IS NOT THIS DOMAIN. A prefix match
+	   that is too loose puts somebody else's traffic in this table. */
+	ok(!in_array('madballs.jeremiahbarber.com-ssl_log', $base, true),
+	   'another domain on the account is being read as this one');
+	/* A gzipped archive cannot be tailed as text, so including it would
+	   produce a screen of binary rather than an older entry. */
+	ok(!in_array('skulliance.io.jeremiahbarber.com-Sep-2026.gz', $base, true),
+	   'a gzipped archive is being read as a plain log');
+
+	if ($keep === null) unset($_SERVER['HOME']); else $_SERVER['HOME'] = $keep;
+	foreach (glob($home . '/*/*') as $f) @unlink($f);
+	@rmdir($home . '/access-logs'); @rmdir($home . '/logs'); @rmdir($home);
+}
+
 echo "\nthe access panel says so when it cannot read anything\n";
 {
 	/* SILENCE MUST NOT READ AS EVIDENCE. "No requests" and "no log to look
