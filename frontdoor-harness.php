@@ -287,6 +287,148 @@ echo "\nthe endpoint logs every interaction, not only the slow ones\n";
 	   . ' leave the endpoint without naming an outcome first, so they log as "started"');
 }
 
+echo "\nthe access log is parsed, including the lines PHP never saw\n";
+{
+	/* Combined format, as cPanel writes it. */
+	$l = '1.2.3.4 - - [31/Oct/2026:01:02:03 -0500] "POST /staking/discord-interactions.php '
+	   . 'HTTP/1.1" 200 61 "-" "Discord-Interactions/1.0 (+https://discord.com)"';
+	$r = frontdoor_parse_access_line($l);
+	ok($r !== null, 'an ordinary combined-log line does not parse');
+	ok($r['status'] === 200, 'the status came back as ' . $r['status']);
+	ok($r['ip'] === '1.2.3.4', 'the client address came back as "' . $r['ip'] . '"');
+	ok($r['method'] === 'POST', 'the method came back as ' . $r['method']);
+	/*
+	 * THE AGENT IS THE LAST QUOTED FIELD, AND TAKING THE FIRST ONE LOOKS
+	 * RIGHT. The first quoted field is the REQUEST LINE, and every line in
+	 * this panel has "discord-interactions.php" in its request line -- so a
+	 * parser that grabs the wrong quote reports every scanner on the
+	 * internet as Discord, which is the one distinction the panel rests on.
+	 * Asserted by value, not by whether it smells like Discord.
+	 */
+	ok($r['ua'] === 'Discord-Interactions/1.0 (+https://discord.com)',
+	   'the user agent came back as "' . $r['ua'] . '"');
+	ok(frontdoor_is_discord($r['ua']), 'a request from Discord is not recognised as one');
+
+	/* The same endpoint, hit by something that is not Discord. */
+	$scan = '9.9.9.9 - - [31/Oct/2026:02:00:00 -0500] "POST /staking/discord-interactions.php '
+	      . 'HTTP/1.1" 401 24 "-" "Mozilla/5.0 (compatible; scanner)"';
+	$r2 = frontdoor_parse_access_line($scan);
+	ok($r2 !== null && !frontdoor_is_discord($r2['ua']),
+	   'a scanner hitting this endpoint is counted as Discord, because the request line it '
+	 . 'asked for has "discord" in it');
+
+	/*
+	 * NO CLIENT ADDRESS AT ALL. Searching the whole line for a dotted quad
+	 * finds one in the query string and prints it as the source, which is a
+	 * fabricated fact in a table people will act on. The address can only
+	 * come from the part of the line BEFORE the timestamp.
+	 */
+	$noip = '- - - [31/Oct/2026:02:01:00 -0500] "POST /staking/discord-interactions.php?ip=9.9.9.9 '
+	      . 'HTTP/1.1" 200 3 "-" "Discord-Interactions/1.0"';
+	$r3 = frontdoor_parse_access_line($noip);
+	ok($r3 !== null && $r3['ip'] === '',
+	   'an address was invented from elsewhere in the line: "' . ($r3 ? $r3['ip'] : '') . '"');
+	ok(date('Y-m-d H:i', $r['at']) === date('Y-m-d H:i', strtotime('2026-10-31 01:02:03 -0500')),
+	   'the timestamp parsed to ' . date('c', $r['at']));
+
+	/*
+	 * HOSTS PREFIX THESE DIFFERENTLY -- some put the vhost and port in front
+	 * -- and none of that is worth failing over, because the request line
+	 * and the status are the only fields the question needs. A parser that
+	 * anchors at the start of the line returns nothing on half of cPanel's
+	 * own formats, and "nothing in the access log" is the single most
+	 * misleading answer this page can give.
+	 */
+	$vhost = 'skulliance.io:443 5.6.7.8 - - [31/Oct/2026:01:02:03 -0500] '
+	       . '"POST /staking/discord-interactions.php HTTP/1.1" 403 226 "-" "Discord-Interactions/1.0"';
+	$r = frontdoor_parse_access_line($vhost);
+	ok($r !== null, 'a line prefixed with the vhost does not parse');
+	ok($r !== null && $r['status'] === 403, 'the status on a vhost-prefixed line was missed');
+	ok($r !== null && $r['ip'] === '5.6.7.8',
+	   'the vhost was read as the client address: "' . ($r ? $r['ip'] : '') . '"');
+
+	ok(frontdoor_parse_access_line('') === null, 'an empty line parses as a request');
+	ok(frontdoor_parse_access_line('not a log line at all') === null, 'junk parses as a request');
+
+	/* A scanner is not Discord, and the panel leans on telling them apart. */
+	ok(!frontdoor_is_discord('Mozilla/5.0 (compatible; Nmap)'), 'a scanner reads as Discord');
+	ok(!frontdoor_is_discord(''), 'an empty agent reads as Discord');
+}
+
+echo "\nthe status codes PHP never sees are the ones called out\n";
+{
+	/*
+	 * 200 AND 401 ARE THE ENDPOINT ANSWERING. Everything else was decided
+	 * ABOVE PHP, and those are precisely the ones that look like "the
+	 * application didn't respond" with an empty interaction log behind them
+	 * -- the combination that has had this bug hidden for two weeks.
+	 */
+	list($st,) = frontdoor_status_say(200); ok($st === 'ok',  '200 is not reported as answered');
+	list($st,) = frontdoor_status_say(401); ok($st === 'ok',  '401 is not reported as ours');
+
+	foreach (array(403, 406, 503, 508, 500) as $code) {
+		list($st, $say) = frontdoor_status_say($code);
+		ok($st === 'bad', "$code is not flagged, so a request PHP never ran reads as healthy");
+		ok(trim($say) !== '', "$code has no explanation beside it");
+	}
+	list($st, $say) = frontdoor_status_say(403);
+	ok(stripos($say, 'modsecurity') !== false || stripos($say, 'firewall') !== false,
+	   'a 403 does not name where to look for it');
+	list($st, $say) = frontdoor_status_say(503);
+	ok(stripos($say, 'resource') !== false,
+	   'a 503 does not name the resource limit, which is the only thing it means here');
+}
+
+echo "\nthe log tail is seeked, not swallowed\n";
+{
+	/*
+	 * AN ACCESS LOG ON A LIVE DOMAIN IS TENS OF MEGABYTES. Reading one whole
+	 * inside a page request is how a diagnostic becomes the outage it was
+	 * opened to investigate.
+	 */
+	$big = sys_get_temp_dir() . '/sk-fd-tail-' . getmypid() . '.log';
+	$line = str_repeat('x', 199) . "\n";
+	file_put_contents($big, str_repeat($line, 300));      // ~60KB
+	$tail = frontdoor_tail($big, 4096);
+	ok(strlen($tail) <= 4096, 'the tail returned ' . strlen($tail) . ' bytes for a 4096 cap');
+	/* AND IT STARTS ON A LINE BOUNDARY: seeking into the middle of one
+	   leaves a fragment that parses as nothing, or worse, as something. */
+	ok($tail !== '' && substr($tail, 0, 1) === 'x' && strlen(explode("\n", $tail)[0]) === 199,
+	   'the tail begins mid-line, so the oldest entry is a fragment');
+	ok(substr($tail, -1) === "\n", 'the tail does not end where the file does');
+
+	/* A file smaller than the window comes back whole, head included. */
+	file_put_contents($big, "first\nsecond\n");
+	ok(frontdoor_tail($big, 4096) === "first\nsecond\n",
+	   'a short file is being trimmed as though it were long');
+	ok(frontdoor_tail($big . '-missing', 4096) === '', 'a missing file returns something');
+	@unlink($big);
+}
+
+echo "\nthe access panel says so when it cannot read anything\n";
+{
+	/* SILENCE MUST NOT READ AS EVIDENCE. "No requests" and "no log to look
+	   at" are opposite answers, and conflating them is the same mistake the
+	   interaction log was built to stop making. */
+	$r = frontdoor_access_hits(array(), 'discord-interactions.php');
+	ok($r['ok'] === false, 'with no readable log the panel reports success');
+	ok(stripos($r['error'], 'cpanel') !== false,
+	   'the no-log message does not say where to look by hand instead');
+
+	$f = sys_get_temp_dir() . '/sk-fd-acc-' . getmypid() . '.log';
+	file_put_contents($f,
+		'1.1.1.1 - - [31/Oct/2026:01:00:00 -0500] "POST /staking/discord-interactions.php HTTP/1.1" 403 1 "-" "Discord-Interactions/1.0"' . "\n" .
+		'2.2.2.2 - - [31/Oct/2026:01:00:05 -0500] "GET /staking/index.php HTTP/1.1" 200 1 "-" "Mozilla"' . "\n" .
+		'3.3.3.3 - - [31/Oct/2026:01:00:09 -0500] "POST /staking/discord-interactions.php HTTP/1.1" 200 1 "-" "Discord-Interactions/1.0"' . "\n");
+	$r = frontdoor_access_hits(array($f), 'discord-interactions.php');
+	ok($r['ok'] === true, 'a readable log reports failure');
+	ok(count($r['hits']) === 2, 'the needle matched ' . count($r['hits']) . ' lines, not 2');
+	/* Newest first, for the same reason the interaction log is: the line
+	   somebody needs is the one from the click a minute ago. */
+	ok($r['hits'][0]['status'] === 200, 'the access hits are not newest first');
+	@unlink($f);
+}
+
 echo "\nthe diagnostic is read only, and is not a public page\n";
 {
 	$page = (string)file_get_contents(__DIR__ . '/admin-frontdoor.php');

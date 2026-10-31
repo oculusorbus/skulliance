@@ -77,6 +77,20 @@ foreach ($fd_msgs['messages'] as $m) {
 
 $fd_log = sk_ilog_read(40);
 
+/*
+ * THE LAYER BELOW PHP. $fd_log can only hold requests that reached PHP; the
+ * web server's own log holds the ones it refused first, and those are
+ * invisible from every other angle -- including the self-probe, which comes
+ * from this host and is not the request Discord makes.
+ */
+$fd_host = isset($_SERVER['HTTP_HOST'])
+	? preg_replace('/[^A-Za-z0-9.-]/', '', explode(':', $_SERVER['HTTP_HOST'])[0]) : '';
+$fd_acc  = frontdoor_access_hits(frontdoor_access_paths($fd_host), 'discord-interactions.php');
+/* Discord's own calls, which is the comparison that matters: the server saw
+   this many, PHP recorded that many, and the difference never ran. */
+$fd_acc_discord = 0;
+foreach ($fd_acc['hits'] as $h) if (frontdoor_is_discord($h['ua'])) $fd_acc_discord++;
+
 include 'header.php';
 admin_chrome('frontdoor');
 ?>
@@ -304,4 +318,45 @@ the channel above, or an unsaved Interactions Endpoint URL, looks like from here
 </tr>
 <?php endforeach; ?>
 </tbody></table></div>
+<?php endif; ?>
+
+<?php /* ---------------- 5. what the web server saw ---------------- */ ?>
+<p class="fd-sect">Requests the web server saw &mdash; including the ones PHP never did</p>
+<p class="fd-why">The log above can only hold interactions that <em>reached PHP</em>. If the
+server refuses one first &mdash; a ModSecurity rule, a CloudLinux resource limit &mdash; PHP
+never runs, nothing is logged, and it looks exactly like Discord never calling. This panel is
+the layer below. <b>A 403 or a 503 here with nothing in the log above is the answer.</b></p>
+<?php if (!$fd_acc['ok']): ?>
+	<p class="fd-row"><span class="fd-tag fd-warn">no log</span>
+		<span class="fd-say"><?php echo htmlspecialchars($fd_acc['error'], ENT_QUOTES); ?></span></p>
+<?php elseif (!$fd_acc['hits']): ?>
+	<p class="fd-none">The access log is readable and carries no request to this endpoint at all
+	in its recent tail. If somebody pressed the button in that window, Discord is not reaching
+	this server &mdash; which points at the Interactions Endpoint URL, not at anything here.</p>
+<?php else: ?>
+	<p class="fd-row">
+		<span class="fd-k">From Discord</span>
+		<span class="fd-v"><?php echo number_format($fd_acc_discord); ?></span>
+		<span class="fd-say">of <?php echo number_format(count($fd_acc['hits'])); ?> recent
+		requests to this endpoint. PHP recorded <?php echo number_format(count($fd_log)); ?>
+		interaction<?php echo count($fd_log) === 1 ? '' : 's'; ?>; a Discord request that is
+		here and not there never ran.</span>
+	</p>
+	<div class="fd-scroll"><table class="fd-t">
+	<thead><tr><th>When</th><th>Status</th><th>From</th><th>Agent</th><th>Means</th></tr></thead>
+	<tbody>
+	<?php foreach ($fd_acc['hits'] as $h):
+		list($st, $say) = frontdoor_status_say($h['status']);
+		$cls = $st === 'ok' ? 'fd-good' : ($st === 'bad' ? 'fd-bad' : 'fd-warn'); ?>
+	<tr>
+		<td class="fd-wrap"><?php echo $h['at'] ? date('j M H:i:s', $h['at']) : '?'; ?></td>
+		<td class="<?php echo $cls; ?>"><?php echo (int)$h['status']; ?></td>
+		<td class="fd-mono"><?php echo htmlspecialchars($h['ip'], ENT_QUOTES); ?></td>
+		<td class="fd-wrap"><?php echo frontdoor_is_discord($h['ua'])
+			? '<span class="fd-tag fd-good">discord</span>'
+			: '<span class="fd-none">' . htmlspecialchars(substr($h['ua'], 0, 40), ENT_QUOTES) . '</span>'; ?></td>
+		<td class="fd-wrap fd-say"><?php echo htmlspecialchars($say, ENT_QUOTES); ?></td>
+	</tr>
+	<?php endforeach; ?>
+	</tbody></table></div>
 <?php endif; ?>

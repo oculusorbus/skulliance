@@ -247,3 +247,175 @@ function frontdoor_ini() {
 		'sodium'           => function_exists('sodium_crypto_sign_verify_detached'),
 	);
 }
+
+/*
+ * ---------------------------------------------------------------------------
+ * THE LAYER BELOW PHP.
+ *
+ * The interaction log can only record requests that REACHED PHP. If the web
+ * server refuses one first -- a ModSecurity rule, a CloudLinux resource
+ * limit, a connection cap -- PHP never runs, nothing is logged, and the
+ * result is indistinguishable from Discord never calling at all.
+ *
+ * That gap is exactly where this bug has been hiding. The endpoint is clean
+ * when probed, the gate message is ours, the member still cannot get in --
+ * and the self-probe CANNOT see it, because a request from this host to this
+ * host does not look like a request from Discord to a stranger and may not
+ * be inspected the same way.
+ *
+ * The web server's access log sees all of it: every request Discord made,
+ * with the status the server actually returned. Comparing its count against
+ * the interaction log's is the measurement nothing else here can make.
+ * ---------------------------------------------------------------------------
+ */
+
+/** Where cPanel keeps this account's raw access logs, if we can read them. */
+function frontdoor_access_paths($host = '') {
+	$host  = preg_replace('/[^A-Za-z0-9.-]/', '', (string)$host);
+	$home  = isset($_SERVER['HOME']) ? $_SERVER['HOME'] : '';
+	if ($home === '' && function_exists('posix_getpwuid')) {
+		$pw = @posix_getpwuid(posix_getuid());
+		if (is_array($pw) && !empty($pw['dir'])) $home = $pw['dir'];
+	}
+	/* DOCUMENT_ROOT is public_html, so two levels up is the home directory
+	   on every cPanel account -- the fallback for a SAPI that does not set
+	   HOME, which LiteSpeed sometimes does not. */
+	if ($home === '' && !empty($_SERVER['DOCUMENT_ROOT'])) {
+		$home = dirname($_SERVER['DOCUMENT_ROOT']);
+	}
+	if ($home === '') return array();
+
+	$names = array();
+	if ($host !== '') {
+		$names[] = $host;
+		$names[] = $host . '-ssl_log';
+		/* www. and the bare domain are separate logs on cPanel. */
+		if (strpos($host, 'www.') === 0) $names[] = substr($host, 4);
+		else                             $names[] = 'www.' . $host;
+	}
+	$out = array();
+	foreach (array('/access-logs/', '/logs/') as $dir) {
+		foreach ($names as $n) {
+			$p = $home . $dir . $n;
+			if (is_file($p) && is_readable($p)) $out[$p] = true;
+		}
+	}
+	return array_keys($out);
+}
+
+/**
+ * The last $bytes of a file, cut at a line boundary.
+ *
+ * SEEKED, NOT READ WHOLE. An access log on a live domain is tens of
+ * megabytes; file_get_contents() on one inside a page request is how a
+ * diagnostic becomes the outage.
+ */
+function frontdoor_tail($path, $bytes = 262144) {
+	$fh = @fopen($path, 'rb');
+	if (!$fh) return '';
+	$size = @filesize($path);
+	if ($size === false) { fclose($fh); return ''; }
+	$bytes = max(1024, (int)$bytes);
+	if ($size > $bytes) @fseek($fh, -$bytes, SEEK_END);
+	$raw = @stream_get_contents($fh);
+	fclose($fh);
+	if ($raw === false) return '';
+	/* The first line is half a line when we seeked into the middle of one. */
+	if ($size > $bytes) {
+		$nl = strpos($raw, "\n");
+		if ($nl !== false) $raw = substr($raw, $nl + 1);
+	}
+	return $raw;
+}
+
+/**
+ * One combined-log line, or null when it is not one.
+ *
+ * TOLERANT ABOUT THE FRONT, STRICT ABOUT THE MIDDLE. Hosts prefix these
+ * differently -- some put the vhost first, some the port -- and none of that
+ * is worth failing over; the request line and the status code are what the
+ * question needs, and those have one shape.
+ */
+function frontdoor_parse_access_line($line) {
+	$line = trim((string)$line);
+	if ($line === '') return null;
+	if (!preg_match('~\[([^\]]+)\]\s+"([A-Z]+)\s+(\S+)[^"]*"\s+(\d{3})~', $line, $m)) return null;
+
+	$when = 0;
+	$dt = DateTime::createFromFormat('d/M/Y:H:i:s O', $m[1]);
+	if ($dt instanceof DateTime) $when = $dt->getTimestamp();
+
+	$head = substr($line, 0, strpos($line, '['));
+	$ip   = '';
+	if (preg_match('~(\d{1,3}(?:\.\d{1,3}){3})~', $head, $ipm)) $ip = $ipm[1];
+	elseif (preg_match('~([0-9a-f]{1,4}(?::[0-9a-f]{0,4}){2,7})~i', $head, $ipm)) $ip = $ipm[1];
+
+	/* The user agent is the last quoted field. It is the one thing that says
+	   whether a request came from Discord or from somebody scanning. */
+	$ua = '';
+	if (preg_match_all('~"([^"]*)"~', $line, $q) && $q[1]) $ua = (string)end($q[1]);
+
+	return array(
+		'at' => $when, 'ip' => $ip, 'method' => $m[2], 'path' => $m[3],
+		'status' => (int)$m[4], 'ua' => $ua,
+	);
+}
+
+/** Is this the real Discord calling, rather than a scanner that found the URL? */
+function frontdoor_is_discord($ua) {
+	return stripos((string)$ua, 'discord') !== false;
+}
+
+/**
+ * What the web server answered, for requests to one path, newest first.
+ *
+ * Returns array(ok, error, paths, hits).
+ */
+function frontdoor_access_hits($paths, $needle, $limit = 40) {
+	$out = array('ok' => false, 'error' => '', 'paths' => $paths, 'hits' => array());
+	if (!$paths) {
+		$out['error'] = 'No readable access log. cPanel keeps them in ~/access-logs/, and some '
+		              . 'plans do not expose them to PHP at all -- cPanel > Raw Access Logs, or '
+		              . 'cPanel > ModSecurity Tools, answers the same question by hand.';
+		return $out;
+	}
+	$needle = (string)$needle;
+	$rows = array();
+	foreach ($paths as $p) {
+		foreach (explode("\n", frontdoor_tail($p)) as $line) {
+			if ($needle !== '' && strpos($line, $needle) === false) continue;
+			$r = frontdoor_parse_access_line($line);
+			if ($r) $rows[] = $r;
+		}
+	}
+	usort($rows, function ($a, $b) { return $b['at'] - $a['at']; });
+	$out['ok']   = true;
+	$out['hits'] = array_slice($rows, 0, max(1, (int)$limit));
+	return $out;
+}
+
+/**
+ * What a status code on THIS endpoint means, in a sentence.
+ *
+ * THE POINT OF THE PANEL IS THE CODES PHP NEVER SAW. 200 and 401 are the
+ * endpoint answering; everything else was decided above it, and those are
+ * the ones that look like "Skull Bot didn't respond" with an empty PHP log
+ * behind them.
+ */
+function frontdoor_status_say($status) {
+	$status = (int)$status;
+	if ($status === 200) return array('ok',  'Answered.');
+	if ($status === 401) return array('ok',  'Signature refused -- a scanner, or Discord validating the URL.');
+	if ($status === 400) return array('warn','Body could not be read.');
+	if ($status === 403 || $status === 406 || $status === 418 || $status === 412)
+		return array('bad', 'REFUSED BEFORE PHP RAN. This is a firewall or ModSecurity rule, not '
+		                  . 'our code -- check cPanel > ModSecurity Tools > Hits List. Discord '
+		                  . 'sees no valid reply and the member is told the app did not respond.');
+	if ($status === 429)  return array('bad', 'Rate limited by the server itself.');
+	if ($status === 503 || $status === 508)
+		return array('bad', 'RESOURCE LIMIT. The CloudLinux LVE turned the request away before PHP '
+		                  . 'started -- cPanel > Resource Usage shows which limit.');
+	if ($status >= 500)   return array('bad', 'The server failed on it.');
+	if ($status === 408 || $status === 499) return array('bad', 'Discord gave up waiting.');
+	return array('warn', 'Unexpected for this endpoint.');
+}
