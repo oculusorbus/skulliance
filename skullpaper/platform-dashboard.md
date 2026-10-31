@@ -16,9 +16,29 @@ Clicking an NFT no longer sends you off to a block explorer. It opens a panel ab
 * **Gauntlet runs** - see [[missions-consumable-items]] and [[realms-raids]].
 * **Raids fought**, with the record underneath: how many won, how many lost, how many attacking versus defending, and how many times it fell. A win is counted from your NFT's own side, so holding your realm against an attacker counts as a win for the defender.
 * **Right now** - the missions it is on, the realm it is standing in and whether it is trained, whether it is away in a raid that has not resolved yet, and whether it is part of a Diamond Skull. The realm and the Diamond Skull are shown with their artwork, not just named.
+* **Traits** - the asset's own on-chain metadata, listed in the order the mint wrote it. For a layered collection that is the order the art is built in, so the list reads the way the piece was assembled.
 * Links out to the chain, the marketplace, the collection, and whichever parts of the platform it is actually involved in.
 
 An NFT that is doing nothing says so plainly rather than showing a column of zeroes.
+
+### Where the traits come from
+
+The platform keeps each asset's metadata document as it was read off the
+chain, so the trait list is not a Skulliance interpretation of your NFT - it
+is what the mint says, with the picture and the project's social links left
+out. **Raw metadata** under the list opens the document itself if you want to
+see exactly that.
+
+Two things can leave the list empty, and the panel says which:
+
+* **"Its on-chain metadata carries no traits."** The document was read and
+  there genuinely are no traits in it. Some collections mint nothing but a
+  name and an image.
+* **"Its on-chain metadata has not been read yet."** Nobody has fetched that
+  asset's document so far. Cardano assets fill in whenever your wallets are
+  verified; on XRPL, Solana and Polygon the document is only fetched for
+  assets as they first appear, so already-staked ones are filled in by a
+  separate pass.
 
 ## Saving the artwork
 

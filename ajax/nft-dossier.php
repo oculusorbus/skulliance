@@ -94,5 +94,21 @@ echo json_encode(array(
 	'raids'    => $d['raids'],
 	'diamond'  => $d['diamond'],
 	'soldier'  => $d['soldier'],
+	/*
+	 * THE TRAITS, PLUS WHETHER ANYBODY HAS LOOKED.
+	 *
+	 * traits is a LIST of {name, value} so its order survives the trip --
+	 * see nftd_trait_pairs(). metadataAt is what lets the panel say "no
+	 * traits on this one" and "not read from the chain yet" as the
+	 * different things they are; without it both are an empty list.
+	 *
+	 * metadata is the stored document itself, for the raw view. It is
+	 * already trimmed of image/files/social links by nft_metadata_clean()
+	 * at write time, and everything left in it is public on chain -- this
+	 * exposes nothing the asset's own explorer page does not.
+	 */
+	'traits'     => $d['traits'],
+	'metadataAt' => $d['metadata_at'],
+	'metadata'   => $d['metadata'],
 ), JSON_UNESCAPED_SLASHES);
 $conn->close();

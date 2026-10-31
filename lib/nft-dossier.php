@@ -17,6 +17,7 @@
  * nothing here decides who may look -- ajax/nft-dossier.php does that, so the
  * rule lives in one place rather than being re-derived per query.
  */
+require_once __DIR__ . '/nft-metadata-lib.php';
 
 /** Rows from a query, or an empty array if the table is not there. */
 function _nftd_rows($conn, $sql) {
@@ -24,6 +25,37 @@ function _nftd_rows($conn, $sql) {
 	if (!$res) return array();
 	$out = array();
 	while ($r = $res->fetch_assoc()) $out[] = $r;
+	return $out;
+}
+
+/**
+ * The trait map as an ORDERED LIST of {name, value}, ready for a renderer.
+ *
+ * WHY A LIST AND NOT THE MAP. nft_metadata_traits() returns an ordered
+ * name => value map, and the order carries meaning -- it is the order the
+ * minter wrote the document in, which for a layered collection is the order
+ * the art is built in. A PHP array keyed 'Background', 'Head' survives
+ * json_encode() as an object and the browser reads it back in order; a
+ * document whose trait names happen to be '0', '1', '2' DOES NOT. PHP turns
+ * those keys into integers, json_encode() emits a JSON ARRAY, and the
+ * browser sees indices where the trait names were. A list of pairs cannot
+ * have that happen to it.
+ *
+ * VALUES COME OUT AS STRINGS because that is what a panel prints, and a
+ * bool is spelled out: json_encode() of true reaches the browser as `true`
+ * and String()s to "true", while (string)true in PHP is "1" -- neither of
+ * which is what a trait called "Animated" means.
+ */
+function nftd_trait_pairs($traits) {
+	$out = array();
+	if (!is_array($traits)) return $out;
+	foreach ($traits as $k => $v) {
+		if (is_bool($v))        $v = $v ? 'Yes' : 'No';
+		else if (is_scalar($v)) $v = (string)$v;
+		else                    continue;
+		if ($v === '') continue;          // an empty trait is not a trait
+		$out[] = array('name' => (string)$k, 'value' => $v);
+	}
 	return $out;
 }
 
@@ -52,7 +84,35 @@ function nft_dossier($conn, $nft_id) {
 
 	$d = array('nft' => $base[0], 'missions' => array(), 'missions_done' => 0,
 	           'gauntlets' => array(), 'diamond' => null, 'soldier' => null,
-	           'raids' => array());
+	           'raids' => array(), 'traits' => array(), 'metadata' => null,
+	           'metadata_at' => null);
+
+	/*
+	 * ---- THE ON-CHAIN DOCUMENT ----
+	 *
+	 * A SEPARATE READ, NOT TWO MORE COLUMNS ON THE BASE SELECT, and that is
+	 * not tidiness. nfts.metadata and nfts.metadata_at are added by hand
+	 * against the live database (nft-metadata-schema.md); naming them up
+	 * there means a deployment that has not run that ALTER gets NO PANEL AT
+	 * ALL instead of a panel with no traits on it. Same bargain every read
+	 * in this file makes with a table that may not exist.
+	 *
+	 * metadata_at IS SENT, and it is not decoration: it is the only thing
+	 * that separates "this asset has no traits" from "nobody has looked
+	 * yet", and those two want different sentences on the screen. The
+	 * schema notes say the same thing about the backfill.
+	 */
+	$meta = _nftd_rows($conn, "SELECT metadata, metadata_at FROM nfts WHERE id = $id LIMIT 1");
+	if ($meta) {
+		$d['metadata_at'] = $meta[0]['metadata_at'];
+		$doc = json_decode((string)$meta[0]['metadata'], true);
+		if (is_array($doc)) $d['metadata'] = $doc;
+		/* nft_metadata_traits() is the ONE place that answers "what are this
+		   NFT's traits" -- four chains write four shapes and a reader that
+		   knows three of them returns an empty list for the fourth with no
+		   error anywhere. Not re-derived here. */
+		$d['traits'] = nftd_trait_pairs(nft_metadata_traits($doc));
+	}
 
 	/* ---- missions. status 0 is in progress; anything else has finished. ---- */
 	$d['missions'] = _nftd_rows($conn,

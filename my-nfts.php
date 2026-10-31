@@ -914,6 +914,34 @@ if ($filterby != "") {
 .nftd-list li img.thumb{flex:0 0 auto;width:34px;height:34px;border-radius:3px;object-fit:cover;
   background:var(--panel2,#0d1e2e);border:1px solid #1b3346}
 .nftd-list li.has-thumb{align-items:center}
+/*
+ * THE TRAITS.
+ *
+ * A GRID OF PAIRS, NOT THE STAT TILES. The tiles above put the number first
+ * and its label under it, which is right when the value is one figure you
+ * recognise; a trait's value is a phrase ("Steel Code Sea Predator") and is
+ * unreadable without its name, so the name leads and the value sits under
+ * it. Same furniture, opposite order, on purpose.
+ *
+ * THE NAME TRUNCATES AND THE VALUE DOES NOT. There are perhaps a dozen
+ * distinct trait names in a collection and the reader learns them; the value
+ * is the thing they came to read, so it wraps instead.
+ */
+.nftd-traits{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px}
+.nftd-traits div{border:1px solid #1b3346;border-radius:3px;padding:6px 10px 7px;min-width:0}
+.nftd-traits span{display:block;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
+  opacity:.55;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nftd-traits b{display:block;font-size:12.5px;font-weight:600;margin-top:3px;
+  overflow-wrap:break-word;word-break:break-word}
+/* The document itself, folded away: it is the answer to "why does it say
+   that", which is a question you only ask occasionally. */
+.nftd-raw{margin:12px 0 0}
+.nftd-raw summary{cursor:pointer;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  opacity:.5;display:inline-block}
+.nftd-raw summary:hover{opacity:.85}
+.nftd-raw pre{margin:8px 0 0;padding:10px 12px;background:#07111d;border:1px solid #1b3346;
+  border-radius:3px;max-height:280px;overflow:auto;font-size:11px;line-height:1.5;
+  color:#9fc0d0;white-space:pre}
 .nftd-links{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0;padding-top:14px;
   border-top:1px solid #1b3346}
 .nftd-links a{font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;
@@ -1004,6 +1032,38 @@ if ($filterby != "") {
           : 'loads from IPFS<span class="nftd-flag off">not saved</span>')
        + '</p>';
     h += '</div></div>';
+
+    /*
+     * ---- WHAT IT IS ----
+     *
+     * Above "Right now" because the traits are the thing itself and the rest
+     * of the panel is what it happens to be doing this week.
+     *
+     * THREE STATES, NOT TWO. An empty list means either "this asset has no
+     * traits" or "nobody has read its document yet", and those are different
+     * sentences -- d.metadataAt is the only thing that tells them apart (see
+     * the endpoint). Printing "no traits" at somebody whose metadata simply
+     * has not been crawled yet would be a confident wrong answer.
+     */
+    var tr = d.traits || [];
+    h += '<p class="nftd-sect">Traits</p>';
+    if (tr.length) {
+      h += '<div class="nftd-traits">' + tr.map(function (t) {
+        return '<div><span>' + esc(t.name) + '</span><b>' + esc(t.value) + '</b></div>';
+      }).join('') + '</div>';
+    } else if (d.metadataAt) {
+      h += '<p class="nftd-idle">Its on-chain metadata carries no traits.</p>';
+    } else {
+      h += '<p class="nftd-idle">Its on-chain metadata has not been read yet. It fills in '
+         + 'the next time this asset is verified.</p>';
+    }
+
+    /* The document behind the list, for when the list looks wrong. Only
+       offered when there IS one -- an empty <details> is a dead control. */
+    if (d.metadata && typeof d.metadata === 'object') {
+      h += '<details class="nftd-raw"><summary>Raw metadata</summary><pre>'
+         + esc(JSON.stringify(d.metadata, null, 2)) + '</pre></details>';
+    }
 
     /* ---- what it is doing right now ---- */
     h += '<p class="nftd-sect">Right now</p>';

@@ -236,5 +236,116 @@ echo "\nthe panel only shows a record once there is one\n";
 	   'a payload without a raids key takes the whole panel down');
 }
 
+echo "\nthe traits reach the panel, in order, without a second opinion\n";
+{
+	/*
+	 * THE REAL PIPELINE, EXECUTED. nft_metadata_traits() already has its own
+	 * harness for the four document shapes; what is new here is the hand-off
+	 * -- and the hand-off is where the order can be lost, which is a bug
+	 * nothing on the screen would announce.
+	 */
+	require_once __DIR__ . '/lib/nft-metadata-lib.php';
+
+	/* nftd_trait_pairs() is lifted rather than required: this file declares
+	   its own _nftd_rows() as the fixture seam, so including the library
+	   whole would be a redeclaration. */
+	$fa = strpos($src, 'function nftd_trait_pairs(');
+	$fb = strpos($src, "\n}\n", $fa);
+	ok($fa !== false && $fb !== false, 'nftd_trait_pairs() is gone from lib/nft-dossier.php');
+	eval(substr($src, $fa, $fb - $fa + 3));
+
+	/* A CIP-25 document, the shape most of this platform's own art is in. */
+	$cip25 = array('name' => 'ANCESTOR #41', 'image' => 'ipfs://bafyreallylong',
+	               'Background' => 'Crypt', 'Head' => 'Bone Blaster', 'Eyes' => 'Neon');
+	$pairs = nftd_trait_pairs(nft_metadata_traits($cip25));
+	$names = array();
+	foreach ($pairs as $t) $names[] = $t['name'];
+	ok($names === array('Background', 'Head', 'Eyes'),
+	   'the trait order did not survive: ' . implode(',', $names));
+	ok($pairs[1]['value'] === 'Bone Blaster', 'the value did not come through');
+	/* The name and the picture are not traits, and the URI test is by VALUE
+	   -- a leaked ipfs:// under any key would read as "Image: ipfs://baf..." */
+	ok(!in_array('image', $names, true) && !in_array('name', $names, true),
+	   'the picture or the asset name is being listed as a trait');
+
+	/* attributes[{trait_type,value}] -- Metaplex and every EVM collection. */
+	$mp = array('attributes' => array(
+		array('trait_type' => 'Suit',  'value' => 'Hazard'),
+		array('trait_type' => 'Level', 'value' => 7),
+		array('trait_type' => 'Animated', 'value' => true),
+	));
+	$pairs = nftd_trait_pairs(nft_metadata_traits($mp));
+	ok(count($pairs) === 3, 'a Metaplex attributes list did not come through as three traits');
+	ok($pairs[1]['value'] === '7', 'a numeric trait value is not a string by the time it ships');
+	/*
+	 * A BOOL IS SPELLED OUT. json_encode(true) reaches the browser as `true`
+	 * and String()s to "true"; (string)true in PHP is "1". A trait called
+	 * Animated must not print either of those.
+	 */
+	ok($pairs[2]['value'] === 'Yes', 'a boolean trait prints as ' . $pairs[2]['value']);
+
+	/*
+	 * TRAIT NAMES THAT ARE DIGITS -- the whole reason this is a LIST and not
+	 * a map. PHP turns the keys '0','1','2' into integers, json_encode()
+	 * emits a JSON array, and the browser reads indices where the names
+	 * were. As pairs it cannot happen.
+	 */
+	$pairs = nftd_trait_pairs(array('0' => 'Alpha', '1' => 'Beta'));
+	ok(isset($pairs[0]['name']) && $pairs[0]['name'] === '0' && $pairs[0]['value'] === 'Alpha',
+	   'a trait named "0" lost its name on the way out');
+	$json = json_encode($pairs);
+	ok(strpos($json, '"name":"0"') !== false,
+	   'the encoded payload does not carry the trait names: ' . $json);
+
+	/* An empty value is not a trait, and nothing non-scalar is one. */
+	$pairs = nftd_trait_pairs(array('Blank' => '', 'Deep' => array('a'), 'Real' => 'x'));
+	ok(count($pairs) === 1 && $pairs[0]['name'] === 'Real',
+	   'an empty or nested trait value is being printed as a trait');
+}
+
+echo "\nthe metadata column is read separately, and may not be there at all\n";
+{
+	$clean = harness_strip_comments($src);
+	$ep    = file_get_contents(__DIR__ . '/ajax/nft-dossier.php');
+
+	/*
+	 * NOT IN THE BASE SELECT, AND THIS IS THE ONE THAT MATTERS.
+	 *
+	 * nfts.metadata and nfts.metadata_at are added by hand against the live
+	 * database (nft-metadata-schema.md). Named in the base query, a
+	 * deployment that has not run that ALTER gets NO PANEL -- the query
+	 * fails, nft_dossier() returns null, and the endpoint says "No such
+	 * NFT" about an NFT that is right there. Read on its own, the traits
+	 * section is empty and everything else works.
+	 */
+	$ba = strpos($clean, '$base = _nftd_rows($conn,');
+	$bb = strpos($clean, '");', $ba);
+	$basesql = substr($clean, $ba, $bb - $ba);
+	ok(strpos($basesql, 'metadata') === false,
+	   'nfts.metadata is in the BASE select, so a database without that column loses the whole panel');
+	ok(preg_match('/SELECT metadata, metadata_at\s+FROM nfts WHERE id = \$id/', $clean) === 1,
+	   'the metadata read is gone, or is no longer a read of its own');
+
+	/* THE SHAPE QUESTION IS NOT ANSWERED TWICE. Four chains write four
+	   document shapes and nft_metadata_traits() is the one place that knows
+	   them; a second reader here would drift. */
+	ok(strpos($clean, 'nft_metadata_traits(') !== false,
+	   'the dossier no longer uses nft_metadata_traits()');
+	foreach (array('attributes', 'trait_type') as $shape) {
+		ok(strpos($clean, "'" . $shape . "'") === false,
+		   "lib/nft-dossier.php is reading document shapes itself ('$shape'); that lives in "
+		 . 'nft_metadata_traits()');
+	}
+	ok(strpos($clean, "require_once __DIR__ . '/nft-metadata-lib.php'") !== false,
+	   'the dossier calls nft_metadata_traits() without including the library that defines it');
+
+	/* metadata_at IS WHAT SEPARATES "no traits" FROM "never looked". */
+	ok(strpos($ep, "'metadataAt' => \$d['metadata_at']") !== false,
+	   'metadata_at is not sent, so the panel cannot tell an asset with no traits from one '
+	 . 'nobody has crawled');
+	ok(strpos($ep, "'traits'     => \$d['traits']") !== false,
+	   'the endpoint does not send the traits');
+}
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

@@ -112,12 +112,78 @@ console.log('\nthe raid record is labelled, and only appears once it has fought'
 	   'a record with only one side still prints "1 attacking, 0 defending"');
 }
 
+console.log('\nthe traits are listed, in the order the document wrote them');
+{
+	const h = ctx.render(base({
+		metadataAt: '2026-10-30 04:11:02',
+		traits: [{ name: 'Background', value: 'Crypt' },
+		         { name: 'Head',       value: 'Bone Blaster' },
+		         { name: 'Eyes',       value: 'Neon' }],
+		metadata: { name: 'ANCESTOR #41', Background: 'Crypt' },
+	}));
+	ok(h.indexOf('<p class="nftd-sect">Traits</p>') > -1, 'there is no Traits section');
+	ok(/<div class="nftd-traits">/.test(h), 'the traits are not rendered as the trait grid');
+	ok(h.indexOf('<span>Head</span><b>Bone Blaster</b>') > -1,
+	   'a trait renders without its name beside its value');
+	/* ORDER IS MEANING. For a layered collection it is the order the art is
+	   built in, and a renderer that sorts or re-keys loses it silently. */
+	ok(h.indexOf('Background') < h.indexOf('Head') && h.indexOf('Head') < h.indexOf('Eyes'),
+	   'the traits came out in a different order than the document wrote them');
+	/* The traits describe the thing; Right now describes its week. */
+	ok(h.indexOf('Traits</p>') < h.indexOf('Right now</p>'),
+	   'the traits are rendered below Right now');
+	ok(h.indexOf('carries no traits') === -1 && h.indexOf('has not been read') === -1,
+	   'an NFT WITH traits also gets one of the empty messages');
+
+	/* A value is page content from a stranger's mint, so it is escaped. */
+	const xss = ctx.render(base({ metadataAt: 'x',
+		traits: [{ name: 'Head', value: '<img src=x onerror=alert(1)>' }] }));
+	ok(xss.indexOf('<img src=x') === -1, 'a trait value is written to the panel unescaped');
+}
+
+console.log('\nno traits and never looked are different sentences');
+{
+	/* metadataAt set, nothing in it: the document was read and genuinely has
+	   no traits. */
+	const empty = ctx.render(base({ metadataAt: '2026-10-30 04:11:02', traits: [] }));
+	ok(empty.indexOf('carries no traits') > -1,
+	   'an asset whose document has no traits says nothing at all');
+	ok(empty.indexOf('has not been read') === -1,
+	   'an asset that HAS been read is told nobody has looked at it');
+
+	/* metadataAt null: nobody has crawled it. Saying "no traits" here is a
+	   confident wrong answer about an asset that may be covered in them. */
+	const never = ctx.render(base({ metadataAt: null, traits: [] }));
+	ok(never.indexOf('has not been read') > -1,
+	   'an uncrawled asset is reported as having no traits');
+	ok(never.indexOf('carries no traits') === -1,
+	   'an uncrawled asset gets the "no traits" sentence as well');
+	/* The section header is there either way, or the panel looks like it
+	   forgot to render something. */
+	ok(never.indexOf('Traits</p>') > -1, 'the Traits heading vanishes when there are none');
+}
+
+console.log('\nthe raw document is offered only when there is one');
+{
+	const h = ctx.render(base({ metadataAt: 'x', traits: [],
+	                            metadata: { name: 'A', Background: 'Crypt' } }));
+	ok(/<details class="nftd-raw">/.test(h), 'the raw metadata view is gone');
+	ok(h.indexOf('&quot;Background&quot;') > -1,
+	   'the raw document is not printed, or is printed unescaped');
+
+	/* An empty <details> is a dead control. */
+	const none = ctx.render(base({ metadataAt: null, traits: [], metadata: null }));
+	ok(none.indexOf('nftd-raw') === -1,
+	   'the Raw metadata control is offered on an NFT with no stored document');
+}
+
 console.log('\na payload from before any of this still renders');
 {
 	/* The endpoint response is fetched per open, but a stale one must not
 	   take the panel down. */
 	const old = base();
 	delete old.raids; delete old.diamond; delete old.soldier;
+	delete old.traits; delete old.metadata; delete old.metadataAt;
 	let threw = false, h = '';
 	try { h = ctx.render(old); } catch (e) { threw = true; }
 	ok(!threw, 'a payload with no raids/diamond/soldier keys throws');
