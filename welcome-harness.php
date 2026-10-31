@@ -244,6 +244,59 @@ ok(preg_match('/\$roles === null\)\s*\$aw_skip/', $pg) === 1,
    'a member whose roles we cannot read and a member who is doing fine are counted '
  . 'together, so a gap in what we know is indistinguishable from good news');
 
+/*
+ * THE LAST REFRESH OUTCOME HAS TO SURVIVE A PAGE LOAD.
+ *
+ * Every caller showed it once and lost it, so three refreshes could fail
+ * for the same reason without the reason ever being read -- the only
+ * visible symptom was a stale roster with no explanation attached, and
+ * the cache file cannot record a refresh that wrote nothing. Asked for
+ * that error three times over a single afternoon before this went in.
+ */
+$gmf = file_get_contents(__DIR__ . '/lib/guild-members.php');
+$body = substr($gmf, strpos($gmf, 'function guild_members_refresh'));
+/*
+ * SPLIT ON THE RETURN, not scanned line by line. The failure paths come
+ * in two shapes -- a one-liner ending in `return $out; }` and a
+ * multi-line concatenation -- and a per-line rule that handles one
+ * misses the other. The first version of this required the line to end
+ * in a semicolon and so skipped every one-liner, which is most of them.
+ * Each chunk ending in a return that set an error must record it.
+ */
+$unrecorded = 0;
+foreach (explode('return $out;', $body) as $chunk) {
+	if (strpos($chunk, "\$out['error'] =") === false) continue;
+	if (strpos($chunk, 'guild_members_note') === false) $unrecorded++;
+}
+ok($unrecorded === 0,
+   "$unrecorded failure path(s) in guild_members_refresh() return without recording why, "
+ . 'so that refresh leaves no trace at all');
+ok(strpos($gmf, 'function guild_members_note(') !== false
+   && strpos($gmf, 'function guild_members_last(') !== false,
+   'the refresh outcome is not persisted, so it is lost on the next page load');
+ok(strpos($gmf, 'guild_members_note(true') !== false,
+   'only failures are recorded, so a page cannot tell "never tried" from "worked"');
+ok(strpos($pg, 'guild_members_last()') !== false,
+   'the page does not read the last refresh outcome, so the error still only flashes once');
+ok(strpos($pg, 'Last refresh failed') !== false,
+   'the page never surfaces a failed refresh');
+
+/*
+ * AND ONE MEMBER CAN BE INTERROGATED. Three rounds went on "this person
+ * holds Candidate and is not in the Candidate list", every one of them
+ * asking for something off the server that the page could have said.
+ */
+foreach (array('In the roster cache'     => 'whether the roster has them at all',
+               'Roles the cache holds'   => 'what roles it has for them',
+               'Configured Visitor id'   => 'what it is comparing those against',
+               'In the welcome channel'  => 'whether the channel read found them') as $needle => $what) {
+	ok(strpos($pg, $needle) !== false,
+	   "the id lookup does not report $what, which is one of the four things that can be wrong");
+}
+ok(strpos($pg, 'UNKNOWN (cache has no roles)') !== false,
+   'the lookup shows an empty role list where the cache simply has none, which are the two '
+ . 'states that most need telling apart');
+
 /* Every reason the list can be empty has to be on the page. */
 foreach (array('Server Members Intent' => 'the intent that makes the roster possible',
                'Refresh roster'        => 'the button that fixes an empty roster',

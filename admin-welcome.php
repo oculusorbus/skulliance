@@ -70,6 +70,17 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST'
 	exit;
 }
 
+/*
+ * ONE MEMBER, INTERROGATED. Paste a Discord id and the page says what it
+ * sees -- in the roster or not, what roles it has for them, which group
+ * that puts them in. Added because "nich holds Candidate and is not in
+ * the Candidate list" took three rounds to pin down, and every round was
+ * me asking for something off the server that the page could have said
+ * itself.
+ */
+$aw_look = isset($_GET['id']) ? preg_replace('/[^0-9]/', '', (string)$_GET['id']) : '';
+
+$aw_last  = guild_members_last();
 $aw_cache = guild_members_load();
 $aw_known = !empty($aw_cache['ids']);
 $aw_roles_known = isset($aw_cache['roles']) && is_array($aw_cache['roles']);
@@ -244,6 +255,47 @@ td.aw-act { text-align:right; white-space:nowrap; }
 		<button type="submit" name="aw_refresh" value="1" class="aw-refresh">Refresh roster</button>
 	</form>
 </p>
+
+<?php /* THE LAST ATTEMPT, WHETHER OR NOT IT WAS THIS PAGE LOAD. A flash
+         message is lost on the next reload, which is how three refreshes
+         can fail for the same reason without the reason ever being read. */ ?>
+<?php if (!empty($aw_last['at']) && empty($aw_last['ok'])): ?>
+<p class="aw-warn"><b>Last refresh failed</b>
+	(<?php echo htmlspecialchars(date('j M, H:i', (int)$aw_last['at'])); ?>):
+	<?php echo htmlspecialchars((string)$aw_last['error']); ?></p>
+<?php elseif (!empty($aw_last['at'])): ?>
+<p class="aw-why">Last refresh succeeded
+	<?php echo htmlspecialchars(date('j M, H:i', (int)$aw_last['at'])); ?>,
+	<?php echo number_format((int)$aw_last['count']); ?> members.</p>
+<?php endif; ?>
+
+<?php /* ---- interrogate one member ---- */ ?>
+<form method="get" style="margin:0 0 14px">
+	<label class="aw-ml" for="awLook">Check one Discord id</label><br>
+	<input type="text" name="id" id="awLook" inputmode="numeric" placeholder="1009474801317974016"
+	       value="<?php echo htmlspecialchars($aw_look, ENT_QUOTES); ?>"
+	       style="background:#07131c;border:1px solid rgba(255,255,255,.12);border-radius:6px;
+	              color:#e8eaed;font:inherit;font-size:.82rem;padding:7px 10px;width:260px">
+	<button type="submit" class="aw-refresh">Check</button>
+</form>
+<?php if ($aw_look !== ''):
+	$lk_in    = guild_member_in($aw_cache, $aw_look);
+	$lk_roles = guild_member_roles($aw_cache, $aw_look);
+	$lk_g     = welcome_group($lk_in, $lk_roles, (string)$role_visitor, (string)$role_candidate);
+	$lk_seen  = isset($aw_arr['people'][$aw_look]);
+?>
+<p class="aw-warn">
+	<b><?php echo htmlspecialchars($aw_look); ?></b><br>
+	In the welcome channel: <b><?php echo $lk_seen ? 'yes' : 'no'; ?></b><br>
+	In the roster cache: <b><?php echo $lk_in ? 'yes' : 'no'; ?></b><br>
+	Roles the cache holds: <b><?php
+		echo $lk_roles === null ? 'UNKNOWN (cache has no roles)'
+		   : ($lk_roles ? htmlspecialchars(implode(', ', $lk_roles)) : 'none'); ?></b><br>
+	Configured Visitor id: <b><?php echo htmlspecialchars((string)$role_visitor ?: 'NOT SET'); ?></b>,
+	Candidate id: <b><?php echo htmlspecialchars((string)$role_candidate ?: 'NOT SET'); ?></b><br>
+	Group: <b><?php echo $lk_g === '' ? 'none -- not shown on this page' : htmlspecialchars($lk_g); ?></b>
+</p>
+<?php endif; ?>
 
 <?php if ($aw_msg !== ''): ?>
 <p class="aw-warn <?php echo strpos($aw_msg, 'Could not') === 0 ? '' : 'aw-ok'; ?>"><?php

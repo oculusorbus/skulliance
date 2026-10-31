@@ -112,14 +112,41 @@ function guild_member_in($cache, $discord_id) {
  * WRITES NOTHING ON FAILURE: a partial roster would mark everybody
  * after the failure point as having left.
  */
+/*
+ * THE LAST ATTEMPT, KEPT.
+ *
+ * The refresh reports its outcome to whoever called it, and every caller
+ * shows that once and loses it on the next page load -- so the single
+ * most useful fact about this cache ("the last three refreshes were
+ * refused for want of the Server Members Intent") was invisible, and the
+ * only visible symptom was a stale roster with no explanation attached.
+ * Asked for the same error three times over before this went in.
+ *
+ * Written on FAILURE as well as success, which is the point: the cache
+ * file itself cannot record a refresh that wrote nothing.
+ */
+function guild_members_note_path() {
+	return __DIR__ . '/../dhcrenders/guild-members-last.json';
+}
+function guild_members_last() {
+	$raw = @file_get_contents(guild_members_note_path());
+	$d = $raw === false ? null : json_decode($raw, true);
+	return is_array($d) ? $d : array();
+}
+function guild_members_note($ok, $error, $count) {
+	@file_put_contents(guild_members_note_path(), json_encode(array(
+		'at' => time(), 'ok' => (bool)$ok, 'error' => (string)$error, 'count' => (int)$count,
+	)));
+}
+
 function guild_members_refresh($bot_token, $guild_id = null) {
 	$out = array('ok' => false, 'count' => 0, 'error' => '');
 	$token = trim((string)$bot_token);
-	if ($token === '') { $out['error'] = 'No bot token is loaded on this page.'; return $out; }
-	if (!function_exists('curl_init')) { $out['error'] = 'curl is not available.'; return $out; }
+	if ($token === '') { $out['error'] = 'No bot token is loaded on this page.'; guild_members_note(false, $out['error'], 0); return $out; }
+	if (!function_exists('curl_init')) { $out['error'] = 'curl is not available.'; guild_members_note(false, $out['error'], 0); return $out; }
 
 	$guild = preg_replace('/[^0-9]/', '', (string)($guild_id === null ? GUILD_MEMBERS_GUILD : $guild_id));
-	if ($guild === '') { $out['error'] = 'No guild id.'; return $out; }
+	if ($guild === '') { $out['error'] = 'No guild id.'; guild_members_note(false, $out['error'], 0); return $out; }
 	/* Same override role.php uses, so a harness can drive this against a
 	   local server instead of Discord. Production never defines it. */
 	$api = defined('SKULL_DISCORD_API') ? SKULL_DISCORD_API : 'https://discord.com';
@@ -141,19 +168,20 @@ function guild_members_refresh($bot_token, $guild_id = null) {
 		$cerr = curl_error($ch);
 		curl_close($ch);
 
-		if ($body === false) { $out['error'] = 'Request failed: ' . $cerr; return $out; }
+		if ($body === false) { $out['error'] = 'Request failed: ' . $cerr; guild_members_note(false, $out['error'], 0); return $out; }
 		if ($code === 403) {
 			/* The one failure with a specific fix, so it gets a specific
 			   message rather than "403". */
 			$out['error'] = 'Discord refused the member list (403). The bot needs the '
 			              . 'Server Members Intent enabled in the Discord developer portal.';
+			guild_members_note(false, $out['error'], 0);
 			return $out;
 		}
-		if ($code === 429) { $out['error'] = 'Rate limited by Discord. Try again shortly.'; return $out; }
-		if ($code !== 200) { $out['error'] = 'Discord returned HTTP ' . $code . '.'; return $out; }
+		if ($code === 429) { $out['error'] = 'Rate limited by Discord. Try again shortly.'; guild_members_note(false, $out['error'], 0); return $out; }
+		if ($code !== 200) { $out['error'] = 'Discord returned HTTP ' . $code . '.'; guild_members_note(false, $out['error'], 0); return $out; }
 
 		$rows = json_decode($body, true);
-		if (!is_array($rows)) { $out['error'] = 'Could not read the member list.'; return $out; }
+		if (!is_array($rows)) { $out['error'] = 'Could not read the member list.'; guild_members_note(false, $out['error'], 0); return $out; }
 		if (!$rows) break;                       // last page
 
 		$lastId = '';
@@ -188,20 +216,21 @@ function guild_members_refresh($bot_token, $guild_id = null) {
 		$after = $lastId;
 	}
 
-	if (!$ids) { $out['error'] = 'Discord returned no members.'; return $out; }
+	if (!$ids) { $out['error'] = 'Discord returned no members.'; guild_members_note(false, $out['error'], 0); return $out; }
 
 	$payload = json_encode(array('ids' => $ids, 'roles' => $roles, 'names' => $names,
 	                             'at' => time(), 'count' => count($ids)));
 	$path = guild_members_path();
 	$dir  = dirname($path);
-	if (!is_dir($dir) && !@mkdir($dir, 0775, true)) { $out['error'] = 'Cache directory is missing.'; return $out; }
+	if (!is_dir($dir) && !@mkdir($dir, 0775, true)) { $out['error'] = 'Cache directory is missing.'; guild_members_note(false, $out['error'], 0); return $out; }
 	/* Written to a temporary name and renamed: a reader must never see
 	   half a roster and conclude everybody left. */
 	$tmp = $path . '.' . getmypid() . '.tmp';
-	if (@file_put_contents($tmp, $payload) === false) { $out['error'] = 'Could not write the cache.'; return $out; }
-	if (!@rename($tmp, $path)) { @unlink($tmp); $out['error'] = 'Could not replace the cache.'; return $out; }
+	if (@file_put_contents($tmp, $payload) === false) { $out['error'] = 'Could not write the cache.'; guild_members_note(false, $out['error'], 0); return $out; }
+	if (!@rename($tmp, $path)) { @unlink($tmp); $out['error'] = 'Could not replace the cache.'; guild_members_note(false, $out['error'], 0); return $out; }
 
 	$out['ok'] = true;
 	$out['count'] = count($ids);
+	guild_members_note(true, '', $out['count']);
 	return $out;
 }
