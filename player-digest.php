@@ -438,11 +438,40 @@ if (!isset($_SESSION['userData']['user_id'])) return;
    * owner's own rewrite of this post came to 362 characters against a 280
    * limit, and almost all of the excess was here.
    */
+  /*
+   * ONE ASK, THREE LINES, THE OWNER'S WORDS.
+   *
+   * There were four variants, each cramming who-qualifies, what-you-get and
+   * what-I-get into a single sentence, and all four read as a sentence you
+   * have to parse rather than an offer you understand. The replacement says
+   * one thing per line: who it is for, what is in it, what to do.
+   *
+   * STILL A TABLE, AND STILL ROTATED. The rotation existed because
+   * near-identical text across many accounts is what X's spam policy covers
+   * and it is the PLAYERS' accounts that get actioned -- so the mechanism
+   * stays and adding a second entry is one line. For now the variation
+   * comes from the report card above the ask, which is a different sentence
+   * for every player and every day.
+   *
+   * THE CLAIM LINE MOVED IN HERE from the tail, because it is the third
+   * line of the owner's copy. It is safe there: the trim ladder below drops
+   * whole clauses from the REPORT CARD and never touches the ask.
+   */
   var ASKS = [
-    'Help me get 3 DHC Fighter traits. Grab 3 if you are new or a month away, better odds.',
-    'Grab 3 DHC Fighter traits on better odds if you are new or a month away. I get 3 too.',
-    'New here, or away a month? 3 DHC Fighter traits on better odds, and 3 for me.',
-    'Fancy 3 DHC Fighter traits on better odds? New here or a month away, and I get 3 too.'
+    /* The owner's copy, verbatim. The two below are the same three lines
+       said differently -- no new claim, no new offer -- and exist only to
+       keep the rotation alive. */
+    'New to Skulliance or been away for a month?'
+      + '\n3 DHC Fighter traits await you on better odds.'
+      + '\nClaim your 3 traits from @skulliance below and I\'ll get 3 too.',
+
+    'New here, or been away a month?'
+      + '\n3 DHC Fighter traits await you on better odds.'
+      + '\nClaim your 3 from @skulliance below and I\'ll get 3 too.',
+
+    'New to Skulliance or been away for a month?'
+      + '\nBetter odds on your first 3 DHC Fighter traits.'
+      + '\nClaim them from @skulliance below and I\'ll get 3 too.'
   ];
 
   function shareText(d) {
@@ -493,9 +522,11 @@ if (!isset($_SESSION['userData']['user_id'])) return;
     for (var i = 0; i < k.length; i++) seed = (seed * 31 + k.charCodeAt(i)) >>> 0;
     var ask = ASKS[seed % ASKS.length];
 
-    /* The claim line names the handle AND says what the link below is,
-       which a bare @skulliance did not. */
-    var tail = '\n\nClaim your 3 traits from @skulliance below.\n\nTrait art by @MMAXI404';
+    /* The handle and the credit, after the trim. X counts any url as 23
+       characters and cuts the overflow off the END, so anything that must
+       survive goes here -- the claim line now lives in the ask instead,
+       which the trim never cuts either. */
+    var tail = '\n\nTrait art by @MMAXI404';
     /* X counts ANY url as 23 characters and cuts the overflow off the END,
        where the handle and the credit live. The ask is the functional half,
        so the report card is what gives way if something has to. */

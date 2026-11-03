@@ -176,7 +176,23 @@ echo "\nthe post keeps its invitation and its credit\n";
 		"var asks = ['a','b','c','d','e','f'].map(function (r) {\n" .
 		"  return shareText({ total: 3, streak: 0, best: null, ref: r, day: '2026-10-17' })" .
 		".split('\\n\\n')[1]; });\n" .
-		"console.log(JSON.stringify({ posts: out, asks: asks }));\n");
+		/*
+		 * THE STREAK, AGAINST THE LONGEST ASK, ON THE SMALLEST DAY.
+		 *
+		 * Whether the streak clause survives is a BUDGET question, and the
+		 * seed decides which ask a given sharer gets -- so asserting it on
+		 * one sampled post passes or fails by luck. This pins the ask to
+		 * the longest one in the table and asks the question properly: on
+		 * a one-line day, is there still room to say how long the streak
+		 * is? If there is not, the ask has outgrown the post.
+		 */
+		"var longest = ASKS.slice().sort(function (x, y) { return y.length - x.length; })[0];\n" .
+		"var saved = ASKS.slice(); ASKS.length = 0; ASKS.push(longest);\n" .
+		"var tight = shareText({ total: 1, streak: 9, best: null, ref: 'q', day: '2026-10-17' });\n" .
+		"ASKS.length = 0; for (var z = 0; z < saved.length; z++) ASKS.push(saved[z]);\n" .
+		/* The table itself, so the checks below test EVERY ask rather than
+		   whichever one a sampled seed happened to land on. */
+		"console.log(JSON.stringify({ posts: out, asks: asks, tight: tight, table: ASKS }));\n");
 	$raw = @shell_exec('node ' . escapeshellarg($tmp) . ' 2>&1');
 	@unlink($tmp);
 	$res   = json_decode(trim((string) $raw), true);
@@ -206,10 +222,54 @@ echo "\nthe post keeps its invitation and its credit\n";
 			   'post ' . $i . ' does not open with the player\'s own numbers: '
 			 . substr($t, 0, 50));
 		}
-		/* The claim line has to name the handle AND point at the link,
-		   which a bare @skulliance on its own line did not. */
-		ok(strpos($posts[0], 'Claim your 3 traits from @skulliance below.') !== false,
-		   'the post does not tell the reader what the link below it is');
+		/*
+		 * THE PROPERTY, NOT THE SENTENCE. This was pinned to the exact
+		 * string 'Claim your 3 traits from @skulliance below.' and failed
+		 * the moment the owner rewrote the ask -- on copy that still named
+		 * the handle and still pointed at the link. An assertion that
+		 * breaks when the words change but the meaning does not is an
+		 * assertion that gets deleted in a hurry, which is how the meaning
+		 * goes next. Two things have to be true: it says who to claim
+		 * from, and it says the link is below.
+		 */
+		/*
+		 * EVERY ASK IN THE TABLE, NOT THE ONE THE SEED PICKED.
+		 *
+		 * These ran over the three sampled posts and passed with the first
+		 * ask gutted, because that sharer's seed had chosen a different
+		 * entry. Five separate mutations walked through -- the handle
+		 * removed, "below" removed, who-qualifies removed, the odds
+		 * removed, the rotation collapsed -- and every one of them is a
+		 * real post going out to real followers. The table is the subject;
+		 * the samples only prove it renders.
+		 */
+		$table = isset($res['table']) && is_array($res['table']) ? $res['table'] : array();
+		ok(count($table) > 0, 'the ask table could not be read');
+		foreach ($table as $i => $a) {
+			ok(strpos($a, '@skulliance') !== false,
+			   'ask ' . $i . ' does not name the handle to claim from: ' . $a);
+			ok(stripos($a, 'below') !== false,
+			   'ask ' . $i . ' does not tell the reader the link is below it: ' . $a);
+			ok(stripos($a, 'claim') !== false,
+			   'ask ' . $i . ' never asks the reader to claim anything: ' . $a);
+			ok(stripos($a, 'month') !== false,
+			   'ask ' . $i . ' does not say who qualifies, so every active follower clicks for '
+			 . 'nothing: ' . $a);
+			ok(stripos($a, 'odds') !== false,
+			   'ask ' . $i . ' does not say the odds are better, so three traits reads as three '
+			 . 'commons: ' . $a);
+			ok(stripos($a, '3') !== false, 'ask ' . $i . ' does not say how many traits: ' . $a);
+		}
+		/*
+		 * AND THEY MUST ACTUALLY DIFFER. The rotation is not decoration:
+		 * near-identical text across many accounts is what X's spam policy
+		 * covers, and it is the PLAYERS' accounts that get actioned. Two
+		 * low-activity sharers on the same day produce the same report
+		 * card, so the ask is the only thing left to tell their posts
+		 * apart.
+		 */
+		ok(count(array_unique($table)) === count($table),
+		   'two entries in the ask table are identical, which is the same as having one fewer');
 		/* And the ask still has to be in there, with who qualifies and why
 		   it is worth anything. */
 		ok(stripos($posts[0], '3 DHC Fighter traits') !== false, 'the post does not say what is on offer');
@@ -224,7 +284,20 @@ echo "\nthe post keeps its invitation and its credit\n";
 		 * nine days -- the owner asked what his own post meant. It is the
 		 * LOGIN streak, which is what the poster calls it.
 		 */
-		ok(strpos($posts[0], '9 day daily reward streak') !== false, 'the streak is missing from the card');
+		$tight = isset($res['tight']) ? (string) $res['tight'] : '';
+		ok(strpos($tight, '9 day daily reward streak') !== false,
+		   'on a one-line day, against the longest ask, there is no room left for the streak -- '
+		 . 'the ask has outgrown the post: ' . $tight);
+		ok(mb_strlen($tight) + 24 <= 280,
+		   'the longest ask on the smallest day already overruns 280 at ' . mb_strlen($tight));
+		/* And wherever it DOES appear, it is worded as what it is. Nothing
+		   may reintroduce "9 days running", which the owner read as nine
+		   days of that much activity and had to ask about. */
+		foreach (array_merge($posts, array($tight)) as $i => $t) {
+			if (stripos($t, 'streak') === false) continue;
+			ok(strpos($t, 'daily reward streak') !== false,
+			   'post ' . $i . ' mentions a streak without saying which streak: ' . $t);
+		}
 		ok(preg_match('/\d+ days running/', $posts[0]) === 0,
 		   'the streak is named as a bare run of days, which reads as the activity repeating');
 		/*
@@ -285,8 +358,16 @@ echo "\nthe post keeps its invitation and its credit\n";
 	file_put_contents($tmp, $js);
 	$rows = json_decode(trim((string) @shell_exec('node ' . escapeshellarg($tmp) . ' 2>&1')), true);
 	@unlink($tmp);
-	ok(is_array($rows) && count($rows) === count($cases) * 4,
-	   'the label sweep did not run: got ' . (is_array($rows) ? count($rows) : 'nothing'));
+	/* COUNTED, NOT ASSUMED. This was `* 4` for the four asks that existed
+	   when it was written, so rewriting the ask table failed a check about
+	   channel labels. The sweep covers every ask by design; how many there
+	   are is the table's business. */
+	$ask_n = substr_count(substr($src, strpos($src, 'var ASKS = ['),
+	                             strpos($src, '];', strpos($src, 'var ASKS = ['))
+	                             - strpos($src, 'var ASKS = [')), "\n\n") + 1;
+	ok(is_array($rows) && count($rows) === count($cases) * $ask_n,
+	   'the label sweep did not run over every ask: got '
+	 . (is_array($rows) ? count($rows) : 'nothing') . ', expected ' . (count($cases) * $ask_n));
 	if (is_array($rows) && $rows) {
 		$long = $bare = $flat = $cut = 0; $worst = ''; $egBare = $egFlat = $egCut = '';
 		foreach ($rows as $r) {
