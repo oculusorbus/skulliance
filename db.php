@@ -7429,14 +7429,18 @@ $SKULLIANCE_BOARDS = array(
 	'dhcarena'          => array('label'=>'DHC Arena',         'icon'=>'🏟️', 'group'=>'Games',
 		'blurb'=>'Crew battles won',
 		'periods'=>array('All-Time'=>'dhcarena','Monthly'=>'monthly-dhcarena')),
-	// WEEKLY ONLY, and that is not an omission. The board ranks damage per
-	// Fighter fielded WITHIN one week; adding that up across every week ever
-	// would put a player who sent one perfect Crew in March above somebody
-	// who has turned up every day since. The week is the season here, and it
-	// is what the 50,000 CARBON is paid against.
+	// WEEKLY IS THE SEASON, and it is what the 50,000 CARBON is paid
+	// against. This was weekly ONLY, for a reason that was correct at the
+	// time: the board ranks damage per Fighter, so across every week ever a
+	// player who sent one perfect Crew in March outranks somebody who has
+	// turned up every day since.
+	//
+	// DHCB_LADDER_MIN_RUNS_ALL is the answer to that. The all-time cut asks
+	// for ten finished Crews rather than the week's three, so one lucky Crew
+	// cannot hold it, and it pays nothing -- it is the record, not the race.
 	'dhcbosses'         => array('label'=>'DHC Bosses',        'icon'=>'☠️', 'group'=>'Games',
 		'blurb'=>'Damage per Fighter fielded',
-		'periods'=>array('Weekly'=>'dhcbosses')),
+		'periods'=>array('Weekly'=>'dhcbosses','All-Time'=>'dhcbosses-all')),
 	'bosses'            => array('label'=>'Boss Battles',      'icon'=>'🐉', 'group'=>'Games',
 		'blurb'=>'Community boss fights',
 		'periods'=>array('All-Time'=>'bosses','Weekly'=>'weekly-bosses')),
@@ -7552,9 +7556,9 @@ function refreshLeaderboardSnapshots($conn) {
 		'guardians'         => function($c) { checkGuardiansLeaderboard($c); },
 		'dhcfighters'       => function($c) { checkDHCFightersLeaderboard($c); },
 		'dhcarena'          => function($c) { checkDHCArenaLeaderboard($c); },
-		/* The WEEK in progress, because that is the only cut this board has
-		   -- it ranks damage per Fighter within a week and there is no
-		   all-time variant to snapshot. */
+		/* The WEEK in progress. The hub card shows the live race, not the
+		   record -- an all-time card would name the same face for months
+		   and stop being a reason to look. */
 		'dhcbosses'         => function($c) { checkDHCBossesLeaderboard($c, true); },
 		'dreadcity'         => function($c) { checkDropShipLeaderboard($c, DROPSHIP_PROJECT_DREADCITY); },
 		'filthymermaid'     => function($c) { checkDropShipLeaderboard($c, DROPSHIP_PROJECT_MERMAID); },
@@ -16438,7 +16442,7 @@ function checkDHCArenaLeaderboard($conn, $monthly = false, $rewards = false) {
  * Paid by rewards.php?dhcbosses=1, which needs its OWN monthly crontab entry
  * -- nothing in this repo schedules anything.
  */
-function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false) {
+function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false, $allTime = false) {
 	/*
 	 * THE LIBRARY FIRST, AND THE ORDER WAS A MONEY BUG.
 	 *
@@ -16485,7 +16489,24 @@ function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false) {
 		$wk = ($wr && ($wx = $wr->fetch_assoc()))
 		    ? $wx['w'] : date('Y-m-d', strtotime('-7 days', strtotime(skl_week_key())));
 	}
-	$rows = dhcb_ladder($conn, $wk, 100);
+	/*
+	 * THE ALL-TIME CUT NEVER PAYS, AND THE ARGUMENT ORDER PROTECTS THAT.
+	 *
+	 * $allTime is the LAST parameter and $rewards is separate, so there is
+	 * no call shape in which asking for the record accidentally asks for a
+	 * settle. Belt and braces, because the rewards path on this board pays
+	 * 50,000 CARBON and the previous money bug here came from exactly this
+	 * kind of coupling (see the require-order note above).
+	 */
+	if ($allTime && $rewards) {
+		error_log('checkDHCBossesLeaderboard: refused an all-time REWARD run; '
+		        . 'the CARBON belongs to the weekly board');
+		echo "<p>The all-time board does not pay.</p>";
+		return;
+	}
+	$rows = $allTime
+		? dhcb_ladder($conn, DHCB_LADDER_ALL_TIME, 100)
+		: dhcb_ladder($conn, $wk, 100);
 	/* false is a broken read, not a quiet week -- and on the REWARDS path
 	   the difference matters enormously: settling against a board that
 	   failed to load would pay nobody and report a clean run. */
@@ -16529,6 +16550,38 @@ function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false) {
 		$me = isset($_SESSION['userData']['user_id']) && (int)$_SESSION['userData']['user_id'] === (int)$row['user_id'];
 		if ($me) $fireworks = true;
 
+		/*
+		 * THE HUB CARD'S LEADER, WHICH THIS BOARD NEVER PUBLISHED.
+		 *
+		 * Every other check*Leaderboard() fills $leaderboard_top3, and
+		 * refreshLeaderboardSnapshots() is what turns that into the face
+		 * and score on the leaderboards hub. This one never did, so the
+		 * DHC Bosses card read "No leader yet" over a week with a full
+		 * board on it -- which is indistinguishable from nobody having
+		 * played, and that is exactly how it was read.
+		 *
+		 * RANKED ROWS ONLY, because the skip above has already dropped the
+		 * rest: a card naming somebody who sent one Crew would advertise a
+		 * leader the board itself refuses to pay.
+		 */
+		if ($leaderboardCounter <= 3) {
+			global $leaderboard_top3;
+			$leaderboard_top3[] = array(
+				'username'   => $row['name'],
+				'discord_id' => $row['discord_id'],
+				'avatar'     => $row['avatar'],
+				/* Carried because every other board carries it; the snapshot
+				   INSERT does not store it and nothing reads it, so it is NOT
+				   a privacy control. dhcb_ladder() does not select it either,
+				   hence the default. */
+				'visibility' => isset($row['visibility']) ? $row['visibility'] : 2,
+				/* The number the board RANKS on, not the one that is
+				   largest. Damage would read as the leader's score and is
+				   mostly a measure of roster size. */
+				'score'      => number_format($row['per']) . ' per Fighter',
+			);
+		}
+
 		$stats = array(
 			'Per Fighter' => number_format($row['per']),
 			'Damage'      => number_format($row['dealt']),
@@ -16536,7 +16589,11 @@ function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false) {
 			'Fighters'    => number_format($row['fighters']),
 		);
 		$pay = round($carbon / $leaderboardCounter);
-		$reward_col = ($monthly || $rewards)
+		/* NOT ON THE ALL-TIME BOARD. $monthly is true for both cuts -- it is
+		   what tells the renderer this is a paying-shaped board -- so
+		   without this the record would print a CARBON figure beside every
+		   rank and promise a prize that does not exist. */
+		$reward_col = (!$allTime && ($monthly || $rewards))
 			? number_format($pay) . " CARBON = " . number_format(floor($pay / 100)) . " DIAMOND" : '';
 		$lb_rows[] = array('rank' => $leaderboardCounter, 'trophy' => $trophy,
 			'avatar_url' => avatar_url($row['discord_id'], $row['avatar']),

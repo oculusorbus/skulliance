@@ -53,6 +53,22 @@ all-time is one press, and it keeps the list to one entry per board
 instead of one per board per period. There is no hub entry in it, because
 the link next to it already is that.
 
+## DHC Bosses has two cuts now
+
+**Weekly** is the race and the one that pays. It ranks damage per Fighter
+fielded inside one week, a minimum of three finished Crews puts you in the
+running, and the CARBON pool is split down the ranked part when the week
+closes Thursday at 4pm.
+
+**All time** is the same ranking with no week boundary, and it pays nothing.
+It asks for **ten** finished Crews rather than three, because across every
+week the smaller number is not a bar at all - one lucky Crew of one would
+sit at the top of it forever. Nobody is listed as unranked there; there is
+no prize to be short of.
+
+The hub card still shows the weekly leader. An all-time card would name the
+same person for months and stop being a reason to look.
+
 ## The Activity page: who is playing, and what
 
 The **Activity** page in the nav is a different question from the Activity

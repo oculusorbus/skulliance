@@ -408,7 +408,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				              $filterby != "guardians" && $filterby != "monthly-guardians" &&
 				              $filterby != "dhcfighters" && $filterby != "monthly-dhcfighters" &&
 				              $filterby != "dhcarena" && $filterby != "monthly-dhcarena" &&
-				              $filterby != "dhcbosses" &&
+				              $filterby != "dhcbosses" && $filterby != "dhcbosses-all" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
 				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp" && $filterby != "dreadcity" && $filterby != "dreadcity-weekly" && $filterby != "dreadcity-xp" && $filterby != "filthymermaid" && $filterby != "filthymermaid-weekly" && $filterby != "filthymermaid-xp" && $filterby != "dhcdropship" && $filterby != "dhcdropship-weekly" && $filterby != "dhcdropship-xp"):
@@ -569,6 +569,16 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				        $title = "This Week's DHC Bosses Ladder";
 				        $filterby = "dhcbosses";
 				        break;
+				    /* THE RECORD, NOT THE RACE. Same ranking with no week
+				       boundary, and it asks for DHCB_LADDER_MIN_RUNS_ALL
+				       finished Crews rather than the week's three -- across
+				       every week the weekly bar is not a bar, and one lucky
+				       Crew of one would hold the top of it forever. It pays
+				       nothing; the CARBON is the weekly board's. */
+				    case ($filterby == "dhcbosses-all"):
+				        $title = "DHC Bosses, All Time";
+				        $filterby = "dhcbosses-all";
+				        break;
 				    case ($filterby == "guardians"):
 				        $title = "All Realm Guardians Sieges";
 				        $filterby = "guardians";
@@ -727,7 +737,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				              $filterby != "guardians" && $filterby != "monthly-guardians" &&
 				              $filterby != "dhcfighters" && $filterby != "monthly-dhcfighters" &&
 				              $filterby != "dhcarena" && $filterby != "monthly-dhcarena" &&
-				              $filterby != "dhcbosses" &&
+				              $filterby != "dhcbosses" && $filterby != "dhcbosses-all" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
 				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp" && $filterby != "dreadcity" && $filterby != "dreadcity-weekly" && $filterby != "dreadcity-xp" && $filterby != "filthymermaid" && $filterby != "filthymermaid-weekly" && $filterby != "filthymermaid-xp" && $filterby != "dhcdropship" && $filterby != "dhcdropship-weekly" && $filterby != "dhcdropship-xp"):
@@ -828,13 +838,19 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				            checkDHCArenaLeaderboard($conn, true);
 				            break;
 				        case ($filterby == "dhcbosses"):
-				            /* Weekly, like the crew it ranks. There is no
-				               all-time variant: the ranking is damage per
-				               Fighter WITHIN a week, so adding it up across
-				               weeks would rank one good Crew above turning up.
-				               The week turns 4pm Thursday, not Monday -- this
-				               comment said Monday and so did two queries. */
+				            /* Weekly, like the crew it ranks. The week turns
+				               4pm Thursday, not Monday -- this comment said
+				               Monday and so did two queries. */
 				            checkDHCBossesLeaderboard($conn, true);
+				            break;
+				        case ($filterby == "dhcbosses-all"):
+				            /* The all-time cut. Its higher minimum is what
+				               makes ranking damage per Fighter across every
+				               week mean anything -- see
+				               DHCB_LADDER_MIN_RUNS_ALL. Never a reward run:
+				               the third argument stays false and the CARBON
+				               belongs to the weekly board. */
+				            checkDHCBossesLeaderboard($conn, true, false, true);
 				            break;
 				        case ($filterby == "guardians"):
 				            checkGuardiansLeaderboard($conn, false);

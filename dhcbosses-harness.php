@@ -3477,5 +3477,95 @@ ok(preg_match('~<h3>All time <span><\?php echo \(int\)DHCB_LADDER_MIN_RUNS_ALL;~
    'the all-time heading hardcodes its bar instead of printing the constant, so raising '
  . 'the minimum leaves the heading saying the old number');
 
+/* ---------------------------------------------------------------- *
+ * THE LEADERBOARDS HUB
+ *
+ * The board exists in three places and they are separate lists:
+ * $SKULLIANCE_BOARDS decides what the card offers, leaderboards.php routes
+ * the filter, and refreshLeaderboardSnapshots() decides what the card SAYS.
+ * A period registered in one and missing from another is a dead link or a
+ * silent omission, which is how the card came to read "No leader yet" over
+ * a full board.
+ * ---------------------------------------------------------------- */
+echo "\nthe hub card names a leader, and offers both cuts\n";
+$DB  = (string) file_get_contents(__DIR__ . '/db.php');
+$LBP = (string) file_get_contents(__DIR__ . '/leaderboards.php');
+
+/*
+ * THE CARD READ "NO LEADER YET" OVER A WEEK WITH A FULL BOARD ON IT.
+ * refreshLeaderboardSnapshots() builds the face and score from
+ * $leaderboard_top3, which every other check*Leaderboard() fills and this
+ * one never did -- and an empty card is indistinguishable from nobody
+ * having played, which is exactly how it was read.
+ */
+$bl = substr($DB, strpos($DB, 'function checkDHCBossesLeaderboard'));
+$bl = substr($bl, 0, strpos($bl, "\nfunction "));
+/* A BARE STATEMENT, not merely the string somewhere. Spelled as a strpos
+   this passed with the whole assignment wrapped in `if (false)`, which is
+   the third time today a check has survived its own subject being
+   disabled. It has to start its own line. */
+$pubAt = strpos($bl, '$leaderboard_top3[] = array(');
+ok($pubAt !== false,
+   'checkDHCBossesLeaderboard() never publishes a champion, so the hub card says "No leader '
+ . 'yet" however full the board is');
+/*
+ * A BARE STATEMENT UNDER THE TOP-3 GATE, not merely the string somewhere.
+ * Two mutations walked past the first spelling of this: the whole
+ * assignment wrapped in `if (false)`, and the enclosing
+ * `if ($leaderboardCounter <= 3)` turned into `if (false)`. Both leave the
+ * line untouched and both reproduce the original bug exactly -- an empty
+ * card over a full board.
+ */
+ok(preg_match('~\n\t+\$leaderboard_top3\[\] = array\(~', $bl) === 1,
+   'the champion assignment is not a bare statement; check it has not been wrapped in a '
+ . 'dead branch');
+$gate = $pubAt === false ? '' : substr($bl, max(0, $pubAt - 200), 200);
+ok(strpos($gate, 'if ($leaderboardCounter <= 3) {') !== false,
+   'the champion is not published under the top-3 gate, so either nothing reaches the hub '
+ . 'or every row does');
+ok(strpos($bl, "'score'      => number_format(\$row['per'])") !== false,
+   'the card scores on something other than the number the board ranks on; damage is mostly '
+ . 'a measure of roster size');
+/* And only from ranked rows -- the skip above runs first, so a card can
+   never name somebody the board itself refuses to pay. */
+$skipAt = strpos($bl, "if (isset(\$row['ranked']) && !\$row['ranked']) continue;");
+$topAt  = strpos($bl, '$leaderboard_top3[] =');
+ok($skipAt !== false && $topAt !== false && $skipAt < $topAt,
+   'the champion is captured before unranked rows are skipped, so the card can name somebody '
+ . 'who sent one Crew');
+
+/* ---- the all-time period, in all three places ---- */
+ok(strpos($DB, "'periods'=>array('Weekly'=>'dhcbosses','All-Time'=>'dhcbosses-all')") !== false,
+   'the hub card does not offer the all-time cut');
+ok(strpos($LBP, 'case ($filterby == "dhcbosses-all")') !== false,
+   'leaderboards.php does not route dhcbosses-all, so the card links to a dead filter');
+ok(substr_count($LBP, 'case ($filterby == "dhcbosses-all")') === 2,
+   'dhcbosses-all is routed in only one of the two switches (title and dispatch)');
+ok(strpos($LBP, '$filterby != "dhcbosses-all"') !== false,
+   'dhcbosses-all is not in the known-board guard, so it falls through to the project branch');
+ok(substr_count($LBP, '$filterby != "dhcbosses-all"') === 2,
+   'the known-board guard exists twice in this file and only one copy knows about the '
+ . 'all-time cut');
+ok(strpos($LBP, 'checkDHCBossesLeaderboard($conn, true, false, true)') !== false,
+   'the all-time filter does not reach the board with $allTime set');
+
+/*
+ * AND IT NEVER PAYS. The weekly board settles 50,000 CARBON; the record
+ * does not. $monthly is true for BOTH cuts -- it is what tells the renderer
+ * this board has a reward column at all -- so without the guard the
+ * all-time board prints a CARBON figure beside every rank and promises a
+ * prize that does not exist.
+ */
+ok(strpos($bl, '$allTime && $rewards') !== false,
+   'an all-time REWARD run is not refused; the CARBON belongs to the weekly board');
+ok(strpos($bl, '!$allTime && ($monthly || $rewards)') !== false,
+   'the all-time board prints a CARBON payout column, promising a prize that does not exist');
+ok(strpos($bl, 'dhcb_ladder($conn, DHCB_LADDER_ALL_TIME, 100)') !== false,
+   'the all-time filter does not ask the ladder for the all-time window');
+/* The snapshot stays weekly: an all-time card would name the same face for
+   months and stop being a reason to look. */
+ok(strpos($DB, "'dhcbosses'         => function(\$c) { checkDHCBossesLeaderboard(\$c, true); }") !== false,
+   'the hub snapshot no longer takes the weekly cut');
+
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all DHC Bosses checks passed\n");
 exit($fail ? 1 : 0);
