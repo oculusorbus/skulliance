@@ -3372,5 +3372,110 @@ ok(preg_match('/\.a-daybreak\.off[^{]*\{display:none\}/', $arena) === 1
  . 'leaves a line above rows that are not shown');
 ok(strpos($arena, '.a-daybreak{') !== false, 'the day line has no styling');
 
+/* ---------------------------------------------------------------- *
+ * THE ALL-TIME BOARD
+ *
+ * It is the same query with the week clause removed, which is exactly why
+ * it needs its own checks: a change made for the weekly board silently
+ * becomes a change to a board that never resets, and the per-Fighter
+ * ranking makes one unqualified row permanent rather than temporary.
+ * ---------------------------------------------------------------- */
+echo "\nall time is the same board over every week, with a bar that means something\n";
+
+ok(defined('DHCB_LADDER_ALL_TIME'), 'there is no all-time sentinel');
+ok(defined('DHCB_LADDER_MIN_RUNS_ALL'), 'the all-time board has no minimum of its own');
+
+/*
+ * THE BAR HAS TO BE HIGHER, AND THE REASON IS ON THE BOARD RIGHT NOW.
+ * baker440 sits at 999 damage per Fighter off a single Crew, correctly
+ * held out of the rankings by the weekly minimum. Carry 3 onto a board
+ * with no Thursday and that row is rank 1 forever.
+ */
+ok(DHCB_LADDER_MIN_RUNS_ALL > DHCB_LADDER_MIN_RUNS,
+   'the all-time minimum (' . DHCB_LADDER_MIN_RUNS_ALL . ') is not above the weekly one ('
+ . DHCB_LADDER_MIN_RUNS . '); over every week the weekly bar is not a bar, and the board '
+ . 'ranks on damage PER FIGHTER, so one lucky Crew of one would hold the top of it forever');
+
+/*
+ * ONE QUERY, TWO WINDOWS. A second copy of this SQL is a second thing to
+ * keep in step, and the two would diverge on the first change to either --
+ * which is the bug this repo has shipped with gateway lists, chain maps
+ * and the activity sources, and is why activity_sources() and admin_tabs()
+ * exist at all.
+ */
+ok(substr_count($lad, 'FROM dhc_boss_runs r') === 1,
+   'the all-time board is a second copy of the ladder query rather than the same one with '
+ . 'the week clause dropped');
+ok(strpos($lad, 'DHCB_LADDER_ALL_TIME') !== false,
+   'dhcb_ladder() does not branch on the all-time sentinel, so asking for it just returns '
+ . 'a week whose key happens to be "*"');
+ok(preg_match('~\$where\s*=\s*\$all\s*\?~', $lad) === 1,
+   'the week clause is not the thing the branch removes');
+ok(strpos($lad, "WHERE \$where") !== false,
+   'the query no longer uses the branched WHERE, so the all-time window does nothing');
+
+/*
+ * AND THE UNRANKED TAIL IS GONE THERE, by not being returned at all rather
+ * than by being hidden in the renderer. "One more Crew" is something you
+ * can do tonight; "seven more Crews, ever" is a verdict, not an
+ * instruction, and dhcb_ladder_html() is shared with the weekly board
+ * where that line has to keep working.
+ */
+ok(preg_match('~\$having\s*=\s*\$all\s*\?~', $lad) === 1,
+   'the all-time board does not drop the below-minimum rows at the query, so the "not yet '
+ . 'ranked" line fires under a board nobody can clear this week');
+ok(strpos($lad, 'COUNT(*) >= $min') !== false && strpos($lad, '$having') !== false,
+   'the all-time HAVING does not use the minimum');
+/* The weekly board must STILL list them -- that is the whole reason the
+   minimum moved out of the HAVING in the first place. */
+ok(preg_match("~\\\$having\\s*=\\s*\\\$all[^;]*'HAVING SUM\\(r\\.crew_size\\) > 0'~s", $lad) === 1,
+   'the weekly board has lost its unranked tail; the minimum decides RANK there, not '
+ . 'visibility, and early in a week that is everybody');
+
+/* The renderer is untouched and shared, so the break line must still be
+   conditional on a row saying it is unranked. */
+$lhtml = substr($LIB, strpos($LIB, 'function dhcb_ladder_html'));
+$lhtml = substr($lhtml, 0, strpos($lhtml, "\nfunction "));
+ok(strpos($lhtml, "isset(\$l['ranked']) && !\$l['ranked']") !== false,
+   'the unranked break no longer keys off the row, so it could fire on the all-time board');
+$allrows = dhcb_ladder_html(array(
+  array('user_id'=>1,'name'=>'a','per'=>10,'dealt'=>100,'runs'=>11,'fighters'=>10,'ranked'=>true),
+  array('user_id'=>2,'name'=>'b','per'=>9,'dealt'=>90,'runs'=>10,'fighters'=>10,'ranked'=>true)
+), 1, false, 'none');
+ok(strpos($allrows, 'lad-break') === false,
+   'a board with no unranked rows still prints the "not yet ranked" line');
+
+/* ---- and the panel actually shows it ---- */
+ok(strpos($ARE, 'dhcb_ladder($conn, DHCB_LADDER_ALL_TIME') !== false,
+   'the Bosses panel never asks for the all-time board, which is why the panel had an '
+ . 'empty half under the weekly one');
+/*
+ * THE ECHO HAS TO BE LIVE, not merely present. Spelled as a strpos for
+ * 'dhcb_ladder_html($dhcb_ladAth' this passed with the call wrapped in
+ * `if (false)` -- the string was still there. The render must be the
+ * first thing in its own section, which is also how the weekly one reads.
+ */
+ok(preg_match('~<div class="a-lsec">\s*<h3>All time.*?<\?php echo dhcb_ladder_html\(\$dhcb_ladAth~s', $ARE) === 1,
+   'the all-time board is fetched and not rendered live -- check it has not been wrapped '
+ . 'in a dead branch or moved out of its section');
+/* Counted on the BOSSES board specifically: the Arena panel on the same
+   page has an all-time section of its own, so counting the heading text
+   across the file is counting two different features. */
+ok(substr_count($ARE, 'dhcb_ladder_html($dhcb_ladAth') === 1,
+   'the Bosses all-time board is rendered more than once, or not at all');
+$weekAt = strpos($ARE, 'dhcb_ladder_html($dhcb_lad,');
+$allAt  = strpos($ARE, 'dhcb_ladder_html($dhcb_ladAth');
+ok($weekAt !== false && $allAt !== false && $allAt > $weekAt,
+   'all time renders above this week; the live race is the one a player came for');
+/*
+ * AND THE HEADING STATES IT FROM THE CONSTANT. A strpos for the constant
+ * anywhere in the page passed with the heading hardcoded to "10+", because
+ * the empty-state message and the how-it-works note mention it too -- so
+ * raising the minimum would have left the heading quietly lying.
+ */
+ok(preg_match('~<h3>All time <span><\?php echo \(int\)DHCB_LADDER_MIN_RUNS_ALL;~', $ARE) === 1,
+   'the all-time heading hardcodes its bar instead of printing the constant, so raising '
+ . 'the minimum leaves the heading saying the old number');
+
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all DHC Bosses checks passed\n");
 exit($fail ? 1 : 0);

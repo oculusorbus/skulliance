@@ -326,6 +326,20 @@ if ($dhcb_lib) {
 			$dhcb_days  = $user_id ? dhcb_cache_days($conn, $user_id) : 0;
 			$dhcb_lad   = dhcb_ladder($conn, null, 10);
 			/*
+			 * AND THE SAME BOARD WITH NO WEEK BOUNDARY. The weekly board
+			 * answers "who is winning right now", resets on Thursday, and
+			 * is the live race; all-time answers "who has ever been good
+			 * at this", which Thursday cannot take away. The Arena panel
+			 * has carried both for this reason and this mirrors it.
+			 *
+			 * Shorter on purpose -- it moves slowly, so a long list of it
+			 * is a long list of the same names -- and it has its own,
+			 * higher minimum, because three Crews is a bar you clear in an
+			 * evening and over all time it is not a bar at all. See
+			 * DHCB_LADDER_MIN_RUNS_ALL.
+			 */
+			$dhcb_ladAth = dhcb_ladder($conn, DHCB_LADDER_ALL_TIME, 10);
+			/*
 			 * THE WHOLE WEEK, with all but the newest dozen folded away
 			 * behind a button.
 			 *
@@ -2496,6 +2510,16 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <?php echo dhcb_ladder_html($dhcb_lad, $user_id, $dhca_guest,
                     'Nobody has finished a Crew against them yet this week. Be first.'); ?>
         </div>
+        <?php /* ALL TIME, UNDERNEATH, and it fills the space the weekly board
+                 leaves -- which is what the panel looked wrong for. No
+                 unranked tail here: the all-time query does not return rows
+                 below its minimum, so the break line never fires. */ ?>
+        <div class="a-lsec">
+          <h3>All time <span><?php echo (int)DHCB_LADDER_MIN_RUNS_ALL; ?>+ finished Crews</span></h3>
+          <?php echo dhcb_ladder_html($dhcb_ladAth, $user_id, $dhca_guest,
+                    'Nobody has finished ' . (int)DHCB_LADDER_MIN_RUNS_ALL
+                  . ' Crews against the bosses yet. The first to get there has the board.'); ?>
+        </div>
         <details class="a-note"><summary>How the ladder works</summary>
         <p class="a-sub" style="margin:0">Ranked on <b>damage per Fighter fielded</b>, so a
            deep Crew list is an advantage and not a win on its own. A Crew that landed
@@ -2503,6 +2527,15 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
            against that average. A minimum of
            <?php echo (int)DHCB_LADDER_MIN_RUNS; ?> finished Crews puts you in the running,
            and anybody short of it is listed underneath with how many they need.
+           <?php /* The all-time board is the same ranking over every week, and
+                    it has to say its own bar or a player who is on one board
+                    and not the other has no way to work out why. */ ?>
+           <b>All time</b> is the same ranking with no week boundary, and it asks for
+           <?php echo (int)DHCB_LADDER_MIN_RUNS_ALL; ?> finished Crews rather than
+           <?php echo (int)DHCB_LADDER_MIN_RUNS; ?> &mdash; over every week the smaller
+           number is not a bar, and one lucky Crew of one would sit on top of it forever.
+           Nobody is listed as unranked there; it pays nothing, so there is nothing to
+           tell them they are short of.
            <?php /* ASKED WITHIN A MINUTE OF THE BOARD GOING UP: "it's a 3 crew minimum to be
                     eligible for the trait?" No -- the two gates are unrelated and they sit
                     next to each other, so the page has to say which is which. */ ?>

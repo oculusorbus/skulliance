@@ -1436,6 +1436,28 @@ if (!defined('DHCB_MIN_ROUNDS')) define('DHCB_MIN_ROUNDS', 5);
    against a MONTH of runs, which over a week would have excluded most of
    the board. */
 if (!defined('DHCB_LADDER_MIN_RUNS'))define('DHCB_LADDER_MIN_RUNS', 3);
+
+/*
+ * THE ALL-TIME BOARD, AND WHY IT NEEDS ITS OWN MINIMUM.
+ *
+ * Three finished Crews is the right bar for a week: it is a couple of
+ * evenings, and anybody short of it is told so and can clear it tomorrow.
+ * Carried onto a board with no week boundary it is not a bar at all --
+ * everybody who has ever played has cleared it -- and the damage is worse
+ * than cosmetic, because the board ranks on damage PER FIGHTER. One lucky
+ * Crew of one lands a 999 average and sits at the top of the all-time
+ * board forever, where a weekly board would have flushed it on Thursday.
+ * That exact row is on the board today: baker440, 999 per Fighter, one
+ * Crew, correctly held out of the rankings by the weekly minimum.
+ *
+ * AND THE UNRANKED TAIL IS DROPPED ENTIRELY THERE, not just raised. On the
+ * weekly board the dim rows are a call to action -- "one more Crew" is
+ * something you can do tonight. "Seven more Crews, ever" is not an
+ * instruction, it is a verdict, and printing it under a board nobody can
+ * clear this week is worse than leaving somebody off it.
+ */
+if (!defined('DHCB_LADDER_ALL_TIME'))    define('DHCB_LADDER_ALL_TIME', '*');
+if (!defined('DHCB_LADDER_MIN_RUNS_ALL'))define('DHCB_LADDER_MIN_RUNS_ALL', 10);
 /*
  * WHAT A ROUND BANKS ONCE THE WEEK HAS PUT A CREW DOWN.
  *
@@ -1806,9 +1828,27 @@ function dhcb_cache_slots($conn, $user_id, $week = null) {
  */
 function dhcb_ladder($conn, $week = null, $limit = 25) {
 	if ($week === null) $week = dhcb_week($conn);
-	$esc = $conn->real_escape_string($week);
+	/*
+	 * ONE FUNCTION, TWO WINDOWS. DHCB_LADDER_ALL_TIME drops the week
+	 * clause and nothing else: the grouping, the scoring denominator and
+	 * the ordering are the same question asked over a longer period, and
+	 * a second copy of this query is a second thing to keep in step with
+	 * the first. dhca_ladder() takes the same shape for the same reason.
+	 */
+	$all = ($week === DHCB_LADDER_ALL_TIME);
+	$esc = $conn->real_escape_string((string)$week);
 	$lim = max(1, (int)$limit);
-	$min = max(1, (int)DHCB_LADDER_MIN_RUNS);
+	$min = max(1, (int)($all ? DHCB_LADDER_MIN_RUNS_ALL : DHCB_LADDER_MIN_RUNS));
+	$where = $all ? 'r.outcome <> 0' : "r.day = '$esc' AND r.outcome <> 0";
+	/*
+	 * BELOW THE BAR IS OFF THE ALL-TIME BOARD, not under it. The weekly
+	 * board lists them so it can say what they need; all-time has nothing
+	 * useful to tell them, so it simply does not rank them. See the note
+	 * on DHCB_LADDER_MIN_RUNS_ALL.
+	 */
+	$having = $all
+		? "HAVING SUM(r.crew_size) > 0 AND COUNT(*) >= $min"
+		: 'HAVING SUM(r.crew_size) > 0';
 	/*
 	 * EVERYBODY WHO TURNED UP IS ON THE BOARD; the minimum decides RANK,
 	 * not visibility. It was a HAVING, so a player with two finished Crews
@@ -1830,9 +1870,9 @@ function dhcb_ladder($conn, $week = null, $limit = 25) {
 	               SUM(CASE WHEN r.dealt > 0 THEN r.crew_size ELSE 0 END) AS scoring
 	          FROM dhc_boss_runs r
 	          INNER JOIN users u ON u.id = r.user_id
-	         WHERE r.day = '$esc' AND r.outcome <> 0
+	         WHERE $where
 	         GROUP BY r.user_id
-	        HAVING SUM(r.crew_size) > 0
+	        $having
 	         ORDER BY (COUNT(*) >= $min) DESC,
 	                  (SUM(r.dealt) / GREATEST(1, SUM(CASE WHEN r.dealt > 0
 	                                                  THEN r.crew_size ELSE 0 END))) DESC,
