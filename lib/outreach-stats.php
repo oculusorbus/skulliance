@@ -100,6 +100,100 @@ function outreach_stats($conn, $project_id) {
 }
 
 /**
+ * THE SAME SIX MEASURES WITH NO PROJECT FILTER, FOR THE WHOLE PLATFORM.
+ *
+ * Same query shapes as outreach_stats(), same null-means-unreadable rule.
+ * Two measures are added that only exist at this scale -- how many projects
+ * and collections are supported -- because "42 projects" is the fact a
+ * stranger recognises about the platform the way "128 holders" is the fact
+ * a partner recognises about themselves.
+ *
+ * AND ONE MEASURE IS DELIBERATELY NOT THE SAME. outreach_stats() sums
+ * transactions.amount for one project, which is one currency and therefore
+ * one number. Summing it across every project adds CARBON to DREAD to
+ * DRKL to everything else, and the total is not a quantity of anything --
+ * it is the sum of forty different units with a currency symbol on the
+ * end. The post would be making a claim nobody could verify because it is
+ * not about anything.
+ *
+ * So the platform-wide version COUNTS THE PAYOUTS instead of summing them.
+ * "1,240,318 reward payouts" is true, comparable, and about one thing.
+ */
+function outreach_stats_all($conn) {
+	$out = array();
+
+	/* Holders and NFTs in one read, the same reason as the per-project
+	   version: two COUNTs over one scan, from the same instant. */
+	$r = @$conn->query("SELECT COUNT(DISTINCT n.user_id) AS holders, COUNT(*) AS staked
+	                      FROM nfts n WHERE n.user_id <> 0");
+	$row = $r ? $r->fetch_assoc() : null;
+	$out['holders'] = array('label' => 'Stakers',
+		'value' => $row ? (float)$row['holders'] : null, 'kind' => 'count');
+	$out['staked']  = array('label' => 'NFTs staked',
+		'value' => $row ? (float)$row['staked'] : null, 'kind' => 'count');
+
+	$out['projects'] = array('label' => 'Projects supported',
+		'value' => outreach_num($conn, "SELECT COUNT(*) AS n FROM projects", 'n'),
+		'kind' => 'count');
+	$out['collections'] = array('label' => 'Collections supported',
+		'value' => outreach_num($conn, "SELECT COUNT(*) AS n FROM collections", 'n'),
+		'kind' => 'count');
+
+	/* COUNT, NOT SUM -- see the note above. Forty currencies do not add. */
+	$out['payouts'] = array('label' => 'Reward payouts',
+		'value' => outreach_num($conn,
+			"SELECT COUNT(*) AS n FROM transactions WHERE type = 'credit'", 'n'),
+		'kind' => 'count');
+
+	$out['missions'] = array('label' => 'Missions completed',
+		'value' => outreach_num($conn, "SELECT SUM(status = '1') AS n FROM missions", 'n'),
+		'kind' => 'count');
+
+	/* Every raid that succeeded, counted once from the attacking side --
+	   the same side the per-project version counts, so the two agree. */
+	$out['raids'] = array('label' => 'Raids won',
+		'value' => outreach_num($conn, "SELECT SUM(outcome = '1') AS n FROM raids", 'n'),
+		'kind' => 'count');
+
+	$out['realms'] = array('label' => 'Realms built',
+		'value' => outreach_num($conn, "SELECT COUNT(*) AS n FROM realms", 'n'),
+		'kind' => 'count');
+
+	return $out;
+}
+
+/**
+ * The platform-wide lines, same rules: a nought or an unreadable figure is
+ * left out rather than printed.
+ *
+ * NO CURRENCY ARGUMENT, and that is the signature telling you so. There is
+ * no platform currency to name, which is exactly why there is no summed
+ * points line here.
+ */
+function outreach_lines_all($stats) {
+	$on = function ($k) use ($stats) {
+		return isset($stats[$k]) && $stats[$k]['value'] !== null && $stats[$k]['value'] > 0;
+	};
+	$n = function ($k) use ($stats) { return number_format($stats[$k]['value']); };
+
+	$lines = array();
+	if ($on('holders') && $on('staked'))
+		$lines[] = $n('holders') . ' stakers holding ' . $n('staked') . ' NFTs';
+	elseif ($on('holders')) $lines[] = $n('holders') . ' stakers';
+	elseif ($on('staked'))  $lines[] = $n('staked') . ' NFTs staked';
+
+	if ($on('projects') && $on('collections'))
+		$lines[] = $n('projects') . ' projects across ' . $n('collections') . ' collections';
+	elseif ($on('projects')) $lines[] = $n('projects') . ' projects supported';
+
+	if ($on('payouts'))  $lines[] = $n('payouts') . ' reward payouts';
+	if ($on('missions')) $lines[] = $n('missions') . ' missions completed';
+	if ($on('raids'))    $lines[] = $n('raids') . ' raids won';
+	if ($on('realms'))   $lines[] = $n('realms') . ' Realms built';
+	return $lines;
+}
+
+/**
  * The lines the post should actually carry.
  *
  * A NOUGHT IS LEFT OUT, not printed. "0 raids won by the faction" is an

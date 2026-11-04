@@ -248,20 +248,27 @@ echo "\nthe project picker works in the only state it is ever used in\n";
  * A FORM CANNOT BE LEFT DEAD BY WHERE A SCRIPT SITS, so the control is a
  * real GET form and the script only removes the button it makes redundant.
  */
-$formAt   = strpos($OUT, '<form class="adm-form" method="get" action="admin-outreach.php"');
-$branchAt = strpos($OUT, '<?php if (!$out_p):');
+/*
+ * THE BRANCH IS GONE, AND THE PROPERTY IS STRONGER FOR IT. These three
+ * assertions were anchored on `<?php if (!$out_p):` and on the form
+ * sitting ABOVE it -- a structural way of saying "the picker is not
+ * trapped inside the branch that already has a project". No project is now
+ * a MODE rather than an empty state, so there is no branch to be trapped
+ * in, and the honest test is that no such branch exists at all. Rewritten
+ * rather than deleted: the bug it caught shipped once.
+ */
+$formAt = strpos($OUT, '<form class="adm-form" method="get" action="admin-outreach.php"');
 ok($formAt !== false, 'the project picker is not a form, so it needs script to do anything');
-ok($branchAt !== false, 'the empty-state branch could not be found');
-ok($formAt !== false && $branchAt !== false && $formAt < $branchAt,
-   'the project picker renders inside the branch that already has a project, so the '
- . 'control that chooses one only works once one is chosen');
+ok(strpos($OUT, 'if (!$out_p):') === false && strpos($OUT, 'if ($out_p):') === false,
+   'the page gates something on whether a project is chosen again; the picker and its '
+ . 'script must render in every state, because choosing one is the only thing the empty '
+ . 'page is for');
 /* A control with no name submits nothing, and the page would reload to itself. */
 ok(strpos($OUT, '<select name="project" id="ou-project">') !== false,
    'the select has no name attribute, so submitting the form sends no project');
 /* The wiring script has to be outside that branch too. */
 $wireAt = strpos($OUT, "s.addEventListener('change', function () { f.submit(); });");
-ok($wireAt !== false && $wireAt < $branchAt,
-   'the script that submits on change is inside the branch that needs a project');
+ok($wireAt !== false, 'the script that submits the picker on change is gone');
 /* NO SCRIPT, STILL USABLE. The button is the fallback and the script is
    what hides it, not the other way round. */
 ok(strpos($OUT, '<button type="submit" class="adm-btn" id="ou-go">') !== false,
@@ -340,6 +347,84 @@ ok(strpos($FLY, "/[?&]project=(\\d+)/") !== false,
 ok(strpos($FLY, "dispatchEvent(new Event('change'))") !== false,
    'the flyer tool sets the select without firing its handler, so the name, ticker and '
  . 'icon never fill in');
+
+/* ---------------------------------------------------------------- *
+ * PLATFORM-WIDE, WHEN NO PROJECT IS PICKED
+ * ---------------------------------------------------------------- */
+echo "\nno project picked builds the same post about the whole platform\n";
+
+function ostat_all($v) { return array('label' => 'x', 'value' => $v, 'kind' => 'count'); }
+
+/*
+ * THE ONE MEASURE THAT IS NOT THE PER-PROJECT ONE SUMMED, AND WHY.
+ *
+ * outreach_stats() sums transactions.amount for one project, which is one
+ * currency and therefore one number. Added across every project it is
+ * CARBON plus DREAD plus DRKL plus thirty-odd others -- a figure that is
+ * not a quantity of anything, printed into a marketing post with a
+ * currency-shaped label on it. The platform version COUNTS payouts
+ * instead. If SUM(amount) ever appears there, that reasoning has been lost
+ * and the post starts making a claim nobody can check.
+ */
+$src_all = (string) file_get_contents(__DIR__ . '/lib/outreach-stats.php');
+$fn = substr($src_all, strpos($src_all, 'function outreach_stats_all'));
+$fn = substr($fn, 0, strpos($fn, "\nfunction "));
+ok(strpos($fn, 'SUM(amount)') === false,
+   'the platform figures sum transactions.amount across every project, which adds forty '
+ . 'different currencies together and prints the total as if it were a quantity');
+ok(strpos($fn, "COUNT(*) AS n FROM transactions WHERE type = 'credit'") !== false,
+   'the platform figures no longer count reward payouts');
+ok(strpos($fn, 'project_id') === false, 'a platform-wide query still filters on a project id');
+
+$full = array('holders'=>ostat_all(900), 'staked'=>ostat_all(40716),
+              'projects'=>ostat_all(42), 'collections'=>ostat_all(319),
+              'payouts'=>ostat_all(1240318), 'missions'=>ostat_all(55000),
+              'raids'=>ostat_all(812), 'realms'=>ostat_all(140));
+$la = outreach_lines_all($full);
+ok(count($la) === 6, 'the platform post built ' . count($la) . ' lines, not 6');
+ok(strpos($la[0], '900 stakers holding 40,716 NFTs') !== false,
+   'stakers and NFTs are not one sentence: ' . $la[0]);
+ok(strpos($la[1], '42 projects across 319 collections') !== false,
+   'the scale line is wrong: ' . $la[1]);
+ok(strpos(implode(' ', $la), 'reward payouts') !== false, 'the payout count is missing');
+
+/* A nought is an argument against turning up, so it is left out; an
+   unreadable figure is left out for the opposite reason, not known true. */
+$zero = $full; $zero['raids'] = ostat_all(0); $zero['realms'] = ostat_all(0);
+$lz = implode(' ', outreach_lines_all($zero));
+ok(strpos($lz, 'raids') === false && strpos($lz, 'Realms') === false,
+   'a nought is printed into the post as "0 raids won"');
+$bad = $full; $bad['payouts'] = ostat_all(null);
+ok(strpos(implode(' ', outreach_lines_all($bad)), 'payouts') === false,
+   'a failed read is printed as a claim');
+ok(outreach_lines_all(array()) === array(), 'an empty stats set still produces lines');
+
+/* NO CURRENCY ARGUMENT, which is the signature saying there is no platform
+   currency to name -- the reason the summed-points line does not exist. */
+$rf = new ReflectionFunction('outreach_lines_all');
+ok($rf->getNumberOfParameters() === 1,
+   'outreach_lines_all() takes a currency, which implies a platform currency that does '
+ . 'not exist');
+
+/* ---- and the page actually uses it ---- */
+ok(strpos($OUT, 'outreach_stats_all($conn)') !== false,
+   'the page never reads the platform figures, so no project picked is still a dead end');
+ok(strpos($OUT, 'outreach_lines_all($out_stats)') !== false,
+   'the page never builds the platform lines');
+ok(strpos($OUT, 'Your favorite project is still live on Skulliance') !== false,
+   'the platform post has no heading of its own');
+/*
+ * ONE BUILDER, TWO MODES. The JS composed both headings out of the project
+ * name, which there is nothing to compose from platform-wide, so the
+ * finished strings are passed in. A second builder would drift from the
+ * first on the next copy change.
+ */
+ok(strpos($OUT, "'**' + P.heading + '**") !== false,
+   'the post builder composes its heading from a project name again, which platform-wide '
+ . 'has none');
+ok(strpos($OUT, 'P.name') === false, 'the builder still reads P.name, which is not sent');
+ok(substr_count($OUT, 'function build()') === 1,
+   'there is a second post builder; the two will drift on the next copy change');
 
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall outreach checks passed\n");
 exit($fail ? 1 : 0);

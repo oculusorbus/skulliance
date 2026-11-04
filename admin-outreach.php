@@ -32,7 +32,30 @@ $OUT_PROJECTS = adm_projects($conn);
 $out_id = isset($_GET['project']) ? (int)$_GET['project'] : 0;
 if ($out_id && !isset($OUT_PROJECTS[$out_id])) $out_id = 0;
 $out_p = $out_id ? $OUT_PROJECTS[$out_id] : null;
-$out_stats = $out_id ? outreach_stats($conn, $out_id) : array();
+/*
+ * NO PROJECT PICKED IS A MODE, NOT A DEAD END.
+ *
+ * The page sat on "pick a project to read its numbers", which is the
+ * state it is in every time it opens -- and the post it builds works just
+ * as well about the whole platform, for the owner's own channels, where
+ * there is no partner to name. Same structure, same games list, the
+ * platform's own figures.
+ *
+ * The figures are NOT the per-project ones summed. See
+ * outreach_stats_all(): adding forty currencies together produces a number
+ * that is not a quantity of anything.
+ */
+$out_all   = !$out_id;
+$out_stats = $out_all ? outreach_stats_all($conn) : outreach_stats($conn, $out_id);
+$out_lines = $out_all ? outreach_lines_all($out_stats)
+                      : outreach_lines($out_stats, $out_p['currency']);
+/* What the post calls itself, and what it calls the figures. Platform-wide
+   it cannot name a project, so it names the reader's instead -- whoever is
+   reading has one, and it is the thing that brought them here. */
+$out_head  = $out_all ? 'Your favorite project is still live on Skulliance'
+                      : $out_p['name'] . ' is still live on Skulliance';
+$out_shead = $out_all ? 'What Skulliance has done so far'
+                      : 'What ' . $out_p['name'] . ' has done here so far';
 
 /*
  * WHAT IS HERE NOW, READ OFF THE LAUNCHPAD RATHER THAN TYPED.
@@ -134,14 +157,10 @@ admin_chrome('outreach');
 }());
 </script>
 
-<?php if (!$out_p): ?>
-  <p class="adm-note">Pick a project to read its numbers.</p>
-<?php else: ?>
-
 <div class="ou-wrap">
   <div>
     <div class="adm-card">
-      <h3><?php echo htmlspecialchars($out_p['name']); ?></h3>
+      <h3><?php echo htmlspecialchars($out_all ? 'The whole platform' : $out_p['name']); ?></h3>
       <?php /* EVERY FIGURE, INCLUDING THE ONES THE POST WILL DROP. The post
                leaves out noughts because "0 raids won" argues against
                turning up -- but the operator still has to see that it is a
@@ -161,9 +180,14 @@ admin_chrome('outreach');
         </li>
         <?php endforeach; ?>
       </ul>
+      <?php if ($out_all): ?>
+      <p class="adm-note" style="margin-top:10px">Platform-wide, for your own channels.
+        Pick a project above to make it about one community instead.</p>
+      <?php else: ?>
       <p class="adm-note" style="margin-top:10px">Ticker <b><?php
         echo htmlspecialchars($out_p['currency']); ?></b> &middot;
         <a href="admin-flyers.php?project=<?php echo (int)$out_id; ?>">build the flyer</a></p>
+      <?php endif; ?>
     </div>
 
     <div class="adm-card">
@@ -198,8 +222,10 @@ admin_chrome('outreach');
     <h3>The post</h3>
     <div class="adm-form">
       <label>Opening
-        <input type="text" id="ou-open" value="Your <?php
-          echo htmlspecialchars($out_p['currency']); ?> has been earning this whole time, and the platform around it has grown a long way past staking."></label>
+        <input type="text" id="ou-open" value="<?php echo htmlspecialchars($out_all
+          ? 'Your NFTs have been earning this whole time, and the platform around them has grown a long way past staking.'
+          : 'Your ' . $out_p['currency'] . ' has been earning this whole time, and the platform around it has grown a long way past staking.',
+          ENT_QUOTES); ?>"></label>
       <label>Closing
         <input type="text" id="ou-close" value="Nothing to set up again. Sign in with the same wallet and everything is where you left it."></label>
     </div>
@@ -219,10 +245,14 @@ admin_chrome('outreach');
 
 <script>
 (function () {
+	/* HEADINGS, NOT A NAME. The builder used to compose both headings out
+	   of the project name, which has nothing to compose from platform-wide.
+	   Passing the finished strings keeps one builder for both modes. */
 	var P = <?php echo json_encode(array(
-		'name' => $out_p['name'], 'currency' => $out_p['currency'],
-		'lines' => outreach_lines($out_stats, $out_p['currency']),
-		'games' => $OUT_GAMES,
+		'heading'   => $out_head,
+		'statsHead' => $out_shead,
+		'lines'     => $out_lines,
+		'games'     => $OUT_GAMES,
 	), JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE); ?>;
 	var LIMIT = 2000;
 	var $ = function (id) { return document.getElementById(id); };
@@ -233,11 +263,11 @@ admin_chrome('outreach');
 			var g = P.games[+c.getAttribute('data-g')];
 			if (g) picked.push(g.emoji + '  **' + g.name + '** — ' + g.blurb);
 		});
-		var t = '**' + P.name + ' is still live on Skulliance**\n\n' + $('ou-open').value + '\n';
-		/* The community's own numbers first. They are the only part of this
-		   a reader cannot dismiss, and the post is weaker without them. */
+		var t = '**' + P.heading + '**\n\n' + $('ou-open').value + '\n';
+		/* The numbers first. They are the only part of this a reader cannot
+		   dismiss, and the post is weaker without them. */
 		if (P.lines.length) {
-			t += '\n**What ' + P.name + ' has done here so far**\n';
+			t += '\n**' + P.statsHead + '**\n';
 			P.lines.forEach(function (l) { t += '• ' + l + '\n'; });
 		}
 		if (picked.length) {
@@ -311,7 +341,6 @@ admin_chrome('outreach');
 	paint(true);
 }());
 </script>
-<?php endif; ?>
 
 <?php /* admin_chrome() opens two divs and every admin page closes them the
          same way; there is no closer function. */ ?>
