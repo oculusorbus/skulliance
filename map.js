@@ -287,6 +287,9 @@ const NS = 'http://www.w3.org/2000/svg';
 function seaLayers(world) {
     const SHADE = ['rgba(120,200,230,0.26)', 'rgba(32,84,116,0.55)',
                    'rgba(22,62,92,0.5)',     'rgba(16,48,74,0.42)'];
+    /* One turn of his sine and one turn of his mod() are the same 2.5s,
+       so the foam and the waves breathe on one clock. */
+    const PERIOD = 2.5;
     const layers = [];
     if (!world) return layers;
     if (world.shores) {
@@ -295,12 +298,48 @@ function seaLayers(world) {
             for (const ring of world.shores[b].rings) layers.push({ ring: ring, fill: fill, band: b });
         }
     }
+    /*
+     * AND THE FOAM BREATHES BY CROSS-FADING, not by brightening.
+     *
+     * His foam band is d < 2.2 + sin(TIME * 2.5) * 1.1, so its EDGE
+     * moves between 1.1 and 3.3px. Both ends are contoured here: the
+     * 1.1 one is the innermost shelf band and is always on, and this is
+     * the 3.3 one, faded in and out over it. Animating one band's
+     * opacity would only make the same rim brighter and dimmer, which
+     * is not what water does at a shore.
+     */
+    if (world.foamOut) {
+        for (const ring of world.foamOut.rings) {
+            layers.push({ ring: ring, fill: 'rgba(150,215,235,0.30)', cls: 'sea-foam', foam: true });
+        }
+    }
+    /*
+     * THE WAVES TAKE TURNS, OUTERMOST FIRST.
+     *
+     * His shader sweeps rings shoreward with mod(d + TIME * speed,
+     * spacing). Six fixed contours cannot move, so instead each one is
+     * lit in turn and the LIT ONE moves: the delay is -(i/N) of the
+     * period with i counting outward, which puts the outermost ring
+     * furthest through its cycle, so it peaks first and the highlight
+     * runs inward to the shore. Reverse the sign and the waves roll out
+     * to sea, which is the tell that this is the line that matters.
+     */
+    if (world.waves) {
+        const N = world.waves.length;
+        for (let i = 0; i < N; i++) {
+            for (const ring of world.waves[i].rings) {
+                layers.push({ ring: ring, fill: 'none', stroke: 'rgba(170,225,245,0.55)',
+                    width: 1.1, cls: 'sea-wave', wave: i,
+                    delay: (-(i / N) * PERIOD).toFixed(3) + 's' });
+            }
+        }
+    }
     /* EVERY SHORELINE, not one. The terrain gives several masses and the
        occasional inland sea, and each is its own ring. */
     if (world.coast) {
         for (const ring of world.coast) {
             layers.push({ ring: ring, fill: 'rgba(18,54,82,0.95)',
-                          stroke: 'rgba(150,215,240,0.42)', band: -1 });
+                          stroke: 'rgba(150,215,240,0.42)', width: 1.6, band: -1 });
         }
     }
     return layers;
@@ -508,10 +547,15 @@ function renderMap() {
             const attrs = { d: toPath(L.ring), fill: L.fill };
             if (L.stroke) {
                 attrs.stroke = L.stroke;
-                attrs['stroke-width'] = '1.6';
+                attrs['stroke-width'] = String(L.width || 1.6);
                 attrs['stroke-linejoin'] = 'round';
             }
-            svg.appendChild(svgEl('path', attrs));
+            if (L.cls) attrs.class = L.cls;
+            const el = svgEl('path', attrs);
+            /* Per-ring phase. The keyframes live in map.css behind a
+               prefers-reduced-motion guard; this only says WHEN. */
+            if (L.delay) el.style.animationDelay = L.delay;
+            svg.appendChild(el);
         }
     }
 

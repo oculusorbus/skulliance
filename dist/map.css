@@ -232,3 +232,40 @@
     border-color: rgba(255,255,255,0.1);
     color: rgba(232,238,244,0.4);
 }
+
+/*
+ * THE WATER MOVES (map.js seaLayers, map-world.js mwShores).
+ *
+ * The shore bands are contours of a distance field, after Kimo's
+ * "2D water shorelines with distance fields". In his Godot shader the
+ * foam and the waves are two lines, because a shader has the distance
+ * at every pixel every frame. Here they are fixed geometry, so the
+ * motion has to come from opacity: six wave contours take turns being
+ * lit, and a wider foam contour fades in over a narrower one so the
+ * foam EDGE moves rather than just brightening.
+ *
+ * BEHIND prefers-reduced-motion. Everything below is decoration on a
+ * page people use to run raids; the map has to be completely readable
+ * standing still, so the static opacities are declared first and the
+ * animation only ever overrides them.
+ */
+#container .sea-wave { opacity: 0.20; }
+#container .sea-foam { opacity: 0.50; }
+
+@media (prefers-reduced-motion: no-preference) {
+    @keyframes skMapWaveRun {
+        0%   { opacity: 0; }
+        12%  { opacity: 0.85; }
+        42%  { opacity: 0; }
+        100% { opacity: 0; }
+    }
+    @keyframes skMapFoamBreathe {
+        0%, 100% { opacity: 0.12; }
+        50%      { opacity: 0.85; }
+    }
+    /* 2.5s is his: one turn of sin(TIME * 2.5), and 11px of wave spacing
+       at 4.4px a second. The per-ring animation-delay that makes the
+       highlight travel shoreward is set in map.js. */
+    #container .sea-wave { animation: skMapWaveRun 2.5s linear infinite; }
+    #container .sea-foam { animation: skMapFoamBreathe 2.5s ease-in-out infinite; }
+}

@@ -631,6 +631,38 @@ function mwDistance(land, gw, gh) {
 }
 
 /**
+ * Drop points closer together than minGap, keeping the shape.
+ *
+ * Chaikin quadruples the points every two passes, and on a smooth
+ * contour most of them land within a pixel of each other: invisible on
+ * screen, but every one is about fifteen characters of path data in the
+ * document. The sea came to 910KB of `d` attributes, which is a parse
+ * cost on a phone long before it is a paint cost.
+ *
+ * ONLY THE SEA USES THIS. The coastline and the territory outlines are
+ * SHARED geometry -- a territory's shoreline is a slice of the coast
+ * ring and a border is one curve used by both neighbours -- and thinning
+ * them independently is precisely how the notches came back last time.
+ * The shore bands belong to nobody and butt against nothing.
+ */
+function mwThin(pts, minGap) {
+	if (pts.length < 8) return pts;
+	const g2 = minGap * minGap;
+	const out = [pts[0]];
+	for (let i = 1; i < pts.length; i++) {
+		const a = out[out.length - 1], b = pts[i];
+		const dx = b.x - a.x, dy = b.y - a.y;
+		if (dx * dx + dy * dy >= g2) out.push(b);
+	}
+	/* A closed ring whose last kept point crowds the first just closes. */
+	if (out.length > 2) {
+		const a = out[out.length - 1], b = out[0];
+		if ((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) < g2) out.pop();
+	}
+	return out.length >= 4 ? out : pts;
+}
+
+/**
  * The shallows: nested contours of the distance field, biggest last.
  * Separate from mwWorld so the harness can measure a band's distance
  * from the land on a mask it built itself.
@@ -694,15 +726,72 @@ function mwShores(land, gw, gh, cs, ox, oy, seed, smoothN, opts) {
 			}
 		}
 	}
-	const shores = bandAt.map(t => {
+	const contour = (t, sm, minPts) => {
 		const m = new Int16Array(gw * gh);
 		for (let k = 0; k < dist.length; k++) m[k] = dist[k] <= t ? 0 : -1;
-		return {
-			d: t,
-			rings: mwTrace(m, 0, gw, gh, cs, ox, oy).map(r => mwSmooth(mwDedupe(r), smoothN))
-		};
-	});
-	return shores;
+		let rings = mwTrace(m, 0, gw, gh, cs, ox, oy);
+		if (minPts) rings = rings.filter(r => r.length >= minPts);
+		const gap = cs * 0.25;
+		return { d: t, rings: rings.map(r =>
+			mwThin(mwSmooth(mwDedupe(r), sm === undefined ? smoothN : sm), gap)) };
+	};
+
+	/*
+	 * THE MOVING HALF OF THE TECHNIQUE.
+	 *
+	 * In his Godot shader both of these are one line, because a shader
+	 * gets the distance at every pixel every frame: foam is
+	 * `d < 2.2 + sin(TIME * 2.5) * 1.1`, and the waves are
+	 * `mod(d + TIME * 4.4, 11)`, which sweeps rings shoreward forever.
+	 *
+	 * There is no shader here -- the map is SVG in the DOM -- so both are
+	 * DISCRETISED INTO GEOMETRY AND ANIMATED BY OPACITY. The foam is the
+	 * two ends of his sine, 1.1px and 3.3px, cross-faded, so the foam
+	 * edge really does move in and out rather than just brightening. The
+	 * waves are six contours spanning the 4-20px his rings travel
+	 * through, lit in turn from the outermost inwards; `mod` over a
+	 * continuous field becomes six paths taking turns, which at a 2.5s
+	 * period is the same motion a reader sees.
+	 *
+	 * SIX IS A COST DECISION. Each contour is real path data in the
+	 * document, not a line of shader, so this is the knob to turn if the
+	 * map ever gets heavy on a phone.
+	 */
+	const foamAt = opts.foamBand === undefined ? 3.3 * px * SHORE : opts.foamBand;
+	/*
+	 * THE SURF IS TIGHTER THAN HIS, AND DELIBERATELY SO.
+	 *
+	 * His wave rings travel the whole 4-20px shelf, which works because
+	 * on his map the shelf IS the water you look at. Here the bands do a
+	 * second job they do not do for him: they are read as topography,
+	 * the graduated shallows going down to deep water, and that is worth
+	 * keeping still. Animating across the full shelf made the whole sea
+	 * move and the depth reading went with it.
+	 *
+	 * So the static shelf stays exactly as it was and the motion is
+	 * confined to a narrow surf zone at the shore -- 0.6 to 3.6 in his
+	 * units against his 4 to 20, which is inside what he gives to foam
+	 * alone. The waves break against the coast; the shelf underneath
+	 * them does not move.
+	 */
+	const waveN = opts.waveRings === undefined ? 5 : opts.waveRings;
+	const waveLo = (opts.waveLo === undefined ? 0.6 : opts.waveLo) * px;
+	const waveHi = (opts.waveHi === undefined ? 3.6 : opts.waveHi) * px;
+	/*
+	 * THE WAVES ARE SMOOTHED LESS, AND DROP THE SMALL RINGS.
+	 *
+	 * Each Chaikin pass doubles the points, and six wave contours at the
+	 * coastline's own three passes came to 36,720 points of path data --
+	 * more than the whole rest of the sea put together, in the document,
+	 * on a phone. A wave is a 1px stroke in open water: two passes is
+	 * smooth enough to read, and a contour ring under 24 raw points is a
+	 * speck whose wave nobody can see. Measured below.
+	 */
+	const waves = [];
+	for (let i = 0; i < waveN; i++) {
+		waves.push(contour(waveLo + (waveHi - waveLo) * (i / (waveN - 1)), 2, 24));
+	}
+	return { bands: bandAt.map(t => contour(t)), foamOut: contour(foamAt), waves: waves };
 }
 
 /** A traced vertex, keyed the way mwTrace keys them, so the two agree. */
@@ -1103,7 +1192,7 @@ function mwWorld(factions, w, h, opts) {
 	const coastRaw = mwTrace(landMask, 0, gw, gh, cs, ox, oy);
 	const coastRings = coastRaw.map(r => mwSmooth(mwDedupe(r), smoothN));
 
-	const shores = mwShores(land, gw, gh, cs, ox, oy, seed, smoothN, opts);
+	const shoreSet = mwShores(land, gw, gh, cs, ox, oy, seed, smoothN, opts);
 
 	/* Which coast ring a given grid vertex sits on, so a junction is
 	   matched against its own shoreline and never a lake's. */
@@ -1193,7 +1282,8 @@ function mwWorld(factions, w, h, opts) {
 	}
 	if (!regions.length) return null;
 
-	return { coast: coastRings, shores: shores, regions: regions, width: w, height: h,
+	return { coast: coastRings, shores: shoreSet.bands, foamOut: shoreSet.foamOut,
+	         waves: shoreSet.waves, regions: regions, width: w, height: h,
 	         masses: masses.length };
 }
 
@@ -1201,6 +1291,6 @@ function mwWorld(factions, w, h, opts) {
 if (typeof module !== 'undefined' && module.exports) {
 	module.exports = { mwHash, mwRng, mwNoise, mwField, mwSeaLevel, mwFloodSpecks,
 	                   mwFillPonds, mwDistance, mwShores, mwInside, mwTrace, mwRingSides, mwSeams, mwMajority, mwAbsorbFragments,
-	                   mwDedupe, mwDedupeOpen,
+	                   mwDedupe, mwDedupeOpen, mwThin,
 	                   mwSmooth, mwSmoothOpen, mwWorld };
 }
