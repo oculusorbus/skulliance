@@ -295,7 +295,23 @@ function mwInside(px, py, poly) {
  * ---------------------------------------------------------------------- */
 function mwTrace(owner, id, gw, gh, cs, ox, oy) {
 	const key = (x, y) => Math.round(x) + ',' + Math.round(y);
+	/*
+	 * A VERTEX CAN HAVE TWO EDGES LEAVING IT, so this is a map to a LIST.
+	 *
+	 * Where land pinches -- two cells meeting only at a corner, which a
+	 * noise field produces constantly -- the boundary passes through that
+	 * corner twice. Keyed by vertex alone, the second edge overwrote the
+	 * first and was silently dropped, so the ring that came out was not
+	 * the outline of anything: measured at 4,422px2 of a 16-faction world
+	 * traced wrong, which no amount of careful smoothing downstream can
+	 * put back.
+	 */
 	const edges = new Map();
+	const push = (x, y, nx, ny) => {
+		const k = key(x, y), e = { x: x, y: y, nx: nx, ny: ny };
+		const at = edges.get(k);
+		if (at) at.push(e); else edges.set(k, [e]);
+	};
 	const has = (i, j) => i >= 0 && j >= 0 && i < gw && j < gh && owner[j * gw + i] === id;
 
 	for (let j = 0; j < gh; j++) {
@@ -304,13 +320,43 @@ function mwTrace(owner, id, gw, gh, cs, ox, oy) {
 			const x0 = ox + i * cs, y0 = oy + j * cs, x1 = x0 + cs, y1 = y0 + cs;
 			/* Clockwise in screen coordinates (y down), so the ring comes
 			   out consistently wound whichever cells are present. */
-			if (!has(i, j - 1)) edges.set(key(x0, y0), { x: x0, y: y0, nx: x1, ny: y0 });
-			if (!has(i + 1, j)) edges.set(key(x1, y0), { x: x1, y: y0, nx: x1, ny: y1 });
-			if (!has(i, j + 1)) edges.set(key(x1, y1), { x: x1, y: y1, nx: x0, ny: y1 });
-			if (!has(i - 1, j)) edges.set(key(x0, y1), { x: x0, y: y1, nx: x0, ny: y0 });
+			if (!has(i, j - 1)) push(x0, y0, x1, y0);
+			if (!has(i + 1, j)) push(x1, y0, x1, y1);
+			if (!has(i, j + 1)) push(x1, y1, x0, y1);
+			if (!has(i - 1, j)) push(x0, y1, x0, y0);
 		}
 	}
 	if (!edges.size) return [];
+
+	/*
+	 * AT A PINCH, TAKE THE SHARPEST RIGHT TURN.
+	 *
+	 * Arriving at a corner where two edges leave, one continues around
+	 * this blob and the other jumps across to the blob touching it
+	 * diagonally. The rest of the file treats cells as 4-connected (the
+	 * flood fills, the fragment absorber), so the tracer has to agree:
+	 * turning right keeps the land on the right-hand side and closes this
+	 * blob as its own ring, which is what 4-connectivity means. Turning
+	 * left would staple two diagonally-touching blobs into one ring.
+	 */
+	const take = (k, dx, dy) => {
+		const arr = edges.get(k);
+		if (!arr || !arr.length) return null;
+		let bi = 0;
+		if (arr.length > 1 && (dx || dy)) {
+			let best = -1;
+			for (let i = 0; i < arr.length; i++) {
+				const ex = Math.sign(arr[i].nx - arr[i].x), ey = Math.sign(arr[i].ny - arr[i].y);
+				const cross = dx * ey - dy * ex;
+				const score = cross > 0 ? 2 : (dx * ex + dy * ey > 0 ? 1 : 0);
+				if (score > best) { best = score; bi = i; }
+			}
+		}
+		const e = arr[bi];
+		arr.splice(bi, 1);
+		if (!arr.length) edges.delete(k);
+		return e;
+	};
 
 	/*
 	 * EVERY RING, LARGEST FIRST -- not just the biggest one.
@@ -322,17 +368,21 @@ function mwTrace(owner, id, gw, gh, cs, ox, oy) {
 	 * want a body take [0]; callers drawing the land take all of them.
 	 */
 	const rings = [];
-	while (edges.size) {
-		const first = edges.values().next().value;
+	let left = 0;
+	for (const arr of edges.values()) left += arr.length;
+	while (left > 0) {
 		const ring = [];
-		let cur = first;
+		let cur = take(edges.keys().next().value, 0, 0);
+		if (cur) left--;
 		/* Bounded: every step consumes an edge, and there are finitely
 		   many. A malformed grid cannot spin this forever. */
-		let guard = edges.size + 1;
+		let guard = left + 2;
 		while (cur && guard-- > 0) {
 			ring.push({ x: cur.x, y: cur.y });
-			edges.delete(key(cur.x, cur.y));
-			cur = edges.get(key(cur.nx, cur.ny));
+			const nxt = take(key(cur.nx, cur.ny),
+				Math.sign(cur.nx - cur.x), Math.sign(cur.ny - cur.y));
+			if (nxt) left--;
+			cur = nxt;
 		}
 		if (ring.length >= 4) rings.push(ring);
 	}
@@ -503,86 +553,6 @@ function mwAbsorbFragments(owner, gw, gh, minCells) {
 	return moved;
 }
 
-/* ---------------------------------------------------------------------- *
- * WHERE A FACTION MEETS ANOTHER FACTION -- and only there.
- *
- * A region's outline is partly coast and partly border, and drawing the
- * whole thing meant every seaward edge carried the shoreline stroke AND
- * the faction's dashed line AND a glow, all on the same path. Reported as
- * "a white boundary line wrapping the terrain, garbled between the
- * factions", which is exactly what three strokes on one line look like.
- *
- * Real maps do not do this. The coast is the coast; a national border is
- * drawn inland and stops when it reaches the sea. So the edges whose
- * neighbour is ANOTHER FACTION are chained separately into open
- * polylines, and the seaward ones are left to the shoreline.
- *
- * OPEN CHAINS, NOT RINGS. A border runs from coast to coast and does not
- * close, so these must never be wrapped -- joining the ends would draw a
- * line straight across somebody's territory.
- * ---------------------------------------------------------------------- */
-function mwBorders(owner, id, gw, gh, cs, cellH, ox, oy) {
-	const key = (x, y) => Math.round(x) + ',' + Math.round(y);
-	const at = (i, j) => (i < 0 || j < 0 || i >= gw || j >= gh) ? -1 : owner[j * gw + i];
-
-	const segs = [];
-	for (let j = 0; j < gh; j++) {
-		for (let i = 0; i < gw; i++) {
-			if (owner[j * gw + i] !== id) continue;
-			const x0 = ox + i * cs, y0 = oy + j * cellH, x1 = x0 + cs, y1 = y0 + cellH;
-			/* Only sides facing a DIFFERENT, OWNED cell. -1 is sea and is
-			   the shoreline's business, not a border. */
-			if (at(i, j - 1) >= 0 && at(i, j - 1) !== id) segs.push([x0, y0, x1, y0]);
-			if (at(i + 1, j) >= 0 && at(i + 1, j) !== id) segs.push([x1, y0, x1, y1]);
-			if (at(i, j + 1) >= 0 && at(i, j + 1) !== id) segs.push([x1, y1, x0, y1]);
-			if (at(i - 1, j) >= 0 && at(i - 1, j) !== id) segs.push([x0, y1, x0, y0]);
-		}
-	}
-	if (!segs.length) return [];
-
-	/* Chain head-to-tail. Undirected, because a border traced from one
-	   side runs the opposite way to the same border from the other. */
-	const ends = new Map();
-	const push = (k, s) => { if (!ends.has(k)) ends.set(k, []); ends.get(k).push(s); };
-	for (const s of segs) {
-		s.used = false;
-		push(key(s[0], s[1]), s);
-		push(key(s[2], s[3]), s);
-	}
-	const step = (k, from) => {
-		for (const s of (ends.get(k) || [])) {
-			if (s.used || s === from) continue;
-			return s;
-		}
-		return null;
-	};
-
-	const lines = [];
-	for (const start of segs) {
-		if (start.used) continue;
-		start.used = true;
-		let line = [{ x: start[0], y: start[1] }, { x: start[2], y: start[3] }];
-		/* Forward, then backward from the original head. */
-		for (const dir of [1, 0]) {
-			let cur = start;
-			let guard = segs.length + 1;
-			while (guard-- > 0) {
-				const tipX = dir ? line[line.length - 1].x : line[0].x;
-				const tipY = dir ? line[line.length - 1].y : line[0].y;
-				const nxt = step(key(tipX, tipY), cur);
-				if (!nxt || nxt.used) break;
-				nxt.used = true;
-				const a = { x: nxt[0], y: nxt[1] }, b = { x: nxt[2], y: nxt[3] };
-				const joinsA = (Math.round(a.x) === Math.round(tipX) && Math.round(a.y) === Math.round(tipY));
-				const far = joinsA ? b : a;
-				if (dir) line.push(far); else line.unshift(far);
-				cur = nxt;
-			}
-		}
-		if (line.length >= 3) lines.push(line);
-	}
-	return lines;
-}
 
 /** Chaikin for an OPEN chain: the ends are kept exactly where they are, so
  *  a border still meets the coast it started from. */
@@ -616,6 +586,135 @@ function mwDedupeOpen(pts) {
 }
 
 /** Chaikin corner cutting. Local copy for the same reason as the RNG. */
+/** A traced vertex, keyed the way mwTrace keys them, so the two agree. */
+function mwVKey(p) { return Math.round(p.x) + ',' + Math.round(p.y); }
+
+/**
+ * WHO IS ON THE OTHER SIDE OF EACH EDGE OF A TRACED RING.
+ *
+ * A ring is a loop of unit cell edges. Each one has this territory on the
+ * inside and something else on the outside: another faction, or the sea
+ * (-1, which is also what falls off the grid). That "something else" is
+ * what decides whether a stretch of outline is coast or border, and where
+ * one stretch ends and the next begins.
+ *
+ * Returns one label per EDGE: sides[i] is what lies across ring[i]->ring[i+1].
+ */
+function mwRingSides(ring, owner, id, gw, gh, cs, ox, oy) {
+	const n = ring.length;
+	const sides = new Array(n);
+	const at = (i, j) => (i < 0 || j < 0 || i >= gw || j >= gh) ? -1 : owner[j * gw + i];
+	for (let e = 0; e < n; e++) {
+		const a = ring[e], b = ring[(e + 1) % n];
+		const gx = Math.round((Math.min(a.x, b.x) - ox) / cs);
+		const gy = Math.round((Math.min(a.y, b.y) - oy) / cs);
+		let o0, o1;
+		if (Math.abs(a.y - b.y) < 1e-6) { o0 = at(gx, gy - 1); o1 = at(gx, gy); }
+		else                            { o0 = at(gx - 1, gy); o1 = at(gx, gy); }
+		sides[e] = (o0 === id) ? o1 : o0;
+	}
+	return sides;
+}
+
+/**
+ * ONE SEAM, SMOOTHED ONCE, SHARED BY EVERYTHING THAT TOUCHES IT.
+ *
+ * REPORTED AS "triangular dips where territories meet each other, because
+ * of rounded edges leading up to the boundary instead of a cohesive
+ * shoreline that is split by the dividing line."
+ *
+ * The cause was three independent smoothings of geometry that is supposed
+ * to be the SAME geometry. Every region ring was rounded as its own closed
+ * loop and the coastline was rounded as another, so at a triple point --
+ * where two territories and the sea meet -- Chaikin cut the corner off
+ * each territory separately, pulling both fills back from the junction and
+ * leaving a notch of bare land between them. Measured: 4.16% of the land
+ * was covered by no territory fill at all.
+ *
+ * So the outline is cut at its JUNCTIONS first -- the vertices where the
+ * thing on the other side changes -- and each stretch between two
+ * junctions is smoothed as an OPEN polyline, which keeps its endpoints.
+ * Two neighbours walk their shared stretch in opposite directions over the
+ * same vertices and Chaikin is symmetric, so they get the identical curve
+ * and the fills meet exactly. The coastline is cut at the same junctions,
+ * so a shoreline arc is the same curve as the region arc beneath it: one
+ * cohesive shoreline, split by the dividing line, which is what was asked
+ * for.
+ *
+ * `pinned` carries junctions found on OTHER rings. A triple point is a
+ * corner for the two territories but not for the coast, whose label does
+ * not change there -- without it the coastline would round straight
+ * through the junction the territories had stopped at.
+ *
+ * Returns the closed fill outline, and the stretches themselves so the
+ * faction-to-faction ones can be drawn as borders without being rebuilt
+ * from scratch and landing somewhere fractionally different.
+ */
+function mwSeams(ring, sides, pinned, smooth, coast) {
+	const n = ring.length;
+	const cut = [];
+	for (let i = 0; i < n; i++) {
+		if (sides[(i - 1 + n) % n] !== sides[i] || (pinned && pinned.has(mwVKey(ring[i])))) cut.push(i);
+	}
+	/* A LONE CUT IS NOT A SEAM. One pin and no side change means the
+	   whole outline is a single stretch; slicing it at one point would
+	   collapse the piece to nothing. */
+	if (cut.length === 1) cut.length = 0;
+	if (!cut.length) {
+		/* No junction anywhere on this ring: an island whose whole outline
+		   is coast, or an enclave wholly inside one neighbour. Rounded as
+		   a closed loop, which is right -- there is no seam to line up
+		   with and nothing to pin. */
+		const whole = mwSmooth(mwDedupe(ring), smooth);
+		return {
+			poly: whole,
+			runs: sides[0] >= 0 ? [{ side: sides[0], pts: whole.concat([whole[0]]) }] : []
+		};
+	}
+	const poly = [], runs = [];
+	for (let c = 0; c < cut.length; c++) {
+		const a = cut[c], b = cut[(c + 1) % cut.length];
+		const h0 = coast && coast.anchor(ring[a]), h1 = coast && coast.anchor(ring[b]);
+		const raw = [ring[a]];
+		let i = a;
+		do { i = (i + 1) % n; raw.push(ring[i]); } while (i !== b);
+
+		/*
+		 * A SHORELINE STRETCH IS CUT FROM THE COASTLINE ITSELF rather than
+		 * smoothed again from the grid. The coastline is already drawn,
+		 * and a second smoothing of the same cells lands in a slightly
+		 * different place -- which is the notch.
+		 *
+		 * ONLY WHERE BOTH ENDS COME ASHORE ON THE SAME COAST RING, so a
+		 * stretch is never spliced out of some other island's outline.
+		 * The lake case -- a self-touching outline that runs out to an
+		 * inland lake, round it and back -- is handled in slice() itself,
+		 * where the two ends land on the same point.
+		 */
+		/* The ring test is a PRECONDITION of slice(), not a tuning knob:
+		   given two ends on different rings it would hunt one ring for
+		   the other's index and return a whole garbage loop. Measured
+		   over sixty worlds it never once fires, which is the reason to
+		   state it rather than the reason to drop it. */
+		const sliceable = sides[a] === -1 && h0 && h1 && h0.ring === h1.ring;
+		let arc;
+		if (sliceable) {
+			arc = coast.slice(h0.ring, h0.idx, h1.idx, raw.length > 2);
+		} else {
+			/* Where this stretch starts or ends ON the coast, it starts or
+			   ends at the coastline's own point, so the border meets the
+			   shore exactly where the shore was split. */
+			if (h0) raw[0] = h0.pt;
+			if (h1) raw[raw.length - 1] = h1.pt;
+			arc = mwSmoothOpen(mwDedupeOpen(raw), smooth);
+		}
+		runs.push({ side: sides[a], pts: arc });
+		/* The last point of each arc is the first of the next. */
+		for (let k = 0; k < arc.length - 1; k++) poly.push(arc[k]);
+	}
+	return { poly: poly, runs: runs };
+}
+
 function mwSmooth(pts, n) {
 	let p = pts;
 	for (let k = 0; k < (n === undefined ? 2 : n); k++) {
@@ -847,21 +946,120 @@ function mwWorld(factions, w, h, opts) {
 	mwAbsorbFragments(owner, gw, gh,
 		Math.max(8, Math.round(gw * gh * (opts.minPiece === undefined ? 0.0035 : opts.minPiece))));
 
-	const dress = (ring) => mwSmooth(mwDedupe(ring), opts.smooth === undefined ? 3 : opts.smooth);
+	const smoothN = opts.smooth === undefined ? 3 : opts.smooth;
 
-	const regions = [];
+	/*
+	 * TRACED FIRST, DRESSED SECOND, because a junction found on one
+	 * region's outline has to be honoured on everybody else's -- including
+	 * the coastline, which cannot see it on its own.
+	 */
+	const traced = [];
+	const pinned = new Set();
 	for (let s = 0; s < seeds.length; s++) {
 		const rings = mwTrace(owner, s, gw, gh, cs, ox, oy);
 		if (!rings.length) continue;
+		const sided = rings.map(r => mwRingSides(r, owner, s, gw, gh, cs, ox, oy));
+		for (let r = 0; r < rings.length; r++) {
+			const ring = rings[r], sides = sided[r], n = ring.length;
+			for (let i = 0; i < n; i++) {
+				if (sides[(i - 1 + n) % n] !== sides[i]) pinned.add(mwVKey(ring[i]));
+			}
+		}
+		traced.push({ s: s, rings: rings, sided: sided });
+	}
+	if (!traced.length) return null;
+
+	/*
+	 * THE COASTLINE IS BUILT FIRST, AND IT KNOWS NOTHING ABOUT OWNERSHIP.
+	 *
+	 * It is traced off the land mask and rounded as a closed loop exactly
+	 * as it always was, so gaining a realm still cannot redraw it -- the
+	 * property the whole feature rests on, and the one the first attempt
+	 * at this fix broke by cutting the coastline at the junctions too.
+	 * The territories bend to the coastline instead: each one takes its
+	 * shoreline as a SLICE of these very points.
+	 */
+	const landMask = new Int16Array(gw * gh);
+	for (let k = 0; k < land.length; k++) landMask[k] = land[k] ? 0 : -1;
+	const coastRaw = mwTrace(landMask, 0, gw, gh, cs, ox, oy);
+	const coastRings = coastRaw.map(r => mwSmooth(mwDedupe(r), smoothN));
+
+	/* Which coast ring a given grid vertex sits on, so a junction is
+	   matched against its own shoreline and never a lake's. */
+	const coastRingOf = new Map();
+	for (let r = 0; r < coastRaw.length; r++) {
+		for (const pt of coastRaw[r]) coastRingOf.set(mwVKey(pt), r);
+	}
+
+	/*
+	 * WHERE A JUNCTION LANDS ON THE SMOOTHED COASTLINE.
+	 *
+	 * The junction is a grid corner; the coastline has been rounded away
+	 * from it by up to a pixel or so. Snapping to the nearest point ON the
+	 * coastline is what keeps the arithmetic exact: both neighbours snap
+	 * to the SAME point, so their shoreline slices butt together with no
+	 * gap, and the border between them starts from that same point.
+	 */
+	const anchorCache = new Map();
+	const coastHelper = {
+		anchor: (pt) => {
+			const key = mwVKey(pt);
+			if (anchorCache.has(key)) return anchorCache.get(key);
+			const r = coastRingOf.get(key);
+			let found = null;
+			if (r !== undefined) {
+				const cr = coastRings[r];
+				let best = Infinity, bi = 0;
+				for (let i = 0; i < cr.length; i++) {
+					const dx = cr[i].x - pt.x, dy = cr[i].y - pt.y;
+					const d = dx * dx + dy * dy;
+					if (d < best) { best = d; bi = i; }
+				}
+				found = { ring: r, idx: bi, pt: cr[bi] };
+			}
+			anchorCache.set(key, found);
+			return found;
+		},
+		/*
+		 * A STRETCH THAT STARTS AND ENDS AT THE SAME POINT IS THE WHOLE
+		 * RING, NOT AN EMPTY ONE.
+		 *
+		 * A territory holding a lake has a self-touching outline: it
+		 * reaches the lake at one pinched corner, goes all the way round
+		 * it, and comes back to that same corner. Both ends of that
+		 * stretch anchor to the same point on the lake's shoreline, and
+		 * walking "from i to i" with a while loop stops immediately and
+		 * returns a single point -- which deleted the lake and painted
+		 * 3,786px2 of open water in a faction's colour. The do-while
+		 * walks the loop. `full` is what separates that from the other
+		 * way two ends can coincide: two different junctions landing on
+		 * the same coastline point, where an empty stretch is right.
+		 */
+		slice: (r, i0, i1, full) => {
+			const cr = coastRings[r], out = [cr[i0]];
+			if (i0 === i1 && !full) return out;
+			let i = i0, guard = cr.length + 1;
+			do { i = (i + 1) % cr.length; out.push(cr[i]); } while (i !== i1 && guard-- > 0);
+			return out;
+		}
+	};
+
+	const regions = [];
+	for (const t of traced) {
 		let cells = 0;
-		for (let k = 0; k < owner.length; k++) if (owner[k] === s) cells++;
-		const polys = rings.map(dress);
-		/* Only the faction-to-faction edges get a drawn border; the rest
-		   of this region's outline is coast. See mwBorders(). */
-		const borders = mwBorders(owner, s, gw, gh, cs, cellH, ox, oy)
-			.map(l => mwSmoothOpen(mwDedupeOpen(l), opts.smooth === undefined ? 3 : opts.smooth));
+		for (let k = 0; k < owner.length; k++) if (owner[k] === t.s) cells++;
+		const polys = [], borders = [];
+		for (let r = 0; r < t.rings.length; r++) {
+			const d = mwSeams(t.rings[r], t.sided[r], pinned, smoothN, coastHelper);
+			polys.push(d.poly);
+			/* Only the faction-to-faction stretches get a drawn border.
+			   The rest of this outline is coast and is already stroked as
+			   the shoreline; stroking it again is the doubled line this
+			   replaced. */
+			for (const run of d.runs) if (run.side >= 0) borders.push(run.pts);
+		}
 		regions.push({
-			name: seeds[s].name,
+			name: seeds[t.s].name,
 			borders: borders,
 			/* poly is the BODY -- markers, the label and the bounding box
 			   all want one shape. polys is every piece, including the
@@ -869,16 +1067,10 @@ function mwWorld(factions, w, h, opts) {
 			poly: polys[0],
 			polys: polys,
 			cells: cells,
-			centre: { x: seeds[s].x, y: seeds[s].y }
+			centre: { x: seeds[t.s].x, y: seeds[t.s].y }
 		});
 	}
 	if (!regions.length) return null;
-
-	/* The land outline: every mass and every lake shore, for the coast
-	   stroke. Traced off the land mask with the same tracer. */
-	const landMask = new Int16Array(gw * gh);
-	for (let k = 0; k < land.length; k++) landMask[k] = land[k] ? 0 : -1;
-	const coastRings = mwTrace(landMask, 0, gw, gh, cs, ox, oy).map(dress);
 
 	return { coast: coastRings, regions: regions, width: w, height: h,
 	         masses: masses.length };
@@ -887,7 +1079,7 @@ function mwWorld(factions, w, h, opts) {
 /* Browser globals, and CommonJS for the harness. */
 if (typeof module !== 'undefined' && module.exports) {
 	module.exports = { mwHash, mwRng, mwNoise, mwField, mwSeaLevel, mwFloodSpecks,
-	                   mwFillPonds, mwInside, mwTrace, mwBorders, mwMajority, mwAbsorbFragments,
+	                   mwFillPonds, mwInside, mwTrace, mwRingSides, mwSeams, mwMajority, mwAbsorbFragments,
 	                   mwDedupe, mwDedupeOpen,
 	                   mwSmooth, mwSmoothOpen, mwWorld };
 }

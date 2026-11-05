@@ -393,6 +393,121 @@ console.log('\nthe grid is tidied before it is traced');
 	 + 'and is the most characterful thing on the map');
 }
 
+console.log('\nthe tracer does not lose an edge where land pinches');
+{
+	/*
+	 * TWO CELLS TOUCHING ONLY AT A CORNER ARE TWO BLOBS, NOT ONE.
+	 *
+	 * A noise field produces diagonal pinches constantly. The boundary
+	 * passes through that shared corner twice, and the tracer keyed its
+	 * edges by vertex alone in a Map -- so the second edge overwrote the
+	 * first and was silently DROPPED, and the ring that came out was not
+	 * the outline of anything.
+	 *
+	 * Arriving at such a corner the tracer now takes the sharpest RIGHT
+	 * turn, which keeps the land on the right and closes each blob as its
+	 * own ring. That is not a free choice: every flood fill in this file
+	 * treats cells as 4-connected, so a tracer that turned left and
+	 * stapled the two blobs into one ring would disagree with the
+	 * ownership it is drawing. Measured: right gives 2 rings of 4 points,
+	 * left gives 1 ring of 8.
+	 */
+	const pinch = new Int16Array(16).fill(-1);
+	pinch[5] = 0; pinch[10] = 0;        // (1,1) and (2,2), corner to corner
+	const pr = W.mwTrace(pinch, 0, 4, 4, 10, 0, 0);
+	ok(pr.length === 2, 'two diagonally-touching cells traced as ' + pr.length
+	 + ' ring(s) instead of 2, so the tracer disagrees with the 4-connected fills');
+	ok(pr.every(r => r.length === 4),
+	   'the pinched rings came out as ' + pr.map(r => r.length).join('/')
+	 + ' points instead of 4 and 4, so an edge was lost or two blobs were stapled together');
+
+	/* AND NOTHING IS DROPPED: both squares are still there. */
+	const tot = pr.reduce((a, r) => a + Math.abs(r.reduce((b, q, i) => {
+		const t = r[(i + 1) % r.length];
+		return b + (q.x * t.y - t.x * q.y);
+	}, 0) / 2), 0);
+	ok(Math.round(tot) === 200, 'the two 10x10 cells traced to ' + Math.round(tot)
+	 + 'px2 instead of 200, so an edge went missing at the pinch');
+}
+
+console.log('\nthe territories tile the land, with no notch where they meet');
+{
+	/*
+	 * REPORTED AS "triangular dips that occur when territories meet each
+	 * other because of rounded edges leading up to the boundary instead
+	 * of a cohesive shoreline that is split by the dividing line."
+	 *
+	 * Every region outline used to be rounded as its own closed loop, and
+	 * the coastline as another. At a triple point -- two territories and
+	 * the sea -- Chaikin cut the corner off each territory separately, so
+	 * both fills pulled back from the junction and left a notch of bare
+	 * land between them, which is what the owner circled.
+	 *
+	 * MEASURED AS AREA, because a notch is land that no territory covers.
+	 * Sum the signed area of the coastline rings (signed, so a lake
+	 * subtracts itself instead of being counted as more land -- the first
+	 * spelling of this took abs() of every ring, reported 4.16% and barely
+	 * moved when the bug was fixed, because it was measuring lakes).
+	 * Then sum the signed area of every territory piece. The difference is
+	 * land the map draws no owner for: 15,104px2 before, 0 after.
+	 */
+	const sarea = (p) => {
+		let a = 0;
+		for (let i = 0; i < p.length; i++) {
+			const q = p[i], r = p[(i + 1) % p.length];
+			a += q.x * r.y - r.x * q.y;
+		}
+		return a / 2;
+	};
+	/*
+	 * ACROSS THE WHOLE MATRIX, NOT SIX WORLDS OF ONE SHAPE.
+	 *
+	 * Six worlds at one canvas size said 0.00px2 while a sixty-world
+	 * sweep still had one at 3,786px2 -- a territory with a lake inside
+	 * it, painting the open water its own colour. That is twice now that
+	 * a too-narrow fixture has hidden one of these (the slivers needed 16
+	 * factions, not 8), so this runs the shapes the platform can actually
+	 * produce: 3 to 16 factions over four canvases.
+	 */
+	let worst = 0, worstAt = '', built = 0;
+	for (const n of [3, 5, 8, 12, 16]) {
+		for (const [w, h] of [[1860, 888], [1200, 700], [960, 520], [1400, 980]]) {
+			for (let k = 0; k < 3; k++) {
+				const F = LIVE_NAMES.slice(0, n).map((name, i) => ({
+					name: name + (k ? ' ' + k : ''), weight: 1 + ((i * 7 + k) % 6)
+				}));
+				const wd = W.mwWorld(F, w, h);
+				if (!wd) continue;
+				built++;
+				let coastArea = 0, heldArea = 0;
+				for (const r of wd.coast) coastArea += sarea(r);
+				for (const rg of wd.regions) for (const piece of rg.polys) heldArea += sarea(piece);
+				const gap = Math.abs(coastArea - heldArea);
+				if (gap > worst) { worst = gap; worstAt = n + ' factions at ' + w + 'x' + h + ' #' + k; }
+			}
+		}
+	}
+	ok(worst < 10, Math.round(worst) + 'px2 of land is covered by no territory at all (' + worstAt
+	 + '), which is the notch where two territories meet the sea');
+	console.log('        (' + built + ' worlds, worst uncovered ' + worst.toFixed(2) + 'px2)');
+
+	/*
+	 * AND THE COASTLINE ITSELF MUST NOT HAVE MOVED TO ACHIEVE IT.
+	 *
+	 * The first attempt cut the coastline at the junctions as well, which
+	 * tiles perfectly and makes the shoreline depend on who owns what --
+	 * so gaining a realm redrew the coast. The territories bend to the
+	 * coastline, never the other way round. (The realm-count assertion at
+	 * the top of this file is what caught it; this one states the rule
+	 * where the fix lives.)
+	 */
+	const plain = LIVE_NAMES.map((name, i) => ({ name: name, weight: 1 + (i % 4) }));
+	const lop = LIVE_NAMES.map((name, i) => ({ name: name, weight: i === 0 ? 90 : 1 }));
+	ok(JSON.stringify(W.mwWorld(plain, 1860, 888).coast)
+	   === JSON.stringify(W.mwWorld(lop, 1860, 888).coast),
+	   'the coastline changed when the realm counts did, so joining a faction redraws the world');
+}
+
 console.log('\nborders run between factions, not around them');
 {
 	/*
@@ -408,23 +523,51 @@ console.log('\nborders run between factions, not around them');
 	// 4x4, left half faction 0, right half faction 1.
 	const owner = new Int16Array(16);
 	for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) owner[j * 4 + i] = i < 2 ? 0 : 1;
-	const b0 = W.mwBorders(owner, 0, 4, 4, 10, 10, 0, 0);
+	const ring0 = W.mwTrace(owner, 0, 4, 4, 10, 0, 0)[0];
+	const sides0 = W.mwRingSides(ring0, owner, 0, 4, 4, 10, 0, 0);
+	ok(sides0.filter(v => v === 1).length === 4 && sides0.filter(v => v === -1).length === 8,
+	   'the outline was not split into 4 edges facing faction 1 and 8 facing the sea');
+	const seam0 = W.mwSeams(ring0, sides0, null, 3);
+	const b0 = seam0.runs.filter(r => r.side >= 0);
 	ok(b0.length === 1, 'a straight shared edge produced ' + b0.length + ' border lines');
-	const line = b0[0] || [];
-	ok(line.length === 5, 'the shared edge has ' + line.length + ' points, not 5');
-	ok(line.every(p => Math.round(p.x) === 20),
+	const line = (b0[0] || { pts: [] }).pts;
+	ok(line.length >= 2 && line.every(p => Math.round(p.x) === 20),
 	   'the border is not on the line between the two factions');
 	/* OPEN, NEVER CLOSED. Joining the ends draws a line straight across
 	   somebody's territory. */
 	ok(!(line[0].x === line[line.length - 1].x && line[0].y === line[line.length - 1].y),
 	   'the border closed into a ring, so it cuts across the territory it belongs to');
+	/* AND IT SPANS THE WHOLE SHARED EDGE, corner to corner. The open
+	   smoother keeps its endpoints precisely so a border still reaches
+	   the coast it ran to. */
+	const ys = line.map(p => p.y);
+	ok(Math.min(...ys) === 0 && Math.max(...ys) === 40,
+	   'the border stops short of the coast at one or both ends');
+
+	/*
+	 * AND THE TWO NEIGHBOURS GET THE IDENTICAL CURVE.
+	 *
+	 * This is the whole point of dressing a seam once. Faction 1 walks
+	 * the same edge in the opposite direction; if each smoothed its own
+	 * outline independently the two fills would not meet, which is the
+	 * notch this replaced.
+	 */
+	const ring1 = W.mwTrace(owner, 1, 4, 4, 10, 0, 0)[0];
+	const seam1 = W.mwSeams(ring1, W.mwRingSides(ring1, owner, 1, 4, 4, 10, 0, 0), null, 3);
+	const line1 = seam1.runs.filter(r => r.side >= 0)[0].pts.slice().reverse();
+	ok(line1.length === line.length
+	   && line.every((p, i) => Math.abs(p.x - line1[i].x) < 1e-9
+	                        && Math.abs(p.y - line1[i].y) < 1e-9),
+	   'the two sides of one border are not the same curve, so the fills leave a gap');
 
 	/* A FACTION WITH NO NEIGHBOURS HAS NO BORDER AT ALL -- its whole
 	   outline is coast, which is the case that was drawing a doubled line
 	   all the way round an island. */
 	const alone = new Int16Array(16).fill(-1);
 	[5, 6, 9, 10].forEach(k => { alone[k] = 0; });
-	ok(W.mwBorders(alone, 0, 4, 4, 10, 10, 0, 0).length === 0,
+	const ringA = W.mwTrace(alone, 0, 4, 4, 10, 0, 0)[0];
+	const seamA = W.mwSeams(ringA, W.mwRingSides(ringA, alone, 0, 4, 4, 10, 0, 0), null, 3);
+	ok(seamA.runs.filter(r => r.side >= 0).length === 0,
 	   'an island faction with no land neighbours is still given a drawn border, which is '
 	 + 'the doubled line this replaced');
 
