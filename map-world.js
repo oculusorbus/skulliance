@@ -586,6 +586,125 @@ function mwDedupeOpen(pts) {
 }
 
 /** Chaikin corner cutting. Local copy for the same reason as the RNG. */
+/**
+ * HOW FAR EVERY CELL IS FROM LAND, in cells.
+ *
+ * A two-pass chamfer transform: sweep once from the top-left taking the
+ * best of the neighbours already visited, once back from the bottom-
+ * right, with 3 for a step and 4 for a diagonal so the result tracks
+ * true distance instead of counting city blocks. Land is 0.
+ *
+ * It is what the shore bands are cut from. Contouring this is why the
+ * bands hug every inlet and island at a constant width rather than
+ * being outlines scaled up, which pulls away from the coast on a
+ * straight run and bunches up inside a bay.
+ */
+function mwDistance(land, gw, gh) {
+	const d = new Float32Array(gw * gh);
+	for (let k = 0; k < land.length; k++) d[k] = land[k] ? 0 : 1e9;
+	for (let j = 0; j < gh; j++) {
+		for (let i = 0; i < gw; i++) {
+			const k = j * gw + i;
+			if (d[k] === 0) continue;
+			let v = d[k];
+			if (i > 0)                v = Math.min(v, d[k - 1] + 3);
+			if (j > 0)                v = Math.min(v, d[k - gw] + 3);
+			if (i > 0 && j > 0)       v = Math.min(v, d[k - gw - 1] + 4);
+			if (i < gw - 1 && j > 0)  v = Math.min(v, d[k - gw + 1] + 4);
+			d[k] = v;
+		}
+	}
+	for (let j = gh - 1; j >= 0; j--) {
+		for (let i = gw - 1; i >= 0; i--) {
+			const k = j * gw + i;
+			if (d[k] === 0) continue;
+			let v = d[k];
+			if (i < gw - 1)                  v = Math.min(v, d[k + 1] + 3);
+			if (j < gh - 1)                  v = Math.min(v, d[k + gw] + 3);
+			if (i < gw - 1 && j < gh - 1)    v = Math.min(v, d[k + gw + 1] + 4);
+			if (i > 0 && j < gh - 1)         v = Math.min(v, d[k + gw - 1] + 4);
+			d[k] = v;
+		}
+	}
+	for (let k = 0; k < d.length; k++) d[k] /= 3;
+	return d;
+}
+
+/**
+ * The shallows: nested contours of the distance field, biggest last.
+ * Separate from mwWorld so the harness can measure a band's distance
+ * from the land on a mask it built itself.
+ */
+function mwShores(land, gw, gh, cs, ox, oy, seed, smoothN, opts) {
+	opts = opts || {};
+	/*
+	 * SHORE BANDS, OFF A DISTANCE FIELD.
+	 *
+	 * The idea is Kimo's (spritecook.ai, "2D Water Shorelines with
+	 * Distance Fields"): instead of shading water by depth you do not
+	 * have, shade it by HOW FAR IT IS FROM LAND, and band that. Every
+	 * inlet gets shallows, every island gets a shelf, and the bands keep
+	 * a constant width round a headland -- none of which an outline
+	 * scaled up can do, because that pulls away from the coast on a
+	 * straight run and bunches up inside a bay.
+	 *
+	 * HIS DISTANCES, CARRIED OVER BY PROPORTION, NOT BY NUMBER. He bands
+	 * a 360px-wide map at 5 / 13 / 26px with anything past 32 reading as
+	 * open sea. Ours is 220 cells wide, so the same fractions of the
+	 * sheet are 3.1 / 7.9 / 15.9 cells, and they hold at any canvas
+	 * because the grid is always 220 across. Copying 5 / 13 / 26 as
+	 * literal pixels would have put all three inside the first cell.
+	 *
+	 * AND THE WOBBLE IS THE WHOLE TRICK. Contouring the raw field gives
+	 * bands that trace the coastline exactly, which reads as a sticker
+	 * cut round the land -- the one thing that would have looked worse
+	 * than no bands at all. He adds +/-3px of smooth noise to the
+	 * distance before banding; the same proportion here is +/-1.8 cells,
+	 * two octaves, seeded off the world so the shallows are the same
+	 * shallows on every visit.
+	 */
+	const px = gw / 360;
+	/*
+	 * AND THEN PULLED IN TO 65%, BY EYE, FOR A REASON HIS MAP DOES NOT
+	 * HAVE: ours is an archipelago and the channels between the masses
+	 * are narrower than his open sea. At the full distances the outer
+	 * band meets itself in midwater and the whole sheet goes pale, which
+	 * throws away the deep/shallow contrast the technique exists to
+	 * create. Swept 100 / 65 / 40%: 100 floods the channels, 40 is a thin
+	 * rim with no layering, 65 keeps both the shelf and the open water.
+	 */
+	const SHORE = 0.65;
+	const bandAt = opts.shoreBands === undefined
+		? [1.1, 5, 13, 26].map(v => v * px * SHORE) : opts.shoreBands;
+	/* THE WOBBLE IS NOT SCALED DOWN WITH THEM. Narrowing the bands is
+	   about our channels; the wobble is about not tracing the coast, and
+	   that argument does not get weaker when the shelf gets thinner. At
+	   0.65x it was visible but timid. His proportion is the one that
+	   opens real pockets of deep water in the shelf. */
+	const wobAmp = (opts.shoreWobble === undefined ? 3 : opts.shoreWobble) * px;
+	const dist = mwDistance(land, gw, gh);
+	if (wobAmp > 0) {
+		const w1 = mwNoise(seed ^ 0x2f9a1c3d), w2 = mwNoise(seed ^ 0x7c31b5e9);
+		for (let j = 0; j < gh; j++) {
+			for (let i = 0; i < gw; i++) {
+				const k = j * gw + i;
+				if (dist[k] === 0) continue;          /* land stays land */
+				const n = (w1(i / 7, j / 7) - 0.5) * 1.34 + (w2(i / 3.1, j / 3.1) - 0.5) * 0.66;
+				dist[k] = Math.max(0.0001, dist[k] + n * wobAmp);
+			}
+		}
+	}
+	const shores = bandAt.map(t => {
+		const m = new Int16Array(gw * gh);
+		for (let k = 0; k < dist.length; k++) m[k] = dist[k] <= t ? 0 : -1;
+		return {
+			d: t,
+			rings: mwTrace(m, 0, gw, gh, cs, ox, oy).map(r => mwSmooth(mwDedupe(r), smoothN))
+		};
+	});
+	return shores;
+}
+
 /** A traced vertex, keyed the way mwTrace keys them, so the two agree. */
 function mwVKey(p) { return Math.round(p.x) + ',' + Math.round(p.y); }
 
@@ -984,6 +1103,8 @@ function mwWorld(factions, w, h, opts) {
 	const coastRaw = mwTrace(landMask, 0, gw, gh, cs, ox, oy);
 	const coastRings = coastRaw.map(r => mwSmooth(mwDedupe(r), smoothN));
 
+	const shores = mwShores(land, gw, gh, cs, ox, oy, seed, smoothN, opts);
+
 	/* Which coast ring a given grid vertex sits on, so a junction is
 	   matched against its own shoreline and never a lake's. */
 	const coastRingOf = new Map();
@@ -1072,14 +1193,14 @@ function mwWorld(factions, w, h, opts) {
 	}
 	if (!regions.length) return null;
 
-	return { coast: coastRings, regions: regions, width: w, height: h,
+	return { coast: coastRings, shores: shores, regions: regions, width: w, height: h,
 	         masses: masses.length };
 }
 
 /* Browser globals, and CommonJS for the harness. */
 if (typeof module !== 'undefined' && module.exports) {
 	module.exports = { mwHash, mwRng, mwNoise, mwField, mwSeaLevel, mwFloodSpecks,
-	                   mwFillPonds, mwInside, mwTrace, mwRingSides, mwSeams, mwMajority, mwAbsorbFragments,
+	                   mwFillPonds, mwDistance, mwShores, mwInside, mwTrace, mwRingSides, mwSeams, mwMajority, mwAbsorbFragments,
 	                   mwDedupe, mwDedupeOpen,
 	                   mwSmooth, mwSmoothOpen, mwWorld };
 }

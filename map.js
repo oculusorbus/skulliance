@@ -265,6 +265,47 @@ const NS = 'http://www.w3.org/2000/svg';
  * WRAPPED, AND IT FALLS BACK. This is the realms map on a live platform;
  * a thrown error in new geometry must cost the coastline, not the map.
  */
+/*
+ * THE SEA, THE SHALLOWS AND THE LAND, as plain layers in draw order.
+ *
+ * THE SHALLOWS USED TO BE A 9px STROKE at 0.13 alpha outside the
+ * coastline -- "the cheapest thing on the map that says coast", and it
+ * was, but a stroke is a constant width no matter what the water is
+ * doing. It stayed 9px across a strait 12px wide and 9px off the open
+ * ocean, so it read as an outline round the land rather than as water.
+ *
+ * These are contours of a DISTANCE FIELD (mwShores in map-world.js, the
+ * technique from spritecook.ai), so a narrow channel is shallow all the
+ * way across while open sea goes dark, and every island gets its own
+ * shelf for free. Biggest band first, so they stack into a gradient with
+ * no blur filter -- the thing that made the old border glow a smear.
+ *
+ * PURE, AND SEPARATE FROM THE DRAWING, so the harness can call it. A
+ * source check cannot tell a band that is drawn from one sitting behind
+ * `if (false)`: the strings it looks for are all still there.
+ */
+function seaLayers(world) {
+    const SHADE = ['rgba(120,200,230,0.26)', 'rgba(32,84,116,0.55)',
+                   'rgba(22,62,92,0.5)',     'rgba(16,48,74,0.42)'];
+    const layers = [];
+    if (!world) return layers;
+    if (world.shores) {
+        for (let b = world.shores.length - 1; b >= 0; b--) {
+            const fill = SHADE[b] || SHADE[SHADE.length - 1];
+            for (const ring of world.shores[b].rings) layers.push({ ring: ring, fill: fill, band: b });
+        }
+    }
+    /* EVERY SHORELINE, not one. The terrain gives several masses and the
+       occasional inland sea, and each is its own ring. */
+    if (world.coast) {
+        for (const ring of world.coast) {
+            layers.push({ ring: ring, fill: 'rgba(18,54,82,0.95)',
+                          stroke: 'rgba(150,215,240,0.42)', band: -1 });
+        }
+    }
+    return layers;
+}
+
 function worldLayout(fdata, w, h) {
     if (typeof mwWorld !== 'function') return null;
     let world;
@@ -294,7 +335,7 @@ function worldLayout(fdata, w, h) {
     /* A faction with no land is a faction nobody can click. Better to draw
        the old map than to drop somebody off the world. */
     if (placedWithPoly.length !== fdata.length) return null;
-    return { placedWithPoly: placedWithPoly, coast: world.coast };
+    return { placedWithPoly: placedWithPoly, coast: world.coast, shores: world.shores };
 }
 
 /*
@@ -460,18 +501,17 @@ function renderMap() {
            and that is exactly what it looked like. */
         svg.appendChild(svgEl('rect', { x: 0, y: 0, width: svgW, height: svgH,
             fill: 'rgba(10,32,52,0.55)' }));
-        /* EVERY SHORELINE, not one. The terrain gives several masses and
-           the occasional inland sea, and each is its own ring. */
-        for (const ring of world.coast) {
-            const cd = toPath(ring);
-            /* A soft halo outside the line, which reads as shallows and is
-               the cheapest thing on the map that says "coast". */
-            svg.appendChild(svgEl('path', { d: cd, fill: 'none',
-                stroke: 'rgba(120,200,230,0.13)', 'stroke-width': '9',
-                'stroke-linejoin': 'round' }));
-            svg.appendChild(svgEl('path', { d: cd, fill: 'rgba(18,54,82,0.95)',
-                stroke: 'rgba(150,215,240,0.42)', 'stroke-width': '1.6',
-                'stroke-linejoin': 'round' }));
+        /* Drawn from seaLayers(), which is pure and is RUN by the
+           harness -- a source check cannot tell a band that is drawn
+           from one behind `if (false)`. */
+        for (const L of seaLayers(world)) {
+            const attrs = { d: toPath(L.ring), fill: L.fill };
+            if (L.stroke) {
+                attrs.stroke = L.stroke;
+                attrs['stroke-width'] = '1.6';
+                attrs['stroke-linejoin'] = 'round';
+            }
+            svg.appendChild(svgEl('path', attrs));
         }
     }
 

@@ -393,6 +393,111 @@ console.log('\nthe grid is tidied before it is traced');
 	 + 'and is the most characterful thing on the map');
 }
 
+console.log('\nthe shallows are contours of a distance field, not an outline');
+{
+	/*
+	 * THE TECHNIQUE IS KIMO'S (spritecook.ai). Shade water by how far it
+	 * is from land and band that, instead of stroking an outline round
+	 * the coast -- a stroke is a constant width whatever the water is
+	 * doing, so it looked the same across a 12px strait as on open ocean.
+	 */
+
+	/* THE FIELD ITSELF. One land cell in the middle of a 5x5: its
+	   neighbours are 1 away and its diagonals 4/3, because the chamfer
+	   pass charges 3 for a step and 4 for a diagonal. A field that only
+	   counted city blocks would say 2 for the diagonal and the bands
+	   would come out with square corners. */
+	const one = new Uint8Array(25);
+	one[12] = 1;
+	const df = W.mwDistance(one, 5, 5);
+	ok(df[12] === 0, 'land is not at distance zero from itself');
+	ok(Math.abs(df[11] - 1) < 1e-6 && Math.abs(df[7] - 1) < 1e-6,
+	   'a cell beside the land is ' + df[11] + ' away instead of 1');
+	ok(Math.abs(df[6] - 4 / 3) < 1e-6,
+	   'the diagonal is ' + df[6].toFixed(3) + ' away instead of 4/3, so the field is '
+	 + 'counting city blocks and the bands will have square corners');
+	ok(df[0] > df[6], 'the field does not grow with distance from the land');
+
+	/* THE BANDS NEST, AND EVERY ONE CONTAINS THE LAND. Drawn biggest
+	   first and stacked, so if they ever came back in the wrong order or
+	   overlapping wrongly the sea would go flat. */
+	const wd = W.mwWorld(FACTIONS, 1860, 888);
+	ok(wd.shores && wd.shores.length === 4,
+	   'the world came back with ' + (wd.shores ? wd.shores.length : 0) + ' shore bands, not 4');
+	const ringArea = (p) => {
+		let a = 0;
+		for (let i = 0; i < p.length; i++) {
+			const q = p[i], r = p[(i + 1) % p.length];
+			a += q.x * r.y - r.x * q.y;
+		}
+		return a / 2;
+	};
+	const bandArea = (b) => b.rings.reduce((a, r) => a + ringArea(r), 0);
+	const landArea = wd.coast.reduce((a, r) => a + ringArea(r), 0);
+	let nested = true;
+	for (let i = 1; i < wd.shores.length; i++) {
+		if (!(bandArea(wd.shores[i]) > bandArea(wd.shores[i - 1]))) nested = false;
+		if (!(wd.shores[i].d > wd.shores[i - 1].d)) nested = false;
+	}
+	ok(nested, 'the shore bands are not strictly nested, so they stack into a flat wash '
+	 + 'instead of a gradient');
+	ok(bandArea(wd.shores[0]) > landArea,
+	   'the innermost band is smaller than the land it is supposed to surround');
+
+	/*
+	 * AND THE WOBBLE IS THE WHOLE TRICK.
+	 *
+	 * Contouring the raw field gives bands at a CONSTANT distance from
+	 * the coast, which reads as a sticker cut round the land -- the one
+	 * thing that would look worse than no bands at all. Kimo adds noise
+	 * to the distance before banding for exactly this reason.
+	 *
+	 * MEASURED AS THE SPREAD OF THE BAND'S DISTANCE FROM THE COAST, which
+	 * is what "wanders instead of tracing" means as a number: constant
+	 * distance is a small spread. (The first spelling of this compared
+	 * PERIMETERS, which does not work -- the outermost band comes out
+	 * 2% SHORTER with the wobble on, because wandering outward into open
+	 * water cuts corners as often as it adds them.) Measured on band 2:
+	 * 2.16px with the wobble off, 5.69px on.
+	 */
+	const spread = (world, bi) => {
+		const pts = [];
+		for (const r of world.coast) for (const p of r) pts.push(p);
+		const vals = [];
+		for (const r of world.shores[bi].rings) {
+			for (let i = 0; i < r.length; i += 3) {
+				const q = r[i];
+				let best = Infinity;
+				for (const c of pts) {
+					const dx = c.x - q.x, dy = c.y - q.y, d = dx * dx + dy * dy;
+					if (d < best) best = d;
+				}
+				vals.push(Math.sqrt(best));
+			}
+		}
+		const m = vals.reduce((a, v) => a + v, 0) / vals.length;
+		return Math.sqrt(vals.reduce((a, v) => a + (v - m) * (v - m), 0) / vals.length);
+	};
+	const flat = W.mwWorld(FACTIONS, 1860, 888, { shoreWobble: 0 });
+	const sOn = spread(wd, 2), sOff = spread(flat, 2);
+	ok(sOn > 3.5, 'the shore band sits ' + sOn.toFixed(2) + 'px from the coast give or take, '
+	 + 'against ' + sOff.toFixed(2) + 'px with the wobble off -- so it is tracing the '
+	 + 'coastline at a constant offset, like a sticker cut round the land');
+	console.log('        (band 2 wanders ' + sOn.toFixed(2) + 'px, against '
+	          + sOff.toFixed(2) + 'px with the wobble off)');
+
+	/*
+	 * THE SHALLOWS DEPEND ON THE LAND AND NOTHING ELSE. They are built
+	 * from the land mask, so like the coastline they must not move when
+	 * somebody gains a realm.
+	 */
+	const plainS = LIVE_NAMES.map((name, i) => ({ name: name, weight: 1 + (i % 4) }));
+	const lopS = LIVE_NAMES.map((name, i) => ({ name: name, weight: i === 0 ? 90 : 1 }));
+	ok(JSON.stringify(W.mwWorld(plainS, 1860, 888).shores)
+	   === JSON.stringify(W.mwWorld(lopS, 1860, 888).shores),
+	   'the shallows moved when the realm counts did, so joining a faction redraws the sea');
+}
+
 console.log('\nthe tracer does not lose an edge where land pinches');
 {
 	/*
@@ -691,6 +796,62 @@ console.log('\nthe pieces behave on their own');
 	   one having no realms -- and it must get the whole continent. */
 	const solo = W.mwWorld([{ name: 'Only', weight: 1 }], 1400, 980);
 	ok(solo && solo.regions.length === 1, 'a single faction does not get a world');
+}
+
+console.log('\nthe shallows reach the drawing, and that is RUN to find out');
+{
+	/*
+	 * EXECUTED, NOT READ -- and this one was learned the hard way twice
+	 * over. The first version of this check searched map.js for
+	 * "world.shores". Wrapping the whole band loop in `if (false)` left
+	 * that string exactly where it was, in the line just inside the dead
+	 * guard, so the assertion passed on a renderer that drew no shallows
+	 * at all. seaLayers() is pure for this reason: it can be called.
+	 */
+	const fs = require('fs');
+	const vm = require('vm');
+	const src = fs.readFileSync(__dirname + '/map.js', 'utf8');
+	const a = src.indexOf('function seaLayers(');
+	const b = a < 0 ? -1 : src.indexOf('\n}\n', a);
+	ok(a >= 0 && b > a, 'seaLayers() could not be lifted out of map.js');
+
+	const ctx = {};
+	vm.createContext(ctx);
+	vm.runInContext(src.slice(a, b + 3) + '\nvar _f = seaLayers;', ctx);
+
+	const ring = [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 4 }, { x: 0, y: 4 }];
+	const fake = {
+		shores: [{ d: 1, rings: [ring] }, { d: 2, rings: [ring] },
+		         { d: 3, rings: [ring] }, { d: 4, rings: [ring] }],
+		coast: [ring]
+	};
+	const layers = ctx._f(fake);
+	ok(layers.length === 5, 'seaLayers returned ' + layers.length
+	 + ' layers for four bands and one coastline, not 5 -- the shallows are being '
+	 + 'computed and then not drawn');
+
+	/* BIGGEST BAND FIRST. Stacked the other way the innermost band is
+	   buried under the widest one and the sea goes flat. */
+	ok(layers.slice(0, 4).every((L, i) => L.band === 3 - i),
+	   'the bands come back in the order ' + layers.slice(0, 4).map(L => L.band).join(',')
+	 + ' instead of outermost first, so they stack into a flat wash');
+
+	/* FOUR DISTINCT SHADES, or the gradient is one colour. */
+	ok(new Set(layers.slice(0, 4).map(L => L.fill)).size === 4,
+	   'the four bands are not four different colours');
+
+	/* THE COASTLINE IS LAST AND IS THE ONLY STROKED LAYER -- a band with
+	   a stroke puts a hard rim back on top of the gradient, which is the
+	   halo this replaced. */
+	ok(layers[4] && layers[4].band === -1 && layers[4].stroke,
+	   'the coastline is not drawn last, or lost its stroke');
+	ok(layers.slice(0, 4).every(L => !L.stroke),
+	   'a shore band is stroked, which is the hard rim the old halo drew');
+
+	/* AND IT SURVIVES A WORLD WITH NO SHALLOWS rather than throwing and
+	   costing the whole map, the same contract worldLayout() has. */
+	ok(ctx._f(null).length === 0 && ctx._f({ coast: [ring] }).length === 1,
+	   'seaLayers throws or miscounts when there are no shore bands');
 }
 
 console.log('\nthe canvas is sized from the page, and it is RUN to find out');

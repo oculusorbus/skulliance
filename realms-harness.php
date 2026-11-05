@@ -1227,6 +1227,24 @@ ok(strpos($MAPJS, 'function stableColors(') !== false,
 ok(strpos($MAPJS, 'colors[f.name]') !== false,
    'buildFactionData() does not take its colour from the stable assignment');
 
+/*
+ * THE SHALLOWS ARE DRAWN, AND THE OLD HALO IS NOT.
+ *
+ * The water used to be a 9px stroke at 0.13 alpha outside the coastline.
+ * A stroke is a constant width whatever the water is doing -- the same
+ * 9px across a 12px strait as on open ocean -- so it read as an outline
+ * round the land rather than as sea. The shore bands (mwShores) replace
+ * it with contours of a distance field. Both halves are asserted: a
+ * renderer that drew the bands AND kept the halo would put a hard rim
+ * back on top of the gradient.
+ */
+ok(strpos($MAPJS, 'world.shores') !== false,
+   'map.js never reads the shore bands, so the shallows are computed and thrown away');
+ok(preg_match('/stroke-width\s*.{0,4}:\s*.9./', $MAPJS) !== 1,
+   'the old 9px coast halo stroke is still being drawn under the shore bands');
+ok(strpos($MAPJS, 'rgba(120,200,230,0.13)') === false,
+   'the old halo colour is still in map.js');
+
 /* THE GENERATOR LOADS BEFORE THE MAP, the same ordering map-kit.js needs
    and for the same reason -- map.js calls mwWorld() while rendering. */
 $kitAt   = strpos($RLM, 'src="map-kit.js');
