@@ -228,6 +228,58 @@ console.log('\nit is a map sheet, not an island');
 	 + 'island instead of the body');
 }
 
+console.log('\nborders run between factions, not around them');
+{
+	/*
+	 * REPORTED AS "a white boundary line wrapping the terrain, garbled
+	 * between the factions". Every region's whole outline was stroked, so
+	 * each seaward edge carried the shoreline, the faction's dashed line
+	 * and a glow on one path. Real maps draw a border inland and stop at
+	 * the coast, which is what mwBorders() returns.
+	 *
+	 * Tested on a hand-built grid, because on real terrain "is this edge
+	 * coast or border" is not something an assertion can eyeball.
+	 */
+	// 4x4, left half faction 0, right half faction 1.
+	const owner = new Int16Array(16);
+	for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) owner[j * 4 + i] = i < 2 ? 0 : 1;
+	const b0 = W.mwBorders(owner, 0, 4, 4, 10, 10, 0, 0);
+	ok(b0.length === 1, 'a straight shared edge produced ' + b0.length + ' border lines');
+	const line = b0[0] || [];
+	ok(line.length === 5, 'the shared edge has ' + line.length + ' points, not 5');
+	ok(line.every(p => Math.round(p.x) === 20),
+	   'the border is not on the line between the two factions');
+	/* OPEN, NEVER CLOSED. Joining the ends draws a line straight across
+	   somebody's territory. */
+	ok(!(line[0].x === line[line.length - 1].x && line[0].y === line[line.length - 1].y),
+	   'the border closed into a ring, so it cuts across the territory it belongs to');
+
+	/* A FACTION WITH NO NEIGHBOURS HAS NO BORDER AT ALL -- its whole
+	   outline is coast, which is the case that was drawing a doubled line
+	   all the way round an island. */
+	const alone = new Int16Array(16).fill(-1);
+	[5, 6, 9, 10].forEach(k => { alone[k] = 0; });
+	ok(W.mwBorders(alone, 0, 4, 4, 10, 10, 0, 0).length === 0,
+	   'an island faction with no land neighbours is still given a drawn border, which is '
+	 + 'the doubled line this replaced');
+
+	/* The open smoother must keep its endpoints where they are, or a
+	   border stops short of the coast it ran to. */
+	const chain = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }];
+	const sm = W.mwSmoothOpen(chain, 2);
+	ok(sm[0].x === 0 && sm[0].y === 0, 'the open smoother moved the first point');
+	ok(sm[sm.length - 1].x === 10 && sm[sm.length - 1].y === 10,
+	   'the open smoother moved the last point, so the border no longer meets the coast');
+	ok(W.mwDedupeOpen(chain).length === 3, 'an open chain lost a real corner');
+
+	/* And on the real thing: every region carries its borders. */
+	const wd = W.mwWorld(FACTIONS, 1860, 888);
+	ok(wd.regions.every(r => Array.isArray(r.borders)),
+	   'a region has no borders list, so map.js has nothing to draw between factions');
+	const totalLines = wd.regions.reduce((a, r) => a + r.borders.length, 0);
+	ok(totalLines > 0, 'eight factions on one world share no borders at all');
+}
+
 console.log('\nthe borders are smoothed, not stepped');
 {
 	/*

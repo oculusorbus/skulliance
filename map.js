@@ -288,6 +288,7 @@ function worldLayout(fdata, w, h) {
             if (q.y < y0) y0 = q.y; if (q.y > y1) y1 = q.y;
         }
         placedWithPoly.push({ faction: f, poly: r.poly, polys: r.polys,
+            borders: r.borders,
             x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
     }
     /* A faction with no land is a faction nobody can click. Better to draw
@@ -466,10 +467,10 @@ function renderMap() {
             /* A soft halo outside the line, which reads as shallows and is
                the cheapest thing on the map that says "coast". */
             svg.appendChild(svgEl('path', { d: cd, fill: 'none',
-                stroke: 'rgba(120,200,230,0.18)', 'stroke-width': '12',
+                stroke: 'rgba(120,200,230,0.13)', 'stroke-width': '9',
                 'stroke-linejoin': 'round' }));
             svg.appendChild(svgEl('path', { d: cd, fill: 'rgba(18,54,82,0.95)',
-                stroke: 'rgba(150,215,240,0.50)', 'stroke-width': '2',
+                stroke: 'rgba(150,215,240,0.42)', 'stroke-width': '1.6',
                 'stroke-linejoin': 'round' }));
         }
     }
@@ -479,7 +480,7 @@ function renderMap() {
 
     // ── Layer 1: territory fills ──────────────────────────────────────────────
     const LOGO_MAX = 96; // max natural size cap in px
-    for (const {faction, poly, polys} of placedWithPoly) {
+    for (const {faction, poly, polys, borders} of placedWithPoly) {
         /* EVERY PIECE A FACTION HOLDS. polys is the body plus its offshore
            islands; the old layout had one shape per faction and this read
            `poly` only, which silently dropped the islands -- the most
@@ -487,19 +488,39 @@ function renderMap() {
         for (const piece of (polys && polys.length ? polys : [poly])) {
             svg.appendChild(svgEl('path', {
                 d: toPath(piece),
-                fill: hexToRgba(faction.color, 0.13),
+                /* Up from 0.13: the territory used to be outlined all the
+                   way round, so a faint wash was enough to say whose it
+                   was. With only the inland border drawn, the FILL has to
+                   carry it. */
+                fill: hexToRgba(faction.color, 0.22),
                 stroke: 'none'
             }));
+        }
+
+        /*
+         * THE BORDER IS ONLY WHERE TWO FACTIONS MEET.
+         *
+         * This used to stroke the whole territory outline, so every
+         * seaward edge carried the shoreline, this dashed line AND a glow
+         * on the same path -- reported as "a white boundary line wrapping
+         * the terrain, garbled between the factions", which is what three
+         * strokes on one line look like. The coast is the coast now, and
+         * the border stops when it reaches it.
+         *
+         * NO GLOW EITHER. At 2px with a 3.5 blur under it, a border that
+         * wanders is a smear; the dashes already say "political line".
+         */
+        for (const line of (borders || [])) {
+            if (line.length < 2) continue;
             svg.appendChild(svgEl('path', {
-                d: toPath(piece),
+                d: 'M' + line.map(q => q.x.toFixed(1) + ' ' + q.y.toFixed(1)).join('L'),
                 fill: 'none',
                 stroke: faction.color,
-                'stroke-width': '2',
-                'stroke-dasharray': '10,6',
+                'stroke-width': '1.8',
+                'stroke-dasharray': '9,6',
                 'stroke-linejoin': 'round',
                 'stroke-linecap': 'round',
-                filter: 'url(#glow)',
-                opacity: '0.85'
+                opacity: '0.9'
             }));
         }
 

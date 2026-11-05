@@ -1349,7 +1349,10 @@ ok(strpos($MAPJS, 'svgW = worldW; svgH = worldH;') !== false,
  * had removed, once on an alpha value that changed with the rewrite.
  */
 $seaAt  = strpos($MAPJS, "svgEl('rect', { x: 0, y: 0, width: svgW, height: svgH");
-$terrAt = strpos($MAPJS, 'hexToRgba(faction.color, 0.13)');
+/* The alpha moved when the outline stopped being stroked -- matched on
+   the call rather than on the value, so a future tweak to the wash does
+   not fail a check about draw ORDER. */
+$terrAt = strpos($MAPJS, 'hexToRgba(faction.color,');
 /* A BARE STATEMENT. Checked as a plain strpos this passed with the whole
    append wrapped in `if (false)` -- the string was untouched. Sixth time
    this session that a check has survived its subject being disabled. */
@@ -1364,6 +1367,30 @@ ok(strpos($MAPJS, 'for (const ring of world.coast)') !== false,
    so a positional check alone passes over a coast that never draws. */
 ok(strpos($MAPJS, 'if (world && world.coast && world.coast.length) {') !== false,
    'the coast is behind a condition that is not "there is a world with shorelines"');
+/*
+ * THE TERRITORY OUTLINE IS NOT STROKED, ONLY THE INLAND BORDER IS.
+ *
+ * Reported as "a white boundary line wrapping the terrain, garbled
+ * between the factions": the whole outline was stroked, so every seaward
+ * edge carried the shoreline, the dashed faction line AND a glow on one
+ * path. The coast is the coast; the border stops when it reaches it.
+ */
+ok(strpos($MAPJS, 'for (const line of (borders || []))') !== false,
+   'the inland borders are not drawn, so there is nothing between two factions that share '
+ . 'a land edge');
+$fillAt = strpos($MAPJS, 'hexToRgba(faction.color, 0.22)');
+ok($fillAt !== false,
+   'the territory fill is not carrying the faction any more; with only the inland border '
+ . 'drawn, the wash is what says whose land it is');
+/* The glow belonged to the old full outline and made a wandering border a
+   smear. It must not come back on a line that follows terrain. */
+$bAt = strpos($MAPJS, "'stroke-dasharray': '9,6'");
+$bEnd = $bAt === false ? false : strpos($MAPJS, '}));', $bAt);
+ok($bAt !== false, 'the border dashes are gone');
+ok($bAt !== false && strpos(substr($MAPJS, $bAt, $bEnd - $bAt), 'url(#glow)') === false,
+   'the border has a glow filter again, which on a line that follows a coastline reads as '
+ . 'a smear rather than a boundary');
+
 /* Every piece a faction holds, not just its body. */
 ok(strpos($MAPJS, '(polys && polys.length ? polys : [poly])') !== false,
    'territories draw only their main body, so a faction\'s offshore islands are left '

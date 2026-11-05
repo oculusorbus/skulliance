@@ -319,6 +319,118 @@ function mwDedupe(pts) {
 	return out.length >= 3 ? out : pts;
 }
 
+/* ---------------------------------------------------------------------- *
+ * WHERE A FACTION MEETS ANOTHER FACTION -- and only there.
+ *
+ * A region's outline is partly coast and partly border, and drawing the
+ * whole thing meant every seaward edge carried the shoreline stroke AND
+ * the faction's dashed line AND a glow, all on the same path. Reported as
+ * "a white boundary line wrapping the terrain, garbled between the
+ * factions", which is exactly what three strokes on one line look like.
+ *
+ * Real maps do not do this. The coast is the coast; a national border is
+ * drawn inland and stops when it reaches the sea. So the edges whose
+ * neighbour is ANOTHER FACTION are chained separately into open
+ * polylines, and the seaward ones are left to the shoreline.
+ *
+ * OPEN CHAINS, NOT RINGS. A border runs from coast to coast and does not
+ * close, so these must never be wrapped -- joining the ends would draw a
+ * line straight across somebody's territory.
+ * ---------------------------------------------------------------------- */
+function mwBorders(owner, id, gw, gh, cs, cellH, ox, oy) {
+	const key = (x, y) => Math.round(x) + ',' + Math.round(y);
+	const at = (i, j) => (i < 0 || j < 0 || i >= gw || j >= gh) ? -1 : owner[j * gw + i];
+
+	const segs = [];
+	for (let j = 0; j < gh; j++) {
+		for (let i = 0; i < gw; i++) {
+			if (owner[j * gw + i] !== id) continue;
+			const x0 = ox + i * cs, y0 = oy + j * cellH, x1 = x0 + cs, y1 = y0 + cellH;
+			/* Only sides facing a DIFFERENT, OWNED cell. -1 is sea and is
+			   the shoreline's business, not a border. */
+			if (at(i, j - 1) >= 0 && at(i, j - 1) !== id) segs.push([x0, y0, x1, y0]);
+			if (at(i + 1, j) >= 0 && at(i + 1, j) !== id) segs.push([x1, y0, x1, y1]);
+			if (at(i, j + 1) >= 0 && at(i, j + 1) !== id) segs.push([x1, y1, x0, y1]);
+			if (at(i - 1, j) >= 0 && at(i - 1, j) !== id) segs.push([x0, y1, x0, y0]);
+		}
+	}
+	if (!segs.length) return [];
+
+	/* Chain head-to-tail. Undirected, because a border traced from one
+	   side runs the opposite way to the same border from the other. */
+	const ends = new Map();
+	const push = (k, s) => { if (!ends.has(k)) ends.set(k, []); ends.get(k).push(s); };
+	for (const s of segs) {
+		s.used = false;
+		push(key(s[0], s[1]), s);
+		push(key(s[2], s[3]), s);
+	}
+	const step = (k, from) => {
+		for (const s of (ends.get(k) || [])) {
+			if (s.used || s === from) continue;
+			return s;
+		}
+		return null;
+	};
+
+	const lines = [];
+	for (const start of segs) {
+		if (start.used) continue;
+		start.used = true;
+		let line = [{ x: start[0], y: start[1] }, { x: start[2], y: start[3] }];
+		/* Forward, then backward from the original head. */
+		for (const dir of [1, 0]) {
+			let cur = start;
+			let guard = segs.length + 1;
+			while (guard-- > 0) {
+				const tipX = dir ? line[line.length - 1].x : line[0].x;
+				const tipY = dir ? line[line.length - 1].y : line[0].y;
+				const nxt = step(key(tipX, tipY), cur);
+				if (!nxt || nxt.used) break;
+				nxt.used = true;
+				const a = { x: nxt[0], y: nxt[1] }, b = { x: nxt[2], y: nxt[3] };
+				const joinsA = (Math.round(a.x) === Math.round(tipX) && Math.round(a.y) === Math.round(tipY));
+				const far = joinsA ? b : a;
+				if (dir) line.push(far); else line.unshift(far);
+				cur = nxt;
+			}
+		}
+		if (line.length >= 3) lines.push(line);
+	}
+	return lines;
+}
+
+/** Chaikin for an OPEN chain: the ends are kept exactly where they are, so
+ *  a border still meets the coast it started from. */
+function mwSmoothOpen(pts, n) {
+	let p = pts;
+	for (let k = 0; k < (n === undefined ? 3 : n); k++) {
+		if (p.length < 3) return p;
+		const out = [p[0]];
+		for (let i = 0; i < p.length - 1; i++) {
+			const a = p[i], b = p[i + 1];
+			out.push({ x: a.x * 0.75 + b.x * 0.25, y: a.y * 0.75 + b.y * 0.25 });
+			out.push({ x: a.x * 0.25 + b.x * 0.75, y: a.y * 0.25 + b.y * 0.75 });
+		}
+		out.push(p[p.length - 1]);
+		p = out;
+	}
+	return p;
+}
+
+/** Collinear collapse for an open chain. Endpoints always survive. */
+function mwDedupeOpen(pts) {
+	if (pts.length < 3) return pts;
+	const out = [pts[0]];
+	for (let i = 1; i < pts.length - 1; i++) {
+		const a = pts[i - 1], b = pts[i], c = pts[i + 1];
+		const cross = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+		if (Math.abs(cross) > 1e-9) out.push(b);
+	}
+	out.push(pts[pts.length - 1]);
+	return out;
+}
+
 /** Chaikin corner cutting. Local copy for the same reason as the RNG. */
 function mwSmooth(pts, n) {
 	let p = pts;
@@ -520,8 +632,13 @@ function mwWorld(factions, w, h, opts) {
 		let cells = 0;
 		for (let k = 0; k < owner.length; k++) if (owner[k] === s) cells++;
 		const polys = rings.map(dress);
+		/* Only the faction-to-faction edges get a drawn border; the rest
+		   of this region's outline is coast. See mwBorders(). */
+		const borders = mwBorders(owner, s, gw, gh, cs, cellH, ox, oy)
+			.map(l => mwSmoothOpen(mwDedupeOpen(l), opts.smooth === undefined ? 3 : opts.smooth));
 		regions.push({
 			name: seeds[s].name,
+			borders: borders,
 			/* poly is the BODY -- markers, the label and the bounding box
 			   all want one shape. polys is every piece, including the
 			   faction's offshore islands, and is what gets drawn. */
@@ -546,5 +663,6 @@ function mwWorld(factions, w, h, opts) {
 /* Browser globals, and CommonJS for the harness. */
 if (typeof module !== 'undefined' && module.exports) {
 	module.exports = { mwHash, mwRng, mwNoise, mwField, mwSeaLevel, mwFloodSpecks,
-	                   mwInside, mwTrace, mwDedupe, mwSmooth, mwWorld };
+	                   mwInside, mwTrace, mwBorders, mwDedupe, mwDedupeOpen,
+	                   mwSmooth, mwSmoothOpen, mwWorld };
 }
