@@ -110,7 +110,14 @@ function ro_form($core, $partner, $id) {
 
 	<div class="ro-hero">
 		<div class="ro-hero-copy">
-			<p class="ro-eyebrow">Skulliance Realms</p>
+			<?php /* The wordmark, not a text label. width/height are the
+			         file's real 750x450 so the browser reserves the right box
+			         before it loads and the headline does not jump; the CSS
+			         caps what it actually renders at. The old page showed this
+			         same file at full column width, which is how it came to be
+			         400px of logo above a form. */ ?>
+			<img class="ro-logo" src="images/realms-logo.png" width="750" height="450"
+			     alt="Skulliance Realms">
 			<h1>Claim a corner of the map.</h1>
 			<p class="ro-lede">
 				Build a realm, grow it location by location, and raid the players around you

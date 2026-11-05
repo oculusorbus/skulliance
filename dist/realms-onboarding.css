@@ -21,12 +21,14 @@
    See the note in flexbox.css about scoped components. */
 .ro p, .ro h1, .ro h2, .ro h3, .ro li, .ro label { text-align: left; }
 
-.ro-eyebrow {
-	margin: 0 0 6px;
-	font-size: 0.78rem;
-	letter-spacing: 0.16em;
-	text-transform: uppercase;
-	color: #00c8a0;
+/* The wordmark stands in for an eyebrow label. Capped hard: this is the
+   same file the old page rendered at full column width, which is how
+   the pre-realm page ended up being 400px of logo above two fields. */
+.ro-logo {
+	display: block;
+	width: min(240px, 62%);
+	height: auto;
+	margin: 0 0 14px;
 }
 .ro h1 {
 	margin: 0 0 14px;

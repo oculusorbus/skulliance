@@ -1612,6 +1612,18 @@ ok(preg_match('/section \{\s*opacity: 0/', (string) file_get_contents(__DIR__ . 
  * width:300px !important and height:30px against a 20px font, which
  * both breaks a full-width field and clips the option text in half.
  */
+/* THE WORDMARK, SIZED. It is the same 750x450 file the old page showed
+   at full column width, which is how the pre-realm page came to be
+   400px of logo above two fields -- so the cap is asserted, not just
+   written. width/height attributes are on the tag as well, or the
+   headline jumps when it loads. */
+ok(strpos($omarkup, 'images/realms-logo.png') !== false,
+   'the hero has no Skulliance Realms wordmark');
+ok(preg_match('/class="ro-logo"[^>]*width="750"[^>]*height="450"/', $omarkup) === 1,
+   'the wordmark has no intrinsic width/height, so the headline shifts as it loads');
+ok(preg_match('/\.ro-logo\s*\{[^}]*width:\s*min\(/', $ocss) === 1,
+   'the wordmark is not capped, which is how this page had a 400px logo on it before');
+
 ok(strpos($omarkup, 'class="dropdown"') === false,
    'the faction select uses class="dropdown", which clips its own text');
 
