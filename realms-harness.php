@@ -1441,5 +1441,129 @@ if ($rc !== 0) {
 }
 ok($rc === 0, 'map-world-harness.js failed: the generated geography is wrong');
 
+/*
+ * THE NEWCOMER PREVIEW.
+ *
+ * Realms branches hard on checkRealm(): with a realm you get the map,
+ * the raid lists and the locations panel; without one you get a single
+ * panel asking you to name a realm and pick a faction. Everyone who can
+ * change that panel has had a realm for years, so the first screen a new
+ * player meets is the one screen nobody on this side of it ever sees.
+ * ?preview=newcomer draws it for the owner.
+ */
+echo "\nthe newcomer preview shows the door without opening it\n";
+require_once __DIR__ . '/lib/realm-preview.php';
+
+/*
+ * WHO IS ALLOWED TO SEE IT, RUN rather than read. A page that drew the
+ * newcomer view for an actual player would be telling them their realm
+ * is gone, so this is the half worth being certain of.
+ */
+$owner  = array('userData' => array('user_id' => 1));
+$player = array('userData' => array('user_id' => 42));
+ok(realm_preview_requested(array('preview' => 'newcomer'), $owner) === true,
+   'the owner cannot open the newcomer preview');
+ok(realm_preview_requested(array('preview' => 'newcomer'), $player) === false,
+   'ANY logged-in player can force the newcomer view, which tells them their realm is gone');
+ok(realm_preview_requested(array('preview' => 'newcomer'), array()) === false,
+   'a request with no session opens the preview');
+ok(realm_preview_requested(array(), $owner) === false,
+   'the preview turns itself on without being asked for');
+ok(realm_preview_requested(array('preview' => 'realm'), $owner) === false,
+   'any value of ?preview= opens it, not just the one');
+/*
+ * AND THE COMPARISON IS STRICT.
+ *
+ * ?preview[]=newcomer arrives as an array and ?preview=1 as a string,
+ * and the one that actually gets through a loose compare is a BOOLEAN:
+ * `true != 'newcomer'` is false in PHP, because the string casts to
+ * true, so `!=` would wave it straight past. Query values are strings
+ * in practice, but the whole point of this function is that it is the
+ * gate, and a gate is not the place to rely on the shape of its input.
+ */
+ok(realm_preview_requested(array('preview' => array('newcomer')), $owner) === false,
+   'an array ?preview[] gets through the gate');
+ok(realm_preview_requested(array('preview' => true), $owner) === false,
+   'a boolean true gets through the gate -- a loose compare against a non-empty string '
+ . 'accepts it, which is the hole strict typing is here to close');
+ok(realm_preview_requested(array('preview' => 1), $owner) === false,
+   'the number 1 gets through the gate');
+
+/*
+ * AND IT RAISES NO WARNINGS ON ANY OF THEM.
+ *
+ * This file exists because a PHP warning printed into the middle of a
+ * <script> block took out 1,500 lines of JavaScript and was invisible
+ * from the page. A gate that returns the right answer while emitting a
+ * notice is still a gate that breaks the page it guards, so the answers
+ * above are re-run with warnings turned into failures.
+ */
+$pv_warn = array();
+set_error_handler(function ($no, $str) use (&$pv_warn) { $pv_warn[] = $str; return true; });
+/* CAUGHT, not allowed to kill the run. Dropping the session-shape check
+   turns array('userData' => 'nope') into a FATAL TypeError in PHP 8, and
+   a harness that dies here reports nothing about any of the checks that
+   come after it -- the failure is real but the suite goes quiet, which
+   is the worst way for a test file to tell you something. */
+foreach (array(
+	array(array('preview' => 'newcomer'), $owner),
+	array(array('preview' => 'newcomer'), array()),
+	array(array('preview' => array('x')), $owner),
+	array(array(), array('userData' => array())),
+	array(array('preview' => 'newcomer'), array('userData' => 'nope')),
+	array(array('preview' => 'newcomer'), 'not-an-array'),
+) as $case) {
+	try { realm_preview_requested($case[0], $case[1]); }
+	catch (Throwable $e) { $pv_warn[] = 'threw ' . get_class($e) . ': ' . $e->getMessage(); }
+}
+restore_error_handler();
+ok(empty($pv_warn),
+   'the preview gate raises ' . count($pv_warn) . ' PHP notice(s) on odd input ('
+ . implode('; ', array_slice($pv_warn, 0, 2)) . ') -- which prints in front of the page');
+ok(realm_preview_requested(array('preview' => 'newcomer'),
+       array('userData' => array('user_id' => '1'))) === true,
+   'a session id that arrived as a string is not recognised as the owner');
+
+/*
+ * AND THE PREVIEW MUST NOT BE ABLE TO WRITE.
+ *
+ * This is the trap in the whole feature. The realm-creation handler is
+ * guarded by `if(!$realm_status)`, so a preview that simply forced that
+ * false would let the owner submit Create Realm and hand himself a
+ * SECOND realm. The drawn state and the real state are separate
+ * variables for exactly that reason.
+ */
+ok(strpos($rsrc, '$realm_status_real = checkRealm($conn);') !== false,
+   'realms.php no longer keeps the real realm state apart from the drawn one');
+ok(strpos($rsrc, '$realm_status = $realm_preview ? false : $realm_status_real;') !== false,
+   'the drawn state is not derived from the preview flag and the real state');
+$createAt = strpos($rsrc, 'createRealm($conn, $_POST[');
+ok($createAt !== false, 'the realm-creation call has moved; this check no longer guards it');
+$guard = substr($rsrc, max(0, $createAt - 420), 420);
+ok(strpos($guard, 'if(!$realm_status_real){') !== false,
+   'createRealm() is guarded by the DRAWN state, so the newcomer preview can create a '
+ . 'second realm for an owner who already has one');
+
+/* AND THE BAR SAYS SO. The page is lying about whether you have a realm;
+   a quiet note leaves the owner one refresh from thinking it vanished. */
+ok(strpos($rsrc, 'if($realm_preview){') !== false,
+   'the preview renders no banner, so it is indistinguishable from having lost your realm');
+ok(strpos($rsrc, 'rl-preview') !== false && strpos($rsrc, '.rl-preview {') !== false,
+   'the preview banner has no styles of its own');
+ok(strpos($rsrc, 'href="realms.php"') !== false,
+   'there is no way out of the preview except editing the URL');
+
+/* AND IT IS REACHABLE. A tool nobody can find is a tool nobody uses. */
+require_once __DIR__ . '/admin-lib.php';
+$tabs = admin_tabs();
+ok(isset($tabs['onboarding']), 'the Onboarding item is missing from the admin menu');
+ok(isset($tabs['onboarding']) && $tabs['onboarding'][0] === 'realms.php?preview=newcomer',
+   'the Onboarding menu item does not point at the newcomer preview');
+/* header.php draws the dropdown straight from admin_tabs(), so the item
+   is in the nav by construction -- but only if the nav still reads it. */
+$hsrc = (string) file_get_contents(__DIR__ . '/header.php');
+ok(strpos($hsrc, 'admin_tabs()') !== false,
+   'the admin dropdown no longer reads admin_tabs(), so new tools stop appearing in it');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);

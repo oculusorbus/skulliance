@@ -6,6 +6,7 @@ include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
 require_once __DIR__ . '/realms-lib.php';   // the locations panel, as data
+require_once __DIR__ . '/lib/realm-preview.php';  // the admin's newcomer view
 
 /*
  * FULL-SCREEN LOADER, FLUSHED BEFORE A SINGLE QUERY RUNS.
@@ -815,13 +816,60 @@ select, input[type=text], textarea,
 .rtc-stat, .rtc-status-msg,
 .ra-sort select#filterRealms,
 [data-tooltip]::after { border-radius: 0; }
+/*
+ * THE NEWCOMER-PREVIEW BAR.
+ *
+ * Loud on purpose. The whole point of the preview is that the page lies
+ * about whether you have a realm, and a quiet note would leave the owner
+ * one refresh away from thinking his realm had vanished.
+ */
+.rl-preview {
+	display: block;
+	margin: 0 0 14px;
+	padding: 12px 16px;
+	border: 1px solid rgba(255,190,80,0.45);
+	border-left: 4px solid rgba(255,190,80,0.9);
+	border-radius: 8px;
+	background: rgba(255,170,60,0.10);
+	color: #ffd79a;
+	text-align: left;
+	line-height: 1.5;
+}
+.rl-preview strong { color: #ffc266; }
+/* flexbox.css centres bare anchors and colours them; both are re-stated
+   here or this link inherits the page's link colour and sits centred in
+   the middle of the sentence. */
+.rl-preview a {
+	display: inline;
+	text-align: left;
+	color: #ffd79a;
+	text-decoration: underline;
+	margin-left: 6px;
+}
+
 /* Avatars stay circular -- they are portraits, not panels. */
 .rc-avatar, .rtc-avatar,
 .popup-avatar { border-radius: 50%; }
 </style>
 <?php
 
-$realm_status = checkRealm($conn);
+/*
+ * WHAT THE PAGE DRAWS AND WHAT THE PAGE ALLOWS ARE TWO DIFFERENT THINGS.
+ *
+ * $realm_status_real is the truth: does this account own a realm. Every
+ * WRITE on this page keys off it.
+ *
+ * $realm_status is what gets DRAWN, and an admin previewing the newcomer
+ * view forces it false. The two have to be separate variables, because
+ * the realm-creation handler below is guarded by `if(!$realm_status)` --
+ * so a preview that simply lied to the whole page would let the owner
+ * submit the Create Realm form and hand himself a second realm. It is
+ * the same split the admin nav already states: the nav decides what to
+ * draw, the page decides what to allow.
+ */
+$realm_status_real = checkRealm($conn);
+$realm_preview = realm_preview_requested($_GET, $_SESSION);
+$realm_status = $realm_preview ? false : $realm_status_real;
 /*
  * SET ONCE, AT PAGE SCOPE.
  *
@@ -876,7 +924,10 @@ $barracks_slots_open = $realm_id
 	? max(0, $barracks_cap - getTotalSoldierSlotCost($conn, $realm_id)) : 0;
 
 if(isset($_POST['realm']) && isset($_POST['faction'])){
-	if(!$realm_status){
+	/* THE REAL STATUS, NOT THE DRAWN ONE. In the admin preview
+	   $realm_status is false on purpose; keying the write off it would
+	   create a second realm for an owner who already has one. */
+	if(!$realm_status_real){
 		createRealm($conn, $_POST['realm'], $_POST['faction']);
 		$realm_id = getRealmID($conn);
 		$core_projects = getProjects($conn, "core");
@@ -906,6 +957,20 @@ $outgoing_completed = getRaids($conn, "outgoing", "completed");
 $incoming_completed = getRaids($conn, "incoming", "completed");
 ?>
 <!-- The flexible grid (content) -->
+<?php if($realm_preview){ ?>
+<div class="row">
+	<div class="main">
+		<div class="rl-preview" role="status">
+			<strong>Newcomer preview.</strong>
+			This is Realms exactly as somebody with no realm sees it &mdash; the
+			sections you normally land on are gone because they are gone for them.
+			Nothing here can write: submitting Create Realm does nothing while the
+			preview is on, so you can click through it safely.
+			<a href="realms.php">Back to my realm</a>
+		</div>
+	</div>
+</div>
+<?php } ?>
 
 <?php if($realm_status){ ?>
 <?php /*

@@ -900,6 +900,13 @@ function admin_tabs() {
 		   Newcomers is people who got in and stalled, Front Door is people
 		   who could not get in at all. */
 		'frontdoor'   => array('admin-frontdoor.php',   'Front Door'),
+		/* The same funnel one step LATER: Front Door is people who could
+		   not get into the server, Newcomers is people who got in and
+		   stalled, and this is the screen that decides whether they
+		   start at all. Not an admin page -- it is Realms itself, drawn
+		   the way somebody with no realm sees it, which is the only view
+		   of it nobody on this side has ever had. */
+		'onboarding'  => array('realms.php?preview=newcomer', 'Onboarding'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }
