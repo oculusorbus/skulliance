@@ -67,67 +67,163 @@ function mwRng(seed) {
 }
 
 /* ---------------------------------------------------------------------- *
- * THE COASTLINE.
+ * THE TERRAIN.
  *
- * Three harmonics, not one and not ten. One gives an egg; ten gives a
- * ragged blob with no readable shape. Three at falling amplitude gives a
- * continent with a couple of large bays, a few headlands, and detail at
- * the scale a reader notices -- which is how a coast is drawn by hand too.
+ * THIS REPLACED A RADIAL COASTLINE, and the owner's read of that was
+ * right: summed harmonics around a centre can only ever produce one
+ * blob, and "the map now feels like an island" is exactly what it was.
+ * A map is a RECTANGLE with geography in it -- seas, inlets, offshore
+ * islands, land running off the edge of the sheet -- and none of that
+ * comes out of a single closed ring.
  *
- * Returned as a closed ring of points, already in map coordinates.
+ * So the land is a FIELD rather than an outline. Layered value noise over
+ * the whole frame, thresholded into land and water. Everything the owner
+ * asked for falls out of that for free: an archipelago where the field
+ * dips, an inland sea where it dips in the middle of a mass, a peninsula
+ * where a ridge runs to the edge. Nothing is placed; it is all one
+ * surface read at one height.
+ *
+ * THE SEA LEVEL IS SEARCHED, NOT PICKED. A fixed threshold against noise
+ * gives a different amount of land for every seed -- one platform gets a
+ * drowned world and another gets a continent with a pond. Bisecting for a
+ * target land fraction means every world has a usable balance of land and
+ * water whatever the seed, which is the difference between generation
+ * that works and generation you have to re-roll.
  * ---------------------------------------------------------------------- */
-function mwCoast(w, h, seed, steps) {
-	const rng = mwRng(seed);
-	const n = steps || 220;
-	/* Inset so the coast never touches the canvas edge: a continent that
-	   runs off the side reads as a crop of a bigger map, and the whole
-	   point of having a coast is that the map has edges of its own. */
-	const cx = w / 2, cy = h / 2;
-	const rx = w * 0.46, ry = h * 0.46;
 
-	const a1 = rng() * Math.PI * 2, a2 = rng() * Math.PI * 2, a3 = rng() * Math.PI * 2;
-	/* Harmonic COUNTS are randomised within a band as well as their phase,
-	   so two different platforms do not get the same silhouette with the
-	   bays in different places. */
-	const k1 = 2 + Math.floor(rng() * 2);      // 2-3  : the overall lobes
-	const k2 = 5 + Math.floor(rng() * 3);      // 5-7  : bays and headlands
-	const k3 = 11 + Math.floor(rng() * 5);     // 11-15: coastal detail
+/** Hash-lattice value noise. Deterministic, no tables, no allocation. */
+function mwNoise(seed) {
+	const h = (x, y) => {
+		let n = (Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ seed) >>> 0;
+		n = Math.imul(n ^ (n >>> 13), 1274126177) >>> 0;
+		return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+	};
+	const smooth = (t) => t * t * (3 - 2 * t);
+	return (x, y) => {
+		const xi = Math.floor(x), yi = Math.floor(y);
+		const u = smooth(x - xi), v = smooth(y - yi);
+		const a = h(xi, yi), b = h(xi + 1, yi), c = h(xi, yi + 1), d = h(xi + 1, yi + 1);
+		return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
+	};
+}
 
-	const pts = [];
-	for (let i = 0; i < n; i++) {
-		const t = (i / n) * Math.PI * 2;
-		const f = 1
-			+ 0.155 * Math.sin(k1 * t + a1)
-			+ 0.085 * Math.sin(k2 * t + a2)
-			+ 0.035 * Math.sin(k3 * t + a3);
-		pts.push({ x: cx + Math.cos(t) * rx * f, y: cy + Math.sin(t) * ry * f });
-	}
-
+/**
+ * The elevation field, as a Float32Array over the grid.
+ *
+ * FOUR OCTAVES. One is a smear with no coastline worth looking at; eight
+ * is static, and every island it makes is a single cell. Four at halving
+ * amplitude gives masses, bays and a scatter of islands at three readable
+ * scales, which is the same reasoning the old three-harmonic coast used
+ * and the only part of it worth keeping.
+ *
+ * THE EDGE FALLOFF IS DELIBERATELY WEAK. A strong one is how you force an
+ * island, which is the thing being fixed here. This only discourages land
+ * in the last few percent of the frame, so a mass can still run off the
+ * sheet the way it does on a real map, while the corners stay water and
+ * the frame reads as a border rather than as a crop.
+ */
+function mwField(gw, gh, seed, opts) {
+	opts = opts || {};
+	const n1 = mwNoise(seed), n2 = mwNoise(seed ^ 0x51ed270b);
 	/*
-	 * FITTED AFTER THE FACT, NOT PREDICTED.
+	 * MEASURED, THEN CHOSEN BY EYE -- in that order.
 	 *
-	 * The three harmonics can sum to 1.275 of the base radius, so a radius
-	 * of 0.46 overflows the canvas -- which it did: the coast ran to x1489
-	 * of 1400 and every territory on that side came out with a RULER-
-	 * STRAIGHT edge, because the grid stops at the canvas and the trace
-	 * followed the clip. The single most un-worldly thing on the map, and
-	 * it was a sign error away from invisible.
-	 *
-	 * Working out the worst case by hand means redoing it every time an
-	 * amplitude changes. Measuring the ring and fitting it cannot drift.
+	 * Swept fourteen worlds across five settings. 1.2 gives one continent
+	 * with a pond; 4.8 averaged 3.6 masses but ranged 1-8, so one world in
+	 * several was still a single blob. The owner picked the archipelago out
+	 * of four previews, so the floor matters more than the average: 6.2
+	 * averages 4.9 and has never produced fewer than three.
 	 */
-	let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-	for (const p of pts) {
-		if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x;
-		if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y;
+	const base = opts.scale || 6.2;
+	const f = new Float32Array(gw * gh);
+	let lo = Infinity, hi = -Infinity;
+
+	for (let j = 0; j < gh; j++) {
+		for (let i = 0; i < gw; i++) {
+			const u = i / gw, v = j / gh;
+			let e = 0, amp = 1, frq = base, norm = 0;
+			for (let o = 0; o < 4; o++) {
+				/* Two offset fields summed per octave, which breaks up the
+				   square lattice -- one alone leaves visible grid artefacts
+				   along the 45s. */
+				e += amp * (n1(u * frq, v * frq) * 0.65 + n2(v * frq + 7.3, u * frq + 1.7) * 0.35);
+				norm += amp;
+				amp *= 0.5; frq *= 2.07;
+			}
+			e /= norm;
+
+			/* Weak frame falloff: nothing for the middle 86%, easing to a
+			   real push only in the outermost band. */
+			const edge = Math.min(Math.min(u, 1 - u) / 0.07, Math.min(v, 1 - v) / 0.07);
+			if (edge < 1) e -= (1 - Math.max(0, edge)) * 0.26;
+
+			f[j * gw + i] = e;
+			if (e < lo) lo = e;
+			if (e > hi) hi = e;
+		}
 	}
-	const m = 0.035;                                   // margin, each side
-	const sx = (w * (1 - m * 2)) / Math.max(1e-6, x1 - x0);
-	const sy = (h * (1 - m * 2)) / Math.max(1e-6, y1 - y0);
-	const k = Math.min(sx, sy);
-	const offx = (w - (x1 - x0) * k) / 2 - x0 * k;
-	const offy = (h - (y1 - y0) * k) / 2 - y0 * k;
-	return pts.map(p => ({ x: p.x * k + offx, y: p.y * k + offy }));
+	/* Normalised so the bisection below works in a known range whatever
+	   the seed produced. */
+	const span = Math.max(1e-6, hi - lo);
+	for (let k = 0; k < f.length; k++) f[k] = (f[k] - lo) / span;
+	return f;
+}
+
+/**
+ * Sea level for a target land fraction, by bisection.
+ *
+ * Returns the threshold, not the mask -- the caller wants both the mask
+ * and the ability to ask "how deep is this" for anything drawn later.
+ */
+function mwSeaLevel(field, target) {
+	let lo = 0, hi = 1;
+	for (let it = 0; it < 24; it++) {
+		const mid = (lo + hi) / 2;
+		let land = 0;
+		for (let k = 0; k < field.length; k++) if (field[k] > mid) land++;
+		if (land / field.length > target) lo = mid; else hi = mid;
+	}
+	return (lo + hi) / 2;
+}
+
+/**
+ * Drop the specks.
+ *
+ * A noise field produces single-cell islands by the dozen, and at map
+ * scale they are dirt rather than geography. Anything under a floor of
+ * the frame is flooded; everything bigger is kept, because a genuine
+ * offshore island is the most characterful thing on the map.
+ *
+ * Also returns the surviving masses, largest first, so a caller can seed
+ * into real land rather than onto a rock.
+ */
+function mwFloodSpecks(mask, gw, gh, minCells) {
+	const seen = new Int32Array(gw * gh).fill(-1);
+	const masses = [];
+	const stack = [];
+	for (let start = 0; start < mask.length; start++) {
+		if (!mask[start] || seen[start] >= 0) continue;
+		const id = masses.length;
+		const cells = [];
+		stack.length = 0; stack.push(start); seen[start] = id;
+		while (stack.length) {
+			const k = stack.pop();
+			cells.push(k);
+			const i = k % gw, j = (k / gw) | 0;
+			if (i > 0      && mask[k - 1]  && seen[k - 1]  < 0) { seen[k - 1]  = id; stack.push(k - 1); }
+			if (i < gw - 1 && mask[k + 1]  && seen[k + 1]  < 0) { seen[k + 1]  = id; stack.push(k + 1); }
+			if (j > 0      && mask[k - gw] && seen[k - gw] < 0) { seen[k - gw] = id; stack.push(k - gw); }
+			if (j < gh - 1 && mask[k + gw] && seen[k + gw] < 0) { seen[k + gw] = id; stack.push(k + gw); }
+		}
+		masses.push(cells);
+	}
+	const kept = [];
+	for (const cells of masses) {
+		if (cells.length < minCells) { for (const k of cells) mask[k] = 0; continue; }
+		kept.push(cells);
+	}
+	kept.sort((a, b) => b.length - a.length);
+	return kept;
 }
 
 /** Winding-number test. Works for the concave rings a coast produces,
@@ -174,7 +270,16 @@ function mwTrace(owner, id, gw, gh, cs, ox, oy) {
 	}
 	if (!edges.size) return [];
 
-	let best = [];
+	/*
+	 * EVERY RING, LARGEST FIRST -- not just the biggest one.
+	 *
+	 * It used to return only the longest, which was right when a region
+	 * was one blob on one island. With real terrain a faction's territory
+	 * legitimately includes offshore islands, and dropping them silently
+	 * deleted the most characterful thing on the map. Callers that only
+	 * want a body take [0]; callers drawing the land take all of them.
+	 */
+	const rings = [];
 	while (edges.size) {
 		const first = edges.values().next().value;
 		const ring = [];
@@ -187,9 +292,10 @@ function mwTrace(owner, id, gw, gh, cs, ox, oy) {
 			edges.delete(key(cur.x, cur.y));
 			cur = edges.get(key(cur.nx, cur.ny));
 		}
-		if (ring.length > best.length) best = ring;
+		if (ring.length >= 4) rings.push(ring);
 	}
-	return best;
+	rings.sort((a, b) => b.length - a.length);
+	return rings;
 }
 
 /*
@@ -248,8 +354,6 @@ function mwWorld(factions, w, h, opts) {
 	const names = factions.map(f => String(f.name)).sort();
 	const seed = mwHash(names.join('|'));
 
-	const coast = mwCoast(w, h, seed, opts.coastSteps);
-
 	/* A coarse grid. Fine enough that a border reads as a line rather than
 	   as stairs once smoothed, coarse enough to stay cheap on a phone:
 	   160 x 110 is ~18k cells and one point-in-polygon test each. */
@@ -258,30 +362,72 @@ function mwWorld(factions, w, h, opts) {
 	const cs = w / gw;
 	const ox = 0, oy = 0;
 
-	const land = new Uint8Array(gw * gh);
-	let landCount = 0;
-	for (let j = 0; j < gh; j++) {
-		for (let i = 0; i < gw; i++) {
-			const x = ox + (i + 0.5) * cs, y = oy + (j + 0.5) * (h / gh);
-			if (mwInside(x, y, coast)) { land[j * gw + i] = 1; landCount++; }
-		}
-	}
-	if (!landCount) return null;
+	const cellH = h / gh;
 
-	/* Seeds spread around a ring inside the coast, in sorted-name order, so
-	   neighbours are stable and a faction keeps roughly its part of the
-	   world as others come and go. */
+	/* ---- the geography ---- */
+	const field = mwField(gw, gh, seed, opts);
+	/* 0.42 from the same sweep. Below 0.38 the map is mostly water and
+	   territories have nowhere to breathe; 0.62 is one continent. */
+	const sea = mwSeaLevel(field, opts.landFraction === undefined ? 0.42 : opts.landFraction);
+	const land = new Uint8Array(gw * gh);
+	for (let k = 0; k < field.length; k++) land[k] = field[k] > sea ? 1 : 0;
+
+	/* Specks flooded, masses returned largest first. A single-cell island
+	   is dirt; a real one is the best thing on the map. */
+	const masses = mwFloodSpecks(land, gw, gh,
+		Math.max(6, Math.round(gw * gh * (opts.minIsland === undefined ? 0.0025 : opts.minIsland))));
+	if (!masses.length) return null;
+
+	/*
+	 * SEEDS GO ON REAL LAND, SPREAD ACROSS THE MASSES.
+	 *
+	 * The old version placed them on a ring and walked them toward the
+	 * centre until they hit land, which only works when there IS a centre
+	 * -- with an archipelago the middle of the frame is often sea. Each
+	 * faction instead takes the cell furthest from every seed placed so
+	 * far, out of the land that exists. That is farthest-point seeding: it
+	 * spreads them across the masses by construction, puts the first few
+	 * on the biggest islands, and cannot land one in the water.
+	 */
 	const rng = mwRng(seed ^ 0x9e3779b9);
-	const seeds = names.map((nm, idx) => {
-		const t = (idx / names.length) * Math.PI * 2 + rng() * 0.25;
-		const rr = 0.18 + rng() * 0.42;
-		return {
-			name: nm,
-			x: w / 2 + Math.cos(t) * w * 0.40 * rr * 2,
-			y: h / 2 + Math.sin(t) * h * 0.40 * rr * 2,
+	const landIdx = [];
+	for (let k = 0; k < land.length; k++) if (land[k]) landIdx.push(k);
+	const cellXY = (k) => ({ x: ox + ((k % gw) + 0.5) * cs, y: oy + (((k / gw) | 0) + 0.5) * cellH });
+
+	const seeds = [];
+	for (const nm of names) {
+		let pick = -1, best = -1;
+		if (!seeds.length) {
+			/* The first seed is the centre of the largest mass, so the
+			   biggest faction is not handed an outlying rock. */
+			const big = masses[0];
+			let mx = 0, my = 0;
+			for (const k of big) { const p = cellXY(k); mx += p.x; my += p.y; }
+			mx /= big.length; my /= big.length;
+			let bd = Infinity;
+			for (const k of big) {
+				const p = cellXY(k);
+				const d = (p.x - mx) * (p.x - mx) + (p.y - my) * (p.y - my);
+				if (d < bd) { bd = d; pick = k; }
+			}
+		} else {
+			for (const k of landIdx) {
+				const p = cellXY(k);
+				let near = Infinity;
+				for (const sd of seeds) {
+					const dx = p.x - sd.x, dy = p.y - sd.y;
+					const d = dx * dx + dy * dy;
+					if (d < near) near = d;
+				}
+				if (near > best) { best = near; pick = k; }
+			}
+		}
+		const p = cellXY(pick);
+		seeds.push({
+			name: nm, x: p.x, y: p.y,
 			weight: Math.max(1, Number((factions.find(f => String(f.name) === nm) || {}).weight) || 1)
-		};
-	});
+		});
+	}
 
 	/*
 	 * WEIGHTED NEAREST, THEN LLOYD.
@@ -292,7 +438,6 @@ function mwWorld(factions, w, h, opts) {
 	 * large faction swallow the continent.
 	 */
 	const owner = new Int16Array(gw * gh).fill(-1);
-	const cellH = h / gh;
 	const passes = opts.relax === undefined ? 3 : opts.relax;
 
 	for (let pass = 0; pass <= passes; pass++) {
@@ -323,31 +468,83 @@ function mwWorld(factions, w, h, opts) {
 			}
 		}
 		for (let s = 0; s < seeds.length; s++) {
-			if (!sn[s]) continue;
-			seeds[s].x = sx[s] / sn[s];
-			seeds[s].y = sy[s] / sn[s];
+			if (sn[s]) {
+				seeds[s].x = sx[s] / sn[s];
+				seeds[s].y = sy[s] / sn[s];
+				continue;
+			}
+			/*
+			 * A STARVED SEED IS RESCUED, NOT LEFT OUT.
+			 *
+			 * Weighted nearest can squeeze a small faction out entirely --
+			 * seven of eight survived on every realistic desktop canvas,
+			 * which tripped the caller's "did everyone get land" guard and
+			 * silently reverted the whole map to the old packing. The
+			 * failure was invisible: a correct-looking fallback.
+			 *
+			 * BELT AND BRACES WITH THE on-land SEED CLAMP ABOVE, and
+			 * deliberately: either alone fixes the eight-faction case, and
+			 * map-world-harness.js therefore catches neither on its own --
+			 * only removing BOTH reproduces the failure. Do not delete one
+			 * because a mutation says nothing breaks.
+			 *
+			 * The rescue drops the seed on the land cell FURTHEST from its
+			 * current owner, which is the cell that owner holds most
+			 * loosely, and only takes from a region big enough to spare it.
+			 * The remaining passes then settle the new border properly.
+			 */
+			let takeIdx = -1, takeD = -1;
+			for (let j = 0; j < gh; j++) {
+				for (let i = 0; i < gw; i++) {
+					const idx = j * gw + i, o = owner[idx];
+					if (o < 0 || sn[o] < 8) continue;
+					const x = ox + (i + 0.5) * cs, y = oy + (j + 0.5) * cellH;
+					const dx = x - seeds[o].x, dy = y - seeds[o].y;
+					const d = dx * dx + dy * dy;
+					if (d > takeD) { takeD = d; takeIdx = idx; }
+				}
+			}
+			if (takeIdx >= 0) {
+				seeds[s].x = ox + ((takeIdx % gw) + 0.5) * cs;
+				seeds[s].y = oy + (Math.floor(takeIdx / gw) + 0.5) * cellH;
+			}
 		}
 	}
 
+	const dress = (ring) => mwSmooth(mwDedupe(ring), opts.smooth === undefined ? 3 : opts.smooth);
+
 	const regions = [];
 	for (let s = 0; s < seeds.length; s++) {
-		const ring = mwTrace(owner, s, gw, gh, cs, ox, oy);
-		if (ring.length < 4) continue;
+		const rings = mwTrace(owner, s, gw, gh, cs, ox, oy);
+		if (!rings.length) continue;
 		let cells = 0;
 		for (let k = 0; k < owner.length; k++) if (owner[k] === s) cells++;
+		const polys = rings.map(dress);
 		regions.push({
 			name: seeds[s].name,
-			poly: mwSmooth(mwDedupe(ring), opts.smooth === undefined ? 3 : opts.smooth),
+			/* poly is the BODY -- markers, the label and the bounding box
+			   all want one shape. polys is every piece, including the
+			   faction's offshore islands, and is what gets drawn. */
+			poly: polys[0],
+			polys: polys,
 			cells: cells,
 			centre: { x: seeds[s].x, y: seeds[s].y }
 		});
 	}
 	if (!regions.length) return null;
 
-	return { coast: coast, regions: regions, width: w, height: h };
+	/* The land outline: every mass and every lake shore, for the coast
+	   stroke. Traced off the land mask with the same tracer. */
+	const landMask = new Int16Array(gw * gh);
+	for (let k = 0; k < land.length; k++) landMask[k] = land[k] ? 0 : -1;
+	const coastRings = mwTrace(landMask, 0, gw, gh, cs, ox, oy).map(dress);
+
+	return { coast: coastRings, regions: regions, width: w, height: h,
+	         masses: masses.length };
 }
 
 /* Browser globals, and CommonJS for the harness. */
 if (typeof module !== 'undefined' && module.exports) {
-	module.exports = { mwHash, mwRng, mwCoast, mwInside, mwTrace, mwDedupe, mwSmooth, mwWorld };
+	module.exports = { mwHash, mwRng, mwNoise, mwField, mwSeaLevel, mwFloodSpecks,
+	                   mwInside, mwTrace, mwDedupe, mwSmooth, mwWorld };
 }

@@ -287,7 +287,7 @@ function worldLayout(fdata, w, h) {
             if (q.x < x0) x0 = q.x; if (q.x > x1) x1 = q.x;
             if (q.y < y0) y0 = q.y; if (q.y > y1) y1 = q.y;
         }
-        placedWithPoly.push({ faction: f, poly: r.poly,
+        placedWithPoly.push({ faction: f, poly: r.poly, polys: r.polys,
             x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
     }
     /* A faction with no land is a faction nobody can click. Better to draw
@@ -296,22 +296,91 @@ function worldLayout(fdata, w, h) {
     return { placedWithPoly: placedWithPoly, coast: world.coast };
 }
 
+/*
+ * HOW WIDE THE WORLD IS COMPOSED.
+ *
+ * NOT window.innerWidth, WHICH IS WHAT THIS SHIPPED AS. The page content
+ * lives inside `.container`, which flexbox.css caps at 2000px and centres
+ * -- so on anything wider the map was drawn to the full viewport and ran
+ * out past the header on both sides. The old packer could use innerWidth
+ * and get away with it because its width came from the blocks it managed
+ * to fit; a continent fills whatever canvas it is given, so the canvas has
+ * to be the right size.
+ *
+ * MEASURED OFF THE NAVBAR, which is inside `.container` and is the width
+ * the owner actually means by "the header". It cannot be measured off
+ * #container: renderMap() runs at page load while #map is display:none, and
+ * a hidden subtree reports zero -- the same trap that made getBBox() return
+ * nothing here, which is written up a few lines further down.
+ *
+ * Every fallback is a real width rather than a guess that could be zero: a
+ * zero canvas means no land, no regions, and worldLayout() handing back
+ * null forever.
+ */
+function composeWidth() {
+    if (window.innerWidth <= MOBILE_BP) return MOBILE_DESIGN_W;
+    const probe = document.getElementById('navbar')
+               || document.querySelector('.navbar')
+               || document.querySelector('.container');
+    const w = (probe && probe.clientWidth) ? probe.clientWidth
+            : Math.min(window.innerWidth, 2000);
+    return Math.max(900, w - MOBILE_GUTTER);
+}
+
+/*
+ * AND HOW TALL, SO THE WHOLE WORLD IS ON ONE SCREEN.
+ *
+ * A map you scroll is a map you navigate instead of reading, and a
+ * continent's shape is the first thing it has to say. The old packer grew
+ * downwards without limit -- 52 realms came out 2062px tall -- which was
+ * tolerable for a stack of blocks and is not for a place.
+ *
+ * DESKTOP is direct: the SVG carries concrete width and height, so the
+ * composed height IS the drawn height and it only has to clear the chrome
+ * above it.
+ *
+ * MOBILE IS NOT. map.css lets the browser scale the SVG down to the column
+ * (max-width:100% over a viewBox), so the drawn height is the composed
+ * height times that scale. Composing to the raw viewport there would give
+ * a map a third of a screen tall. The composed height is divided back
+ * through the scale, which is the same reasoning MOBILE_DESIGN_W already
+ * rests on.
+ *
+ * MEASURED OFF THE NAVBAR for the same reason composeWidth() is, and with
+ * the same floor: #map is display:none at render time and a hidden subtree
+ * measures zero.
+ */
+function composeHeight(worldW) {
+    const vh = window.innerHeight || 800;
+    const nav = document.getElementById('navbar');
+    const navH = (nav && nav.offsetHeight) ? nav.offsetHeight : 64;
+    /* The realms tab row, #container-wrapper's 20px of padding and a little
+       breathing room under the map. Measured rather than guessed would mean
+       measuring hidden elements, which returns zero. */
+    const CHROME = 128;
+    const avail = Math.max(360, vh - navH - CHROME);
+    if (window.innerWidth > MOBILE_BP) return Math.round(avail);
+    const scale = Math.max(0.12, (window.innerWidth - MOBILE_GUTTER) / worldW);
+    return Math.max(500, Math.round(avail / scale));
+}
+
 function renderMap() {
     const container = document.getElementById('container');
     const fdata = buildFactionData();
 
-    /* The canvas the world is composed at. Same width rule the packer
-       uses, so the mobile path is unchanged; the height is a ratio rather
-       than a sum of blocks, because a continent has a shape of its own. */
-    const worldW = window.innerWidth <= MOBILE_BP
-        ? MOBILE_DESIGN_W : Math.max(900, window.innerWidth - MOBILE_GUTTER);
-    const world = worldLayout(fdata, worldW, Math.round(worldW * 0.70));
+    const worldW = composeWidth();
+    /* The world FILLS the box rather than keeping a fixed ratio: the coast
+       fitter preserves the continent's own proportions inside whatever it
+       is given (one scale factor, the smaller of the two), so a wide short
+       canvas yields a centred continent and not a squashed one. */
+    const worldH = composeHeight(worldW);
+    const world = worldLayout(fdata, worldW, worldH);
 
     const placed = world ? [] : packFactions(fdata);
 
     let svgW = 0, svgH = 0;
     if (world) {
-        svgW = worldW; svgH = Math.round(worldW * 0.70);
+        svgW = worldW; svgH = worldH;
     } else {
         for (const p of placed) {
             svgW = Math.max(svgW, p.x+p.w+PAD);
@@ -384,16 +453,25 @@ function renderMap() {
      * shade off the page ground rather than a colour of its own: the
      * point is that the map has an edge, not that the sea is blue.
      */
-    if (world && world.coast) {
-        const cd = toPath(world.coast);
-        /* A soft halo outside the line, which is what reads as shallows
-           and is the cheapest thing on the map that says "coast". */
-        svg.appendChild(svgEl('path', { d: cd, fill: 'none',
-            stroke: 'rgba(120,200,230,0.20)', 'stroke-width': '14',
-            'stroke-linejoin': 'round' }));
-        svg.appendChild(svgEl('path', { d: cd, fill: 'rgba(90,150,190,0.10)',
-            stroke: 'rgba(150,215,240,0.55)', 'stroke-width': '2',
-            'stroke-linejoin': 'round' }));
+    if (world && world.coast && world.coast.length) {
+        /* THE SEA IS THE WHOLE SHEET. A map is a rectangle with geography
+           in it; the first version drew one island centred in the frame
+           and that is exactly what it looked like. */
+        svg.appendChild(svgEl('rect', { x: 0, y: 0, width: svgW, height: svgH,
+            fill: 'rgba(10,32,52,0.55)' }));
+        /* EVERY SHORELINE, not one. The terrain gives several masses and
+           the occasional inland sea, and each is its own ring. */
+        for (const ring of world.coast) {
+            const cd = toPath(ring);
+            /* A soft halo outside the line, which reads as shallows and is
+               the cheapest thing on the map that says "coast". */
+            svg.appendChild(svgEl('path', { d: cd, fill: 'none',
+                stroke: 'rgba(120,200,230,0.18)', 'stroke-width': '12',
+                'stroke-linejoin': 'round' }));
+            svg.appendChild(svgEl('path', { d: cd, fill: 'rgba(18,54,82,0.95)',
+                stroke: 'rgba(150,215,240,0.50)', 'stroke-width': '2',
+                'stroke-linejoin': 'round' }));
+        }
     }
 
     const R = 22;
@@ -401,23 +479,29 @@ function renderMap() {
 
     // ── Layer 1: territory fills ──────────────────────────────────────────────
     const LOGO_MAX = 96; // max natural size cap in px
-    for (const {faction, poly} of placedWithPoly) {
-        svg.appendChild(svgEl('path', {
-            d: toPath(poly),
-            fill: hexToRgba(faction.color, 0.13),
-            stroke: 'none'
-        }));
-        svg.appendChild(svgEl('path', {
-            d: toPath(poly),
-            fill: 'none',
-            stroke: faction.color,
-            'stroke-width': '2',
-            'stroke-dasharray': '10,6',
-            'stroke-linejoin': 'round',
-            'stroke-linecap': 'round',
-            filter: 'url(#glow)',
-            opacity: '0.85'
-        }));
+    for (const {faction, poly, polys} of placedWithPoly) {
+        /* EVERY PIECE A FACTION HOLDS. polys is the body plus its offshore
+           islands; the old layout had one shape per faction and this read
+           `poly` only, which silently dropped the islands -- the most
+           characterful thing the terrain produces. */
+        for (const piece of (polys && polys.length ? polys : [poly])) {
+            svg.appendChild(svgEl('path', {
+                d: toPath(piece),
+                fill: hexToRgba(faction.color, 0.13),
+                stroke: 'none'
+            }));
+            svg.appendChild(svgEl('path', {
+                d: toPath(piece),
+                fill: 'none',
+                stroke: faction.color,
+                'stroke-width': '2',
+                'stroke-dasharray': '10,6',
+                'stroke-linejoin': 'round',
+                'stroke-linecap': 'round',
+                filter: 'url(#glow)',
+                opacity: '0.85'
+            }));
+        }
 
         // Project logo watermark centered in territory
         if (faction.currency) {

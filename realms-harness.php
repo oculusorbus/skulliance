@@ -1261,20 +1261,115 @@ ok(strpos($wl, 'placedWithPoly.length !== fdata.length') !== false,
 ok(strpos($MAPJS, 'world ? world.placedWithPoly : placed.map(') !== false,
    'the old packing is no longer the fallback, so there is nothing to fall back TO');
 
-/* The sea is drawn under the territories or it is not a coast.
-   ANCHORED ON CODE, NOT ON A SECTION COMMENT: this read is
-   comment-stripped, so '// Layer 1: territory fills' is not in it -- which
-   is how the first spelling of this failed on a correct file. */
-$seaAt  = strpos($MAPJS, "stroke: 'rgba(150,215,240,0.55)'");
+/*
+ * THE MAP IS NO WIDER THAN THE HEADER.
+ *
+ * This shipped using window.innerWidth, which is not the page: content
+ * lives inside `.container`, capped at 2000px and centred, so on a wide
+ * screen the continent was drawn past the header on both sides. The old
+ * packer got away with innerWidth because its width came from the blocks
+ * it fitted; a continent fills whatever canvas it is given.
+ */
+ok(strpos($MAPJS, 'function composeWidth(') !== false,
+   'the compose width is inlined again rather than being one function the resize path and '
+ . 'the first render share');
+$cw = substr($MAPJS, strpos($MAPJS, 'function composeWidth('));
+$cw = substr($cw, 0, strpos($cw, "\nfunction "));
+ok(strpos($cw, 'navbar') !== false,
+   'the world is sized from something other than the header, so it can be wider than the page');
+/* innerWidth is still legitimate as the MOBILE branch and as a last-resort
+   fallback; what it must not be is the desktop answer. */
+ok(preg_match('~return Math\.max\(900, window\.innerWidth~', $cw) !== 1,
+   'the desktop width is window.innerWidth again, which is the viewport and not the page');
+ok(strpos($cw, 'MOBILE_DESIGN_W') !== false,
+   'the mobile composition width is gone, so a phone composes at its own narrow width and '
+ . 'the packer degenerates into a single column');
+/*
+ * AND IT CANNOT RETURN ZERO. renderMap() runs while #map is display:none,
+ * where a hidden subtree measures zero -- the same trap that made getBBox()
+ * return nothing here. A zero canvas means no land, no regions, and
+ * worldLayout() handing back null for good.
+ */
+ok(strpos($cw, 'Math.max(900,') !== false,
+   'there is no floor on the composed width, so a hidden or unmeasurable probe yields a '
+ . 'zero-width world and the map silently falls back forever');
+
+/*
+ * AND NO TALLER THAN THE WINDOW. A map you scroll is a map you navigate
+ * instead of read, and the continent's shape is the first thing it says.
+ * The old packer grew downwards without limit -- 52 realms came out
+ * 2062px tall -- which was tolerable for a stack of blocks and is not for
+ * a place.
+ */
+ok(strpos($MAPJS, 'function composeHeight(') !== false,
+   'the composed height is inlined again rather than shared by the first render and the '
+ . 'resize path');
+$ch = substr($MAPJS, strpos($MAPJS, 'function composeHeight('));
+$ch = substr($ch, 0, strpos($ch, "\nfunction "));
+ok(strpos($ch, 'innerHeight') !== false,
+   'the height does not come from the window, so the map can run off the bottom of it');
+/* SUBTRACTED, not merely mentioned. Checking for 'navbar' passed with the
+   measurement replaced by a constant zero, because the getElementById call
+   still named it. */
+ok(strpos($ch, 'navbar') !== false,
+   'the height does not look at the header above the map');
+ok(strpos($ch, 'vh - navH') !== false,
+   'the header height is read and then not subtracted, so the map still runs past the '
+ . 'bottom of the window by exactly the height of the nav');
+/*
+ * MOBILE IS NOT THE SAME SUM. map.css scales the SVG down to the column
+ * (max-width:100% over a viewBox), so the DRAWN height is the composed
+ * height times that scale -- composing to the raw viewport there gives a
+ * map a third of a screen tall.
+ */
+ok(strpos($ch, 'MOBILE_GUTTER) / worldW') !== false,
+   'the mobile height is not divided back through the CSS scale, so the map composes to the '
+ . 'viewport and then shrinks to a third of it');
+ok(strpos($ch, 'Math.max(360,') !== false,
+   'there is no floor on the available height; a short window or an unmeasurable navbar '
+ . 'yields a zero-height world and worldLayout() falls back for good');
+/* And the world must actually BE composed at it, not at a fixed ratio. */
+ok(strpos($MAPJS, 'const worldH = composeHeight(worldW);') !== false,
+   'the world is built at a fixed aspect ratio again rather than at the window height');
+ok(strpos($MAPJS, 'svgW = worldW; svgH = worldH;') !== false,
+   'the svg is sized to something other than the composed canvas');
+
+/*
+ * THE SEA IS THE WHOLE SHEET, AND EVERY SHORELINE IS DRAWN.
+ *
+ * The first geography was a single radial coastline and looked like what
+ * it was -- "the map now feels like an island". The land is a noise field
+ * over the rectangle now, which means SEVERAL shorelines: masses, inland
+ * seas, offshore islands. Drawing world.coast as one ring silently loses
+ * all but one of them.
+ *
+ * Anchored on code rather than on colour literals or section comments:
+ * this read is comment-stripped, and the first spelling of these broke on
+ * a correct file twice -- once on a '// Layer 1' comment that stripping
+ * had removed, once on an alpha value that changed with the rewrite.
+ */
+$seaAt  = strpos($MAPJS, "svgEl('rect', { x: 0, y: 0, width: svgW, height: svgH");
 $terrAt = strpos($MAPJS, 'hexToRgba(faction.color, 0.13)');
-ok($seaAt !== false, 'the coastline is never stroked, so the map has no coast');
+/* A BARE STATEMENT. Checked as a plain strpos this passed with the whole
+   append wrapped in `if (false)` -- the string was untouched. Sixth time
+   this session that a check has survived its subject being disabled. */
+ok(preg_match('~\n\s*svg\.appendChild\(svgEl\(\x27rect\x27, \{ x: 0, y: 0, width: svgW~', $MAPJS) === 1,
+   'the sea no longer covers the sheet, or its append has been wrapped in a dead branch');
 ok($terrAt !== false, 'the territory fill is gone');
 ok($seaAt !== false && $terrAt !== false && $seaAt < $terrAt,
-   'the coastline is drawn over the territories instead of under them');
+   'the sea is painted over the territories instead of under them');
+ok(strpos($MAPJS, 'for (const ring of world.coast)') !== false,
+   'only one shoreline is drawn; the terrain produces several and the rest vanish');
 /* AND IT IS ACTUALLY REACHED. `if (false)` leaves every string in place,
    so a positional check alone passes over a coast that never draws. */
-ok(strpos($MAPJS, 'if (world && world.coast) {') !== false,
-   'the coast is behind a condition that is not "there is a world with a coast"');
+ok(strpos($MAPJS, 'if (world && world.coast && world.coast.length) {') !== false,
+   'the coast is behind a condition that is not "there is a world with shorelines"');
+/* Every piece a faction holds, not just its body. */
+ok(strpos($MAPJS, '(polys && polys.length ? polys : [poly])') !== false,
+   'territories draw only their main body, so a faction\'s offshore islands are left '
+ . 'uncoloured on a map whose best feature is that it has islands');
+
+
 
 /*
  * THE SHIPPED JAVASCRIPT PARSES.

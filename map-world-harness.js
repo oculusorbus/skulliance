@@ -51,7 +51,7 @@ console.log('the same world every visit');
 	   order the continent would reshape whenever the planner changed. */
 	const c = W.mwWorld(FACTIONS.slice().reverse(), 1400, 980);
 	ok(JSON.stringify(a.coast) === JSON.stringify(c.coast),
-	   'the coastline depends on the order the factions arrived in');
+	   'the geography depends on the order the factions arrived in');
 
 	/*
 	 * AND A NEW REALM MUST NOT REDRAW THE CONTINENT. Borders move, which
@@ -61,7 +61,7 @@ console.log('the same world every visit');
 	const grown = FACTIONS.map(f => f.name === 'Omen' ? { name: f.name, weight: f.weight + 4 } : f);
 	const d = W.mwWorld(grown, 1400, 980);
 	ok(JSON.stringify(a.coast) === JSON.stringify(d.coast),
-	   'a faction gaining realms redraws the coastline, so the world changes shape whenever '
+	   'a faction gaining realms redraws the land, so the world changes shape whenever '
 	 + 'anybody joins');
 	ok(JSON.stringify(a.regions) !== JSON.stringify(d.regions),
 	   'a faction gaining four realms does not change the borders at all, so territory does '
@@ -77,28 +77,53 @@ console.log('\nthe continent fits inside the canvas');
 	 * a dead-straight eastern border -- the single most un-worldly thing
 	 * on a map built to stop looking like boxes.
 	 */
-	for (const [w, h] of [[1400, 980], [900, 630], [2400, 1200], [640, 900]]) {
+	/*
+	 * THE SHAPES THE PAGE ACTUALLY COMPOSES AT, not a square-ish one that
+	 * happens to work. The first version of this tested 1400x980 only, and
+	 * every realistic desktop canvas was starving one faction out of eight
+	 * -- which tripped worldLayout()'s "did everyone get land" guard and
+	 * silently reverted the whole map to the old packing. A correct-looking
+	 * fallback is the worst way for a feature to fail, and a test list that
+	 * omits the real aspect ratios is how it got shipped.
+	 */
+	for (const [w, h] of [[1400, 980], [1860, 888], [1380, 708], [1940, 1208],
+	                      [900, 630], [2400, 700], [900, 430], [640, 900]]) {
 		const world = W.mwWorld(FACTIONS, w, h);
 		ok(world !== null, 'no world at ' + w + 'x' + h);
 		if (!world) continue;
-		const c = bbox(world.coast);
-		ok(c.x0 >= 0 && c.y0 >= 0 && c.x1 <= w && c.y1 <= h,
-		   'the coast overflows a ' + w + 'x' + h + ' canvas: x ' + c.x0.toFixed(0) + '-'
+		const c = bbox([].concat.apply([], world.coast));
+		ok(c.x0 >= -1 && c.y0 >= -1 && c.x1 <= w + 1 && c.y1 <= h + 1,
+		   'the land overflows a ' + w + 'x' + h + ' sheet: x ' + c.x0.toFixed(0) + '-'
 		 + c.x1.toFixed(0) + ', y ' + c.y0.toFixed(0) + '-' + c.y1.toFixed(0));
-		/* And it has to USE the canvas. A continent fitted so hard it sits
-		   in the middle at a quarter size is "fits" and is not a map. */
-		ok((c.x1 - c.x0) > w * 0.80 || (c.y1 - c.y0) > h * 0.80,
-		   'the continent only fills ' + (((c.x1 - c.x0) / w) * 100).toFixed(0) + '% of a '
-		 + w + 'x' + h + ' canvas');
+		/* And it has to USE the sheet. A map is a rectangle with geography
+		   in it; land huddled in the middle is the island this replaced. */
+		ok((c.x1 - c.x0) > w * 0.80 && (c.y1 - c.y0) > h * 0.70,
+		   'the land only spans ' + (((c.x1 - c.x0) / w) * 100).toFixed(0) + '% x '
+		 + (((c.y1 - c.y0) / h) * 100).toFixed(0) + '% of a ' + w + 'x' + h + ' sheet');
 	}
 }
 
 console.log('\nnobody is left off the world, and land tracks realms');
 {
+	/* AT EVERY SHAPE, for the reason in the block above: this held at
+	   1400x980 and failed at every real desktop size. */
+	for (const [w, h] of [[1400, 980], [1860, 888], [1380, 708], [1940, 1208],
+	                      [900, 430], [2400, 700]]) {
+		const wd = W.mwWorld(FACTIONS, w, h);
+		ok(wd && wd.regions.length === FACTIONS.length,
+		   'at ' + w + 'x' + h + ' only ' + (wd ? wd.regions.length : 0) + ' of '
+		 + FACTIONS.length + ' factions got territory, so worldLayout() reverts to the old '
+		 + 'packing and the whole map quietly stops being a world');
+	}
+	/* And a faction squeezed to nothing must be RESCUED rather than left
+	   out: one realm against a field of big ones is the common case. */
+	const lopsided = [{ name: 'Giant', weight: 400 }, { name: 'Tiny', weight: 1 },
+	                  { name: 'Small', weight: 2 }];
+	const lw = W.mwWorld(lopsided, 1860, 888);
+	ok(lw && lw.regions.length === 3,
+	   'a one-realm faction beside a 400-realm one is squeezed off the map entirely');
+
 	const world = W.mwWorld(FACTIONS, 1400, 980);
-	ok(world.regions.length === FACTIONS.length,
-	   'only ' + world.regions.length + ' of ' + FACTIONS.length + ' factions got territory; '
-	 + 'a faction with no land is a faction nobody can click');
 
 	const total = world.regions.reduce((a, r) => a + r.cells, 0);
 	const wTotal = FACTIONS.reduce((a, f) => a + f.weight, 0);
@@ -122,6 +147,87 @@ console.log('\nnobody is left off the world, and land tracks realms');
 	}
 }
 
+console.log('\nit is a map sheet, not an island');
+{
+	/*
+	 * THE FIRST VERSION WAS A RADIAL COASTLINE -- summed harmonics around
+	 * a centre -- and the owner's read of it was exactly right: "the map
+	 * now feels like an island". One closed ring around one centre cannot
+	 * produce anything else. The land is a NOISE FIELD over the whole
+	 * rectangle now, thresholded, so seas, inlets, offshore islands and
+	 * land running off the sheet all fall out of one surface.
+	 *
+	 * Twelve worlds, because a single seed proves nothing about variety.
+	 */
+	const base = FACTIONS.map(f => f.name);
+	let masses = 0, worlds = 0, islandsHeld = 0, mostMasses = 0, fewestMasses = Infinity;
+	for (let k = 0; k < 12; k++) {
+		const F = FACTIONS.map((f, i) => ({ name: base[i] + (k ? ' ' + k : ''), weight: f.weight }));
+		const wd = W.mwWorld(F, 1860, 888);
+		ok(wd !== null, 'world ' + k + ' did not generate');
+		if (!wd) continue;
+		worlds++;
+		masses += wd.masses;
+		if (wd.masses > mostMasses) mostMasses = wd.masses;
+		if (wd.masses < fewestMasses) fewestMasses = wd.masses;
+		islandsHeld += wd.regions.reduce((a, r) => a + (r.polys.length - 1), 0);
+		ok(wd.regions.length === FACTIONS.length,
+		   'world ' + k + ' left ' + (FACTIONS.length - wd.regions.length) + ' faction(s) '
+		 + 'without land');
+	}
+	const avg = masses / worlds;
+	/* Measured across the sweep that chose the defaults: 3.1/0.62 gives
+	   one continent with a pond, 5.4/0.40 gives six scraps. The shipped
+	   4.8/0.45 sits around three. */
+	ok(avg > 1.6, 'twelve worlds averaged ' + avg.toFixed(1) + ' landmasses; the map is a '
+	 + 'single blob again');
+	ok(mostMasses >= 4, 'no world in twelve had more than ' + mostMasses + ' landmasses, so '
+	 + 'there is no variety between them');
+	/*
+	 * AND THE FLOOR MATTERS MORE THAN THE AVERAGE. The owner picked the
+	 * archipelago out of four previews; a setting that averages four
+	 * masses but drops to one every few worlds still hands somebody the
+	 * island this replaced.
+	 */
+	ok(fewestMasses >= 2, 'one of twelve worlds came out as ' + fewestMasses + ' landmass(es); '
+	 + 'the floor is what a player actually gets, not the average');
+
+	/*
+	 * IT REACHES THE EDGES OF THE SHEET. This is what separates a map from
+	 * an island, and the land-span check above does NOT catch it -- a
+	 * strong edge falloff still leaves land spanning most of the frame
+	 * while rounding every corner into open water. A real sheet has land
+	 * running off at least a couple of sides.
+	 */
+	const edgeWorld = W.mwWorld(FACTIONS, 1860, 888);
+	const allPts = [].concat.apply([], edgeWorld.coast);
+	const band = 1860 * 0.04;
+	const sides = {
+		left:   allPts.some(p => p.x < band),
+		right:  allPts.some(p => p.x > 1860 - band),
+		top:    allPts.some(p => p.y < 888 * 0.04),
+		bottom: allPts.some(p => p.y > 888 - 888 * 0.04)
+	};
+	const touching = Object.keys(sides).filter(k => sides[k]).length;
+	ok(touching >= 2,
+	   'land reaches only ' + touching + ' of the four edges, so the frame reads as open sea '
+	 + 'around an island rather than as a map sheet');
+	ok(islandsHeld > 0,
+	   'not one faction in twelve worlds holds an offshore island; the terrain is producing '
+	 + 'no islands worth keeping, or the tracer is dropping them');
+	console.log('        (' + avg.toFixed(1) + ' landmasses on average, up to ' + mostMasses
+	          + '; ' + islandsHeld + ' faction-held islands across twelve worlds)');
+
+	/* EVERY REGION CARRIES ITS PIECES. mwTrace used to return the longest
+	   ring only, which silently deleted a faction's islands. */
+	const one = W.mwWorld(FACTIONS, 1860, 888);
+	ok(one.regions.every(r => Array.isArray(r.polys) && r.polys.length >= 1),
+	   'a region has no polys list, so map.js draws only its main body');
+	ok(one.regions.every(r => r.polys[0] === r.poly),
+	   'poly is not the first and largest of polys, so the label and the markers sit on an '
+	 + 'island instead of the body');
+}
+
 console.log('\nthe borders are smoothed, not stepped');
 {
 	/*
@@ -142,6 +248,21 @@ console.log('\nthe borders are smoothed, not stepped');
 	/* It must never destroy a shape it cannot simplify. */
 	const tri = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 5, y: 9 }];
 	ok(W.mwDedupe(tri).length === 3, 'a triangle was simplified away');
+
+	/*
+	 * SPECKS ARE FLOODED. A noise field makes single-cell islands by the
+	 * dozen and at map scale they are dirt, not geography -- and each one
+	 * is a ring the renderer draws. Tested on the function directly,
+	 * because by the time mwWorld() returns they are already gone.
+	 */
+	const mask = new Uint8Array(100);
+	[11, 12, 21, 22].forEach(k => { mask[k] = 1; });   // a 2x2 island
+	[55, 77, 99].forEach(k => { mask[k] = 1; });        // three specks
+	const kept = W.mwFloodSpecks(mask, 10, 10, 4);
+	ok(kept.length === 1, 'speck flooding kept ' + kept.length + ' masses instead of 1');
+	ok(mask[55] === 0 && mask[77] === 0 && mask[99] === 0,
+	   'the single-cell specks survived, so the map is drawn with grit on it');
+	ok(mask[11] === 1, 'the real island was flooded along with the specks');
 
 	/*
 	 * ON THE REAL THING: HOW MUCH BORDER LENGTH STILL RUNS ALONG AN AXIS.
@@ -188,7 +309,12 @@ console.log('\nthe pieces behave on their own');
 	   faction, on one screen size, once. */
 	const owner = new Int16Array(16).fill(-1);
 	[5, 6, 9, 10].forEach(i => { owner[i] = 0; });
-	const ring = W.mwTrace(owner, 0, 4, 4, 10, 0, 0);
+	/* mwTrace returns ALL rings now, largest first -- it used to return the
+	   longest one on its own, which deleted a faction's islands. */
+	const rings = W.mwTrace(owner, 0, 4, 4, 10, 0, 0);
+	ok(Array.isArray(rings) && rings.length === 1,
+	   'a single 2x2 block traced to ' + (rings ? rings.length : 0) + ' rings');
+	const ring = rings[0] || [];
 	ok(ring.length === 8 || ring.length === 4,
 	   'a 2x2 block traced to ' + ring.length + ' points');
 	const rb = bbox(ring);
@@ -205,6 +331,79 @@ console.log('\nthe pieces behave on their own');
 	   one having no realms -- and it must get the whole continent. */
 	const solo = W.mwWorld([{ name: 'Only', weight: 1 }], 1400, 980);
 	ok(solo && solo.regions.length === 1, 'a single faction does not get a world');
+}
+
+console.log('\nthe canvas is sized from the page, and it is RUN to find out');
+{
+	/*
+	 * EXECUTED, NOT READ. A source check cannot tell a real measurement
+	 * from a constant: `const navH = 0;` leaves every string these
+	 * assertions look for exactly where it was, and the map still runs off
+	 * the bottom of the window by the height of the nav. The only way to
+	 * know is to call the thing -- the same reason nft-panel-harness.js
+	 * executes render() instead of reading it.
+	 */
+	const fs = require('fs');
+	const vm = require('vm');
+	const src = fs.readFileSync(__dirname + '/map.js', 'utf8');
+	const grab = (sig) => {
+		const a = src.indexOf(sig);
+		if (a < 0) return '';
+		const b = src.indexOf('\n}\n', a);
+		return b < 0 ? '' : src.slice(a, b + 3);
+	};
+	const cw = grab('function composeWidth(');
+	const ch = grab('function composeHeight(');
+	ok(cw !== '' && ch !== '', 'composeWidth/composeHeight could not be lifted out of map.js');
+
+	const run = (vw, vh, navW, navH) => {
+		const ctx = {
+			MOBILE_BP: 768, MOBILE_DESIGN_W: 1400, MOBILE_GUTTER: 60,
+			window: { innerWidth: vw, innerHeight: vh },
+			document: {
+				getElementById: (id) => id === 'navbar'
+					? { clientWidth: navW, offsetHeight: navH } : null,
+				querySelector: () => null
+			}
+		};
+		vm.createContext(ctx);
+		vm.runInContext(cw + '\n' + ch + '\nvar _w = composeWidth(); var _h = composeHeight(_w);', ctx);
+		return { w: ctx._w, h: ctx._h };
+	};
+
+	/* A 2560 viewport with the page capped at 2000: the map must follow the
+	   page, not the screen. This is the bug the owner reported. */
+	const wide = run(2560, 1080, 2000, 64);
+	ok(wide.w <= 2000 - 60 + 1,
+	   'on a 2560 screen with a 2000px header the map composes ' + wide.w + ' wide');
+	ok(wide.w > 1600, 'the map is far narrower than the header it should match: ' + wide.w);
+
+	/* THE NAV IS REALLY SUBTRACTED. A taller header must give a shorter
+	   map, one pixel for one pixel -- which `navH = 0` cannot fake. */
+	const short = run(1920, 1080, 1860, 64);
+	const tall  = run(1920, 1080, 1860, 200);
+	ok(short.h - tall.h === 136,
+	   'a header 136px taller shortened the map by ' + (short.h - tall.h)
+	 + 'px; the header height is not actually being subtracted');
+	ok(short.h < 1080 && short.h > 300,
+	   'the composed height of ' + short.h + ' does not fit sensibly in a 1080 window');
+
+	/* MOBILE COMPOSES WIDE AND IS SCALED DOWN BY CSS, so its height has to
+	   be divided back through that scale or the map lands a third of a
+	   screen tall. */
+	const phone = run(390, 844, 390, 56);
+	ok(phone.w === 1400, 'a phone no longer composes at the design width: ' + phone.w);
+	const drawn = phone.h * ((390 - 60) / 1400);
+	ok(drawn > 300 && drawn < 844,
+	   'on a 390x844 phone the map draws ' + drawn.toFixed(0) + 'px tall, which is not a '
+	 + 'screenful');
+
+	/* Nothing may come back zero: #map is display:none when this runs, and
+	   a hidden probe measures zero. A zero canvas means no land at all. */
+	const blind = run(1920, 1080, 0, 0);
+	ok(blind.w > 0 && blind.h > 0,
+	   'an unmeasurable page yields a ' + blind.w + 'x' + blind.h + ' canvas, so the world '
+	 + 'is empty and the map falls back for good');
 }
 
 console.log('\nit is cheap enough for a phone');
