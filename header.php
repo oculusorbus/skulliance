@@ -148,9 +148,20 @@
   <link href="dist/modal.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
   <link href="dist/circular-progress-bar.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
   <?php
-  if(basename($_SERVER['REQUEST_URI']) == "realms.php"){
-  ?>  
+  /*
+   * THE PATH, NOT THE WHOLE REQUEST URI.
+   *
+   * This was basename($_SERVER['REQUEST_URI']), which is
+   * "realms.php?preview=newcomer" the moment anything is appended --
+   * so the comparison failed and the page rendered with NO map.css at
+   * all. Found by building the newcomer preview and wondering why the
+   * form looked like 2009: it was unstyled, and so was the map on any
+   * other realms.php link that ever carries a query string.
+   */
+  if (basename(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)) === "realms.php") {
+  ?>
 	  <link href="dist/map.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
+	  <link href="dist/realms-onboarding.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
   <?php
   }
   ?>

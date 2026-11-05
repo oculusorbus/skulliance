@@ -194,3 +194,75 @@ function realm_location_panel($conn) {
 		'ceiling'    => REALM_UPGRADE_CEILING,
 	);
 }
+
+/**
+ * Realms whose owner has been seen in the last $days, best first.
+ *
+ * FOR THE ONBOARDING PAGE, which until now argued for Realms entirely in
+ * the abstract. A list of people who are actually playing, with their
+ * faces on it, is the one piece of evidence a pitch cannot fake.
+ *
+ * last_login IS THE RIGHT CLOCK. skulliance.php writes it at most once a
+ * day on any signed-in page load, so it means "last seen" rather than
+ * "last Discord handshake" -- the same reasoning admin-lapsed.php runs
+ * on, in the other direction.
+ *
+ * Levels are summed over locations 1-7 only, matching the realms
+ * leaderboard exactly, so a realm cannot be shown here at one level and
+ * on the leaderboard at another.
+ */
+function realm_showcase($conn, $limit = 6, $days = 30) {
+	$limit = max(1, min(24, (int) $limit));
+	$days  = max(1, min(365, (int) $days));
+	$sql = "SELECT realms.id AS realm_id, realms.name AS realm_name, realms.theme_id,
+	               users.username, users.avatar, users.discord_id,
+	               projects.name AS faction_name, projects.currency AS faction_currency,
+	               COALESCE(SUM(realms_locations.level), 0) AS total_levels,
+	               (SELECT COUNT(*) FROM raids
+	                 WHERE raids.offense_id = realms.id AND raids.outcome = '1') AS raids_won
+	        FROM realms
+	        INNER JOIN users ON users.id = realms.user_id
+	        INNER JOIN projects ON projects.id = realms.project_id
+	        LEFT JOIN realms_locations ON realms_locations.realm_id = realms.id
+	             AND realms_locations.location_id IN (1,2,3,4,5,6,7)
+	        WHERE realms.active = '1'
+	          AND users.last_login >= (NOW() - INTERVAL " . $days . " DAY)
+	        GROUP BY realms.id
+	        ORDER BY total_levels DESC, realms.name ASC
+	        LIMIT " . $limit;
+	$result = $conn->query($sql);
+	if (!$result || $result->num_rows == 0) return array();
+	$rows = array();
+	while ($row = $result->fetch_assoc()) {
+		$rows[] = array(
+			'realm'     => $row['realm_name'],
+			'theme_id'  => (int) $row['theme_id'],
+			'username'  => $row['username'],
+			'avatar'    => avatar_url($row['discord_id'], $row['avatar']),
+			'faction'   => $row['faction_name'],
+			'currency'  => $row['faction_currency'],
+			'levels'    => (int) $row['total_levels'],
+			'raids_won' => (int) $row['raids_won'],
+		);
+	}
+	return $rows;
+}
+
+/**
+ * The starter pack, read off the code that actually grants it.
+ *
+ * createRealm() loops getProjects($conn, 'core') and credits 1000 of
+ * each. The onboarding page used to print its own hand-typed list of
+ * seven currencies beside it, which is a promise maintained in two
+ * places -- add a core project and the page quietly under-sells, drop
+ * one and it lies.
+ */
+function realm_starter_pack($conn) {
+	$out = array();
+	foreach (getProjects($conn, 'core') as $project) {
+		$out[] = array('currency' => $project['currency'],
+		               'name'     => $project['name'],
+		               'amount'   => REALM_STARTER_EACH);
+	}
+	return $out;
+}

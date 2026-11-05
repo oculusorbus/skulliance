@@ -1,0 +1,269 @@
+/*
+ * realms-onboarding.css — the pre-realm pitch (realms-onboarding.php).
+ *
+ * SCOPED UNDER .ro, every rule. This loads on realms.php beside
+ * flexbox.css and map.css, and the page it decorates is one a player
+ * sees exactly once; a loose `h1` or `section` rule here would follow
+ * them around the rest of the platform forever.
+ *
+ * PALETTE IS THE PLATFORM'S, not a new one: #00c8a0 accent (flexbox.css
+ * uses it 66 times), #e8eaed text, #7a9eb0 muted, #0d1e2e / #0a1929 /
+ * #07111d surfaces. The old page was legible but anonymous -- it could
+ * have belonged to any site, which is a poor first impression of one
+ * whose whole pitch is that it has a world in it.
+ */
+
+.ro { text-align: left; }
+
+/* flexbox.css sets text-align:center on .main and colours bare anchors.
+   Both are re-stated wherever they would otherwise land, because this
+   block is full of prose and links and every one of them would centre.
+   See the note in flexbox.css about scoped components. */
+.ro p, .ro h1, .ro h2, .ro h3, .ro li, .ro label { text-align: left; }
+
+.ro-eyebrow {
+	margin: 0 0 6px;
+	font-size: 0.78rem;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: #00c8a0;
+}
+.ro h1 {
+	margin: 0 0 14px;
+	font-size: clamp(1.9rem, 4.2vw, 3rem);
+	line-height: 1.1;
+	color: #e8eaed;
+	text-wrap: balance;
+}
+.ro h2 {
+	margin: 0 0 6px;
+	font-size: clamp(1.25rem, 2.4vw, 1.6rem);
+	color: #e8eaed;
+}
+.ro h3 { margin: 0 0 6px; font-size: 1.02rem; color: #e8eaed; }
+.ro-lede { margin: 0 0 14px; font-size: 1.05rem; line-height: 1.6; color: #b9c7d1; }
+.ro-kicker { margin: 0; color: #7a9eb0; }
+.ro-kicker strong { color: #00c8a0; }
+
+.ro-head { margin: 0 0 16px; }
+.ro-head p { margin: 0; color: #7a9eb0; }
+
+/* ── hero ─────────────────────────────────────────────────────────── */
+.ro-hero {
+	display: grid;
+	grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+	gap: 28px;
+	align-items: center;
+	padding: 30px;
+	margin-bottom: 22px;
+	border: 1px solid rgba(0,200,160,0.22);
+	border-radius: 14px;
+	background:
+		radial-gradient(90% 120% at 10% 0%, rgba(0,200,160,0.13), transparent 60%),
+		linear-gradient(180deg, #0d1e2e, #07111d);
+}
+
+/* ── the form, twice ──────────────────────────────────────────────── */
+.ro-form {
+	padding: 20px;
+	border: 1px solid rgba(122,158,176,0.26);
+	border-radius: 12px;
+	background: rgba(2,10,18,0.55);
+}
+.ro-field { margin-bottom: 14px; }
+.ro-field label {
+	display: block;
+	margin-bottom: 6px;
+	font-size: 0.8rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #7a9eb0;
+}
+/* The old fields were the browser's. These are the platform's: full
+   width, real padding, and a focus ring, because a 160px box with no
+   focus state is the single clearest signal that a form was an
+   afterthought. */
+.ro-form input[type="text"],
+.ro-form select {
+	width: 100%;
+	box-sizing: border-box;
+	/* height:auto because flexbox.css's .dropdown pins 30px with a 20px
+	   font and clips the text; this field does not use that class, and
+	   states its own height so it cannot inherit one. */
+	height: auto;
+	padding: 11px 12px;
+	font-family: inherit;
+	font-size: 1rem;
+	line-height: 1.3;
+	color: #e8eaed;
+	background: #0a1929;
+	border: 1px solid rgba(122,158,176,0.38);
+	border-radius: 8px;
+	outline: none;
+}
+/* A caret of our own, since the platform's dropdown style is not used. */
+.ro-form select {
+	appearance: none;
+	-webkit-appearance: none;
+	padding-right: 34px;
+	background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' fill='none' stroke='%237a9eb0' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+	background-repeat: no-repeat;
+	background-position: right 12px center;
+}
+.ro-form input[type="text"]::placeholder { color: #4d6b7d; }
+.ro-form input[type="text"]:focus,
+.ro-form select:focus {
+	border-color: #00c8a0;
+	box-shadow: 0 0 0 3px rgba(0,200,160,0.18);
+}
+.ro-go {
+	width: 100%;
+	padding: 13px 18px;
+	font-size: 1.05rem;
+	font-weight: 700;
+	color: #04131b;
+	background: #00c8a0;
+	border: 0;
+	border-radius: 8px;
+	cursor: pointer;
+}
+.ro-go:hover { background: #00a882; }
+.ro-go:focus-visible { outline: 3px solid rgba(0,200,160,0.5); outline-offset: 2px; }
+.ro-fine { margin: 10px 0 0; font-size: 0.85rem; color: #5a7888; }
+
+/* ── perks ────────────────────────────────────────────────────────── */
+.ro-perks {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 14px;
+	margin-bottom: 22px;
+}
+.ro-perk {
+	padding: 18px;
+	border: 1px solid rgba(122,158,176,0.2);
+	border-radius: 12px;
+	background: #0a1929;
+}
+.ro-perk p { margin: 0; color: #7a9eb0; line-height: 1.55; }
+.ro-perk-ico {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px; height: 38px;
+	margin-bottom: 10px;
+	border-radius: 9px;
+	color: #00c8a0;
+	background: rgba(0,200,160,0.12);
+}
+.ro-ico { width: 21px; height: 21px; }
+
+/* ── founding grant ───────────────────────────────────────────────── */
+.ro-starter, .ro-live {
+	padding: 24px;
+	margin-bottom: 22px;
+	border: 1px solid rgba(122,158,176,0.2);
+	border-radius: 14px;
+	background: #0a1929;
+}
+.ro-coins {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+	gap: 10px;
+	margin: 0; padding: 0;
+	list-style: none;
+}
+.ro-coin {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	padding: 11px 12px;
+	border: 1px solid rgba(0,200,160,0.18);
+	border-radius: 10px;
+	background: rgba(0,200,160,0.06);
+}
+.ro-coin img { width: 26px; height: 26px; flex: 0 0 26px; object-fit: contain; }
+.ro-coin-amt { font-weight: 700; color: #e8eaed; font-variant-numeric: tabular-nums; }
+.ro-coin-cur { font-size: 0.78rem; letter-spacing: 0.06em; color: #7a9eb0; }
+
+/* ── who is playing ───────────────────────────────────────────────── */
+.ro-players {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 14px;
+	margin: 0; padding: 0;
+	list-style: none;
+}
+.ro-player {
+	display: grid;
+	grid-template-columns: 58px minmax(0, 1fr);
+	grid-template-rows: auto auto auto;
+	gap: 4px 12px;
+	padding: 12px;
+	border: 1px solid rgba(122,158,176,0.2);
+	border-radius: 12px;
+	background: #07111d;
+}
+/* The realm's own theme art behind its owner's face: the two things a
+   player picks, shown as the pair they are. */
+.ro-player-art {
+	grid-row: 1 / span 3;
+	width: 58px; height: 58px;
+	border-radius: 10px;
+	background-size: cover;
+	background-position: center;
+	display: flex; align-items: flex-end; justify-content: flex-end;
+}
+.ro-player-face {
+	width: 28px; height: 28px;
+	border-radius: 50%;
+	border: 2px solid #07111d;
+	margin: 0 -4px -4px 0;
+}
+.ro-player-id { min-width: 0; }
+.ro-player-id strong {
+	display: block;
+	color: #e8eaed;
+	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ro-player-id span { font-size: 0.85rem; color: #7a9eb0; }
+.ro-player-faction { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ro-player-faction img { width: 16px; height: 16px; flex: 0 0 16px; object-fit: contain; }
+.ro-player-faction span {
+	font-size: 0.82rem; color: #7a9eb0;
+	overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ro-player-stats { display: flex; gap: 14px; }
+.ro-player-stats span { font-size: 0.78rem; color: #5a7888; }
+.ro-player-stats em {
+	display: block;
+	font-style: normal; font-weight: 700;
+	color: #00c8a0;
+	font-variant-numeric: tabular-nums;
+}
+
+/* ── closing ──────────────────────────────────────────────────────── */
+.ro-close {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+	gap: 28px;
+	/* start, not centre: centred against a tall form the heading floats
+	   into the middle of its own panel with dead space above it. */
+	align-items: start;
+	padding: 28px;
+	border: 1px solid rgba(0,200,160,0.22);
+	border-radius: 14px;
+	background: linear-gradient(180deg, #0d1e2e, #07111d);
+}
+.ro-close p { color: #7a9eb0; margin: 0 0 10px; }
+/* flexbox.css centres bare anchors and gives them its own colour. */
+.ro-more a {
+	display: inline;
+	text-align: left;
+	color: #00c8a0;
+	text-decoration: underline;
+}
+
+@media (max-width: 860px) {
+	.ro-hero, .ro-close { grid-template-columns: minmax(0, 1fr); padding: 20px; }
+	.ro-starter, .ro-live { padding: 18px; }
+}

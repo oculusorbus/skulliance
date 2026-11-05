@@ -1196,7 +1196,7 @@ ok(substr_count($rl_loader_off, '{') === substr_count($rl_loader_off, '}')
    && substr_count($rl_loader_off, '(') === substr_count($rl_loader_off, ')'),
    'the emitted loader removal is unbalanced, so it is a syntax error and the overlay stays');
 /* And there IS something to see once it lifts. */
-ok(strpos($rsrc, 'value="Create Realm"') !== false,
+ok(strpos((string) file_get_contents(__DIR__ . '/realms-onboarding.php'), 'ro-go') !== false,
    'there is no Create Realm form, so lifting the loader reveals an empty page');
 
 /* ---------------------------------------------------------------- *
@@ -1564,6 +1564,121 @@ ok(isset($tabs['onboarding']) && $tabs['onboarding'][0] === 'realms.php?preview=
 $hsrc = (string) file_get_contents(__DIR__ . '/header.php');
 ok(strpos($hsrc, 'admin_tabs()') !== false,
    'the admin dropdown no longer reads admin_tabs(), so new tools stop appearing in it');
+
+/*
+ * THE ONBOARDING PAGE.
+ *
+ * What a newcomer meets before they have a realm. It used to be the
+ * Create Realm form wedged into the narrow left column of the
+ * logged-in layout with the right two thirds of the screen empty; it
+ * is realms-onboarding.php now and gets the whole page.
+ */
+echo "\nthe onboarding page is a page, not a leftover column\n";
+$osrc = (string) file_get_contents(__DIR__ . '/realms-onboarding.php');
+$ocss = (string) file_get_contents(__DIR__ . '/dist/realms-onboarding.css');
+
+ok($osrc !== '' && $ocss !== '', 'the onboarding partial or its stylesheet is missing');
+ok(strpos($rsrc, "include __DIR__ . '/realms-onboarding.php';") !== false,
+   'realms.php does not include the onboarding partial');
+/* And the OLD form is gone, not merely bypassed: two onboarding forms
+   in the tree is two places to change the faction list. */
+ok(strpos($rsrc, 'Create Your Realm') === false && strpos($rsrc, '1K DIAMOND') === false,
+   'the old inline Create Realm form is still in realms.php');
+
+/*
+ * NO <section>, AND THIS ONE IS NOT STYLE PEDANTRY.
+ *
+ * dist/flexbox.css carries `section { opacity: 0 }` platform-wide for
+ * its reveal-on-scroll effect. A semantic <section> here renders a
+ * completely invisible page -- which is what the first draft of this
+ * partial did, caught only because it was previewed against the real
+ * stylesheet. admin-lib.php already carries a note about losing an
+ * afternoon to the same rule.
+ */
+/* STRIPPED FIRST. Both of the next two checks are about MARKUP, and
+   both of them failed on their own explanatory comment the first time
+   round -- the seventh occasion in this repo that a bare string search
+   has matched the note about a thing instead of the thing. */
+$omarkup = harness_strip_comments($osrc);
+$omarkup = preg_replace('/<!--.*?-->/s', '', $omarkup);
+ok(!preg_match('/<\s*section\b/i', $omarkup),
+   'the onboarding partial uses <section>, which flexbox.css renders at opacity 0 -- '
+ . 'the whole page disappears');
+ok(preg_match('/section \{\s*opacity: 0/', (string) file_get_contents(__DIR__ . '/dist/flexbox.css')) === 1,
+   'flexbox.css no longer hides <section>; this guard can go, but check before removing it');
+
+/*
+ * AND NOT class="dropdown" EITHER. flexbox.css pins that at
+ * width:300px !important and height:30px against a 20px font, which
+ * both breaks a full-width field and clips the option text in half.
+ */
+ok(strpos($omarkup, 'class="dropdown"') === false,
+   'the faction select uses class="dropdown", which clips its own text');
+
+/*
+ * THE STYLESHEET IS SCOPED, EVERY RULE.
+ *
+ * This loads on realms.php beside flexbox.css and map.css. One bare
+ * `h1` or `input` rule in here would follow the player around the rest
+ * of the platform, and the page it decorates is one they see once.
+ */
+$leaks = array();
+foreach (preg_split('/\r?\n/', $ocss) as $line) {
+	$line = trim($line);
+	if ($line === '' || $line[0] === '*' || strpos($line, '/*') === 0) continue;
+	if (substr($line, -1) !== '{') continue;
+	if ($line[0] === '@' || $line === '}') continue;
+	foreach (explode(',', rtrim($line, ' {')) as $sel) {
+		$sel = trim($sel);
+		if ($sel === '') continue;
+		if (strpos($sel, '.ro') !== 0) $leaks[] = $sel;
+	}
+}
+ok(empty($leaks), 'these onboarding rules are not scoped to .ro and will leak across the '
+ . 'platform: ' . implode(', ', array_slice($leaks, 0, 4)));
+
+/*
+ * THE GRANT IS PROMISED FROM THE CODE THAT PAYS IT.
+ *
+ * createRealm() credits REALM_STARTER_EACH of every core project. The
+ * old page typed its own list of seven currencies beside that loop,
+ * which is a promise maintained in two places: add a core project and
+ * the page under-sells, drop one and it lies.
+ */
+$dbsrc = (string) file_get_contents(__DIR__ . '/db.php');
+ok(strpos($dbsrc, "define('REALM_STARTER_EACH'") !== false,
+   'the founding grant is not a named constant');
+ok(substr_count($dbsrc, 'REALM_STARTER_EACH') >= 3,
+   'createRealm() does not credit REALM_STARTER_EACH, so the page and the payout can drift');
+ok(!preg_match('/updateBalance\([^)]*,\s*1000\s*\)/', $dbsrc),
+   'createRealm() still credits a bare 1000 rather than the named grant');
+$lsrc = (string) file_get_contents(__DIR__ . '/realms-lib.php');
+ok(strpos($lsrc, 'REALM_STARTER_EACH') !== false,
+   'realm_starter_pack() does not read the same constant the payout uses');
+
+/* THE SHOWCASE IS REAL PLAYERS, and bounded. */
+ok(strpos($lsrc, 'function realm_showcase(') !== false, 'realm_showcase() is missing');
+ok(preg_match('/\$limit\s*=\s*max\(1,\s*min\(\d+,\s*\(int\)\s*\$limit\)\)/', $lsrc) === 1
+   && preg_match('/\$days\s*=\s*max\(1,\s*min\(\d+,\s*\(int\)\s*\$days\)\)/', $lsrc) === 1,
+   'realm_showcase() does not clamp its LIMIT and day window to ints, and they go straight '
+ . 'into the SQL');
+ok(strpos($lsrc, "users.last_login >=") !== false,
+   'the showcase does not filter on last_login, so it is not "active" players at all');
+
+/*
+ * AND THE PAGE GETS ITS STYLESHEET.
+ *
+ * header.php gated map.css on basename($_SERVER['REQUEST_URI']), which
+ * is "realms.php?preview=newcomer" the moment anything is appended --
+ * so the preview, and any realms.php link carrying a query string,
+ * rendered with no map.css at all. Found by looking at the preview and
+ * wondering why the form looked like 2009.
+ */
+ok(strpos($hsrc, "parse_url(\$_SERVER['REQUEST_URI'], PHP_URL_PATH)") !== false,
+   'header.php matches the page on the raw REQUEST_URI again, so any query string drops '
+ . 'the realms stylesheets');
+ok(strpos($hsrc, 'dist/realms-onboarding.css') !== false,
+   'the onboarding stylesheet is never linked');
 
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);

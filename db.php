@@ -8570,6 +8570,12 @@ function checkRealm($conn){
 	}
 }
 
+/* The founding grant: this many of EVERY core project currency. Named
+   because the onboarding page promises it in words and must read the
+   same number -- a hand-typed list beside this loop is a promise kept
+   in two places, and the page is the half that gets forgotten. */
+define('REALM_STARTER_EACH', 1000);
+
 function createRealm($conn, $realm, $faction){
 	if(isset($_SESSION['userData']['user_id'])){
 		$sql = "INSERT INTO realms (name, user_id, project_id, theme_id)
@@ -8592,9 +8598,9 @@ function createRealm($conn, $realm, $faction){
 			$projects = getProjects($conn, "core");
 			foreach($projects AS $project_id => $project){
 				// Update balance
-				updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, 1000);
+				updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, REALM_STARTER_EACH);
 				// Log transactions
-				logCredit($conn, $_SESSION['userData']['user_id'], 1000, $project_id);
+				logCredit($conn, $_SESSION['userData']['user_id'], REALM_STARTER_EACH, $project_id);
 			}
 			$discord_mention = isset($_SESSION['userData']['discord_id']) ? "<@".$_SESSION['userData']['discord_id'].">" : "A member";
 			discordmsg("New Realm Established", $discord_mention." has founded **".$realm."**", "", "https://skulliance.io/staking/realms.php", "realms");

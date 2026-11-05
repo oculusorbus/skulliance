@@ -1012,6 +1012,22 @@ $incoming_completed = getRaids($conn, "incoming", "completed");
 	<a href="#map" data-sec="map" onclick="return rlNav('map')">Map</a>
 </nav>
 <?php } ?>
+<?php
+/*
+ * NO REALM, NO TWO-COLUMN LAYOUT.
+ *
+ * This page used to greet a newcomer inside the logged-in shell: the
+ * Create Realm form squeezed into the narrow left column, with the
+ * right two thirds of the screen empty, because every panel that fills
+ * it needs a realm to exist. The first sight of Realms was a small
+ * form beside a large nothing.
+ *
+ * It gets the whole page now, and argues for itself. See
+ * realms-onboarding.php.
+ */
+if(!$realm_status){
+	include __DIR__ . '/realms-onboarding.php';
+}else{ ?>
 <div class="row" id="row0">
 	  <div class="side" id="locations">
 		<div class="content realm">
@@ -1038,56 +1054,13 @@ $incoming_completed = getRaids($conn, "incoming", "completed");
 					}
 				}
 			}else{
-				?>
-				<h2>Create Your Realm</h2>
-				<img src="images/realms-logo.png" width="100%"/>
-				<ul>
-				<li class="role">
-				<form action="realms.php" method="post">
-					<label for="realm">Realm Name:</label><br><br>
-					<input type="text" id="realm" name="realm" size="30" required><br><br>
-					<label for="faction"><strong>Faction:</strong></label><br><br>
-					<select required class="dropdown" name="faction" id="faction">
-					<?php
-					$core_projects = getProjects($conn, "core");
-					$partner_projects = getProjects($conn, "partner");
-					?>
-					<optgroup label="Core Factions">';
-					<?php
-					unset($core_projects[7]);
-					foreach($core_projects AS $id => $project){
-						echo '<option value="'.$id.'">'.$project["name"].'</option>';
-					}
-					echo '</optgroup><optgroup label="Partner Factions">';
-					$partner_projects = getProjects($conn, "partner");
-					foreach($partner_projects AS $id => $project){
-						echo '<option value="'.$id.'">'.$project["name"].'</option>';
-					}
-					echo '</optgroup>';
-					?>
-					</select><br><br>
-					<input class="button" type="submit" value="Create Realm"><br><br>
-					<label for="disclaimer">Information</label><br>
-					<p id="disclaimer">
-Skulliance Realms is a unique and rewarding multiplayer experience for stakers that allows for competition between players.
-<br><br>
-<a href="skullpaper.php?page=realms">Read about Realms, Locations, Raids, and Factions in the Skull Paper</a>
-<br><br>
-Skulliance is offering a promotional incentive to participate in realms. Stakers establishing new realms will receive the following starter pack of core project points:
-<ul>
-	<li>1K STAR</li>
-	<li>1K DREAD</li>
-	<li>1K HYPE</li>
-	<li>1K SINDER</li>
-	<li>1K CYBER</li>
-	<li>1K CRYPT</li>
-	<li>1K DIAMOND</li>
-</ul>
-</p>
-				</form>
-				</li>
-				</ul>
-				<?php
+				/* UNREACHABLE, AND SAYING SO IS THE POINT. This row only
+				   renders WITH a realm now, so the Create Realm form that
+				   used to sit here cannot be reached -- it is
+				   realms-onboarding.php, which gets the whole page. Left as
+				   an empty branch rather than deleted outright, so the next
+				   reader of checkRealmState() above can see that its third
+				   case is answered somewhere else. */
 			}
 			?>
 		</div>
@@ -1134,6 +1107,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		</div>
 	</div>
 </div>
+<?php } /* close: if(!$realm_status) ... else */ ?>
 
 <?php if($realm_status){ ?>
 <div class="row" data-wrap="raids">
