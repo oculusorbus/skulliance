@@ -850,15 +850,15 @@ console.log('\nthe pieces behave on their own');
 	ok(solo && solo.regions.length === 1, 'a single faction does not get a world');
 }
 
-console.log('\nthe shallows reach the drawing, and the surf actually moves');
+console.log('\nthe shallows reach the drawing, and the surf actually flows');
 {
 	/*
-	 * EXECUTED, NOT READ -- and learned the hard way twice over. The
-	 * first check searched map.js for "world.shores"; wrapping the band
-	 * loop in `if (false)` left that string inside the dead guard and it
-	 * passed on a renderer drawing nothing. The second passed seaLayers()
-	 * a world built by hand, and the live map still drew no water,
-	 * because worldLayout() builds its own object and had dropped it.
+	 * EXECUTED, NOT READ, and learned the hard way three times. A source
+	 * check passed on a renderer wrapped in `if (false)`. A unit test on
+	 * seaLayers() passed while the live map drew no water, because
+	 * worldLayout() builds its own object and had dropped it. And the
+	 * surf looked right in every static frame while reading as "flashing
+	 * lights" in motion.
 	 */
 	const fs = require('fs');
 	const vm = require('vm');
@@ -868,158 +868,187 @@ console.log('\nthe shallows reach the drawing, and the surf actually moves');
 		const j = i < 0 ? -1 : src.indexOf('\n}\n', i);
 		return (i >= 0 && j > i) ? src.slice(i, j + 3) : '';
 	};
-	const sl = lift('function seaLayers('), wl = lift('function worldLayout(');
-	/* WATER_TEMPO is declared just above WATER and is referenced inside
-	   it, so the slice has to start there or the sandbox throws. */
-	const sh = lift('function surfShade('), wc = src.slice(src.indexOf('const WATER_TEMPO'),
+	const consts = src.slice(src.indexOf('const WATER_TEMPO'),
 		src.indexOf('};', src.indexOf('const WATER = {')) + 2);
-	ok(sl && wl && sh && wc, 'seaLayers / worldLayout / surfShade / WATER could not be lifted from map.js');
+	const parts = ['function smoothEdge(', 'function foamEdgeAt(', 'function surfFoam(',
+	               'function surfWave(', 'function seaLayers(', 'function worldLayout('].map(lift);
+	ok(consts && parts.every(Boolean), 'the water functions could not be lifted out of map.js');
 
 	const ctx = { mwWorld: W.mwWorld, Math: Math, console: { warn: () => {} } };
 	vm.createContext(ctx);
-	vm.runInContext(wc + '\n' + sh + '\n' + sl + '\n' + wl
-		+ '\nvar _shade = surfShade, _W = WATER;'
+	vm.runInContext(consts + '\n' + parts.join('\n')
+		+ '\nvar _W = WATER, _foam = surfFoam, _wave = surfWave, _edge = foamEdgeAt;'
 		+ '\nvar _joined = (f, w, h) => seaLayers(worldLayout(f, w, h));', ctx);
+	const WAT = ctx._W, F = 1 / 60;
 
 	/*
-	 * THE RING MOVES, AND MOVES BY LESS THAN A PIXEL PER FRAME.
+	 * NOTHING SNAPS ON. THIS IS THE ASSERTION THE REWRITE EXISTS FOR.
 	 *
-	 * THIS IS THE WHOLE POINT OF THE REWRITE. Reported twice as "flashing
-	 * lights in succession": the surf was N fixed contours cross-faded,
-	 * so the ring only ever had N positions and what moved was opacity,
-	 * not the line. His shader evaluates the distance per PIXEL, so the
-	 * ring slides continuously. Measured as: where is the ring at t, and
-	 * how far did it travel in one frame at 60fps?
-	 */
-	/*
-	 * The leading ring, measured ABOVE THE FOAM'S REACH.
+	 * His shader tests `phase < 1.6`, a hard in-or-out, which makes a
+	 * pixel's alpha a STEP FUNCTION OF TIME: off, then on, nothing in
+	 * between. At his tempo those steps come fast enough to read as
+	 * flow; at half speed they do not, and the owner called it
+	 * immediately -- "creeping and stuttery" is thousands of pixels each
+	 * snapping on at its own moment.
 	 *
-	 * surfShade tests foam before waves, so anything under the foam edge
-	 * comes back as foam and a naive scan from waveLo tracks the foam
-	 * edge instead of the ring -- which reported the waves rolling out
-	 * to sea, because the breathing edge happened to be moving outward
-	 * at that moment. Start past where the foam can ever reach.
+	 * The ramp makes alpha continuous in t, because the phase term
+	 * carries t continuously even though a pixel's distance never
+	 * changes. Measured as the largest alpha change at a FIXED pixel
+	 * between consecutive frames: 0.04 with the ramp, 1.00 with a step.
 	 */
-	const _wLo = () => Math.max(ctx._W.waveLo, ctx._W.foamMid + ctx._W.foamSwing) + 0.05;
-	const _wHi = () => ctx._W.waveHi;
-	const ringAt = (t) => {
-		for (let d = _wLo(); d < _wHi(); d += 0.02) if (ctx._shade(d, t) === 2) return d;
-		return -1;
-	};
-	/*
-	 * Sampled every frame for a second and a half, and judged on the
-	 * MEDIAN step rather than on two endpoints. A ring eventually
-	 * travels past the bottom of the window and the scan picks up the
-	 * next one out, which is a jump outward that says nothing about the
-	 * direction of travel; comparing one pair of samples can land
-	 * exactly on it, and did.
-	 */
-	const frame = 1 / 60;
-	const samples = [];
-	for (let k = 0; k <= 90; k++) samples.push(ringAt(1 + k * frame));
-	const steps = [];
-	for (let k = 1; k < samples.length; k++) {
-		if (samples[k] > 0 && samples[k - 1] > 0) steps.push(samples[k] - samples[k - 1]);
+	let jump = 0, jumpAt = 0;
+	for (let d = WAT.waveLo + 0.2; d < WAT.waveHi; d += 0.07) {
+		let prev = ctx._wave(d, 1 * WAT.speed);
+		for (let f = 1; f < 240; f++) {
+			const al = ctx._wave(d, (1 + f * F) * WAT.speed);
+			if (Math.abs(al - prev) > jump) { jump = Math.abs(al - prev); jumpAt = d; }
+			prev = al;
+		}
 	}
-	ok(steps.length > 60, 'only ' + steps.length + ' usable samples of the ring position');
-	const sorted = steps.slice().sort((a, b) => a - b);
-	const median = sorted[Math.floor(sorted.length / 2)];
-	ok(median < 0,
-	   'the ring moves ' + median.toFixed(3) + 'px per frame on the median, so the waves '
-	 + 'are rolling out to sea rather than toward the shore');
+	ok(jump < 0.15, 'a pixel\'s wave alpha jumps ' + jump.toFixed(3) + ' in one frame at d='
+	 + jumpAt.toFixed(1) + '; that is a pixel snapping on, which is what stutter is');
 
-	const inward = steps.filter(v => v < 0).map(v => -v);
-	ok(inward.length > steps.length * 0.7,
-	   'the ring only moved shoreward on ' + inward.length + ' of ' + steps.length + ' frames');
+	/* The same for the foam, whose edge breathes rather than travels. */
+	let fj = 0;
+	for (let d = 0.5; d < WAT.foamMid + WAT.foamSwing + 2; d += 0.07) {
+		let prev = ctx._foam(d, ctx._edge(0));
+		for (let f = 1; f < 400; f++) {
+			const al = ctx._foam(d, ctx._edge(f * F));
+			fj = Math.max(fj, Math.abs(al - prev));
+			prev = al;
+		}
+	}
+	ok(fj < 0.15, 'the foam alpha jumps ' + fj.toFixed(3) + ' in one frame');
+	console.log('        (largest alpha change at a pixel per frame: wave ' + jump.toFixed(3)
+	          + ', foam ' + fj.toFixed(3) + '; a hard edge would be 1.000)');
 
 	/*
-	 * AND BY LESS THAN A PIXEL EACH FRAME. THIS IS THE WHOLE POINT OF
-	 * THE REWRITE. Reported twice as "flashing lights in succession":
-	 * the surf was N fixed contours cross-faded, so the ring only ever
-	 * had N positions 2.2px apart and what moved was opacity, not the
-	 * line. His shader evaluates the distance per PIXEL, so it slides.
+	 * AND THE BAND IS WHOLE AT THE WRAP. The crest lives on a modulus,
+	 * so its soft trailing edge sits just below phase 0 and reappears
+	 * just below `spacing`. Measuring the distance to the crest without
+	 * wrapping slices that tail off and costs 0.54 of alpha in one
+	 * frame -- which is a step, dressed up as a ramp.
 	 */
-	const biggest = Math.max.apply(null, inward);
-	ok(biggest < 1,
-	   'the ring jumps ' + biggest.toFixed(2) + 'px between frames; anything near a pixel '
-	 + 'reads as a step rather than as water');
-	ok(Math.min.apply(null, inward) > 0.005,
-	   'the ring is not actually moving between frames');
+	const atPhase = (ph) => ctx._wave(WAT.waveLo + (WAT.waveHi - WAT.waveLo) / 2, ph);
+	const mid = WAT.waveLo + (WAT.waveHi - WAT.waveLo) / 2;
+	let wrapJump = 0;
+	for (let q = 0; q < WAT.spacing; q += 0.02) {
+		const a0 = ctx._wave(mid, q), a1 = ctx._wave(mid, q + 0.02);
+		wrapJump = Math.max(wrapJump, Math.abs(a1 - a0));
+	}
+	ok(wrapJump < 0.05,
+	   'the crest alpha steps ' + wrapJump.toFixed(3) + ' across the modulus, so the band '
+	 + 'is being sliced in half where the phase wraps');
 
 	/*
-	 * AND IT IS NOT FRANTIC.
+	 * AND A CREST ARRIVES AND DIES, rather than appearing whole.
 	 *
-	 * "The example takes about 6 seconds to complete a wave and ours is
-	 * running at 3." Speed is the one thing here that can be perfectly
-	 * smooth and still wrong: a sub-pixel step per frame says nothing
-	 * about how busy the page feels, so the journey is timed as well as
-	 * the step. One crest crosses the surf in 3.8s at the shipped tempo.
+	 * Without the end fades the surf zone has hard walls: a crest
+	 * switches on at full strength the moment it crosses waveHi and is
+	 * cut off mid-stride at waveLo. That is a spatial edge, not a
+	 * temporal one, so none of the per-frame measurements above can see
+	 * it -- they all watch a fixed pixel over time, and this is about
+	 * two particular pixels at the boundaries.
 	 */
-	const crossing = (ctx._W.waveHi - ctx._W.waveLo) / ctx._W.speed;
-	ok(crossing > 3,
-	   'a crest crosses the surf in ' + crossing.toFixed(2) + 's, which reads as busy '
-	 + 'rather than as water');
-	ok(crossing < 12,
-	   'a crest takes ' + crossing.toFixed(2) + 's to cross, slow enough that nothing '
-	 + 'appears to be moving at all');
+	const peakNear = (d) => {
+		let m = 0;
+		for (let q = 0; q < WAT.spacing; q += 0.05) m = Math.max(m, ctx._wave(d, q));
+		return m;
+	};
+	ok(peakNear(WAT.waveLo + 0.15) < 0.15,
+	   'a crest reaches ' + peakNear(WAT.waveLo + 0.15).toFixed(2)
+	 + ' alpha right at the beach edge, so it is cut off mid-stride instead of dying there');
+	ok(peakNear(WAT.waveHi - 0.15) < 0.15,
+	   'a crest reaches ' + peakNear(WAT.waveHi - 0.15).toFixed(2)
+	 + ' alpha at the seaward edge, so it switches on whole instead of arriving');
+	/* And it does reach full strength in between, or the fades have
+	   simply swallowed the wave. */
+	ok(peakNear((WAT.waveLo + WAT.waveHi) / 2) > 0.8,
+	   'the crest never reaches full strength anywhere in the surf zone');
 
-	/* AND THE FOAM KEEPS ITS RELATIONSHIP TO THE WAVES. Both clocks are
-	   scaled by one factor, so retiming cannot quietly unhook the bloom
-	   from the arrival the way two independent numbers would. */
-	const breath = 2 * Math.PI / ctx._W.foamHz;
+	/*
+	 * THE CREST TRAVELS SHOREWARD, found as the peak of the ramp rather
+	 * than the first lit sample -- and measured ABOVE THE FOAM'S REACH,
+	 * because the foam is drawn over the waves and a scan from the
+	 * beach tracks the breathing edge instead of the crest. That
+	 * reported the waves rolling out to sea once already.
+	 */
+	const floor = Math.max(WAT.waveLo, WAT.foamMid + WAT.foamSwing) + 0.2;
+	const crestAt = (t) => {
+		let best = -1, bestA = 0.02;
+		for (let d = floor; d < WAT.waveHi; d += 0.02) {
+			const al = ctx._wave(d, t * WAT.speed);
+			if (al > bestA) { bestA = al; best = d; }
+		}
+		return best;
+	};
+	const pos = [];
+	for (let k = 0; k <= 90; k++) pos.push(crestAt(1 + k * F));
+	const steps = [];
+	for (let k = 1; k < pos.length; k++) if (pos[k] > 0 && pos[k - 1] > 0) steps.push(pos[k] - pos[k - 1]);
+	ok(steps.length > 60, 'only ' + steps.length + ' usable samples of the crest position');
+	const sorted = steps.slice().sort((x, y) => x - y);
+	ok(sorted[Math.floor(sorted.length / 2)] < 0,
+	   'the crest moves outward on the median step, so the waves roll out to sea');
+	const inward = steps.filter(v => v < 0).map(v => -v);
+	ok(Math.max.apply(null, inward) < 1,
+	   'the crest jumps ' + Math.max.apply(null, inward).toFixed(2) + 'px between frames');
+
+	/*
+	 * AND IT IS NOT FRANTIC. "The example takes about 6 seconds to
+	 * complete a wave and ours is running at 3." Speed can be perfectly
+	 * smooth and still wrong, so the journey is timed as well as the
+	 * step.
+	 */
+	const crossing = (WAT.waveHi - WAT.waveLo) / WAT.speed;
+	ok(crossing > 3, 'a crest crosses the surf in ' + crossing.toFixed(2) + 's, which reads busy');
+	ok(crossing < 12, 'a crest takes ' + crossing.toFixed(2) + 's to cross; nothing seems to move');
+	const breath = 2 * Math.PI / WAT.foamHz;
 	ok(breath > crossing * 0.8 && breath < crossing * 2,
 	   'the foam breathes every ' + breath.toFixed(2) + 's against a ' + crossing.toFixed(2)
-	 + 's crossing, so the bloom has drifted away from the wave arriving');
+	 + 's crossing, so the bloom has drifted off the wave arriving');
 
-	/* THE FOAM EDGE BREATHES, which is his sine on the threshold. */
-	let lo = Infinity, hi = -Infinity;
-	for (let t = 0; t < 3; t += 0.01) {
-		let e = 0;
-		while (ctx._shade(e + 0.01, t) === 1 && e < 40) e += 0.01;
-		lo = Math.min(lo, e); hi = Math.max(hi, e);
-	}
-	ok(hi - lo > 4,
-	   'the foam edge only moves ' + (hi - lo).toFixed(2) + 'px over a full cycle, so it '
-	 + 'brightens instead of breathing');
-
-	/* AND NOTHING IS PAINTED ON LAND. The field is zero there, and the
-	   canvas sits OVER the territories and the markers -- a single lit
-	   pixel at d <= 0 would be surf drawn across somebody's realm. */
-	ok(ctx._shade(0, 0) === 0 && ctx._shade(-3, 1.2) === 0,
+	/* NOTHING IS PAINTED ON LAND. The canvas sits OVER the territories
+	   and the markers, so one lit pixel at d <= 0 is water on somebody's
+	   realm. */
+	ok(ctx._foam(0, ctx._edge(0)) === 0 && ctx._wave(0, 0) === 0 && ctx._wave(-4, 2) === 0,
 	   'the surf paints at or inside the shoreline, which puts water over the land');
-
-	/* The surf stays at the shore rather than crossing the shelf. */
-	ok(ctx._W.waveHi <= 25,
-	   'the surf reaches ' + ctx._W.waveHi + 'px out, which animates the topography');
+	ok(WAT.waveHi <= 25, 'the surf reaches ' + WAT.waveHi + 'px out, animating the topography');
 
 	/*
-	 * AND THE STATIC SHELF STILL REACHES THE RENDERER THROUGH worldLayout.
-	 * This is the assertion that would have caught the shipped bug.
+	 * AND THE STATIC SHELF STILL REACHES THE RENDERER THROUGH worldLayout,
+	 * which is the assertion that would have caught the shipped bug.
 	 */
-	const joined = ctx._joined(
-		FACTIONS.map(f => ({ name: f.name, count: f.weight })), 1860, 888);
+	const joined = ctx._joined(FACTIONS.map(f => ({ name: f.name, count: f.weight })), 1860, 888);
 	ok(joined.length > 0, 'worldLayout fed seaLayers nothing at all');
 	const bands = joined.filter(L => L.band >= 0);
-	/* A band is one layer PER LANDMASS, so there are many more layers
-	   than bands; what matters is that the four bands appear, and that
-	   the first time each shows up they are in outermost-first order. */
 	const order = [];
 	for (const L of bands) if (order[order.length - 1] !== L.band) order.push(L.band);
-	ok(order.length === 4 && order.every((b, i) => b === 3 - i),
-	   'the shelf bands arrive in the order ' + order.join(',')
-	 + ' instead of 3,2,1,0, so the widest is painted over the narrowest');
+	ok(order.length === 4 && order.every((v, i) => v === 3 - i),
+	   'the shelf bands arrive in the order ' + order.join(',') + ' instead of 3,2,1,0');
 	ok(new Set(bands.map(L => L.fill)).size === 4, 'the shelf is not four different shades');
-	ok(bands.every(L => !L.cls && !L.stroke),
-	   'a shelf band is animated or stroked; it is static topography');
-	const last = joined[joined.length - 1];
-	ok(last && last.band === -1 && last.stroke, 'the coastline is not drawn last, or lost its stroke');
+	ok(bands.every(L => !L.cls && !L.stroke), 'a shelf band is animated or stroked');
+
+	/*
+	 * AND THE SHORELINE HAS NO RULE ROUND IT.
+	 *
+	 * "I don't think we need the line around the shore. It doesn't let
+	 * the animation breathe and the shore animation itself acts as the
+	 * border line." A hard 1.6px stroke round every coast competed with
+	 * the foam sitting directly on top of it.
+	 */
+	const coastL = joined.filter(L => L.band === -1);
+	ok(coastL.length > 0 && coastL.every(L => !L.stroke),
+	   'the shoreline is still stroked, which crowds the foam that now draws that edge');
+	ok(joined[joined.length - 1].band === -1, 'the land is not drawn last, over the shelf');
 
 	/* THE CANVAS IS OVER THE MAP AND CANNOT EAT A CLICK. */
 	const css = fs.readFileSync(__dirname + '/dist/map.css', 'utf8');
 	const surfCss = css.slice(css.indexOf('#container .sea-surf'));
-	ok(surfCss.indexOf('pointer-events: none') > 0 && surfCss.indexOf('pointer-events: none') < surfCss.indexOf('}'),
+	const decl = surfCss.slice(0, surfCss.indexOf('}'));
+	ok(decl.indexOf('pointer-events: none') > 0,
 	   'the water canvas does not set pointer-events:none, so it swallows every realm click');
-	ok(/width:\s*100%/.test(surfCss.slice(0, surfCss.indexOf('}'))),
+	ok(/width:\s*100%/.test(decl) && /height:\s*100%/.test(decl),
 	   'the water canvas is not stretched to the container, so it will not track the map '
 	 + 'when max-width shrinks the SVG on mobile');
 	ok(src.indexOf('prefers-reduced-motion') > 0 && src.indexOf('cancelAnimationFrame') > 0,

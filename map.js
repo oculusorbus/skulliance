@@ -331,26 +331,69 @@ const WATER = {
     foamHz: 2.5 * WATER_TEMPO,                   /* his sin(TIME * 2.5) */
     waveLo: 3, waveHi: 22, spacing: 14, width: 3,
     speed: 10 * WATER_TEMPO,
+    /*
+     * SOFT EDGES, WHICH HIS SHADER DOES NOT HAVE, AND WHY.
+     *
+     * His test is `phase < 1.6` -- a hard in-or-out. That makes a given
+     * pixel's alpha a STEP FUNCTION OF TIME: it is off, then on, with
+     * nothing in between. At his tempo the steps come fast enough to
+     * read as flow. Halved, they do not: the owner saw it immediately
+     * as "creeping and stuttery", which is thousands of pixels each
+     * snapping on at its own moment.
+     *
+     * A ramp instead of a step makes alpha a CONTINUOUS function of t,
+     * because the phase term carries t continuously even though the
+     * distance at a pixel never changes. That is what sub-pixel motion
+     * looks like when you cannot move a pixel.
+     *
+     * aa is the ramp width in screen pixels; fade is how far a crest
+     * takes to arrive and to die at the two ends of the surf, so rings
+     * do not pop into existence offshore or vanish at the beach.
+     */
+    aa: 1.6, fade: 5,
     foam: [168, 226, 243, 0.42], wave: [190, 232, 248, 0.5]
 };
 
-/**
- * His three lines as one pure function: 0 nothing, 1 foam, 2 wave.
- *
- * Pure so the harness can run it forward in time and check that the ring
- * MOVES, and moves by less than a pixel between frames -- the one
- * property the contour version could never have, and the whole reason
- * this file now has a canvas in it.
- */
-function surfShade(d, t) {
+function smoothEdge(e0, e1, x) {
+    let t = (x - e0) / (e1 - e0);
+    t = t < 0 ? 0 : (t > 1 ? 1 : t);
+    return t * t * (3 - 2 * t);
+}
+
+/** Where the foam edge stands at time t -- his 2.2 + 1.1 * sin(TIME * 2.5). */
+function foamEdgeAt(t) {
+    return WATER.foamMid + WATER.foamSwing * Math.sin(t * WATER.foamHz);
+}
+
+/** Foam coverage at distance d, 0..1, given the edge for this frame. */
+function surfFoam(d, edge) {
     if (d <= 0) return 0;
-    if (d < WATER.foamMid + WATER.foamSwing * Math.sin(t * WATER.foamHz)) return 1;
-    if (d > WATER.waveLo && d < WATER.waveHi) {
-        let phase = (d + t * WATER.speed) % WATER.spacing;
-        if (phase < 0) phase += WATER.spacing;
-        if (phase < WATER.width) return 2;
-    }
-    return 0;
+    return 1 - smoothEdge(edge - WATER.aa, edge + WATER.aa, d);
+}
+
+/**
+ * Wave coverage at distance d, 0..1, for a frame whose crests have been
+ * carried `shift` pixels shoreward (shift = t * speed, hoisted out of
+ * the pixel loop).
+ */
+function surfWave(d, shift) {
+    if (d <= 0 || d <= WATER.waveLo || d >= WATER.waveHi) return 0;
+    let phase = (d + shift) % WATER.spacing;
+    if (phase < 0) phase += WATER.spacing;
+    const half = WATER.width / 2;
+    /* CIRCULAR distance to the crest, or the band is sliced in half at
+       the modulus boundary: the soft trailing edge sits just below
+       phase 0, wraps round to just below `spacing`, and a plain
+       abs(phase - half) throws it away. Measured as a 0.54 alpha jump
+       in a single frame at the wrap -- a step, which is the whole thing
+       being fixed here. */
+    let dp = Math.abs(phase - half);
+    if (dp > WATER.spacing / 2) dp = WATER.spacing - dp;
+    let a = 1 - smoothEdge(half - WATER.aa, half + WATER.aa, dp);
+    /* Arrive and die gently at the two ends of the surf zone. */
+    a *= smoothEdge(WATER.waveLo, WATER.waveLo + WATER.fade, d);
+    a *= 1 - smoothEdge(WATER.waveHi - WATER.fade, WATER.waveHi, d);
+    return a;
 }
 
 let waterRAF = 0;
@@ -407,7 +450,7 @@ function waterLayer(container, world, svgW, svgH) {
     const dist = mwDistance(mask, W, H);
 
     /* Only the pixels the surf can ever reach are touched per frame. */
-    const reach = Math.max(WATER.foamMid + WATER.foamSwing, WATER.waveHi) / 2 + 1;
+    const reach = (Math.max(WATER.foamMid + WATER.foamSwing, WATER.waveHi) + WATER.aa + 2) / 2;
     const live = [];
     for (let i = 0; i < dist.length; i++) if (dist[i] > 0 && dist[i] < reach) live.push(i);
     if (!live.length) return null;
@@ -423,20 +466,33 @@ function waterLayer(container, world, svgW, svgH) {
     const frame = ctx.createImageData(W, H);
     const out = new Uint32Array(frame.data.buffer);
     const little = new Uint8Array(new Uint32Array([0x11223344]).buffer)[0] === 0x44;
-    const pack = (c) => {
-        const al = Math.round(c[3] * 255);
-        return little ? ((al << 24) | (c[2] << 16) | (c[1] << 8) | c[0]) >>> 0
-                      : ((c[0] << 24) | (c[1] << 16) | (c[2] << 8) | al) >>> 0;
-    };
-    const FOAM = pack(WATER.foam), WAVE = pack(WATER.wave);
+    const F = WATER.foam, V = WATER.wave;
 
-    /* Every live pixel is written every frame, including the empty ones,
-       so nothing is left over from the frame before. */
+    /*
+     * Every live pixel is written every frame, including the empty ones,
+     * so nothing is left over from the frame before.
+     *
+     * The foam edge and the crest shift depend only on t, so both are
+     * hoisted out: a Math.sin per pixel would be thirty thousand of
+     * them a frame for one number.
+     */
     const paint = (t) => {
+        const edge = foamEdgeAt(t), shift = t * WATER.speed;
         for (let k = 0; k < idx.length; k++) {
-            const i = idx[k];
-            const s = surfShade(dist[i] * 2, t);
-            out[i] = s === 1 ? FOAM : (s === 2 ? WAVE : 0);
+            const i = idx[k], d = dist[i] * 2;
+            const fa = surfFoam(d, edge) * F[3];
+            const wa = surfWave(d, shift) * V[3];
+            /* foam over wave, both over nothing */
+            const under = wa * (1 - fa);
+            const a = fa + under;
+            if (a < 0.004) { out[i] = 0; continue; }
+            const r = (F[0] * fa + V[0] * under) / a;
+            const g = (F[1] * fa + V[1] * under) / a;
+            const b = (F[2] * fa + V[2] * under) / a;
+            const al = a > 1 ? 255 : (a * 255) | 0;
+            out[i] = little
+                ? ((al << 24) | ((b | 0) << 16) | ((g | 0) << 8) | (r | 0)) >>> 0
+                : (((r | 0) << 24) | ((g | 0) << 16) | ((b | 0) << 8) | al) >>> 0;
         }
         ctx.putImageData(frame, 0, 0);
     };
@@ -475,8 +531,17 @@ function seaLayers(world) {
        occasional inland sea, and each is its own ring. */
     if (world.coast) {
         for (const ring of world.coast) {
-            layers.push({ ring: ring, fill: 'rgba(18,54,82,0.95)',
-                          stroke: 'rgba(150,215,240,0.42)', width: 1.6, band: -1 });
+            /*
+             * NO STROKE ON THE SHORELINE ANY MORE.
+             *
+             * "I don't think we need the line around the shore. It
+             * doesn't let the animation breathe and the shore animation
+             * itself acts as the border line." A hard 1.6px rule round
+             * every coast competed with the foam sitting right on top
+             * of it, and the foam is the better edge because it moves.
+             * The land fill still has its own edge against the water.
+             */
+            layers.push({ ring: ring, fill: 'rgba(18,54,82,0.95)', band: -1 });
         }
     }
     return layers;
