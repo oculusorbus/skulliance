@@ -726,12 +726,15 @@ function mwShores(land, gw, gh, cs, ox, oy, seed, smoothN, opts) {
 			}
 		}
 	}
-	const contour = (t, sm, minPts) => {
+	const contour = (t, sm, minPts, thin) => {
 		const m = new Int16Array(gw * gh);
 		for (let k = 0; k < dist.length; k++) m[k] = dist[k] <= t ? 0 : -1;
 		let rings = mwTrace(m, 0, gw, gh, cs, ox, oy);
 		if (minPts) rings = rings.filter(r => r.length >= minPts);
-		const gap = cs * 0.25;
+		/* A filled shelf band shows its edge against the band under it, so
+		   it is thinned gently. A wave is a 1.1px stroke in open water and
+		   tolerates a much coarser chord before anyone could tell. */
+		const gap = cs * (thin === undefined ? 0.25 : thin);
 		return { d: t, rings: rings.map(r =>
 			mwThin(mwSmooth(mwDedupe(r), sm === undefined ? smoothN : sm), gap)) };
 	};
@@ -774,7 +777,11 @@ function mwShores(land, gw, gh, cs, ox, oy, seed, smoothN, opts) {
 	 * alone. The waves break against the coast; the shelf underneath
 	 * them does not move.
 	 */
-	const waveN = opts.waveRings === undefined ? 5 : opts.waveRings;
+	/* EIGHT, NOT FIVE. Five contours over this surf zone sit 3.9px apart
+	   and the sweep reads as lamps switching on in turn. Eight puts them
+	   2.2px apart, close enough that a crest fading from one to the next
+	   reads as one line moving: the owner's word was "smoother". */
+	const waveN = opts.waveRings === undefined ? 8 : opts.waveRings;
 	const waveLo = (opts.waveLo === undefined ? 0.6 : opts.waveLo) * px;
 	const waveHi = (opts.waveHi === undefined ? 3.6 : opts.waveHi) * px;
 	/*
@@ -789,7 +796,7 @@ function mwShores(land, gw, gh, cs, ox, oy, seed, smoothN, opts) {
 	 */
 	const waves = [];
 	for (let i = 0; i < waveN; i++) {
-		waves.push(contour(waveLo + (waveHi - waveLo) * (i / (waveN - 1)), 2, 24));
+		waves.push(contour(waveLo + (waveHi - waveLo) * (i / (waveN - 1)), 2, 24, 0.5));
 	}
 	return { bands: bandAt.map(t => contour(t)), foamOut: contour(foamAt), waves: waves };
 }

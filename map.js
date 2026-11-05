@@ -290,6 +290,27 @@ function seaLayers(world) {
     /* One turn of his sine and one turn of his mod() are the same 2.5s,
        so the foam and the waves breathe on one clock. */
     const PERIOD = 2.5;
+    /*
+     * A NEW CREST LEAVES BEFORE THE LAST ONE LANDS.
+     *
+     * Spreading the phases over exactly one period puts one crest in the
+     * water at a time: it reaches the shore and only then does the next
+     * appear, which is a pulse, not a sea. Watching the clip frame by
+     * frame, "as it's about 3/4 of the way to the shore, another line
+     * emerges". So the sweep is spread over PERIOD / 0.75 while the
+     * animation still repeats every PERIOD -- the phases run past one
+     * full turn, which puts 1.33 crests in flight and starts the next
+     * one exactly three quarters of the way in.
+     */
+    const TRAVEL = PERIOD / 0.75;
+    /*
+     * The bright stop in skMapWaveRun over in map.css, as a fraction.
+     * The foam bloom is wound back against it so it lands with the
+     * crest; the harness reads the stylesheet and checks the two agree,
+     * because retiming the keyframes and leaving this behind unhooks
+     * the foam from the wave with nothing on screen to say so.
+     */
+    const CREST_PEAK = 0.06;
     const layers = [];
     if (!world) return layers;
     if (world.shores) {
@@ -310,7 +331,18 @@ function seaLayers(world) {
      */
     if (world.foamOut) {
         for (const ring of world.foamOut.rings) {
-            layers.push({ ring: ring, fill: 'rgba(150,215,235,0.30)', cls: 'sea-foam', foam: true });
+            /*
+             * PHASE-LOCKED TO THE CREST LANDING.
+             *
+             * "It completes touching the shore and then fans out like
+             * backwash." The foam bloom IS that fan-out, so it cannot
+             * breathe on its own clock: the innermost crest peaks at
+             * 8% of its cycle, the foam peaks at 50% of its own, so the
+             * foam is wound back by the difference and blooms exactly
+             * as the wave arrives.
+             */
+            layers.push({ ring: ring, fill: 'rgba(150,215,235,0.30)', cls: 'sea-foam', foam: true,
+                delay: (-(0.5 - CREST_PEAK) * PERIOD).toFixed(3) + 's' });
         }
     }
     /*
@@ -330,7 +362,7 @@ function seaLayers(world) {
             for (const ring of world.waves[i].rings) {
                 layers.push({ ring: ring, fill: 'none', stroke: 'rgba(170,225,245,0.55)',
                     width: 1.1, cls: 'sea-wave', wave: i,
-                    delay: (-(i / N) * PERIOD).toFixed(3) + 's' });
+                    delay: (-(i / N) * TRAVEL).toFixed(3) + 's' });
             }
         }
     }
@@ -374,7 +406,13 @@ function worldLayout(fdata, w, h) {
     /* A faction with no land is a faction nobody can click. Better to draw
        the old map than to drop somebody off the world. */
     if (placedWithPoly.length !== fdata.length) return null;
-    return { placedWithPoly: placedWithPoly, coast: world.coast, shores: world.shores };
+    /* EVERYTHING seaLayers() DRAWS HAS TO COME THROUGH HERE. This builds
+       a NEW object for the renderer rather than passing mwWorld's through,
+       so a layer added to the generator and not added to this line is
+       computed on every load and silently dropped -- which is exactly what
+       happened to the waves and the foam. */
+    return { placedWithPoly: placedWithPoly, coast: world.coast, shores: world.shores,
+             foamOut: world.foamOut, waves: world.waves };
 }
 
 /*

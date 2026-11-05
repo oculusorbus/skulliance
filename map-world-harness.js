@@ -504,8 +504,9 @@ console.log('\nthe shallows are contours of a distance field, not an outline');
 	 * handing it waves, every assertion over there still passes on a map
 	 * with dead flat water.
 	 */
-	ok(wd.waves && wd.waves.length === 5,
-	   'the world came back with ' + (wd.waves ? wd.waves.length : 0) + ' wave contours, not 5');
+	ok(wd.waves && wd.waves.length === 8,
+	   'the world came back with ' + (wd.waves ? wd.waves.length : 0) + ' wave contours, not 8 '
+	 + '-- five sit 3.9px apart and read as lamps switching on in turn, not as a wave');
 	ok(wd.waves.every((v, i) => i === 0 || v.d > wd.waves[i - 1].d),
 	   'the wave contours are not in increasing distance order, so the sweep is scrambled');
 	/*
@@ -953,20 +954,54 @@ console.log('\nthe shallows reach the drawing, and that is RUN to find out');
 	 + 'negative outward, or the highlight does not sweep toward the shore');
 	ok(Math.abs(delays[0]) < 1e-9,
 	   'the innermost wave is already part-way through its cycle, so the sweep starts mid-water');
-	/* Spread across one period, not bunched: six rings a sixth apart.
-	   Checked against the period itself rather than against a step
-	   derived from the delays, which would hold however bunched they
-	   were. The tolerance is 3ms because the delays are written to the
-	   DOM rounded to the millisecond. */
-	ok(delays.every((v, i) => Math.abs(v + i * (2.5 / 6)) < 3e-3),
-	   'the wave phases are ' + delays.join(', ') + ' -- not an even sweep over the 2.5s '
-	 + 'period, so the waves arrive in clumps');
+	/* An even sweep, checked against the travel time itself rather than
+	   against a step derived from the delays, which would hold however
+	   bunched they were. 3ms tolerance: the delays go into the DOM
+	   rounded to the millisecond. */
+	const TRAVEL = 2.5 / 0.75;
+	ok(delays.every((v, i) => Math.abs(v + i * (TRAVEL / delays.length)) < 3e-3),
+	   'the wave phases are ' + delays.join(', ') + ' -- not an even sweep, so the crests '
+	 + 'arrive in clumps');
+
+	/*
+	 * AND THE CRESTS OVERLAP: more than one in the water at a time.
+	 *
+	 * "As it's about 3/4 of the way to the shore, another line emerges."
+	 * Spread the phases over exactly one period and there is only ever
+	 * one crest -- it lands, and only then does the next appear, which
+	 * is a pulse and not a sea. The spread has to RUN PAST one full
+	 * turn, which is what puts the next crest in the water early.
+	 */
+	const spread = Math.abs(delays[delays.length - 1]) * delays.length / (delays.length - 1);
+	ok(spread > 2.5 * 1.2,
+	   'the wave phases span ' + spread.toFixed(2) + 's against a 2.5s period, so only one '
+	 + 'crest is ever in the water and it lands before the next one leaves');
 
 	/* THE FOAM IS A SECOND CONTOUR, over the top of the first. One band
 	   animated on its own only brightens; the EDGE has to move. */
 	const foam = layers.filter(L => L.foam);
 	ok(foam.length === 1 && foam[0].cls === 'sea-foam',
 	   'the breathing foam contour is missing, so the foam edge cannot move');
+
+	/*
+	 * THE FOAM BLOOMS WHEN THE CREST LANDS, AND THAT SPANS TWO FILES.
+	 *
+	 * "It completes touching the shore and then fans out like backwash."
+	 * The bloom is the fan-out, so it is phase-locked to the arrival
+	 * rather than breathing on its own clock -- which means a constant
+	 * in map.js has to agree with a keyframe percentage in map.css.
+	 * Retime the keyframes, leave the constant, and the foam silently
+	 * comes unhooked from the wave with nothing on screen to say so.
+	 */
+	const cssSrc = fs.readFileSync(__dirname + '/dist/map.css', 'utf8');
+	const kf = cssSrc.slice(cssSrc.indexOf('@keyframes skMapWaveRun'));
+	const stops = [...kf.slice(0, kf.indexOf('}\n    }')).matchAll(/(\d+)%\s*\{\s*opacity:\s*([\d.]+)/g)]
+		.map(m => ({ at: +m[1] / 100, o: +m[2] }));
+	ok(stops.length >= 4, 'could not read the wave keyframe stops out of map.css');
+	const crest = stops.reduce((a, b) => (b.o > a.o ? b : a), stops[0]);
+	ok(Math.abs(parseFloat(foam[0].delay) + (0.5 - crest.at) * 2.5) < 4e-3,
+	   'the foam is delayed ' + foam[0].delay + ' but the crest in map.css peaks at '
+	 + (crest.at * 100) + '%, so the foam does not bloom when the wave lands');
 	const foamAt = layers.indexOf(foam[0]), waveAt = layers.indexOf(waves[0]);
 	ok(foamAt > layers.indexOf(bands[3]) && waveAt > foamAt,
 	   'the draw order is wrong: the static shelf, then the foam, then the waves over the '
@@ -991,6 +1026,40 @@ console.log('\nthe shallows reach the drawing, and that is RUN to find out');
 	   'the coastline is not drawn last, or lost its stroke');
 	ok(bands.every(L => !L.stroke),
 	   'a shore band is stroked, which is the hard rim the old halo drew');
+
+	/*
+	 * AND THE RENDERER IS FED BY worldLayout(), WHICH IS RUN TOO.
+	 *
+	 * THIS IS THE ONE THAT GOT SHIPPED BROKEN. Every assertion above
+	 * passes seaLayers() a world built by hand, so they all passed while
+	 * the live map drew no waves at all: worldLayout() builds a NEW
+	 * object for the renderer instead of passing mwWorld's through, and
+	 * it carried coast and shores but not foamOut or waves. A unit test
+	 * on each half cannot see a gap between them, so the two are run
+	 * JOINED here -- real generator, real worldLayout, real seaLayers.
+	 */
+	const wl = src.indexOf('function worldLayout(');
+	const wlEnd = wl < 0 ? -1 : src.indexOf('\n}\n', wl);
+	ok(wl >= 0 && wlEnd > wl, 'worldLayout() could not be lifted out of map.js');
+	const ctx2 = { mwWorld: W.mwWorld, console: { warn: () => {} } };
+	vm.createContext(ctx2);
+	vm.runInContext(src.slice(wl, wlEnd + 3) + '\n' + src.slice(a, b + 3)
+	              + '\nvar _joined = (f, w, h) => seaLayers(worldLayout(f, w, h));', ctx2);
+	const joined = ctx2._joined(
+		FACTIONS.map(f => ({ name: f.name, count: f.weight })), 1860, 888);
+	ok(joined.length > 0, 'worldLayout fed seaLayers nothing at all');
+	ok(joined.some(L => L.cls === 'sea-wave'),
+	   'no wave reaches the renderer through worldLayout, so the water is computed on '
+	 + 'every load and thrown away before it is drawn');
+	ok(joined.some(L => L.cls === 'sea-foam'),
+	   'no foam reaches the renderer through worldLayout');
+	ok(joined.some(L => L.band >= 0) && joined.some(L => L.band === -1),
+	   'the shelf or the coastline does not survive worldLayout');
+	/* And the phases survive the trip, not just the paths. */
+	const liveDelays = [...new Set(joined.filter(L => L.cls === 'sea-wave').map(L => L.delay))];
+	ok(liveDelays.length === 8,
+	   'the waves arrive at the renderer with ' + liveDelays.length
+	 + ' distinct phases instead of 8, so they all pulse together');
 
 	/* AND IT SURVIVES A WORLD WITH NO SHALLOWS rather than throwing and
 	   costing the whole map, the same contract worldLayout() has. */
