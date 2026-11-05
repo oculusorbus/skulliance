@@ -740,65 +740,26 @@ function mwShores(land, gw, gh, cs, ox, oy, seed, smoothN, opts) {
 	};
 
 	/*
-	 * THE MOVING HALF OF THE TECHNIQUE.
+	 * NO CONTOURS FOR THE MOVING WATER. There were two sets here -- a
+	 * breathing foam ring and eight wave rings cross-faded in sequence --
+	 * and they were deleted because the approach cannot work, not because
+	 * they were tuned wrong.
 	 *
-	 * In his Godot shader both of these are one line, because a shader
-	 * gets the distance at every pixel every frame: foam is
-	 * `d < 2.2 + sin(TIME * 2.5) * 1.1`, and the waves are
-	 * `mod(d + TIME * 4.4, 11)`, which sweeps rings shoreward forever.
+	 * His shader is `mod(d + TIME * speed, spacing) < 1.6`, evaluated PER
+	 * PIXEL. The edges are hard; the smoothness comes entirely from d
+	 * being continuous, so the ring slides by a fraction of a pixel each
+	 * frame. A fixed contour can only ever put that ring in one place, so
+	 * N contours give it N places and cross-fading between them is
+	 * opacity, not movement: the owner saw "flashing lights in
+	 * succession" twice, and more rings and softer keyframes only ever
+	 * made it a smoother flash.
 	 *
-	 * There is no shader here -- the map is SVG in the DOM -- so both are
-	 * DISCRETISED INTO GEOMETRY AND ANIMATED BY OPACITY. The foam is the
-	 * two ends of his sine, 1.1px and 3.3px, cross-faded, so the foam
-	 * edge really does move in and out rather than just brightening. The
-	 * waves are six contours spanning the 4-20px his rings travel
-	 * through, lit in turn from the outermost inwards; `mod` over a
-	 * continuous field becomes six paths taking turns, which at a 2.5s
-	 * period is the same motion a reader sees.
-	 *
-	 * SIX IS A COST DECISION. Each contour is real path data in the
-	 * document, not a line of shader, so this is the knob to turn if the
-	 * map ever gets heavy on a phone.
+	 * The surf is a canvas now (waterLayer in map.js), evaluating the
+	 * shader per pixel over a distance field. These bands stay as
+	 * geometry because they are STATIC topography -- the graduated
+	 * shallows -- and SVG draws those perfectly well.
 	 */
-	const foamAt = opts.foamBand === undefined ? 3.3 * px * SHORE : opts.foamBand;
-	/*
-	 * THE SURF IS TIGHTER THAN HIS, AND DELIBERATELY SO.
-	 *
-	 * His wave rings travel the whole 4-20px shelf, which works because
-	 * on his map the shelf IS the water you look at. Here the bands do a
-	 * second job they do not do for him: they are read as topography,
-	 * the graduated shallows going down to deep water, and that is worth
-	 * keeping still. Animating across the full shelf made the whole sea
-	 * move and the depth reading went with it.
-	 *
-	 * So the static shelf stays exactly as it was and the motion is
-	 * confined to a narrow surf zone at the shore -- 0.6 to 3.6 in his
-	 * units against his 4 to 20, which is inside what he gives to foam
-	 * alone. The waves break against the coast; the shelf underneath
-	 * them does not move.
-	 */
-	/* EIGHT, NOT FIVE. Five contours over this surf zone sit 3.9px apart
-	   and the sweep reads as lamps switching on in turn. Eight puts them
-	   2.2px apart, close enough that a crest fading from one to the next
-	   reads as one line moving: the owner's word was "smoother". */
-	const waveN = opts.waveRings === undefined ? 8 : opts.waveRings;
-	const waveLo = (opts.waveLo === undefined ? 0.6 : opts.waveLo) * px;
-	const waveHi = (opts.waveHi === undefined ? 3.6 : opts.waveHi) * px;
-	/*
-	 * THE WAVES ARE SMOOTHED LESS, AND DROP THE SMALL RINGS.
-	 *
-	 * Each Chaikin pass doubles the points, and six wave contours at the
-	 * coastline's own three passes came to 36,720 points of path data --
-	 * more than the whole rest of the sea put together, in the document,
-	 * on a phone. A wave is a 1px stroke in open water: two passes is
-	 * smooth enough to read, and a contour ring under 24 raw points is a
-	 * speck whose wave nobody can see. Measured below.
-	 */
-	const waves = [];
-	for (let i = 0; i < waveN; i++) {
-		waves.push(contour(waveLo + (waveHi - waveLo) * (i / (waveN - 1)), 2, 24, 0.5));
-	}
-	return { bands: bandAt.map(t => contour(t)), foamOut: contour(foamAt), waves: waves };
+	return { bands: bandAt.map(t => contour(t)) };
 }
 
 /** A traced vertex, keyed the way mwTrace keys them, so the two agree. */
@@ -1289,8 +1250,7 @@ function mwWorld(factions, w, h, opts) {
 	}
 	if (!regions.length) return null;
 
-	return { coast: coastRings, shores: shoreSet.bands, foamOut: shoreSet.foamOut,
-	         waves: shoreSet.waves, regions: regions, width: w, height: h,
+	return { coast: coastRings, shores: shoreSet.bands, regions: regions, width: w, height: h,
 	         masses: masses.length };
 }
 

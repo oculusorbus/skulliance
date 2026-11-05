@@ -452,13 +452,11 @@ console.log('\nthe shallows are contours of a distance field, not an outline');
 	 * but about fifteen characters of `d` attribute each. Measured in a
 	 * real browser, the sea was 910KB of path data before thinning and
 	 * 658KB after -- a parse cost on a phone long before it is a paint
-	 * cost. 26,962 points thinned against 44,000 raw on this fixture.
+	 * cost. Only the static shelf is geometry now; the surf is pixels.
 	 */
 	const seaPoints = (world) =>
-		world.shores.reduce((a, b) => a + b.rings.reduce((x, r) => x + r.length, 0), 0)
-		+ world.foamOut.rings.reduce((x, r) => x + r.length, 0)
-		+ world.waves.reduce((a, b) => a + b.rings.reduce((x, r) => x + r.length, 0), 0);
-	ok(seaPoints(wd) < 35000, 'the sea is ' + seaPoints(wd)
+		world.shores.reduce((a, b) => a + b.rings.reduce((x, r) => x + r.length, 0), 0);
+	ok(seaPoints(wd) < 20000, 'the shelf is ' + seaPoints(wd)
 	 + ' points of path data, which goes into the document as text on every load');
 
 	/* AND THINNING KEEPS THE SHAPE. A circle of 720 points comes back as
@@ -497,40 +495,6 @@ console.log('\nthe shallows are contours of a distance field, not an outline');
 	ok(W.mwThin(speck, 2).length === 6,
 	   'a six-point ring was thinned to ' + W.mwThin(speck, 2).length
 	 + ' points, which reshapes a speck rather than de-duplicating it');
-
-	/*
-	 * THE MOVING PARTS EXIST ON A REAL WORLD, not just in the renderer's
-	 * fixture. seaLayers() draws whatever it is handed; if mwWorld stops
-	 * handing it waves, every assertion over there still passes on a map
-	 * with dead flat water.
-	 */
-	ok(wd.waves && wd.waves.length === 8,
-	   'the world came back with ' + (wd.waves ? wd.waves.length : 0) + ' wave contours, not 8 '
-	 + '-- five sit 3.9px apart and read as lamps switching on in turn, not as a wave');
-	ok(wd.waves.every((v, i) => i === 0 || v.d > wd.waves[i - 1].d),
-	   'the wave contours are not in increasing distance order, so the sweep is scrambled');
-	/*
-	 * AND THE SURF HUGS THE SHORE. This is the owner's call and the
-	 * reason the two halves are separate: "keep the static topography
-	 * and then place the animation on top very close to the shore".
-	 * Waves running the full width of the shelf set the whole sea in
-	 * motion and the depth stops reading as depth. The surf is kept
-	 * inside a quarter of the shelf -- 2.20 cells against a shelf that
-	 * reaches 10.33.
-	 */
-	const outerWave = wd.waves[wd.waves.length - 1].d;
-	const outerShelf = wd.shores[wd.shores.length - 1].d;
-	ok(outerWave < outerShelf * 0.3,
-	   'the surf reaches ' + outerWave.toFixed(2) + ' cells out against a shelf of '
-	 + outerShelf.toFixed(2) + ' -- it is animating the topography instead of the shore');
-
-	/* AND THE FOAM HAS ROOM TO BREATHE. His band moves between 1.1 and
-	   3.3px; both ends are contoured, and if they collapse together the
-	   cross-fade animates one rim into itself and nothing moves. */
-	ok(wd.foamOut && wd.foamOut.d > wd.shores[0].d * 2,
-	   'the breathing foam contour is ' + (wd.foamOut ? wd.foamOut.d.toFixed(2) : '-')
-	 + ' against an inner rim of ' + wd.shores[0].d.toFixed(2)
-	 + ' -- too close together for the foam edge to visibly move');
 
 	/*
 	 * AND THE WOBBLE IS THE WHOLE TRICK.
@@ -886,203 +850,127 @@ console.log('\nthe pieces behave on their own');
 	ok(solo && solo.regions.length === 1, 'a single faction does not get a world');
 }
 
-console.log('\nthe shallows reach the drawing, and that is RUN to find out');
+console.log('\nthe shallows reach the drawing, and the surf actually moves');
 {
 	/*
-	 * EXECUTED, NOT READ -- and this one was learned the hard way twice
-	 * over. The first version of this check searched map.js for
-	 * "world.shores". Wrapping the whole band loop in `if (false)` left
-	 * that string exactly where it was, in the line just inside the dead
-	 * guard, so the assertion passed on a renderer that drew no shallows
-	 * at all. seaLayers() is pure for this reason: it can be called.
+	 * EXECUTED, NOT READ -- and learned the hard way twice over. The
+	 * first check searched map.js for "world.shores"; wrapping the band
+	 * loop in `if (false)` left that string inside the dead guard and it
+	 * passed on a renderer drawing nothing. The second passed seaLayers()
+	 * a world built by hand, and the live map still drew no water,
+	 * because worldLayout() builds its own object and had dropped it.
 	 */
 	const fs = require('fs');
 	const vm = require('vm');
 	const src = fs.readFileSync(__dirname + '/map.js', 'utf8');
-	const a = src.indexOf('function seaLayers(');
-	const b = a < 0 ? -1 : src.indexOf('\n}\n', a);
-	ok(a >= 0 && b > a, 'seaLayers() could not be lifted out of map.js');
-
-	const ctx = {};
-	vm.createContext(ctx);
-	vm.runInContext(src.slice(a, b + 3) + '\nvar _f = seaLayers;', ctx);
-
-	const ring = [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 4 }, { x: 0, y: 4 }];
-	const band = (d) => ({ d: d, rings: [ring] });
-	const fake = {
-		shores: [band(1), band(2), band(3), band(4)],
-		waves: [band(5), band(6), band(7), band(8), band(9), band(10)],
-		foamOut: band(1.5),
-		coast: [ring]
+	const lift = (sig) => {
+		const i = src.indexOf(sig);
+		const j = i < 0 ? -1 : src.indexOf('\n}\n', i);
+		return (i >= 0 && j > i) ? src.slice(i, j + 3) : '';
 	};
-	const layers = ctx._f(fake);
-	ok(layers.length === 12, 'seaLayers returned ' + layers.length
-	 + ' layers for four bands, six waves, the foam and one coastline, not 12 -- part of '
-	 + 'the sea is being computed and then not drawn');
+	const sl = lift('function seaLayers('), wl = lift('function worldLayout(');
+	const sh = lift('function surfShade('), wc = src.slice(src.indexOf('const WATER = {'),
+		src.indexOf('};', src.indexOf('const WATER = {')) + 2);
+	ok(sl && wl && sh && wc, 'seaLayers / worldLayout / surfShade / WATER could not be lifted from map.js');
 
-	/* BIGGEST BAND FIRST. Stacked the other way the innermost band is
-	   buried under the widest one and the sea goes flat. */
-	const bands = layers.filter(L => L.band >= 0);
-	ok(bands.length === 4 && bands.every((L, i) => L.band === 3 - i),
-	   'the bands come back in the order ' + bands.map(L => L.band).join(',')
-	 + ' instead of outermost first, so they stack into a flat wash');
-
-	/* FOUR DISTINCT SHADES, or the gradient is one colour. */
-	ok(new Set(bands.map(L => L.fill)).size === 4,
-	   'the four bands are not four different colours');
+	const ctx = { mwWorld: W.mwWorld, Math: Math, console: { warn: () => {} } };
+	vm.createContext(ctx);
+	vm.runInContext(wc + '\n' + sh + '\n' + sl + '\n' + wl
+		+ '\nvar _shade = surfShade, _W = WATER;'
+		+ '\nvar _joined = (f, w, h) => seaLayers(worldLayout(f, w, h));', ctx);
 
 	/*
-	 * THE WAVES TRAVEL SHOREWARD, WHICH IS A FACT ABOUT THE DELAYS.
+	 * THE RING MOVES, AND MOVES BY LESS THAN A PIXEL PER FRAME.
 	 *
-	 * Six fixed contours cannot move; the LIT one moves. Each ring's
-	 * animation-delay is -(i/N) of the period with i counting outward,
-	 * so the outermost ring is furthest through its cycle and peaks
-	 * first. Flip the sign and the waves roll out to sea instead -- it
-	 * still animates, it still looks like something is happening, and
-	 * it is wrong, which is exactly why this is asserted on the numbers
-	 * rather than left to the eye.
+	 * THIS IS THE WHOLE POINT OF THE REWRITE. Reported twice as "flashing
+	 * lights in succession": the surf was N fixed contours cross-faded,
+	 * so the ring only ever had N positions and what moved was opacity,
+	 * not the line. His shader evaluates the distance per PIXEL, so the
+	 * ring slides continuously. Measured as: where is the ring at t, and
+	 * how far did it travel in one frame at 60fps?
 	 */
-	const waves = layers.filter(L => L.wave !== undefined);
-	ok(waves.length === 6, 'got ' + waves.length + ' wave rings instead of 6');
-	ok(waves.every(L => L.cls === 'sea-wave'),
-	   'a wave ring has no class, so the stylesheet never animates it');
-	const delays = waves.map(L => parseFloat(L.delay));
-	ok(delays.every(v => v <= 0),
-	   'a wave delay is positive, so that ring sits still until its first cycle comes round');
-	ok(delays.every((v, i) => i === 0 || v < delays[i - 1]),
-	   'the wave delays are ' + delays.join(', ') + ' -- they must get steadily more '
-	 + 'negative outward, or the highlight does not sweep toward the shore');
-	ok(Math.abs(delays[0]) < 1e-9,
-	   'the innermost wave is already part-way through its cycle, so the sweep starts mid-water');
-	/* An even sweep, checked against the travel time itself rather than
-	   against a step derived from the delays, which would hold however
-	   bunched they were. 3ms tolerance: the delays go into the DOM
-	   rounded to the millisecond. */
-	const TRAVEL = 2.5 / 0.75;
-	ok(delays.every((v, i) => Math.abs(v + i * (TRAVEL / delays.length)) < 3e-3),
-	   'the wave phases are ' + delays.join(', ') + ' -- not an even sweep, so the crests '
-	 + 'arrive in clumps');
+	const ringAt = (t) => {
+		/* the smallest d inside the surf zone that is lit as a wave */
+		for (let d = _wLo(); d < _wHi(); d += 0.02) if (ctx._shade(d, t) === 2) return d;
+		return -1;
+	};
+	function _wLo() { return ctx._W.waveLo + 0.01; }
+	function _wHi() { return ctx._W.waveHi; }
+	const frame = 1 / 60;
+	const steps = [];
+	for (let k = 0; k < 40; k++) {
+		const a0 = ringAt(1 + k * frame), a1 = ringAt(1 + (k + 1) * frame);
+		if (a0 > 0 && a1 > 0 && a1 < a0) steps.push(a0 - a1);
+	}
+	ok(steps.length > 25,
+	   'the leading ring only moved shoreward on ' + steps.length + ' of 40 frames');
+	const biggest = Math.max.apply(null, steps);
+	ok(biggest < 1,
+	   'the ring jumps ' + biggest.toFixed(2) + 'px between frames; anything near a pixel '
+	 + 'reads as a step rather than as water');
+	ok(Math.min.apply(null, steps) > 0.01,
+	   'the ring is not actually moving between frames');
+
+	/* AND IT MOVES SHOREWARD, not out to sea. Same trap as before: the
+	   wrong sign still animates and still looks busy. */
+	const early = ringAt(1), later = ringAt(1 + 10 * frame);
+	ok(later < early,
+	   'the ring sits at ' + early.toFixed(2) + 'px and ' + later.toFixed(2)
+	 + 'px ten frames later, so the waves are rolling out to sea');
+
+	/* THE FOAM EDGE BREATHES, which is his sine on the threshold. */
+	let lo = Infinity, hi = -Infinity;
+	for (let t = 0; t < 3; t += 0.01) {
+		let e = 0;
+		while (ctx._shade(e + 0.01, t) === 1 && e < 40) e += 0.01;
+		lo = Math.min(lo, e); hi = Math.max(hi, e);
+	}
+	ok(hi - lo > 4,
+	   'the foam edge only moves ' + (hi - lo).toFixed(2) + 'px over a full cycle, so it '
+	 + 'brightens instead of breathing');
+
+	/* AND NOTHING IS PAINTED ON LAND. The field is zero there, and the
+	   canvas sits OVER the territories and the markers -- a single lit
+	   pixel at d <= 0 would be surf drawn across somebody's realm. */
+	ok(ctx._shade(0, 0) === 0 && ctx._shade(-3, 1.2) === 0,
+	   'the surf paints at or inside the shoreline, which puts water over the land');
+
+	/* The surf stays at the shore rather than crossing the shelf. */
+	ok(ctx._W.waveHi <= 25,
+	   'the surf reaches ' + ctx._W.waveHi + 'px out, which animates the topography');
 
 	/*
-	 * AND THE CRESTS OVERLAP: more than one in the water at a time.
-	 *
-	 * "As it's about 3/4 of the way to the shore, another line emerges."
-	 * Spread the phases over exactly one period and there is only ever
-	 * one crest -- it lands, and only then does the next appear, which
-	 * is a pulse and not a sea. The spread has to RUN PAST one full
-	 * turn, which is what puts the next crest in the water early.
+	 * AND THE STATIC SHELF STILL REACHES THE RENDERER THROUGH worldLayout.
+	 * This is the assertion that would have caught the shipped bug.
 	 */
-	const spread = Math.abs(delays[delays.length - 1]) * delays.length / (delays.length - 1);
-	ok(spread > 2.5 * 1.2,
-	   'the wave phases span ' + spread.toFixed(2) + 's against a 2.5s period, so only one '
-	 + 'crest is ever in the water and it lands before the next one leaves');
-
-	/* THE FOAM IS A SECOND CONTOUR, over the top of the first. One band
-	   animated on its own only brightens; the EDGE has to move. */
-	const foam = layers.filter(L => L.foam);
-	ok(foam.length === 1 && foam[0].cls === 'sea-foam',
-	   'the breathing foam contour is missing, so the foam edge cannot move');
-
-	/*
-	 * THE FOAM BLOOMS WHEN THE CREST LANDS, AND THAT SPANS TWO FILES.
-	 *
-	 * "It completes touching the shore and then fans out like backwash."
-	 * The bloom is the fan-out, so it is phase-locked to the arrival
-	 * rather than breathing on its own clock -- which means a constant
-	 * in map.js has to agree with a keyframe percentage in map.css.
-	 * Retime the keyframes, leave the constant, and the foam silently
-	 * comes unhooked from the wave with nothing on screen to say so.
-	 */
-	const cssSrc = fs.readFileSync(__dirname + '/dist/map.css', 'utf8');
-	const kf = cssSrc.slice(cssSrc.indexOf('@keyframes skMapWaveRun'));
-	const stops = [...kf.slice(0, kf.indexOf('}\n    }')).matchAll(/(\d+)%\s*\{\s*opacity:\s*([\d.]+)/g)]
-		.map(m => ({ at: +m[1] / 100, o: +m[2] }));
-	ok(stops.length >= 4, 'could not read the wave keyframe stops out of map.css');
-	const crest = stops.reduce((a, b) => (b.o > a.o ? b : a), stops[0]);
-	ok(Math.abs(parseFloat(foam[0].delay) + (0.5 - crest.at) * 2.5) < 4e-3,
-	   'the foam is delayed ' + foam[0].delay + ' but the crest in map.css peaks at '
-	 + (crest.at * 100) + '%, so the foam does not bloom when the wave lands');
-	const foamAt = layers.indexOf(foam[0]), waveAt = layers.indexOf(waves[0]);
-	ok(foamAt > layers.indexOf(bands[3]) && waveAt > foamAt,
-	   'the draw order is wrong: the static shelf, then the foam, then the waves over the '
-	 + 'top of it, then the land');
-
-	/*
-	 * AND NOTHING ANIMATES THE SHELF.
-	 *
-	 * The shelf is topography -- graduated depth going out to open water
-	 * -- and the owner wants it read as that, standing still. Only the
-	 * surf moves. A class on a band is all it would take for the whole
-	 * sea to start breathing.
-	 */
-	ok(bands.every(L => !L.cls && !L.delay),
-	   'a shelf band carries an animation class, so the topography moves with the water');
-
-	/* THE COASTLINE IS LAST, and no BAND is stroked -- a stroked band
-	   puts a hard rim back on top of the gradient, which is the halo
-	   this replaced. The waves are strokes by design. */
-	const last = layers[layers.length - 1];
-	ok(last && last.band === -1 && last.stroke,
-	   'the coastline is not drawn last, or lost its stroke');
-	ok(bands.every(L => !L.stroke),
-	   'a shore band is stroked, which is the hard rim the old halo drew');
-
-	/*
-	 * AND THE RENDERER IS FED BY worldLayout(), WHICH IS RUN TOO.
-	 *
-	 * THIS IS THE ONE THAT GOT SHIPPED BROKEN. Every assertion above
-	 * passes seaLayers() a world built by hand, so they all passed while
-	 * the live map drew no waves at all: worldLayout() builds a NEW
-	 * object for the renderer instead of passing mwWorld's through, and
-	 * it carried coast and shores but not foamOut or waves. A unit test
-	 * on each half cannot see a gap between them, so the two are run
-	 * JOINED here -- real generator, real worldLayout, real seaLayers.
-	 */
-	const wl = src.indexOf('function worldLayout(');
-	const wlEnd = wl < 0 ? -1 : src.indexOf('\n}\n', wl);
-	ok(wl >= 0 && wlEnd > wl, 'worldLayout() could not be lifted out of map.js');
-	const ctx2 = { mwWorld: W.mwWorld, console: { warn: () => {} } };
-	vm.createContext(ctx2);
-	vm.runInContext(src.slice(wl, wlEnd + 3) + '\n' + src.slice(a, b + 3)
-	              + '\nvar _joined = (f, w, h) => seaLayers(worldLayout(f, w, h));', ctx2);
-	const joined = ctx2._joined(
+	const joined = ctx._joined(
 		FACTIONS.map(f => ({ name: f.name, count: f.weight })), 1860, 888);
 	ok(joined.length > 0, 'worldLayout fed seaLayers nothing at all');
-	ok(joined.some(L => L.cls === 'sea-wave'),
-	   'no wave reaches the renderer through worldLayout, so the water is computed on '
-	 + 'every load and thrown away before it is drawn');
-	ok(joined.some(L => L.cls === 'sea-foam'),
-	   'no foam reaches the renderer through worldLayout');
-	ok(joined.some(L => L.band >= 0) && joined.some(L => L.band === -1),
-	   'the shelf or the coastline does not survive worldLayout');
-	/* And the phases survive the trip, not just the paths. */
-	const liveDelays = [...new Set(joined.filter(L => L.cls === 'sea-wave').map(L => L.delay))];
-	ok(liveDelays.length === 8,
-	   'the waves arrive at the renderer with ' + liveDelays.length
-	 + ' distinct phases instead of 8, so they all pulse together');
+	const bands = joined.filter(L => L.band >= 0);
+	/* A band is one layer PER LANDMASS, so there are many more layers
+	   than bands; what matters is that the four bands appear, and that
+	   the first time each shows up they are in outermost-first order. */
+	const order = [];
+	for (const L of bands) if (order[order.length - 1] !== L.band) order.push(L.band);
+	ok(order.length === 4 && order.every((b, i) => b === 3 - i),
+	   'the shelf bands arrive in the order ' + order.join(',')
+	 + ' instead of 3,2,1,0, so the widest is painted over the narrowest');
+	ok(new Set(bands.map(L => L.fill)).size === 4, 'the shelf is not four different shades');
+	ok(bands.every(L => !L.cls && !L.stroke),
+	   'a shelf band is animated or stroked; it is static topography');
+	const last = joined[joined.length - 1];
+	ok(last && last.band === -1 && last.stroke, 'the coastline is not drawn last, or lost its stroke');
 
-	/* AND IT SURVIVES A WORLD WITH NO SHALLOWS rather than throwing and
-	   costing the whole map, the same contract worldLayout() has. */
-	ok(ctx._f(null).length === 0 && ctx._f({ coast: [ring] }).length === 1,
-	   'seaLayers throws or miscounts when there are no shore bands');
-
-	/*
-	 * AND THE ANIMATION IS BEHIND prefers-reduced-motion.
-	 *
-	 * This is decoration on a page people use to run raids. The static
-	 * opacities are declared OUTSIDE the guard so the map is complete
-	 * standing still, and the keyframes only ever override them.
-	 */
+	/* THE CANVAS IS OVER THE MAP AND CANNOT EAT A CLICK. */
 	const css = fs.readFileSync(__dirname + '/dist/map.css', 'utf8');
-	const guard = css.indexOf('@media (prefers-reduced-motion: no-preference)');
-	ok(guard > 0, 'the water animation is not behind a prefers-reduced-motion guard');
-	ok(css.indexOf('@keyframes skMapWaveRun') > guard
-	   && css.indexOf('@keyframes skMapFoamBreathe') > guard,
-	   'a water keyframe is declared outside the reduced-motion guard, so it plays for '
-	 + 'somebody who asked the system for no animation');
-	ok(css.indexOf('.sea-wave { opacity') > 0 && css.indexOf('.sea-wave { opacity') < guard,
-	   'the waves have no resting opacity outside the guard, so they vanish entirely '
-	 + 'for a reader with reduced motion on');
+	const surfCss = css.slice(css.indexOf('#container .sea-surf'));
+	ok(surfCss.indexOf('pointer-events: none') > 0 && surfCss.indexOf('pointer-events: none') < surfCss.indexOf('}'),
+	   'the water canvas does not set pointer-events:none, so it swallows every realm click');
+	ok(/width:\s*100%/.test(surfCss.slice(0, surfCss.indexOf('}'))),
+	   'the water canvas is not stretched to the container, so it will not track the map '
+	 + 'when max-width shrinks the SVG on mobile');
+	ok(src.indexOf('prefers-reduced-motion') > 0 && src.indexOf('cancelAnimationFrame') > 0,
+	   'map.js never checks reduced motion, or never cancels its loop when the map redraws');
 }
 
 console.log('\nthe canvas is sized from the page, and it is RUN to find out');

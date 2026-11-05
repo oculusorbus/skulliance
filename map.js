@@ -284,86 +284,172 @@ const NS = 'http://www.w3.org/2000/svg';
  * source check cannot tell a band that is drawn from one sitting behind
  * `if (false)`: the strings it looks for are all still there.
  */
+/*
+ * THE MOVING WATER, EVALUATED PER PIXEL.
+ *
+ * WHY THIS IS NOT SVG. His shader is three lines:
+ *
+ *     if (d < 2.2 + 1.1 * sin(TIME * 2.5)) c = foam;
+ *     float phase = mod(d + TIME * wave_speed, wave_spacing);
+ *     if (phase < 1.6 && d > 4.0 && d < 20.0) c = wave;
+ *
+ * The edges are HARD -- there is no smoothstep anywhere in it. All of
+ * the fluidity comes from `d` being evaluated at every pixel, so the
+ * ring slides a fraction of a pixel per frame and never sits still.
+ *
+ * Two attempts here cross-faded fixed contours instead: five rings, then
+ * eight with softer keyframes and overlapping phases. Both were reported
+ * as "flashing lights in succession", and both always would be. A
+ * contour is ONE position. N contours give the ring N positions, and
+ * fading between two static shapes is not movement -- you see both at
+ * once, then one of them. No keyframe fixes that. The geometry has to
+ * stop being fixed, which means pixels.
+ */
+
+/* Distances in screen pixels. His 4-20 scales to 13-67 here, which is
+   the full-shelf version the owner turned down; these are the tight
+   surf numbers kept from that round. */
+const WATER = {
+    foamMid: 7.4, foamSwing: 3.7, foamHz: 2.5,   /* his 2.2 +/- 1.1, scaled */
+    waveLo: 3, waveHi: 22, spacing: 14, width: 3, speed: 10,
+    foam: [168, 226, 243, 0.42], wave: [190, 232, 248, 0.5]
+};
+
+/**
+ * His three lines as one pure function: 0 nothing, 1 foam, 2 wave.
+ *
+ * Pure so the harness can run it forward in time and check that the ring
+ * MOVES, and moves by less than a pixel between frames -- the one
+ * property the contour version could never have, and the whole reason
+ * this file now has a canvas in it.
+ */
+function surfShade(d, t) {
+    if (d <= 0) return 0;
+    if (d < WATER.foamMid + WATER.foamSwing * Math.sin(t * WATER.foamHz)) return 1;
+    if (d > WATER.waveLo && d < WATER.waveHi) {
+        let phase = (d + t * WATER.speed) % WATER.spacing;
+        if (phase < 0) phase += WATER.spacing;
+        if (phase < WATER.width) return 2;
+    }
+    return 0;
+}
+
+let waterRAF = 0;
+
+/* map.js rebuilds the whole map on resize and on every filter change; an
+   orphaned loop would keep painting a canvas that has left the document. */
+function stopWater() {
+    if (waterRAF) { cancelAnimationFrame(waterRAF); waterRAF = 0; }
+}
+
+/**
+ * Bake a distance field off the drawn coastline, then animate the surf.
+ *
+ * THE FIELD IS RASTERISED FROM THE COAST POLYGONS, NOT THE CELL GRID, so
+ * the water lines up with the shoreline actually on screen rather than
+ * with the grid it was traced from. Half a cell out is plainly visible
+ * when the foam is three pixels wide.
+ *
+ * HALF RESOLUTION, STRETCHED BACK UP: a quarter of the pixels to touch
+ * each frame, and the browser's bilinear upscale softens his hard edges
+ * into something that suits a map better than it does pixel art.
+ */
+function waterLayer(container, world, svgW, svgH) {
+    stopWater();
+    if (typeof mwDistance !== 'function' || !world || !world.coast || !world.coast.length) return null;
+
+    const SCALE = 0.5;
+    const W = Math.max(1, Math.round(svgW * SCALE)), H = Math.max(1, Math.round(svgH * SCALE));
+
+    const off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    const octx = off.getContext('2d', { willReadFrequently: true });
+    if (!octx) return null;
+    octx.fillStyle = '#000';
+    octx.fillRect(0, 0, W, H);
+    octx.fillStyle = '#fff';
+    octx.beginPath();
+    for (const ring of world.coast) {
+        for (let i = 0; i < ring.length; i++) {
+            const x = ring[i].x * SCALE, y = ring[i].y * SCALE;
+            if (i) octx.lineTo(x, y); else octx.moveTo(x, y);
+        }
+        octx.closePath();
+    }
+    /* nonzero, and the lake rings wind the other way, so they come out as
+       holes in the land and get their own shoreline for nothing. */
+    octx.fill('nonzero');
+
+    const px = octx.getImageData(0, 0, W, H).data;
+    const mask = new Uint8Array(W * H);
+    for (let i = 0; i < mask.length; i++) mask[i] = px[i * 4] > 127 ? 1 : 0;
+
+    /* In half-res cells, doubled back to screen pixels as it is read. */
+    const dist = mwDistance(mask, W, H);
+
+    /* Only the pixels the surf can ever reach are touched per frame. */
+    const reach = Math.max(WATER.foamMid + WATER.foamSwing, WATER.waveHi) / 2 + 1;
+    const live = [];
+    for (let i = 0; i < dist.length; i++) if (dist[i] > 0 && dist[i] < reach) live.push(i);
+    if (!live.length) return null;
+    const idx = new Int32Array(live);
+
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    cv.className = 'sea-surf';
+    const ctx = cv.getContext('2d');
+    if (!ctx) return null;
+    container.appendChild(cv);
+
+    const frame = ctx.createImageData(W, H);
+    const out = new Uint32Array(frame.data.buffer);
+    const little = new Uint8Array(new Uint32Array([0x11223344]).buffer)[0] === 0x44;
+    const pack = (c) => {
+        const al = Math.round(c[3] * 255);
+        return little ? ((al << 24) | (c[2] << 16) | (c[1] << 8) | c[0]) >>> 0
+                      : ((c[0] << 24) | (c[1] << 16) | (c[2] << 8) | al) >>> 0;
+    };
+    const FOAM = pack(WATER.foam), WAVE = pack(WATER.wave);
+
+    /* Every live pixel is written every frame, including the empty ones,
+       so nothing is left over from the frame before. */
+    const paint = (t) => {
+        for (let k = 0; k < idx.length; k++) {
+            const i = idx[k];
+            const s = surfShade(dist[i] * 2, t);
+            out[i] = s === 1 ? FOAM : (s === 2 ? WAVE : 0);
+        }
+        ctx.putImageData(frame, 0, 0);
+    };
+
+    const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (still) { paint(0); return cv; }
+
+    const t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+    const tick = (now) => {
+        paint((now - t0) / 1000);
+        waterRAF = requestAnimationFrame(tick);
+    };
+    waterRAF = requestAnimationFrame(tick);
+    return cv;
+}
+
 function seaLayers(world) {
     const SHADE = ['rgba(120,200,230,0.26)', 'rgba(32,84,116,0.55)',
                    'rgba(22,62,92,0.5)',     'rgba(16,48,74,0.42)'];
-    /* One turn of his sine and one turn of his mod() are the same 2.5s,
-       so the foam and the waves breathe on one clock. */
-    const PERIOD = 2.5;
-    /*
-     * A NEW CREST LEAVES BEFORE THE LAST ONE LANDS.
-     *
-     * Spreading the phases over exactly one period puts one crest in the
-     * water at a time: it reaches the shore and only then does the next
-     * appear, which is a pulse, not a sea. Watching the clip frame by
-     * frame, "as it's about 3/4 of the way to the shore, another line
-     * emerges". So the sweep is spread over PERIOD / 0.75 while the
-     * animation still repeats every PERIOD -- the phases run past one
-     * full turn, which puts 1.33 crests in flight and starts the next
-     * one exactly three quarters of the way in.
-     */
-    const TRAVEL = PERIOD / 0.75;
-    /*
-     * The bright stop in skMapWaveRun over in map.css, as a fraction.
-     * The foam bloom is wound back against it so it lands with the
-     * crest; the harness reads the stylesheet and checks the two agree,
-     * because retiming the keyframes and leaving this behind unhooks
-     * the foam from the wave with nothing on screen to say so.
-     */
-    const CREST_PEAK = 0.06;
     const layers = [];
     if (!world) return layers;
+    /*
+     * THE STATIC SHELF ONLY. The foam and the waves used to be here as
+     * cross-faded contours; they are a canvas now (waterLayer above),
+     * because a fixed contour cannot move and fading between fixed
+     * shapes is not movement. This half never moves and SVG draws it
+     * perfectly well.
+     */
     if (world.shores) {
         for (let b = world.shores.length - 1; b >= 0; b--) {
             const fill = SHADE[b] || SHADE[SHADE.length - 1];
             for (const ring of world.shores[b].rings) layers.push({ ring: ring, fill: fill, band: b });
-        }
-    }
-    /*
-     * AND THE FOAM BREATHES BY CROSS-FADING, not by brightening.
-     *
-     * His foam band is d < 2.2 + sin(TIME * 2.5) * 1.1, so its EDGE
-     * moves between 1.1 and 3.3px. Both ends are contoured here: the
-     * 1.1 one is the innermost shelf band and is always on, and this is
-     * the 3.3 one, faded in and out over it. Animating one band's
-     * opacity would only make the same rim brighter and dimmer, which
-     * is not what water does at a shore.
-     */
-    if (world.foamOut) {
-        for (const ring of world.foamOut.rings) {
-            /*
-             * PHASE-LOCKED TO THE CREST LANDING.
-             *
-             * "It completes touching the shore and then fans out like
-             * backwash." The foam bloom IS that fan-out, so it cannot
-             * breathe on its own clock: the innermost crest peaks at
-             * 8% of its cycle, the foam peaks at 50% of its own, so the
-             * foam is wound back by the difference and blooms exactly
-             * as the wave arrives.
-             */
-            layers.push({ ring: ring, fill: 'rgba(150,215,235,0.30)', cls: 'sea-foam', foam: true,
-                delay: (-(0.5 - CREST_PEAK) * PERIOD).toFixed(3) + 's' });
-        }
-    }
-    /*
-     * THE WAVES TAKE TURNS, OUTERMOST FIRST.
-     *
-     * His shader sweeps rings shoreward with mod(d + TIME * speed,
-     * spacing). Six fixed contours cannot move, so instead each one is
-     * lit in turn and the LIT ONE moves: the delay is -(i/N) of the
-     * period with i counting outward, which puts the outermost ring
-     * furthest through its cycle, so it peaks first and the highlight
-     * runs inward to the shore. Reverse the sign and the waves roll out
-     * to sea, which is the tell that this is the line that matters.
-     */
-    if (world.waves) {
-        const N = world.waves.length;
-        for (let i = 0; i < N; i++) {
-            for (const ring of world.waves[i].rings) {
-                layers.push({ ring: ring, fill: 'none', stroke: 'rgba(170,225,245,0.55)',
-                    width: 1.1, cls: 'sea-wave', wave: i,
-                    delay: (-(i / N) * TRAVEL).toFixed(3) + 's' });
-            }
         }
     }
     /* EVERY SHORELINE, not one. The terrain gives several masses and the
@@ -406,13 +492,12 @@ function worldLayout(fdata, w, h) {
     /* A faction with no land is a faction nobody can click. Better to draw
        the old map than to drop somebody off the world. */
     if (placedWithPoly.length !== fdata.length) return null;
-    /* EVERYTHING seaLayers() DRAWS HAS TO COME THROUGH HERE. This builds
-       a NEW object for the renderer rather than passing mwWorld's through,
-       so a layer added to the generator and not added to this line is
-       computed on every load and silently dropped -- which is exactly what
-       happened to the waves and the foam. */
-    return { placedWithPoly: placedWithPoly, coast: world.coast, shores: world.shores,
-             foamOut: world.foamOut, waves: world.waves };
+    /* EVERYTHING THE RENDERER DRAWS HAS TO COME THROUGH HERE. This builds
+       a NEW object rather than passing mwWorld's through, so a layer added
+       to the generator and not added to this line is computed on every
+       load and silently dropped -- which is exactly what happened to the
+       waves and the foam, and shipped. */
+    return { placedWithPoly: placedWithPoly, coast: world.coast, shores: world.shores };
 }
 
 /*
@@ -956,8 +1041,12 @@ function renderMap() {
         svg.appendChild(lbl);
     }
 
+    stopWater();
     container.innerHTML = '';
     container.appendChild(svg);
+    /* Over the map, under nothing: the field is zero on land, so the
+       canvas is transparent everywhere the territories and markers are. */
+    waterLayer(container, world, svgW, svgH);
 
     /*
      * THE BOX HAS TO CONTAIN ITS OWN INK.

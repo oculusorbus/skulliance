@@ -234,52 +234,29 @@
 }
 
 /*
- * THE WATER MOVES (map.js seaLayers, map-world.js mwShores).
+ * THE MOVING WATER IS A CANVAS OVER THE MAP (waterLayer in map.js).
  *
- * The shore bands are contours of a distance field, after Kimo's
- * "2D water shorelines with distance fields". In his Godot shader the
- * foam and the waves are two lines, because a shader has the distance
- * at every pixel every frame. Here they are fixed geometry, so the
- * motion has to come from opacity: six wave contours take turns being
- * lit, and a wider foam contour fades in over a narrower one so the
- * foam EDGE moves rather than just brightening.
+ * It used to be SVG contours cross-faded by the keyframes that were
+ * here. That cannot work: a contour is one position, so fading between
+ * fixed shapes shows two shapes, not one moving line. The real shader
+ * evaluates the distance at every pixel, which is why it flows, so the
+ * surf is pixels now and the animation is driven by requestAnimationFrame
+ * rather than by CSS. Only the static shelf is left in SVG.
  *
- * BEHIND prefers-reduced-motion. Everything below is decoration on a
- * page people use to run raids; the map has to be completely readable
- * standing still, so the static opacities are declared first and the
- * animation only ever overrides them.
+ * #container is already position:relative and the canvas is stretched
+ * over the whole of it, so it tracks the map at any size -- including
+ * the mobile breakpoint, where max-width shrinks the SVG and the canvas
+ * follows because it is sized in percentages, not pixels.
+ *
+ * prefers-reduced-motion is handled in map.js, which paints a single
+ * still frame and never starts the loop.
  */
-#container .sea-wave { opacity: 0.20; }
-#container .sea-foam { opacity: 0.50; }
-
-@media (prefers-reduced-motion: no-preference) {
-    /*
-     * ONE CREST, WITH THE DRAG BEHIND IT.
-     *
-     * A short bright rise is the crest arriving; the long shallow tail
-     * is the water running back off the shore behind it. Because the
-     * crest sweeps inward, that tail is always on the SEAWARD side of
-     * it, which is what reads as backwash. The first version was a
-     * 12%-peak spike with 58% of the cycle dark, so each ring popped on
-     * and off and the eye saw eight lamps instead of one wave.
-     */
-    @keyframes skMapWaveRun {
-        0%   { opacity: 0; }
-        6%   { opacity: 0.95; }
-        16%  { opacity: 0.45; }
-        34%  { opacity: 0.12; }
-        48%  { opacity: 0; }
-        100% { opacity: 0; }
-    }
-    @keyframes skMapFoamBreathe {
-        0%, 100% { opacity: 0.12; }
-        50%      { opacity: 0.85; }
-    }
-    /* 2.5s is his: one turn of sin(TIME * 2.5), and 11px of wave spacing
-       at 4.4px a second. The per-ring animation-delay that makes the
-       highlight travel shoreward is set in map.js. */
-    #container .sea-wave { animation: skMapWaveRun 2.5s linear infinite; }
-    /* The per-ring delay in map.js spreads the phases over MORE than one
-       period, so crests overlap: see TRAVEL in seaLayers(). */
-    #container .sea-foam { animation: skMapFoamBreathe 2.5s ease-in-out infinite; }
+#container .sea-surf {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    /* The map is clickable; the water must never be. */
+    pointer-events: none;
 }
