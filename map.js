@@ -396,6 +396,38 @@ function surfWave(d, shift) {
     return a;
 }
 
+/*
+ * WHERE THE WATER CANVAS HAS TO SIT.
+ *
+ * The distance field is built in WORLD coordinates, 0..svgW by 0..svgH.
+ * The SVG does not show that rectangle 1:1: after everything is drawn
+ * the viewBox is grown to take in the faction labels that bleed past
+ * the edges, so world (0,0) ends up at (-vx, -vy) inside an element
+ * that is fitW wide for vw of world.
+ *
+ * Stretching the canvas over the container with width:100% ignores all
+ * of that. Measured live: a 1940x1146 world inside a viewBox of
+ * -6 -6 1952 1157, so the surf was drawn 0.62% too wide and 6px off --
+ * dead on near the middle of the map and out by up to 6px at the
+ * edges, in whichever direction a landmass happened to sit. Reported
+ * as the shoreline lining up on one side of a landmass and leaving
+ * gaps on the others, which is exactly what a small stretch looks
+ * like: it cannot be wrong by the same amount everywhere.
+ *
+ * Pure, and the harness checks it against the mapping the SVG itself
+ * uses, because "these two coordinate systems agree" is not something
+ * a screenshot shows you until it is already wrong.
+ */
+function surfBox(vx, vy, vw, fitW, svgW, svgH) {
+    const scale = fitW / vw;
+    return {
+        left: (0 - vx) * scale,
+        top: (0 - vy) * scale,
+        width: svgW * scale,
+        height: svgH * scale
+    };
+}
+
 let waterRAF = 0;
 
 /* map.js rebuilds the whole map on resize and on every filter change; an
@@ -416,7 +448,7 @@ function stopWater() {
  * each frame, and the browser's bilinear upscale softens his hard edges
  * into something that suits a map better than it does pixel art.
  */
-function waterLayer(container, world, svgW, svgH) {
+function waterLayer(container, world, svgW, svgH, box) {
     stopWater();
     if (typeof mwDistance !== 'function' || !world || !world.coast || !world.coast.length) return null;
 
@@ -459,6 +491,12 @@ function waterLayer(container, world, svgW, svgH) {
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
     cv.className = 'sea-surf';
+    if (box) {
+        cv.style.left = box.left + 'px';
+        cv.style.top = box.top + 'px';
+        cv.style.width = box.width + 'px';
+        cv.style.height = box.height + 'px';
+    }
     const ctx = cv.getContext('2d');
     if (!ctx) return null;
     container.appendChild(cv);
@@ -532,9 +570,32 @@ function waterLayer(container, world, svgW, svgH) {
  * never.
  */
 const LAND_TEX = {
-    tiles: [
-        { size: 137, count: 26, rMin: 0.9, rMax: 2.3, fill: 'rgba(7,22,38,0.30)' },
-        { size: 89,  count: 14, rMin: 0.7, rMax: 1.6, fill: 'rgba(132,178,208,0.16)' }
+    /*
+     * SCATTERED OVER THE WHOLE SHEET, NOT TILED.
+     *
+     * This was two <pattern> tiles at coprime sizes, on the theory that
+     * 137 and 89 only realign every 12,193px so the repeat would never
+     * show. That reasoning was wrong: the COMBINED pattern repeats
+     * rarely, but each layer still repeats on its own every 137px and
+     * the eye locks onto a single layer's recurring cluster long before
+     * it notices the two agreeing. Reported as "the flecking is too
+     * predictable, I can identify the pattern across a landmass".
+     *
+     * So there is no tile. Each layer is one scatter across the whole
+     * sheet, emitted as a single <path> of little squares -- one DOM
+     * node per layer rather than thousands of <circle>s, and clipped to
+     * the land by being the same shape as the land.
+     *
+     * CLUSTERED, NOT UNIFORM. Uniform random reads as television static,
+     * which is just as recognisable as a grid. Real ground is patchy, so
+     * flecks come in small groups: the harness measures the mean
+     * nearest-neighbour distance against what a uniform scatter of the
+     * same density would give, because "clustered" is otherwise a word
+     * with no test attached to it.
+     */
+    layers: [
+        { per1000: 1.39, group: 3, spread: 14, sMin: 0.9, sMax: 2.4, fill: 'rgba(7,22,38,0.30)' },
+        { per1000: 1.77, group: 3, spread: 15, sMin: 0.7, sMax: 1.7, fill: 'rgba(132,178,208,0.16)' }
     ],
     /* The edge fade, as inner rims. A stroke centred on the shoreline
        and clipped to the land leaves exactly half its width inside, so
@@ -546,21 +607,30 @@ const LAND_TEX = {
 };
 
 /**
- * The specks in one pattern tile, as plain data so the harness can
- * check they are the same specks every load and that they stay inside
- * the tile -- a speck crossing the tile edge is clipped by the browser
- * and shows up as a seam along the whole grid.
+ * One layer's flecks over a whole w x h sheet, as plain data.
+ *
+ * Returned rather than drawn so the harness can measure the things that
+ * actually matter about a texture: that it is the same ground on every
+ * visit, that it does not repeat, and that it clumps.
  */
-function fleckTile(seed, spec) {
+function fleckField(seed, w, h, spec) {
     const rnd = mwRng(seed);
+    const total = Math.round((w * h / 1000) * spec.per1000);
+    const groups = Math.max(1, Math.round(total / spec.group));
     const out = [];
-    for (let i = 0; i < spec.count; i++) {
-        const r = spec.rMin + rnd() * (spec.rMax - spec.rMin);
-        out.push({
-            x: r + rnd() * (spec.size - 2 * r),
-            y: r + rnd() * (spec.size - 2 * r),
-            r: r
-        });
+    for (let g = 0; g < groups; g++) {
+        const cx = rnd() * w, cy = rnd() * h;
+        for (let n = 0; n < spec.group && out.length < total; n++) {
+            /* Two uniforms summed lands more of the group near its
+               centre than a single one does, so a clump reads as a
+               clump rather than as a square of confetti. */
+            const dx = (rnd() + rnd() - 1) * spec.spread;
+            const dy = (rnd() + rnd() - 1) * spec.spread;
+            const sz = spec.sMin + rnd() * (spec.sMax - spec.sMin);
+            const x = cx + dx, y = cy + dy;
+            if (x < 0 || y < 0 || x + sz > w || y + sz > h) continue;
+            out.push({ x: x, y: y, s: sz });
+        }
     }
     return out;
 }
@@ -573,7 +643,7 @@ function fleckTile(seed, spec) {
  * for the flecks, and the rims get one because a stroke straddles the
  * line it follows.
  */
-function paintLandTexture(svg, defs, world, d) {
+function paintLandTexture(svg, defs, world, d, w, h) {
     if (!world.coast || !world.coast.length || typeof mwRng !== 'function') return 0;
     const seed = world.seed || 1;
     let drawn = 0;
@@ -593,19 +663,16 @@ function paintLandTexture(svg, defs, world, d) {
         drawn++;
     }
 
-    LAND_TEX.tiles.forEach((spec, n) => {
-        const id = 'sk-land-fleck-' + n;
-        const pat = svgEl('pattern', {
-            id: id, width: String(spec.size), height: String(spec.size),
-            patternUnits: 'userSpaceOnUse'
-        });
-        for (const f of fleckTile(seed + n * 7919, spec)) {
-            pat.appendChild(svgEl('circle', {
-                cx: f.x.toFixed(2), cy: f.y.toFixed(2), r: f.r.toFixed(2), fill: spec.fill
-            }));
+    LAND_TEX.layers.forEach((spec, n) => {
+        let path = '';
+        for (const f of fleckField(seed + n * 7919, w, h, spec)) {
+            const x = f.x.toFixed(1), y = f.y.toFixed(1), s = f.s.toFixed(1);
+            path += 'M' + x + ',' + y + 'h' + s + 'v' + s + 'h-' + s + 'Z';
         }
-        defs.appendChild(pat);
-        svg.appendChild(svgEl('path', { d: d, fill: 'url(#' + id + ')' }));
+        if (!path) return;
+        svg.appendChild(svgEl('path', {
+            d: path, fill: spec.fill, 'clip-path': 'url(#' + clipId + ')'
+        }));
         drawn++;
     });
     return drawn;
@@ -878,7 +945,7 @@ function renderMap() {
             svg.appendChild(el);
             /* The land is the last sea layer; its texture goes straight
                on top, under the territory washes that follow. */
-            if (L.band === -1 && L.rings) paintLandTexture(svg, defs, world, attrs.d);
+            if (L.band === -1 && L.rings) paintLandTexture(svg, defs, world, attrs.d, svgW, svgH);
         }
     }
 
@@ -945,6 +1012,24 @@ function renderMap() {
             svg.appendChild(logoImg);
         }
     }
+
+    /*
+     * EVERYTHING FROM HERE UP GOES ABOVE THE WATER.
+     *
+     * The surf is a canvas and a canvas cannot be interleaved into an
+     * SVG, so it is laid over the whole map -- which was fine while it
+     * only ever painted water, and is not fine at all for a marker or a
+     * faction label sitting on a coast: "the tide animation covers both
+     * avatars and faction labels, making them hard to see."
+     *
+     * So the drawing is split in two. Everything below this line is
+     * terrain and belongs under the water; everything above it is
+     * furniture -- raid lines, realm markers, faction labels -- and is
+     * moved into a second SVG stacked on top of the canvas once the
+     * viewBox is settled. Same viewBox, same box, so the coordinates do
+     * not move.
+     */
+    const overlayFrom = svg.childNodes.length;
 
     // ── Layer 2.5: raid lines group (populated after markers are placed) ────────
     const linesGroup = document.createElementNS(NS, 'g');
@@ -1244,9 +1329,6 @@ function renderMap() {
     stopWater();
     container.innerHTML = '';
     container.appendChild(svg);
-    /* Over the map, under nothing: the field is zero on land, so the
-       canvas is transparent everywhere the territories and markers are. */
-    waterLayer(container, world, svgW, svgH);
 
     /*
      * THE BOX HAS TO CONTAIN ITS OWN INK.
@@ -1293,6 +1375,34 @@ function renderMap() {
     svg.setAttribute('height', fitH);
     container.style.width  = `${fitW}px`;
     container.style.height = `${fitH}px`;
+
+    /*
+     * THE WATER GOES ON LAST, once the viewBox is settled.
+     *
+     * It has to: the canvas is positioned against the FINAL mapping
+     * from world coordinates to the element, and that mapping is not
+     * known until the labels have been measured and the viewBox grown
+     * to fit them. Drawn earlier and stretched to the container, the
+     * surf sits a few pixels off the coast it belongs to.
+     *
+     * Over the map, under nothing: the field is zero on land, so the
+     * canvas is transparent everywhere the territories and markers are.
+     */
+    waterLayer(container, world, svgW, svgH, surfBox(vx, vy, vw, fitW, svgW, svgH));
+
+    /*
+     * AND THE FURNITURE GOES BACK ON TOP, in its own SVG above the
+     * canvas. The nodes are MOVED, not rebuilt, so every click handler,
+     * filter reference and countdown already attached to them comes
+     * along; url(#glow) and the marker clip paths still resolve, because
+     * SVG ids are looked up across the whole document and <defs> stayed
+     * behind in the terrain layer.
+     */
+    const over = svgEl('svg', {
+        width: fitW, height: fitH, viewBox: `${vx} ${vy} ${vw} ${vh}`, class: 'map-over'
+    });
+    while (svg.childNodes.length > overlayFrom) over.appendChild(svg.childNodes[overlayFrom]);
+    container.appendChild(over);
 }
 
 renderMap();

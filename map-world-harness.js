@@ -36,6 +36,11 @@ const LIVE_NAMES = ['Omen', 'Kimosabe Art', 'Perps', 'Black Flag', 'Maxingo',
 	'Hellknights', 'Dead Heads Club', 'Crypties', 'Danketsu', 'Ancestors',
 	'Havoc Worlds'];
 
+/* The inset margin mwWorld reserves so the shelf has somewhere to go.
+   Mirrored here on purpose: if the two formulas drift apart the
+   assertions below stop describing the map that ships. */
+const HARNESS_MARGIN = (w) => Math.ceil(26 * (220 / 360) * 0.65 * (w / 220) * 1.08);
+
 const bbox = (p) => p.reduce((a, q) => ({
 	x0: Math.min(a.x0, q.x), y0: Math.min(a.y0, q.y),
 	x1: Math.max(a.x1, q.x), y1: Math.max(a.y1, q.y)
@@ -101,11 +106,24 @@ console.log('\nthe continent fits inside the canvas');
 		ok(c.x0 >= -1 && c.y0 >= -1 && c.x1 <= w + 1 && c.y1 <= h + 1,
 		   'the land overflows a ' + w + 'x' + h + ' sheet: x ' + c.x0.toFixed(0) + '-'
 		 + c.x1.toFixed(0) + ', y ' + c.y0.toFixed(0) + '-' + c.y1.toFixed(0));
-		/* And it has to USE the sheet. A map is a rectangle with geography
-		   in it; land huddled in the middle is the island this replaced. */
-		ok((c.x1 - c.x0) > w * 0.80 && (c.y1 - c.y0) > h * 0.70,
-		   'the land only spans ' + (((c.x1 - c.x0) / w) * 100).toFixed(0) + '% x '
-		 + (((c.y1 - c.y0) / h) * 100).toFixed(0) + '% of a ' + w + 'x' + h + ' sheet');
+		/*
+		 * And it has to USE the sheet it was given. Land huddled in the
+		 * middle is the island this replaced.
+		 *
+		 * MEASURED AGAINST THE GENERATED BOX, not the canvas. The world
+		 * is inset by a margin so the shelf and the surf have somewhere
+		 * to go, and on a short wide sheet that margin is a real slice
+		 * of the height -- 2400x700 reserves 122px top and bottom out of
+		 * 700. Against the canvas that reads as 60% and looks like the
+		 * island coming back; against the box the land was actually
+		 * drawn into, it is 92%.
+		 */
+		const mg = HARNESS_MARGIN(w);
+		const bw = w - 2 * mg, bh = h - 2 * mg;
+		ok((c.x1 - c.x0) > bw * 0.80 && (c.y1 - c.y0) > bh * 0.70,
+		   'the land only spans ' + (((c.x1 - c.x0) / bw) * 100).toFixed(0) + '% x '
+		 + (((c.y1 - c.y0) / bh) * 100).toFixed(0) + '% of the box generated inside a '
+		 + w + 'x' + h + ' sheet');
 	}
 }
 
@@ -229,25 +247,81 @@ console.log('\nit is a map sheet, not an island');
 	 + 'the floor is what a player actually gets, not the average');
 
 	/*
-	 * IT REACHES THE EDGES OF THE SHEET. This is what separates a map from
-	 * an island, and the land-span check above does NOT catch it -- a
-	 * strong edge falloff still leaves land spanning most of the frame
-	 * while rounding every corner into open water. A real sheet has land
-	 * running off at least a couple of sides.
+	 * IT FILLS THE BOX IT WAS GENERATED INTO.
+	 *
+	 * THIS USED TO SAY THE OPPOSITE: land had to run off at least two
+	 * edges of the CANVAS, because that is what separates a map from an
+	 * island. Right when the coast was a line; wrong once the coast
+	 * grows things outward -- shelf bands to 10.3 cells with a surf
+	 * animation over them -- because a coast flush against the frame
+	 * has all of that sliced off. Reported as "the land is in the
+	 * container... barely, but with all our topography and animations,
+	 * all that is bleeding over".
+	 *
+	 * The world is generated into an inset rectangle and placed in the
+	 * middle, so the anti-island property moves with it. The geography
+	 * is untouched: same noise, same archipelago.
+	 *
+	 * (Pushing land inward with a stronger edge falloff was tried first
+	 * and measured. The sea level is bisected for a target land
+	 * FRACTION, so suppressing the rim just concentrates the same land
+	 * in the middle: masses 4.5 -> 1.6, span 94% -> 58%. That IS the
+	 * island. The falloff was left exactly as it was.)
 	 */
 	const edgeWorld = W.mwWorld(FACTIONS, 1860, 888);
 	const allPts = [].concat.apply([], edgeWorld.coast);
-	const band = 1860 * 0.04;
+	const emg = HARNESS_MARGIN(1860);
+	const ebw = 1860 - 2 * emg, ebh = 888 - 2 * emg;
 	const sides = {
-		left:   allPts.some(p => p.x < band),
-		right:  allPts.some(p => p.x > 1860 - band),
-		top:    allPts.some(p => p.y < 888 * 0.04),
-		bottom: allPts.some(p => p.y > 888 - 888 * 0.04)
+		left:   allPts.some(p => p.x < emg + ebw * 0.04),
+		right:  allPts.some(p => p.x > 1860 - emg - ebw * 0.04),
+		top:    allPts.some(p => p.y < emg + ebh * 0.04),
+		bottom: allPts.some(p => p.y > 888 - emg - ebh * 0.04)
 	};
 	const touching = Object.keys(sides).filter(k => sides[k]).length;
 	ok(touching >= 2,
-	   'land reaches only ' + touching + ' of the four edges, so the frame reads as open sea '
-	 + 'around an island rather than as a map sheet');
+	   'land reaches only ' + touching + ' of the four edges of the box it was generated '
+	 + 'into, so it is an island in open sea rather than a sheet of map');
+
+	/*
+	 * AND THE MARGIN IS WIDE ENOUGH BY ARITHMETIC, not by luck of the
+	 * terrain. An empirical check passes on a margin far too thin,
+	 * because land rarely runs right up to the edge of its box --
+	 * measured, a 45% margin still cleared fifteen worlds. But the rule
+	 * directly above REQUIRES land to reach that edge, so the day it
+	 * does, the shelf needs the room.
+	 */
+	const SHAPES = [[1860, 888], [1200, 700], [2400, 700], [1400, 980], [960, 520]];
+	for (const [cw, ch] of SHAPES) {
+		const wm = W.mwWorld(FACTIONS, cw, ch);
+		if (!wm) continue;
+		/* Read off the world that SHIPPED, not off a copy of the formula
+		   -- a mirrored constant here would agree with itself while the
+		   two numbers in map-world.js quietly drifted apart. */
+		const reach = wm.shores[wm.shores.length - 1].d * wm.cell;
+		ok(wm.margin >= reach,
+		   'the ' + cw + 'x' + ch + ' sheet reserves a ' + wm.margin + 'px margin for a shelf '
+		 + 'that reaches ' + reach.toFixed(0) + 'px, so a coast on the edge of its box is cut off');
+	}
+
+	/* And on real worlds: the outermost band is the furthest thing from
+	   the land, so if it is inside the sheet the surf and foam are too. */
+	let worstOut = -Infinity, outAt = '';
+	for (const [cw, ch] of SHAPES) {
+		const wd2 = W.mwWorld(FACTIONS, cw, ch);
+		if (!wd2) continue;
+		for (const r of wd2.shores[wd2.shores.length - 1].rings) {
+			for (const p of r) {
+				const out = Math.max(-p.x, -p.y, p.x - cw, p.y - ch);
+				if (out > worstOut) { worstOut = out; outAt = cw + 'x' + ch; }
+			}
+		}
+	}
+	ok(worstOut < 0,
+	   'the outermost shelf band runs ' + worstOut.toFixed(1) + 'px past the edge of the '
+	 + outAt + ' sheet, so the topography is cut off by the container');
+	console.log('        (shelf clears the sheet edge by ' + (-worstOut).toFixed(0) + 'px)');
+
 	ok(islandsHeld > 0,
 	   'not one faction in twelve worlds holds an offshore island; the terrain is producing '
 	 + 'no islands worth keeping, or the tracer is dropping them');
@@ -577,6 +651,56 @@ console.log('\nthe tracer does not lose an edge where land pinches');
 	ok(pr.every(r => r.length === 4),
 	   'the pinched rings came out as ' + pr.map(r => r.length).join('/')
 	 + ' points instead of 4 and 4, so an edge was lost or two blobs were stapled together');
+
+	/*
+	 * THE RINGS ACCOUNT FOR EVERY CELL -- AT AWKWARD CELL SIZES.
+	 *
+	 * This is the assertion that was missing when the tracer shipped
+	 * broken. It keyed each vertex as Math.round(x) + ',' + Math.round(y),
+	 * and a cell emits a corner as x0 + cs while its neighbour emits the
+	 * same corner as ox + (i + 1) * cs: equal in arithmetic, not always
+	 * equal in floating point. Land on a vertex sitting a hair either
+	 * side of .5 and the two round to different integers, nothing leaves
+	 * that vertex, and the ring ends mid-coast as an open polyline whose
+	 * area is nonsense. Measured on a real 1400x980 world: 1658 boundary
+	 * edges, no pinches at all, 14 of them ending at a vertex with
+	 * nothing leaving it, and 26 rings totalling 22,905px2 of a
+	 * 443,347px2 continent.
+	 *
+	 * Nothing here noticed, because every fixture used round numbers:
+	 * cs = 10, ox = 0. The offsets below are deliberately nasty, the
+	 * kind the inset margin produces, and the property is exact -- the
+	 * area the rings enclose IS the cell count times the cell area, or
+	 * a chain broke.
+	 */
+	const blob = new Int16Array(26 * 26).fill(-1);
+	let blobCells = 0;
+	for (let j = 2; j < 24; j++) {
+		for (let i = 2; i < 24; i++) {
+			const dd = Math.hypot(i - 13, j - 13);
+			if (dd < 10.4 && dd > 3.2 && !(i === 7 && j === 19)) { blob[j * 26 + i] = 0; blobCells++; }
+		}
+	}
+	const sArea = (pp) => {
+		let a = 0;
+		for (let i = 0; i < pp.length; i++) {
+			const q = pp[i], t = pp[(i + 1) % pp.length];
+			a += q.x * t.y - t.x * q.y;
+		}
+		return a / 2;
+	};
+	let worstErr = 0, worstCase = '';
+	for (const cs of [10, 5.718, 7.5905, 3.9182, 9.80909, 6.36363, 8.4545]) {
+		for (const ox of [0, 71, 95.5, 122.25, 49.37]) {
+			const rs = W.mwTrace(blob, 0, 26, 26, cs, ox, ox);
+			const err = Math.abs(rs.reduce((a, r) => a + sArea(r), 0) - blobCells * cs * cs)
+				/ (blobCells * cs * cs);
+			if (err > worstErr) { worstErr = err; worstCase = 'cs=' + cs + ' ox=' + ox; }
+		}
+	}
+	ok(worstErr < 1e-9,
+	   'the traced rings enclose an area ' + (worstErr * 100).toFixed(1) + '% off the cells '
+	 + 'they came from (' + worstCase + '), so a chain is breaking and leaving open polylines');
 
 	/* AND NOTHING IS DROPPED: both squares are still there. */
 	const tot = pr.reduce((a, r) => a + Math.abs(r.reduce((b, q, i) => {
@@ -1048,9 +1172,85 @@ console.log('\nthe shallows reach the drawing, and the surf actually flows');
 	const decl = surfCss.slice(0, surfCss.indexOf('}'));
 	ok(decl.indexOf('pointer-events: none') > 0,
 	   'the water canvas does not set pointer-events:none, so it swallows every realm click');
-	ok(/width:\s*100%/.test(decl) && /height:\s*100%/.test(decl),
-	   'the water canvas is not stretched to the container, so it will not track the map '
-	 + 'when max-width shrinks the SVG on mobile');
+	/*
+	 * THE CANVAS IS POSITIONED FROM THE FINAL viewBox, NOT STRETCHED TO
+	 * THE CONTAINER.
+	 *
+	 * The distance field is built in world coordinates, 0..svgW. The
+	 * SVG does not show that rectangle 1:1 -- after the drawing is
+	 * measured the viewBox grows to take in faction labels that bleed
+	 * past the edges, so world (0,0) sits at (-vx, -vy) inside an
+	 * element that is fitW wide for vw of world. width:100% ignores all
+	 * of it. Measured on the live page: a 1946x1095 world inside a
+	 * viewBox of -6 -6 1952 1101, so the surf was 0.3% too wide and 6px
+	 * adrift -- right in the middle and out by 6px at the edges.
+	 * Reported as the shoreline matching one side of a landmass and
+	 * gapping on the others, which is what a stretch looks like: it
+	 * cannot be wrong by the same amount everywhere.
+	 *
+	 * Checked the only way that means anything: map a world point
+	 * through the SVG's own viewBox mapping and through the canvas box,
+	 * and compare.
+	 */
+	const sb = lift('function surfBox(');
+	ok(sb, 'surfBox() could not be lifted out of map.js');
+	vm.runInContext(sb + '\nvar _box = surfBox;', ctx);
+	let worstOff = 0;
+	for (const c of [
+		{ vx: -6, vy: -6, vw: 1952, sw: 1946, sh: 1095, fitW: 1952 },
+		{ vx: -74, vy: -20, vw: 2040, sw: 1940, sh: 1146, fitW: 2040 },
+		{ vx: -74, vy: -20, vw: 2040, sw: 1940, sh: 1146, fitW: 1020 },
+		{ vx: 0, vy: 0, vw: 1200, sw: 1200, sh: 700, fitW: 1200 }
+	]) {
+		const box = ctx._box(c.vx, c.vy, c.vw, c.fitW, c.sw, c.sh);
+		const k = c.fitW / c.vw;
+		for (const wx of [0, c.sw * 0.25, c.sw * 0.5, c.sw * 0.77, c.sw]) {
+			worstOff = Math.max(worstOff, Math.abs((wx - c.vx) * k - (box.left + (wx / c.sw) * box.width)));
+		}
+		for (const wy of [0, c.sh * 0.5, c.sh]) {
+			worstOff = Math.max(worstOff, Math.abs((wy - c.vy) * k - (box.top + (wy / c.sh) * box.height)));
+		}
+	}
+	ok(worstOff < 0.001,
+	   'the water canvas lands up to ' + worstOff.toFixed(2) + 'px from where the SVG puts '
+	 + 'the same world point, so the surf sits off its own coastline');
+	ok(!/width:\s*100%/.test(decl),
+	   'the stylesheet still stretches the water canvas to the container');
+	/* Anchored on the CALL, not the signature -- searching for
+	   'surfBox(vx, vy, vw, fitW, svgW, svgH)' matches the function's own
+	   declaration and passes with the call deleted. */
+	/*
+	 * AND THE MARKERS SIT ABOVE THE WATER.
+	 *
+	 * A canvas cannot be interleaved into an SVG's paint order, so the
+	 * surf covers the whole map. That was fine while it only painted
+	 * water and wrong the moment a marker or a faction label sat on a
+	 * coast: "the tide animation covers both avatars and faction
+	 * labels, making them hard to see." The furniture is MOVED into a
+	 * second SVG stacked over the canvas -- moved, not rebuilt, so the
+	 * click handlers and filter references travel with it.
+	 */
+	ok(src.indexOf('const overlayFrom = svg.childNodes.length;') > 0,
+	   'map.js no longer marks where the terrain stops and the furniture starts');
+	ok(src.indexOf('while (svg.childNodes.length > overlayFrom) over.appendChild(') > 0,
+	   'the markers and labels are not moved into the overlay, so the tide washes over them');
+	const overAt = src.indexOf("class: 'map-over'"), waterAt = src.indexOf('waterLayer(container, world, svgW, svgH, surfBox(');
+	ok(overAt > 0 && waterAt > 0 && overAt > waterAt,
+	   'the overlay is built before the water canvas, so it ends up underneath it');
+	/* Same viewBox as the terrain, or the furniture lands somewhere else. */
+	ok(/class: 'map-over'[\s\S]{0,40}\}\)/.test(src)
+	   && src.slice(overAt - 220, overAt).indexOf('viewBox: `${vx} ${vy} ${vw} ${vh}`') > 0,
+	   'the overlay does not carry the terrain viewBox, so the markers shift off their realms');
+	const overCss = css.slice(css.indexOf('#container .map-over'));
+	ok(/pointer-events:\s*none/.test(overCss.slice(0, overCss.indexOf('}'))),
+	   'the overlay takes pointer events across the whole map, which swallows every click '
+	 + 'that is not exactly on a marker');
+	ok(/\.map-over > \*\s*\{\s*pointer-events:\s*auto/.test(css),
+	   'the overlay contents cannot be clicked, so no realm marker responds any more');
+
+	ok(src.indexOf('waterLayer(container, world, svgW, svgH, surfBox(') > 0,
+	   'waterLayer is not given the box computed from the final viewBox, so the canvas '
+	 + 'falls back to covering the container and the surf drifts off the coast');
 	ok(src.indexOf('prefers-reduced-motion') > 0 && src.indexOf('cancelAnimationFrame') > 0,
 	   'map.js never checks reduced motion, or never cancels its loop when the map redraws');
 }
@@ -1094,9 +1294,9 @@ console.log('\nthe land is one shape, and it is textured');
 		toPath: (pts) => pts.map((q, i) => (i ? 'L' : 'M') + q.x.toFixed(1) + ',' + q.y.toFixed(1)).join(' ') + 'Z'
 	};
 	vm.createContext(ctx);
-	vm.runInContext(texConsts + '\n' + lift('function fleckTile(') + lift('function toPathAll(')
+	vm.runInContext(texConsts + '\n' + lift('function fleckField(') + lift('function toPathAll(')
 		+ lift('function paintLandTexture(') + lift('function seaLayers(') + lift('function worldLayout(')
-		+ '\nvar _tex = paintLandTexture, _tile = fleckTile, _T = LAND_TEX;'
+		+ '\nvar _tex = paintLandTexture, _field = fleckField, _T = LAND_TEX;'
 		+ '\nvar toPathAll_ = toPathAll;'
 		+ '\nvar _joined = (f, w, h) => seaLayers(worldLayout(f, w, h));', ctx);
 
@@ -1136,63 +1336,96 @@ console.log('\nthe land is one shape, and it is textured');
 	 * carries over and none of the code does.
 	 */
 	const svg = node('svg'), defs = node('defs');
-	const drawn = ctx._tex(svg, defs, { coast: land[0].rings, seed: 12345 }, 'M0,0Z');
-	ok(drawn === _T_rims() + _T_tiles(), 'paintLandTexture drew ' + drawn + ' layers');
-	function _T_rims() { return ctx._T.rims.length; }
-	function _T_tiles() { return ctx._T.tiles.length; }
+	const drawn = ctx._tex(svg, defs, { coast: land[0].rings, seed: 12345 }, 'M0,0Z', 1860, 888);
+	ok(drawn === ctx._T.rims.length + ctx._T.layers.length,
+	   'paintLandTexture drew ' + drawn + ' layers');
 
 	const rims = svg.kids.filter(k => k.attrs.stroke);
 	ok(rims.length === ctx._T.rims.length, 'the shore rims were not drawn');
-	ok(rims.every(r => r.attrs.fill === 'none' && /clip-path/.test(Object.keys(r.attrs).join())),
+	ok(rims.every(r => r.attrs.fill === 'none' && r.attrs['clip-path']),
 	   'a shore rim is filled, or is not clipped to the land -- an unclipped stroke puts '
 	 + 'half its width out in the water, which is the hard shoreline rule all over again');
 	ok(defs.kids.some(k => k.tag === 'clipPath'), 'no clipPath was added for the shore rims');
 
-	const pats = defs.kids.filter(k => k.tag === 'pattern');
-	ok(pats.length === ctx._T.tiles.length, 'the fleck patterns were not added to <defs>');
-
 	/*
-	 * A SPECK MUST NOT TOUCH THE EDGE OF ITS TILE. The browser clips a
-	 * pattern tile to its own box, so a circle crossing the boundary is
-	 * sliced in half and the cut repeats every 137px in a dead straight
-	 * line across the whole continent -- a grid, which is the one thing
-	 * a texture must not produce.
+	 * NO TILE. THIS IS THE ONE THE OWNER CAUGHT.
+	 *
+	 * The flecks were two <pattern> tiles at coprime sizes, 137 and 89,
+	 * on the theory that they only realign every 12,193px so the repeat
+	 * would never show. The reasoning was wrong: the COMBINATION
+	 * repeats rarely, but each layer still repeats every 137px on its
+	 * own, and the eye locks onto one layer's recurring clump long
+	 * before it notices the two agreeing. "I can identify the pattern
+	 * across a landmass and it's less believable when the eye catches
+	 * that."
 	 */
-	let outside = 0, checked = 0;
-	/* Over MANY SEEDS, not the one this world happens to use. With a
-	   single seed whether a speck lands on the boundary is luck, and
-	   the first spelling of this passed a version that let them -- the
-	   mutation slipped through because that seed happened to miss. */
-	for (let sd = 1; sd <= 200; sd++) {
-		ctx._T.tiles.forEach((spec) => {
-			for (const f of ctx._tile(sd, spec)) {
-				checked++;
-				if (f.x - f.r < 0 || f.y - f.r < 0 || f.x + f.r > spec.size || f.y + f.r > spec.size) outside++;
-			}
-		});
-	}
-	ok(outside === 0, outside + ' of ' + checked + ' specks cross the edge of their pattern '
-	 + 'tile; the browser slices those in half and the cut repeats in a dead straight line '
-	 + 'across the whole continent');
+	ok(!defs.kids.some(k => k.tag === 'pattern'),
+	   'the flecks are still a tiled <pattern>, which repeats across the landmass');
+	const fleckPaths = svg.kids.filter(k => !k.attrs.stroke && /^M/.test(k.attrs.d || ''));
+	ok(fleckPaths.length === ctx._T.layers.length,
+	   'expected one path per fleck layer, got ' + fleckPaths.length);
+	ok(fleckPaths.every(f => f.attrs['clip-path']),
+	   'a fleck layer is not clipped to the land, so specks land in the sea');
 
-	/* AND THE TILES DO NOT SHARE A FACTOR. Two tiles whose sizes have a
-	   common factor line up again every few hundred pixels and the grid
-	   comes back; coprime sizes only agree after their product. */
-	const gcd = (a, b) => b ? gcd(b, a % b) : a;
-	const sizes = ctx._T.tiles.map(t => t.size);
-	ok(sizes.length >= 2 && gcd(sizes[0], sizes[1]) === 1,
-	   'the fleck tiles are ' + sizes.join(' and ') + ', which share a factor, so the two '
-	 + 'patterns realign and the repeat becomes visible');
-	ok(Math.min.apply(null, sizes) > 60,
-	   'a fleck tile is only ' + Math.min.apply(null, sizes) + 'px, small enough to read as '
-	 + 'a grid on its own');
+	for (let n = 0; n < ctx._T.layers.length; n++) {
+		const f = ctx._field(12345 + n * 7919, 1860, 888, ctx._T.layers[n]);
+		ok(f.length > 400, 'fleck layer ' + n + ' produced only ' + f.length + ' specks');
+		ok(f.every(q => q.x >= 0 && q.y >= 0 && q.x + q.s <= 1860 && q.y + q.s <= 888),
+		   'a speck in layer ' + n + ' falls outside the sheet');
+		const xs = f.map(q => q.x), ys = f.map(q => q.y);
+		ok(Math.max.apply(null, xs) - Math.min.apply(null, xs) > 1860 * 0.9
+		   && Math.max.apply(null, ys) - Math.min.apply(null, ys) > 888 * 0.9,
+		   'fleck layer ' + n + ' does not cover the sheet, so part of the land has no texture');
+
+		/*
+		 * MEASURED AS A TRANSLATIONAL SELF-MATCH, which is what "I can
+		 * see the pattern" means as a number: slide the scatter
+		 * sideways by every plausible period and count the specks that
+		 * land on another speck. A tiled pattern scores ~100% at its
+		 * tile width; this scores under 1%.
+		 */
+		const set = new Set(f.map(q => Math.round(q.x) + ',' + Math.round(q.y)));
+		let best = 0, bestP = 0;
+		for (let per = 40; per <= 420; per++) {
+			let hit = 0;
+			for (const q of f) if (set.has(Math.round(q.x + per) + ',' + Math.round(q.y))) hit++;
+			if (hit > best) { best = hit; bestP = per; }
+		}
+		ok(best / f.length < 0.05,
+		   'layer ' + n + ': ' + (100 * best / f.length).toFixed(0) + '% of specks have a twin '
+		 + bestP + 'px to the right, so the texture repeats and the eye will find it');
+
+		/*
+		 * AND IT CLUMPS. Uniform random is as recognisable as a grid --
+		 * it reads as television static. For a uniform scatter of
+		 * density d the mean nearest-neighbour distance is 0.5/sqrt(d);
+		 * patchy ground comes in well under that.
+		 */
+		const sample = f.filter((_, i) => i % 7 === 0).slice(0, 300);
+		let sum = 0;
+		for (const q of sample) {
+			let nn = Infinity;
+			for (const r of f) {
+				if (r === q) continue;
+				const dd = (r.x - q.x) * (r.x - q.x) + (r.y - q.y) * (r.y - q.y);
+				if (dd < nn) nn = dd;
+			}
+			sum += Math.sqrt(nn);
+		}
+		const meanNN = sum / sample.length;
+		const uniformNN = 0.5 / Math.sqrt(f.length / (1860 * 888));
+		ok(meanNN < uniformNN * 0.75,
+		   'layer ' + n + ' averages ' + meanNN.toFixed(1) + 'px to its nearest speck against '
+		 + uniformNN.toFixed(1) + 'px for a uniform scatter, so the ground is static, not patchy');
+	}
 
 	/* THE SAME GROUND EVERY VISIT, same as the coastline. */
-	const t1 = JSON.stringify(ctx._tile(999, ctx._T.tiles[0]));
-	const t2 = JSON.stringify(ctx._tile(999, ctx._T.tiles[0]));
-	const t3 = JSON.stringify(ctx._tile(1000, ctx._T.tiles[0]));
-	ok(t1 === t2, 'the flecks are not deterministic, so the ground shifts on every load');
-	ok(t1 !== t3, 'the flecks ignore the seed, so every world has identical ground');
+	const sp0 = ctx._T.layers[0];
+	const g1 = JSON.stringify(ctx._field(999, 800, 600, sp0));
+	const g2 = JSON.stringify(ctx._field(999, 800, 600, sp0));
+	const g3 = JSON.stringify(ctx._field(1000, 800, 600, sp0));
+	ok(g1 === g2, 'the flecks are not deterministic, so the ground shifts on every load');
+	ok(g1 !== g3, 'the flecks ignore the seed, so every world has identical ground');
 }
 
 console.log('\nthe canvas is sized from the page, and it is RUN to find out');

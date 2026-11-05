@@ -253,10 +253,35 @@
  */
 #container .sea-surf {
     position: absolute;
+    /* left/top/width/height are set in map.js from the FINAL viewBox --
+       see surfBox(). Stretching this to the container with percentages
+       ignores the bleed the viewBox is grown by for the faction labels,
+       which put the surf a few pixels off its own coastline. The zeros
+       here are only a resting place before that runs. */
     left: 0;
     top: 0;
-    width: 100%;
-    height: 100%;
     /* The map is clickable; the water must never be. */
     pointer-events: none;
 }
+
+/*
+ * THE MARKERS AND LABELS LIVE ABOVE THE WATER.
+ *
+ * The surf is a canvas, and a canvas cannot sit inside an SVG's paint
+ * order, so it covers the whole map. Fine while it only painted water;
+ * not fine for an avatar or a faction label on a coast, which the tide
+ * was washing straight over. map.js moves that furniture into this
+ * second SVG after the canvas.
+ *
+ * pointer-events is off on the layer and back on for its contents, or a
+ * transparent sheet over the entire map would swallow every click that
+ * was not exactly on a marker.
+ */
+#container .map-over {
+    position: absolute;
+    left: 0;
+    top: 0;
+    overflow: visible;
+    pointer-events: none;
+}
+#container .map-over > * { pointer-events: auto; }

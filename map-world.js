@@ -294,21 +294,34 @@ function mwInside(px, py, poly) {
  * is better than drawing a territory with confetti around it.
  * ---------------------------------------------------------------------- */
 function mwTrace(owner, id, gw, gh, cs, ox, oy) {
-	const key = (x, y) => Math.round(x) + ',' + Math.round(y);
 	/*
-	 * A VERTEX CAN HAVE TWO EDGES LEAVING IT, so this is a map to a LIST.
+	 * KEYED ON GRID INDICES, NEVER ON ROUNDED COORDINATES.
 	 *
-	 * Where land pinches -- two cells meeting only at a corner, which a
-	 * noise field produces constantly -- the boundary passes through that
-	 * corner twice. Keyed by vertex alone, the second edge overwrote the
-	 * first and was silently dropped, so the ring that came out was not
-	 * the outline of anything: measured at 4,422px2 of a 16-faction world
-	 * traced wrong, which no amount of careful smoothing downstream can
-	 * put back.
+	 * This used to key each vertex as Math.round(x) + ',' + Math.round(y).
+	 * A cell emits its corners as x0 and x0 + cs while its neighbour
+	 * emits the same corner as ox + (i + 1) * cs -- the same number in
+	 * arithmetic, not always the same number in floating point. Land on
+	 * a vertex whose coordinate sits a hair either side of .5 and the two
+	 * round to DIFFERENT integers, the chain finds no edge leaving that
+	 * vertex, and the ring ends mid-coast as an open polyline whose area
+	 * is meaningless.
+	 *
+	 * Measured on a real 1400x980 world: 1658 boundary edges, no pinches
+	 * at all, and 14 of them ending at a vertex with nothing leaving it.
+	 * The trace came back as 26 rings summing to 22,905px2 of a 443,347px2
+	 * continent, and the territory fills had nothing coherent to butt
+	 * against. It is an old bug -- it only surfaced when insetting the
+	 * world moved every vertex by a margin and put a few of them on the
+	 * boundary.
+	 *
+	 * A vertex is (a, b) in grid indices, which are exact integers. The
+	 * world coordinate is computed once, at the end, when the ring is
+	 * built.
 	 */
 	const edges = new Map();
-	const push = (x, y, nx, ny) => {
-		const k = key(x, y), e = { x: x, y: y, nx: nx, ny: ny };
+	const vkey = (a, b) => a * (gh + 2) + b;
+	const push = (a, b, na, nb) => {
+		const k = vkey(a, b), e = { a: a, b: b, na: na, nb: nb };
 		const at = edges.get(k);
 		if (at) at.push(e); else edges.set(k, [e]);
 	};
@@ -317,13 +330,12 @@ function mwTrace(owner, id, gw, gh, cs, ox, oy) {
 	for (let j = 0; j < gh; j++) {
 		for (let i = 0; i < gw; i++) {
 			if (owner[j * gw + i] !== id) continue;
-			const x0 = ox + i * cs, y0 = oy + j * cs, x1 = x0 + cs, y1 = y0 + cs;
 			/* Clockwise in screen coordinates (y down), so the ring comes
 			   out consistently wound whichever cells are present. */
-			if (!has(i, j - 1)) push(x0, y0, x1, y0);
-			if (!has(i + 1, j)) push(x1, y0, x1, y1);
-			if (!has(i, j + 1)) push(x1, y1, x0, y1);
-			if (!has(i - 1, j)) push(x0, y1, x0, y0);
+			if (!has(i, j - 1)) push(i, j, i + 1, j);
+			if (!has(i + 1, j)) push(i + 1, j, i + 1, j + 1);
+			if (!has(i, j + 1)) push(i + 1, j + 1, i, j + 1);
+			if (!has(i - 1, j)) push(i, j + 1, i, j);
 		}
 	}
 	if (!edges.size) return [];
@@ -335,9 +347,8 @@ function mwTrace(owner, id, gw, gh, cs, ox, oy) {
 	 * this blob and the other jumps across to the blob touching it
 	 * diagonally. The rest of the file treats cells as 4-connected (the
 	 * flood fills, the fragment absorber), so the tracer has to agree:
-	 * turning right keeps the land on the right-hand side and closes this
-	 * blob as its own ring, which is what 4-connectivity means. Turning
-	 * left would staple two diagonally-touching blobs into one ring.
+	 * turning right keeps the land on the right-hand side and closes
+	 * this blob as its own ring, which is what 4-connectivity means.
 	 */
 	const take = (k, dx, dy) => {
 		const arr = edges.get(k);
@@ -346,7 +357,7 @@ function mwTrace(owner, id, gw, gh, cs, ox, oy) {
 		if (arr.length > 1 && (dx || dy)) {
 			let best = -1;
 			for (let i = 0; i < arr.length; i++) {
-				const ex = Math.sign(arr[i].nx - arr[i].x), ey = Math.sign(arr[i].ny - arr[i].y);
+				const ex = arr[i].na - arr[i].a, ey = arr[i].nb - arr[i].b;
 				const cross = dx * ey - dy * ex;
 				const score = cross > 0 ? 2 : (dx * ex + dy * ey > 0 ? 1 : 0);
 				if (score > best) { best = score; bi = i; }
@@ -364,13 +375,16 @@ function mwTrace(owner, id, gw, gh, cs, ox, oy) {
 	 * It used to return only the longest, which was right when a region
 	 * was one blob on one island. With real terrain a faction's territory
 	 * legitimately includes offshore islands, and dropping them silently
-	 * deleted the most characterful thing on the map. Callers that only
-	 * want a body take [0]; callers drawing the land take all of them.
+	 * deleted the most characterful thing on the map.
 	 */
 	const rings = [];
 	let left = 0;
 	for (const arr of edges.values()) left += arr.length;
-	while (left > 0) {
+	/* `left` and the edge store must agree; if they ever stop agreeing
+	   this loop would spin forever, so it trusts the store rather than
+	   the counter. A mutation that silently discarded edges hung the
+	   harness for two minutes, which is a worse way to find out. */
+	while (left > 0 && edges.size) {
 		const ring = [];
 		let cur = take(edges.keys().next().value, 0, 0);
 		if (cur) left--;
@@ -378,9 +392,8 @@ function mwTrace(owner, id, gw, gh, cs, ox, oy) {
 		   many. A malformed grid cannot spin this forever. */
 		let guard = left + 2;
 		while (cur && guard-- > 0) {
-			ring.push({ x: cur.x, y: cur.y });
-			const nxt = take(key(cur.nx, cur.ny),
-				Math.sign(cur.nx - cur.x), Math.sign(cur.ny - cur.y));
+			ring.push({ x: ox + cur.a * cs, y: oy + cur.b * cs });
+			const nxt = take(vkey(cur.na, cur.nb), cur.na - cur.a, cur.nb - cur.b);
 			if (nxt) left--;
 			cur = nxt;
 		}
@@ -663,6 +676,15 @@ function mwThin(pts, minGap) {
 }
 
 /**
+ * How far the outermost shelf band reaches from the coast, in cells.
+ *
+ * Shared, because two places need the same number and they must not
+ * drift: mwShores() contours the bands at it, and mwWorld() insets the
+ * whole world by it so the bands have somewhere to go.
+ */
+function mwShelfReach(gw) { return 26 * (gw / 360) * 0.65; }
+
+/**
  * The shallows: nested contours of the distance field, biggest last.
  * Separate from mwWorld so the harness can measure a band's distance
  * from the land on a mask it built itself.
@@ -706,8 +728,13 @@ function mwShores(land, gw, gh, cs, ox, oy, seed, smoothN, opts) {
 	 * rim with no layering, 65 keeps both the shelf and the open water.
 	 */
 	const SHORE = 0.65;
+	/* EXPRESSED AS FRACTIONS OF THE REACH so mwShelfReach() is genuinely
+	   the one number, not a comment claiming to be. mwWorld sizes the
+	   inset margin from the same call, and the two cannot drift. */
+	const reach = mwShelfReach(gw);
 	const bandAt = opts.shoreBands === undefined
-		? [1.1, 5, 13, 26].map(v => v * px * SHORE) : opts.shoreBands;
+		? [1.1 / 26, 5 / 26, 13 / 26, 1].map(v => v * reach) : opts.shoreBands;
+	void px; void SHORE;
 	/* THE WOBBLE IS NOT SCALED DOWN WITH THEM. Narrowing the bands is
 	   about our channels; the wobble is about not tracing the coast, and
 	   that argument does not get weaker when the shelf gets thinner. At
@@ -929,11 +956,43 @@ function mwWorld(factions, w, h, opts) {
 	   as stairs once smoothed, coarse enough to stay cheap on a phone:
 	   160 x 110 is ~18k cells and one point-in-polygon test each. */
 	const gw = opts.gw || 220;
-	const gh = opts.gh || Math.max(40, Math.round(gw * (h / w)));
-	const cs = w / gw;
-	const ox = 0, oy = 0;
 
-	const cellH = h / gh;
+	/*
+	 * THE WORLD IS INSET, SO THE SEA HAS ROOM TO BE THE SEA.
+	 *
+	 * Reported as "the land is in the container... barely, but with all
+	 * our topography and animations, all that is bleeding over". The
+	 * land genuinely was inside -- nothing SVG painted outside the box,
+	 * measured on the live page -- but the coast GROWS things outward:
+	 * shelf bands to 10.3 cells and the surf on top of them. A coast
+	 * flush against the frame has its shoreline sliced off, and a
+	 * sliced shoreline reads as a rendering fault rather than as the
+	 * edge of a map.
+	 *
+	 * THE OBVIOUS FIX IS THE WRONG ONE. Pushing land away from the
+	 * frame with a stronger edge falloff was tried and measured: the
+	 * sea level is bisected for a target land FRACTION, so suppressing
+	 * the edges just concentrates the same land in the middle. Masses
+	 * went 4.5 -> 1.6 and the span 94% -> 58% of the sheet, which is
+	 * the single central island this whole map was built to stop being.
+	 * The weak falloff above stays exactly as it was.
+	 *
+	 * So the geography is not changed at all -- it is generated into a
+	 * SMALLER RECTANGLE and placed in the middle. Same noise, same
+	 * archipelago, same everything, with a band of open water round it
+	 * wide enough to hold the shelf. The margin is a property of the
+	 * drawing, not of the terrain.
+	 */
+	const cs0 = w / gw;
+	const margin = opts.margin === undefined
+		? Math.ceil(mwShelfReach(gw) * cs0 * 1.08) : opts.margin;
+	const iw = Math.max(40, w - 2 * margin), ih = Math.max(40, h - 2 * margin);
+
+	const gh = opts.gh || Math.max(40, Math.round(gw * (ih / iw)));
+	const cs = iw / gw;
+	const ox = margin, oy = margin;
+
+	const cellH = ih / gh;
 
 	/* ---- the geography ---- */
 	const field = mwField(gw, gh, seed, opts);
@@ -1250,8 +1309,11 @@ function mwWorld(factions, w, h, opts) {
 	}
 	if (!regions.length) return null;
 
+	/* margin and cs are published so the harness can check the design
+	   rule -- margin >= the shelf's own reach -- against the numbers
+	   that actually shipped, instead of against a copy of the formula. */
 	return { coast: coastRings, shores: shoreSet.bands, regions: regions, seed: seed,
-	         width: w, height: h,
+	         margin: margin, cell: cs, width: w, height: h,
 	         masses: masses.length };
 }
 
