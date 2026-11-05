@@ -30,6 +30,12 @@ const FACTIONS = [
 	{ name: 'Crypties', weight: 12 }, { name: 'Havoc Worlds', weight: 3 },
 	{ name: 'Ancestors', weight: 7 }, { name: 'Wavy Apes', weight: 2 }
 ];
+/* The faction names the live map actually carries, in its own order. */
+const LIVE_NAMES = ['Omen', 'Kimosabe Art', 'Perps', 'Black Flag', 'Maxingo',
+	'Nethanel Cohen', 'Sinder Skullz', 'Ohh Meed', 'Heist on Alpha', 'Old Money',
+	'Hellknights', 'Dead Heads Club', 'Crypties', 'Danketsu', 'Ancestors',
+	'Havoc Worlds'];
+
 const bbox = (p) => p.reduce((a, q) => ({
 	x0: Math.min(a.x0, q.x), y0: Math.min(a.y0, q.y),
 	x1: Math.max(a.x1, q.x), y1: Math.max(a.y1, q.y)
@@ -105,6 +111,36 @@ console.log('\nthe continent fits inside the canvas');
 
 console.log('\nnobody is left off the world, and land tracks realms');
 {
+	/*
+	 * ONE REALM BESIDE FOUR HUNDRED.
+	 *
+	 * Territory is apportioned by realm count, and the spread between the
+	 * biggest holder and a brand-new faction has no ceiling. Uncapped, the
+	 * big faction's seed reaches so far that a small one is left with no
+	 * cell at all -- and a faction with no land trips the landless guard
+	 * in worldLayout(), which throws away THE WHOLE MAP and falls back to
+	 * the old packing. So the loss is never "one faction looks small", it
+	 * is "the new map silently stopped rendering".
+	 *
+	 * Hence the seed weight cap. Measured: uncapped, one of these worlds
+	 * loses a faction; capped, none of them do.
+	 */
+	let landless = 0, built = 0;
+	for (const big of [400, 60, 16]) {
+		for (const [w, h] of [[1860, 888], [1200, 700], [960, 520]]) {
+			for (let k = 0; k < 3; k++) {
+				const F = LIVE_NAMES.map((name, i) => ({
+					name: name + (k ? ' ' + k : ''), weight: i === 0 ? big : 1
+				}));
+				const wd = W.mwWorld(F, w, h);
+				built++;
+				landless += wd ? F.length - wd.regions.length : F.length;
+			}
+		}
+	}
+	ok(landless === 0, landless + ' factions across ' + built
+	 + ' lopsided worlds got no land at all, which reverts the entire map');
+
 	/* AT EVERY SHAPE, for the reason in the block above: this held at
 	   1400x980 and failed at every real desktop size. */
 	for (const [w, h] of [[1400, 980], [1860, 888], [1380, 708], [1940, 1208],
@@ -226,6 +262,135 @@ console.log('\nit is a map sheet, not an island');
 	ok(one.regions.every(r => r.polys[0] === r.poly),
 	   'poly is not the first and largest of polys, so the label and the markers sit on an '
 	 + 'island instead of the body');
+}
+
+console.log('\nno slivers, no dots -- at the faction count the live map actually has');
+{
+	/*
+	 * THE EIGHT-FACTION FIXTURE WAS HIDING THIS. The live map carries
+	 * sixteen factions, most of them with one or two realms, and at that
+	 * density the nearest-seed assignment strands single cells inside
+	 * neighbours and runs ownership one cell wide for long stretches.
+	 * Traced and smoothed those are dots and worms -- reported as "all
+	 * this messiness and garbled borders disrupts the cleanliness and
+	 * readability of the map", with the scraps circled.
+	 *
+	 * Measured in PIXELS OF AREA, because that is what a reader sees. The
+	 * worst piece before the majority filter was 60px2, which is a speck
+	 * with a faction colour on it.
+	 */
+	const LIVE = [['Omen',3],['Kimosabe Art',1],['Perps',2],['Black Flag',2],['Maxingo',1],
+		['Nethanel Cohen',1],['Sinder Skullz',2],['Ohh Meed',2],['Heist on Alpha',2],
+		['Old Money',1],['Hellknights',1],['Dead Heads Club',4],['Crypties',2],
+		['Danketsu',1],['Ancestors',1],['Havoc Worlds',1]]
+		.map(([name, weight]) => ({ name, weight }));
+	const area = (p) => {
+		let a = 0;
+		for (let i = 0; i < p.length; i++) {
+			const q = p[i], r = p[(i + 1) % p.length];
+			a += q.x * r.y - r.x * q.y;
+		}
+		return Math.abs(a / 2);
+	};
+
+	let worst = Infinity, pieces = 0, islands = 0;
+	for (let k = 0; k < 6; k++) {
+		const F = LIVE.map((f, i) => ({ name: f.name + (k ? ' ' + k : ''), weight: f.weight }));
+		const wd = W.mwWorld(F, 1860, 888);
+		ok(wd && wd.regions.length === F.length,
+		   'world ' + k + ': only ' + (wd ? wd.regions.length : 0) + ' of ' + F.length
+		 + ' factions got territory at the live faction count');
+		if (!wd) continue;
+		for (const r of wd.regions) {
+			islands += r.polys.length - 1;
+			for (const piece of r.polys) {
+				pieces++;
+				const a = area(piece);
+				if (a < worst) worst = a;
+			}
+		}
+	}
+	ok(worst > 2500,
+	   'the smallest drawn piece across six live-shaped worlds is ' + Math.round(worst)
+	 + 'px2; anything under a few thousand is a dot with a faction colour on it');
+	console.log('        (' + pieces + ' pieces, smallest ' + Math.round(worst)
+	          + 'px2, ' + islands + ' islands kept)');
+
+	/* AND THE ISLANDS SURVIVED THE TIDY-UP. The fix for scraps is "absorb
+	   anything small that TOUCHES a neighbour", not "delete anything
+	   small" -- an offshore island has no land neighbour and is the best
+	   thing the terrain makes. Deleting it to fix the symptom would have
+	   thrown away the feature. */
+	ok(islands > 0,
+	   'six live-shaped worlds produced no faction-held islands at all; the scrap absorption '
+	 + 'is eating them');
+}
+
+console.log('\nthe grid is tidied before it is traced');
+{
+	/* A stranded cell is outvoted by its neighbours. */
+	const g = new Int16Array(25).fill(0);
+	g[12] = 1;                                   // one cell of faction 1 inside faction 0
+	W.mwMajority(g, 5, 5, 1, -1);
+	ok(g[12] === 0, 'a single stranded cell survives the majority filter');
+
+	/* Sea is not a candidate and is never overwritten: smoothing WHO owns
+	   a coast must not be able to move the coast. */
+	const g2 = new Int16Array(9).fill(-1);
+	g2[4] = 0;
+	W.mwMajority(g2, 3, 3, 2, -1);
+	ok(g2[4] === 0 && g2[0] === -1,
+	   'the majority filter moved the coastline while smoothing ownership');
+
+	/*
+	 * A POND BELOW THE ISLAND FLOOR IS FILLED, AND THE OCEAN IS NOT.
+	 *
+	 * This is the one that produced the four smallest "pieces" on the
+	 * live-shaped worlds: a two-cell lake comes back from mwTrace as an
+	 * interior ring, the renderer fills it like any other piece, and it
+	 * lands on the map as an 8x17px dot in the faction's colour.
+	 */
+	const gPond = new Uint8Array(100).fill(1);
+	gPond[44] = 0; gPond[45] = 0;                       // a two-cell pond, enclosed
+	[90, 91, 92].forEach(k => { gPond[k] = 0; });    // sea on the bottom edge
+	const pond = W.mwFillPonds(gPond, 10, 10, 8);
+	ok(pond === 2 && gPond[44] === 1 && gPond[45] === 1,
+	   'a two-cell pond was left in the land to be drawn as a faction-coloured dot');
+	ok(gPond[91] === 0, 'the ocean was filled in along with the pond');
+
+	/* AND A LAKE THAT CLEARS THE FLOOR STAYS. The rule is "too small to
+	   be a lake", not "no water inland" -- an inland sea is a feature. */
+	const gLake = new Uint8Array(100).fill(1);
+	[33, 34, 35, 43, 44, 45, 53, 54, 55].forEach(k => { gLake[k] = 0; });
+	W.mwFillPonds(gLake, 10, 10, 8);
+	ok(gLake[44] === 0, 'a nine-cell inland lake was filled in despite clearing the floor');
+
+	/* A scrap attached to a neighbour is absorbed -- but it has to be a
+	   scrap, not the faction's only land. Faction 1 gets a body in the
+	   corner AND a detached two-cell lobe out in faction 0's ground. */
+	const g3 = new Int16Array(100).fill(0);
+	[0, 1, 10, 11].forEach(k => { g3[k] = 1; });  // the body, four cells
+	[44, 45].forEach(k => { g3[k] = 1; });        // the scrap, two cells
+	const moved = W.mwAbsorbFragments(g3, 10, 10, 3);
+	ok(moved === 2 && g3[44] === 0, 'an attached two-cell scrap was not absorbed');
+	ok(g3[0] === 1, 'the faction\'s body was absorbed along with its scrap');
+
+	/* AND A FACTION WHOSE WHOLE TERRITORY IS UNDER THE FLOOR KEEPS IT.
+	   Small is not the same as spare: absorbing it takes the faction off
+	   the map, and worldLayout() then reverts the entire map. */
+	const g5 = new Int16Array(100).fill(0);
+	[44, 45].forEach(k => { g5[k] = 1; });        // all faction 1 has
+	W.mwAbsorbFragments(g5, 10, 10, 8);
+	ok(g5[44] === 1, 'a faction whose entire territory is small was absorbed out of existence');
+
+	/* ...but an ISLAND is not, because it touches nobody. */
+	const g4 = new Int16Array(100).fill(-1);
+	[11, 12].forEach(k => { g4[k] = 1; });        // an island of faction 1, all sea around
+	[55, 56, 65, 66].forEach(k => { g4[k] = 0; });
+	W.mwAbsorbFragments(g4, 10, 10, 8);
+	ok(g4[11] === 1,
+	   'an offshore island was absorbed as if it were a scrap; it touches no other faction '
+	 + 'and is the most characterful thing on the map');
 }
 
 console.log('\nborders run between factions, not around them');

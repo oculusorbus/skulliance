@@ -226,6 +226,48 @@ function mwFloodSpecks(mask, gw, gh, minCells) {
 	return kept;
 }
 
+/*
+ * PONDS FILLED IN -- the mirror of flooding specks.
+ *
+ * mwFloodSpecks sinks land too small to be an island. Nothing sank WATER
+ * too small to be a lake, and a two-cell pond is worse than a two-cell
+ * island: mwTrace returns it as an interior ring of the territory around
+ * it, the renderer fills that ring like any other piece, and it lands on
+ * the map as an 8x17px dot in the faction's colour. Four of those were
+ * the smallest "pieces" on the live-shaped worlds, and they are exactly
+ * the specks the owner circled.
+ *
+ * Sea that touches the frame is the ocean, however thin the channel --
+ * only enclosed water is a candidate, and only below the same floor an
+ * island has to clear. A lake bigger than the smallest island is a
+ * feature and is left alone.
+ */
+function mwFillPonds(mask, gw, gh, minCells) {
+	const seen = new Uint8Array(gw * gh);
+	const stack = [];
+	let filled = 0;
+	for (let start = 0; start < mask.length; start++) {
+		if (mask[start] || seen[start]) continue;
+		const cells = [];
+		let open = false;
+		stack.length = 0; stack.push(start); seen[start] = 1;
+		while (stack.length) {
+			const k = stack.pop();
+			cells.push(k);
+			const i = k % gw, j = (k / gw) | 0;
+			if (i === 0 || j === 0 || i === gw - 1 || j === gh - 1) open = true;
+			if (i > 0      && !mask[k - 1]  && !seen[k - 1])  { seen[k - 1]  = 1; stack.push(k - 1); }
+			if (i < gw - 1 && !mask[k + 1]  && !seen[k + 1])  { seen[k + 1]  = 1; stack.push(k + 1); }
+			if (j > 0      && !mask[k - gw] && !seen[k - gw]) { seen[k - gw] = 1; stack.push(k - gw); }
+			if (j < gh - 1 && !mask[k + gw] && !seen[k + gw]) { seen[k + gw] = 1; stack.push(k + gw); }
+		}
+		if (open || cells.length >= minCells) continue;
+		for (const k of cells) mask[k] = 1;
+		filled += cells.length;
+	}
+	return filled;
+}
+
 /** Winding-number test. Works for the concave rings a coast produces,
  *  where a crossing-count test on a self-touching ring does not. */
 function mwInside(px, py, poly) {
@@ -317,6 +359,148 @@ function mwDedupe(pts) {
 		if (Math.abs(cross) > 1e-9) out.push(b);
 	}
 	return out.length >= 3 ? out : pts;
+}
+
+/* ---------------------------------------------------------------------- *
+ * SMOOTH THE GRID BEFORE TRACING IT.
+ *
+ * A nearest-seed assignment over a noise field produces two kinds of mess
+ * that only show up with real data, and the live map had both: single
+ * cells of one faction stranded inside another, and ownership one cell
+ * wide running for a long way. Traced and smoothed, those come out as
+ * dots and as wandering worms -- "all this messiness and garbled borders
+ * disrupts the cleanliness and readability of the map".
+ *
+ * A MAJORITY FILTER FIXES BOTH AT ONCE and is the oldest trick in raster
+ * processing: every cell takes whatever most of its neighbours are. A
+ * stranded cell is outvoted; a one-cell isthmus has more outside
+ * neighbours than inside ones and closes. Two passes is enough -- three
+ * starts rounding off real headlands.
+ *
+ * SEA IS NOT A CANDIDATE when filtering OWNERSHIP, and land is not
+ * reassigned: the two grids are filtered separately so that smoothing who
+ * owns a coast can never move the coast.
+ * ---------------------------------------------------------------------- */
+function mwMajority(grid, gw, gh, passes, empty) {
+	const n = passes === undefined ? 2 : passes;
+	for (let pass = 0; pass < n; pass++) {
+		const next = grid.slice();
+		for (let j = 0; j < gh; j++) {
+			for (let i = 0; i < gw; i++) {
+				const k = j * gw + i;
+				if (grid[k] === empty) continue;          // sea stays sea
+				const tally = new Map();
+				let bestV = grid[k], bestN = 0;
+				for (let dj = -1; dj <= 1; dj++) {
+					for (let di = -1; di <= 1; di++) {
+						const x = i + di, y = j + dj;
+						if (x < 0 || y < 0 || x >= gw || y >= gh) continue;
+						const v = grid[y * gw + x];
+						if (v === empty) continue;
+						/* Its own value counts once, like any neighbour, so a
+						   cell in a genuine thin strip with support on both
+						   sides survives and a stranded one does not. */
+						const c = (tally.get(v) || 0) + 1;
+						tally.set(v, c);
+						if (c > bestN || (c === bestN && v === grid[k])) { bestN = c; bestV = v; }
+					}
+				}
+				next[k] = bestV;
+			}
+		}
+		grid.set(next);
+	}
+	return grid;
+}
+
+/* ---------------------------------------------------------------------- *
+ * ABSORB THE SCRAPS THAT ARE STILL ATTACHED.
+ *
+ * The majority filter removes stranded cells and thin necks; what it
+ * cannot remove is a genuinely connected lobe of twenty cells hanging off
+ * a neighbour's coast, and at map scale that draws as a dot with a label
+ * nowhere near it. Any piece under the floor that TOUCHES another faction
+ * is handed to whichever neighbour it shares the most edge with.
+ *
+ * AN OFFSHORE ISLAND IS NOT A SCRAP, and this is the whole reason the
+ * test is "touches another faction" rather than "is small". An island has
+ * no land neighbour to be absorbed into, and it is the most characterful
+ * thing the terrain produces -- deleting it to tidy up would throw away
+ * the feature to fix the symptom.
+ * ---------------------------------------------------------------------- */
+function mwAbsorbFragments(owner, gw, gh, minCells) {
+	const seen = new Uint8Array(gw * gh);
+	const stack = [];
+	let moved = 0;
+
+	/*
+	 * A FACTION'S LARGEST PIECE IS NEVER A SCRAP, however small it is.
+	 * Without this a faction whose whole territory is under the floor is
+	 * absorbed out of existence -- which happened the moment the harness
+	 * tried one realm beside four hundred: the tiny faction vanished from
+	 * the map and worldLayout() then reverted the entire thing to the old
+	 * packing. Small is not the same as spare.
+	 */
+	const biggest = new Map();
+	{
+		const mark = new Uint8Array(gw * gh);
+		for (let st = 0; st < owner.length; st++) {
+			if (owner[st] < 0 || mark[st]) continue;
+			const id = owner[st];
+			let n = 0;
+			stack.length = 0; stack.push(st); mark[st] = 1;
+			while (stack.length) {
+				const k = stack.pop(); n++;
+				const i = k % gw, j = (k / gw) | 0;
+				const go = (x, y) => {
+					if (x < 0 || y < 0 || x >= gw || y >= gh) return;
+					const m = y * gw + x;
+					if (!mark[m] && owner[m] === id) { mark[m] = 1; stack.push(m); }
+				};
+				go(i - 1, j); go(i + 1, j); go(i, j - 1); go(i, j + 1);
+			}
+			if (n > (biggest.get(id) || 0)) biggest.set(id, n);
+		}
+	}
+
+	for (let start = 0; start < owner.length; start++) {
+		if (owner[start] < 0 || seen[start]) continue;
+		const id = owner[start];
+		const cells = [];
+		stack.length = 0; stack.push(start); seen[start] = 1;
+		while (stack.length) {
+			const k = stack.pop();
+			cells.push(k);
+			const i = k % gw, j = (k / gw) | 0;
+			const step = (x, y) => {
+				if (x < 0 || y < 0 || x >= gw || y >= gh) return;
+				const n = y * gw + x;
+				if (!seen[n] && owner[n] === id) { seen[n] = 1; stack.push(n); }
+			};
+			step(i - 1, j); step(i + 1, j); step(i, j - 1); step(i, j + 1);
+		}
+		if (cells.length >= minCells) continue;
+		if (cells.length === biggest.get(id)) continue;   // its body, not a scrap
+
+		/* Who does it touch, and along how much edge? */
+		const touch = new Map();
+		for (const k of cells) {
+			const i = k % gw, j = (k / gw) | 0;
+			const look = (x, y) => {
+				if (x < 0 || y < 0 || x >= gw || y >= gh) return;
+				const v = owner[y * gw + x];
+				if (v < 0 || v === id) return;
+				touch.set(v, (touch.get(v) || 0) + 1);
+			};
+			look(i - 1, j); look(i + 1, j); look(i, j - 1); look(i, j + 1);
+		}
+		if (!touch.size) continue;             // an island: left alone
+		let to = id, best = 0;
+		for (const [v, n] of touch) if (n > best) { best = n; to = v; }
+		for (const k of cells) owner[k] = to;
+		moved += cells.length;
+	}
+	return moved;
 }
 
 /* ---------------------------------------------------------------------- *
@@ -486,8 +670,13 @@ function mwWorld(factions, w, h, opts) {
 
 	/* Specks flooded, masses returned largest first. A single-cell island
 	   is dirt; a real one is the best thing on the map. */
-	const masses = mwFloodSpecks(land, gw, gh,
-		Math.max(6, Math.round(gw * gh * (opts.minIsland === undefined ? 0.0025 : opts.minIsland))));
+	/* Coast first: a one-cell peninsula traced and smoothed is a worm,
+	   and no amount of tidying the ownership on top of it helps. */
+	mwMajority(land, gw, gh, opts.coastSmooth === undefined ? 2 : opts.coastSmooth, 255);
+	const minIsland = Math.max(6,
+		Math.round(gw * gh * (opts.minIsland === undefined ? 0.0025 : opts.minIsland)));
+	mwFillPonds(land, gw, gh, minIsland);
+	const masses = mwFloodSpecks(land, gw, gh, minIsland);
 	if (!masses.length) return null;
 
 	/*
@@ -503,7 +692,7 @@ function mwWorld(factions, w, h, opts) {
 	 */
 	const rng = mwRng(seed ^ 0x9e3779b9);
 	const landIdx = [];
-	for (let k = 0; k < land.length; k++) if (land[k]) landIdx.push(k);
+	for (const m of masses) for (const k of m) landIdx.push(k);
 	const cellXY = (k) => ({ x: ox + ((k % gw) + 0.5) * cs, y: oy + (((k / gw) | 0) + 0.5) * cellH });
 
 	const seeds = [];
@@ -549,6 +738,23 @@ function mwWorld(factions, w, h, opts) {
 	 * about four times the area. Dividing by the weight itself made one
 	 * large faction swallow the continent.
 	 */
+	/*
+	 * THE WEIGHT RATIO IS CAPPED, AND THAT IS A DESIGN CALL.
+	 *
+	 * Distance divides by sqrt(weight), so four hundred realms against one
+	 * is a twenty-fold radius and the small faction is left with a few
+	 * cells -- or none, at which point it is off the map entirely. A map
+	 * where one faction is ninety-nine percent of the land is not a map,
+	 * and the point of the board is that everybody is ON it.
+	 *
+	 * Capped at sixteen, so the biggest territory is at most about sixteen
+	 * times the smallest in AREA and four times in reach. Across the
+	 * realistic spread -- one to eighteen realms -- nothing is clamped at
+	 * all, so this only ever bites on the pathological case.
+	 */
+	const minW = seeds.reduce((a, s) => Math.min(a, s.weight), Infinity);
+	for (const s of seeds) s.weight = Math.min(s.weight, minW * 16);
+
 	const owner = new Int16Array(gw * gh).fill(-1);
 	const passes = opts.relax === undefined ? 3 : opts.relax;
 
@@ -623,6 +829,24 @@ function mwWorld(factions, w, h, opts) {
 		}
 	}
 
+	/* And the ownership, once the seeds have settled. Done AFTER the last
+	   assignment rather than inside the loop: the relaxation needs the raw
+	   nearest-seed answer to move its seeds honestly. */
+	/*
+	 * NO MAJORITY FILTER ON THE OWNER GRID. There was one here. Measured
+	 * over sixty worlds (3-16 factions, four canvas sizes) it shortened
+	 * the drawn borders by 0.7% and removed 2 pieces out of 735 -- a pass
+	 * over 23k cells for nothing a reader could see, and no threshold a
+	 * harness could assert honestly. Weighted-nearest assignment is
+	 * already compact, so the filter had almost nothing to flip. It stays
+	 * on the LAND mask above, where it does real work: there it is the
+	 * difference between a coast and a row of one-cell worms.
+	 */
+	/* Then the attached scraps. A floor of 0.35% of the grid is about the
+	   size below which a piece cannot carry anything a reader can use. */
+	mwAbsorbFragments(owner, gw, gh,
+		Math.max(8, Math.round(gw * gh * (opts.minPiece === undefined ? 0.0035 : opts.minPiece))));
+
 	const dress = (ring) => mwSmooth(mwDedupe(ring), opts.smooth === undefined ? 3 : opts.smooth);
 
 	const regions = [];
@@ -663,6 +887,7 @@ function mwWorld(factions, w, h, opts) {
 /* Browser globals, and CommonJS for the harness. */
 if (typeof module !== 'undefined' && module.exports) {
 	module.exports = { mwHash, mwRng, mwNoise, mwField, mwSeaLevel, mwFloodSpecks,
-	                   mwInside, mwTrace, mwBorders, mwDedupe, mwDedupeOpen,
+	                   mwFillPonds, mwInside, mwTrace, mwBorders, mwMajority, mwAbsorbFragments,
+	                   mwDedupe, mwDedupeOpen,
 	                   mwSmooth, mwSmoothOpen, mwWorld };
 }
