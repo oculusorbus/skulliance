@@ -509,6 +509,116 @@ function waterLayer(container, world, svgW, svgH) {
     return cv;
 }
 
+/*
+ * TEXTURED LAND: flecks and an edge fade.
+ *
+ * After SpriteCook's tileset generator (MIT), which builds its terrain
+ * from seeded value noise plus "flecks / pixel clusters", and an "edge
+ * fade" controlling how far a rim colour reaches in from the
+ * silhouette. That tool draws tiles; this is one continent-shaped
+ * polygon, so what carries over is the IDEA rather than any code: a
+ * sparse scatter of specks to stop a large flat fill reading as a flat
+ * fill, and a band of lighter ground just inside the shoreline.
+ *
+ * DONE AS SVG, NOT PIXELS, unlike the water. The water had to be
+ * per-pixel because it moves and a contour cannot. The land never
+ * moves, so a tiled <pattern> is drawn once by the browser, stays
+ * crisp at any zoom, and costs nothing per frame.
+ *
+ * TWO TILES AT COPRIME SIZES. A single repeating tile across an
+ * 1800px map repeats about thirteen times and the eye finds the grid
+ * immediately. 137 and 89 are coprime, so the combined pattern only
+ * repeats every 12,193px -- about seven map widths, which is to say
+ * never.
+ */
+const LAND_TEX = {
+    tiles: [
+        { size: 137, count: 26, rMin: 0.9, rMax: 2.3, fill: 'rgba(7,22,38,0.30)' },
+        { size: 89,  count: 14, rMin: 0.7, rMax: 1.6, fill: 'rgba(132,178,208,0.16)' }
+    ],
+    /* The edge fade, as inner rims. A stroke centred on the shoreline
+       and clipped to the land leaves exactly half its width inside, so
+       these are 7px and 2.5px of shore. */
+    rims: [
+        { width: 14, stroke: 'rgba(96,150,182,0.18)' },
+        { width: 5,  stroke: 'rgba(150,198,226,0.20)' }
+    ]
+};
+
+/**
+ * The specks in one pattern tile, as plain data so the harness can
+ * check they are the same specks every load and that they stay inside
+ * the tile -- a speck crossing the tile edge is clipped by the browser
+ * and shows up as a seam along the whole grid.
+ */
+function fleckTile(seed, spec) {
+    const rnd = mwRng(seed);
+    const out = [];
+    for (let i = 0; i < spec.count; i++) {
+        const r = spec.rMin + rnd() * (spec.rMax - spec.rMin);
+        out.push({
+            x: r + rnd() * (spec.size - 2 * r),
+            y: r + rnd() * (spec.size - 2 * r),
+            r: r
+        });
+    }
+    return out;
+}
+
+/**
+ * Append the land texture: the rims first, then the flecks over them.
+ *
+ * Everything is the SAME path as the land fill, so it is clipped to the
+ * coastline for free and the lakes stay holes -- no clip-path needed
+ * for the flecks, and the rims get one because a stroke straddles the
+ * line it follows.
+ */
+function paintLandTexture(svg, defs, world, d) {
+    if (!world.coast || !world.coast.length || typeof mwRng !== 'function') return 0;
+    const seed = world.seed || 1;
+    let drawn = 0;
+
+    const clipId = 'sk-land-clip';
+    const clip = svgEl('clipPath', { id: clipId });
+    clip.appendChild(svgEl('path', { d: d }));
+    defs.appendChild(clip);
+
+    /* The shore band. Half of each stroke falls outside the coastline
+       and is clipped away, which is the point: it fades inward only. */
+    for (const rim of LAND_TEX.rims) {
+        svg.appendChild(svgEl('path', {
+            d: d, fill: 'none', stroke: rim.stroke, 'stroke-width': String(rim.width),
+            'stroke-linejoin': 'round', 'clip-path': 'url(#' + clipId + ')'
+        }));
+        drawn++;
+    }
+
+    LAND_TEX.tiles.forEach((spec, n) => {
+        const id = 'sk-land-fleck-' + n;
+        const pat = svgEl('pattern', {
+            id: id, width: String(spec.size), height: String(spec.size),
+            patternUnits: 'userSpaceOnUse'
+        });
+        for (const f of fleckTile(seed + n * 7919, spec)) {
+            pat.appendChild(svgEl('circle', {
+                cx: f.x.toFixed(2), cy: f.y.toFixed(2), r: f.r.toFixed(2), fill: spec.fill
+            }));
+        }
+        defs.appendChild(pat);
+        svg.appendChild(svgEl('path', { d: d, fill: 'url(#' + id + ')' }));
+        drawn++;
+    });
+    return drawn;
+}
+
+/* Several rings as ONE path, so opposite-wound rings read as holes under
+   the default nonzero rule. A lake is a ring wound the other way. */
+function toPathAll(rings) {
+    let d = '';
+    for (const r of rings) d += toPath(r);
+    return d;
+}
+
 function seaLayers(world) {
     const SHADE = ['rgba(120,200,230,0.26)', 'rgba(32,84,116,0.55)',
                    'rgba(22,62,92,0.5)',     'rgba(16,48,74,0.42)'];
@@ -527,22 +637,24 @@ function seaLayers(world) {
             for (const ring of world.shores[b].rings) layers.push({ ring: ring, fill: fill, band: b });
         }
     }
-    /* EVERY SHORELINE, not one. The terrain gives several masses and the
-       occasional inland sea, and each is its own ring. */
-    if (world.coast) {
-        for (const ring of world.coast) {
-            /*
-             * NO STROKE ON THE SHORELINE ANY MORE.
-             *
-             * "I don't think we need the line around the shore. It
-             * doesn't let the animation breathe and the shore animation
-             * itself acts as the border line." A hard 1.6px rule round
-             * every coast competed with the foam sitting right on top
-             * of it, and the foam is the better edge because it moves.
-             * The land fill still has its own edge against the water.
-             */
-            layers.push({ ring: ring, fill: 'rgba(18,54,82,0.95)', band: -1 });
-        }
+    /*
+     * THE LAND IS ONE PATH, NOT ONE PATH PER RING.
+     *
+     * Every ring used to be its own <path>, and SVG fills a closed
+     * subpath whatever direction it is wound -- so the lake rings, which
+     * the geometry produces wound the other way precisely so they read
+     * as holes, were being filled with the land colour. Two lakes of
+     * 3,786 and 2,053px2 painted over as dry land on a 16-faction world.
+     * All the rings in one path with the default nonzero rule makes them
+     * holes again, which is what they already were everywhere else: the
+     * distance field rasterises the coast exactly this way, so the water
+     * knew about the lakes while the land did not.
+     */
+    if (world.coast && world.coast.length) {
+        /* AND NO STROKE ROUND IT: "it doesn't let the animation breathe
+           and the shore animation itself acts as the border line". The
+           foam is the better edge because it moves. */
+        layers.push({ rings: world.coast, fill: 'rgba(18,54,82,0.95)', band: -1 });
     }
     return layers;
 }
@@ -581,7 +693,8 @@ function worldLayout(fdata, w, h) {
        to the generator and not added to this line is computed on every
        load and silently dropped -- which is exactly what happened to the
        waves and the foam, and shipped. */
-    return { placedWithPoly: placedWithPoly, coast: world.coast, shores: world.shores };
+    return { placedWithPoly: placedWithPoly, coast: world.coast, shores: world.shores,
+             seed: world.seed };
 }
 
 /*
@@ -751,7 +864,7 @@ function renderMap() {
            harness -- a source check cannot tell a band that is drawn
            from one behind `if (false)`. */
         for (const L of seaLayers(world)) {
-            const attrs = { d: toPath(L.ring), fill: L.fill };
+            const attrs = { d: L.rings ? toPathAll(L.rings) : toPath(L.ring), fill: L.fill };
             if (L.stroke) {
                 attrs.stroke = L.stroke;
                 attrs['stroke-width'] = String(L.width || 1.6);
@@ -763,6 +876,9 @@ function renderMap() {
                prefers-reduced-motion guard; this only says WHEN. */
             if (L.delay) el.style.animationDelay = L.delay;
             svg.appendChild(el);
+            /* The land is the last sea layer; its texture goes straight
+               on top, under the territory washes that follow. */
+            if (L.band === -1 && L.rings) paintLandTexture(svg, defs, world, attrs.d);
         }
     }
 

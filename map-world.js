@@ -1250,7 +1250,8 @@ function mwWorld(factions, w, h, opts) {
 	}
 	if (!regions.length) return null;
 
-	return { coast: coastRings, shores: shoreSet.bands, regions: regions, width: w, height: h,
+	return { coast: coastRings, shores: shoreSet.bands, regions: regions, seed: seed,
+	         width: w, height: h,
 	         masses: masses.length };
 }
 

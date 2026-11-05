@@ -1055,6 +1055,146 @@ console.log('\nthe shallows reach the drawing, and the surf actually flows');
 	   'map.js never checks reduced motion, or never cancels its loop when the map redraws');
 }
 
+console.log('\nthe land is one shape, and it is textured');
+{
+	/*
+	 * LAKES WERE BEING PAINTED AS LAND.
+	 *
+	 * Every coast ring used to be emitted as its own layer and drawn as
+	 * its own <path>, and SVG fills a closed subpath whatever direction
+	 * it is wound -- so the lake rings, which the geometry winds the
+	 * other way precisely so they read as holes, came out filled with
+	 * the land colour. Two lakes of 3,786 and 2,053px2 painted over as
+	 * dry ground on a 16-faction world. The distance field rasterises
+	 * the coast as a single path, so the WATER knew about the lakes the
+	 * whole time while the land did not.
+	 */
+	const fs = require('fs');
+	const vm = require('vm');
+	const src = fs.readFileSync(__dirname + '/map.js', 'utf8');
+	const lift = (sig) => {
+		const i = src.indexOf(sig);
+		const j = i < 0 ? -1 : src.indexOf('\n}\n', i);
+		return (i >= 0 && j > i) ? src.slice(i, j + 3) : '';
+	};
+	const texConsts = src.slice(src.indexOf('const LAND_TEX = {'),
+		src.indexOf('};', src.indexOf('const LAND_TEX = {')) + 2);
+
+	/* A tiny stub DOM: paintLandTexture is run, not read. */
+	const made = [];
+	const node = (tag) => {
+		const n = { tag: tag, attrs: {}, kids: [] };
+		n.appendChild = (c) => { n.kids.push(c); return c; };
+		return n;
+	};
+	const ctx = {
+		mwWorld: W.mwWorld, mwRng: W.mwRng, Math: Math, console: { warn: () => {} },
+		svgEl: (tag, attrs) => { const n = node(tag); n.attrs = attrs || {}; made.push(n); return n; },
+		/* toPath lives in map-kit.js, not map.js; same shape. */
+		toPath: (pts) => pts.map((q, i) => (i ? 'L' : 'M') + q.x.toFixed(1) + ',' + q.y.toFixed(1)).join(' ') + 'Z'
+	};
+	vm.createContext(ctx);
+	vm.runInContext(texConsts + '\n' + lift('function fleckTile(') + lift('function toPathAll(')
+		+ lift('function paintLandTexture(') + lift('function seaLayers(') + lift('function worldLayout(')
+		+ '\nvar _tex = paintLandTexture, _tile = fleckTile, _T = LAND_TEX;'
+		+ '\nvar toPathAll_ = toPathAll;'
+		+ '\nvar _joined = (f, w, h) => seaLayers(worldLayout(f, w, h));', ctx);
+
+	/* The 16-faction 1200x700 world is the one with two real lakes. */
+	const lakey = LIVE_NAMES.map((name, i) => ({ name: name + ' 1', count: 1 + ((i * 7 + 1) % 6) }));
+	const layers = ctx._joined(lakey, 1200, 700);
+	const land = layers.filter(L => L.band === -1);
+	ok(land.length === 1,
+	   'the coast came back as ' + land.length + ' layers; every one becomes its own <path> '
+	 + 'and a lake drawn on its own is filled in as land');
+	ok(land[0].rings && land[0].rings.length >= 3,
+	   'the single land layer is not carrying all the coast rings, so the holes are lost');
+	const sgn = (r) => {
+		let a = 0;
+		for (let i = 0; i < r.length; i++) {
+			const q = r[i], t = r[(i + 1) % r.length];
+			a += q.x * t.y - t.x * q.y;
+		}
+		return a;
+	};
+	ok(land[0].rings.some(r => sgn(r) < 0),
+	   'no opposite-wound ring reached the renderer, so there is nothing to cut the lakes out');
+
+	/* AND ALL OF THEM REACH THE PATH DATA. Carrying the rings in the
+	   layer is no use if the path builder only emits the first: one
+	   subpath, one filled blob, lakes gone again and the islands with
+	   them. One moveto per ring. */
+	const dAll = ctx.toPathAll_(land[0].rings);
+	ok((dAll.match(/M/g) || []).length === land[0].rings.length,
+	   'the land path has ' + (dAll.match(/M/g) || []).length + ' subpaths for '
+	 + land[0].rings.length + ' rings, so rings are being dropped on the way to the screen');
+
+	/*
+	 * THE TEXTURE, after SpriteCook's tileset generator (MIT): seeded
+	 * flecks, and an edge fade reaching in from the silhouette. Its
+	 * code draws tiles and ours draws one continent, so the idea
+	 * carries over and none of the code does.
+	 */
+	const svg = node('svg'), defs = node('defs');
+	const drawn = ctx._tex(svg, defs, { coast: land[0].rings, seed: 12345 }, 'M0,0Z');
+	ok(drawn === _T_rims() + _T_tiles(), 'paintLandTexture drew ' + drawn + ' layers');
+	function _T_rims() { return ctx._T.rims.length; }
+	function _T_tiles() { return ctx._T.tiles.length; }
+
+	const rims = svg.kids.filter(k => k.attrs.stroke);
+	ok(rims.length === ctx._T.rims.length, 'the shore rims were not drawn');
+	ok(rims.every(r => r.attrs.fill === 'none' && /clip-path/.test(Object.keys(r.attrs).join())),
+	   'a shore rim is filled, or is not clipped to the land -- an unclipped stroke puts '
+	 + 'half its width out in the water, which is the hard shoreline rule all over again');
+	ok(defs.kids.some(k => k.tag === 'clipPath'), 'no clipPath was added for the shore rims');
+
+	const pats = defs.kids.filter(k => k.tag === 'pattern');
+	ok(pats.length === ctx._T.tiles.length, 'the fleck patterns were not added to <defs>');
+
+	/*
+	 * A SPECK MUST NOT TOUCH THE EDGE OF ITS TILE. The browser clips a
+	 * pattern tile to its own box, so a circle crossing the boundary is
+	 * sliced in half and the cut repeats every 137px in a dead straight
+	 * line across the whole continent -- a grid, which is the one thing
+	 * a texture must not produce.
+	 */
+	let outside = 0, checked = 0;
+	/* Over MANY SEEDS, not the one this world happens to use. With a
+	   single seed whether a speck lands on the boundary is luck, and
+	   the first spelling of this passed a version that let them -- the
+	   mutation slipped through because that seed happened to miss. */
+	for (let sd = 1; sd <= 200; sd++) {
+		ctx._T.tiles.forEach((spec) => {
+			for (const f of ctx._tile(sd, spec)) {
+				checked++;
+				if (f.x - f.r < 0 || f.y - f.r < 0 || f.x + f.r > spec.size || f.y + f.r > spec.size) outside++;
+			}
+		});
+	}
+	ok(outside === 0, outside + ' of ' + checked + ' specks cross the edge of their pattern '
+	 + 'tile; the browser slices those in half and the cut repeats in a dead straight line '
+	 + 'across the whole continent');
+
+	/* AND THE TILES DO NOT SHARE A FACTOR. Two tiles whose sizes have a
+	   common factor line up again every few hundred pixels and the grid
+	   comes back; coprime sizes only agree after their product. */
+	const gcd = (a, b) => b ? gcd(b, a % b) : a;
+	const sizes = ctx._T.tiles.map(t => t.size);
+	ok(sizes.length >= 2 && gcd(sizes[0], sizes[1]) === 1,
+	   'the fleck tiles are ' + sizes.join(' and ') + ', which share a factor, so the two '
+	 + 'patterns realign and the repeat becomes visible');
+	ok(Math.min.apply(null, sizes) > 60,
+	   'a fleck tile is only ' + Math.min.apply(null, sizes) + 'px, small enough to read as '
+	 + 'a grid on its own');
+
+	/* THE SAME GROUND EVERY VISIT, same as the coastline. */
+	const t1 = JSON.stringify(ctx._tile(999, ctx._T.tiles[0]));
+	const t2 = JSON.stringify(ctx._tile(999, ctx._T.tiles[0]));
+	const t3 = JSON.stringify(ctx._tile(1000, ctx._T.tiles[0]));
+	ok(t1 === t2, 'the flecks are not deterministic, so the ground shifts on every load');
+	ok(t1 !== t3, 'the flecks ignore the seed, so every world has identical ground');
+}
+
 console.log('\nthe canvas is sized from the page, and it is RUN to find out');
 {
 	/*
