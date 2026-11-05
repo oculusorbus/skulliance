@@ -25,12 +25,25 @@ factions.forEach(f => f.realms.sort((a, b) => parseInt(a.realm_id) - parseInt(b.
    getColor stays: the realm map wants a random colour per faction, where the
    rivalry map wants a stable one per player (mapkitColorFor). */
 
-let colorPool = [];
-
-function getColor() {
-    if (!colorPool.length) colorPool = [...palette];
-    const i = Math.floor(Math.random() * colorPool.length);
-    return colorPool.splice(i, 1)[0];
+/*
+ * A FACTION'S COLOUR IS THE SAME COLOUR EVERY VISIT.
+ *
+ * This was Math.random() out of a pool, so every faction repainted itself
+ * on every page load. Nothing can feel like a place if it changes colour
+ * while you are looking away, and it is the cheapest fix on the map.
+ *
+ * NOT mapkitColorFor() ON ITS OWN, which is what the Rivalries map uses:
+ * that hashes straight into the palette and two factions out of fifteen
+ * collide often. Here the names are SORTED and dealt consecutive palette
+ * entries from a hashed starting offset -- stable, and distinct until
+ * there are more factions than colours.
+ */
+function stableColors(names) {
+    const sorted = names.slice().sort();
+    const start = hashStr(sorted.join('|')) % palette.length;
+    const out = {};
+    sorted.forEach((n, i) => { out[n] = palette[(start + i) % palette.length]; });
+    return out;
 }
 
 
@@ -170,13 +183,14 @@ const CELL = 170;
 const PAD  = 32;
 
 function buildFactionData() {
-    colorPool = [...palette];
+    const colors = stableColors(factions.map(f => f.name));
     return factions.map(f => {
         const count = f.realms.length;
         const cols = Math.max(1, Math.ceil(Math.sqrt(count)));
         const rows = Math.max(1, Math.ceil(count / cols));
         const currency = (f.currency || '').toLowerCase();
-        return Object.assign({}, f, { count: count, w: cols*CELL, h: rows*CELL, color: getColor(), currency: currency });
+        return Object.assign({}, f, { count: count, w: cols*CELL, h: rows*CELL,
+            color: colors[f.name], currency: currency });
     });
 }
 
@@ -239,15 +253,70 @@ const NS = 'http://www.w3.org/2000/svg';
 
 
 // ── Render ────────────────────────────────────────────────────────────────────
+/*
+ * THE WORLD, OR THE OLD PACKING IF ANYTHING GOES WRONG.
+ *
+ * mwWorld() grows faction territories from seeds inside a generated
+ * coastline (map-world.js). Downstream code wants {faction,x,y,w,h,poly},
+ * so each region's bounding box stands in for the rectangle it used to
+ * have -- the label pill and the marker placement both read those and
+ * neither cares that the shape inside is no longer a rectangle.
+ *
+ * WRAPPED, AND IT FALLS BACK. This is the realms map on a live platform;
+ * a thrown error in new geometry must cost the coastline, not the map.
+ */
+function worldLayout(fdata, w, h) {
+    if (typeof mwWorld !== 'function') return null;
+    let world;
+    try {
+        world = mwWorld(fdata.map(f => ({ name: f.name, weight: Math.max(1, f.count) })), w, h);
+    } catch (e) {
+        console.warn('map.js: world generation failed, falling back to packing', e);
+        return null;
+    }
+    if (!world || !world.regions || !world.regions.length) return null;
+
+    const byName = {};
+    fdata.forEach(f => { byName[f.name] = f; });
+    const placedWithPoly = [];
+    for (const r of world.regions) {
+        const f = byName[r.name];
+        if (!f) continue;
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (const q of r.poly) {
+            if (q.x < x0) x0 = q.x; if (q.x > x1) x1 = q.x;
+            if (q.y < y0) y0 = q.y; if (q.y > y1) y1 = q.y;
+        }
+        placedWithPoly.push({ faction: f, poly: r.poly,
+            x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
+    }
+    /* A faction with no land is a faction nobody can click. Better to draw
+       the old map than to drop somebody off the world. */
+    if (placedWithPoly.length !== fdata.length) return null;
+    return { placedWithPoly: placedWithPoly, coast: world.coast };
+}
+
 function renderMap() {
     const container = document.getElementById('container');
     const fdata = buildFactionData();
-    const placed = packFactions(fdata);
+
+    /* The canvas the world is composed at. Same width rule the packer
+       uses, so the mobile path is unchanged; the height is a ratio rather
+       than a sum of blocks, because a continent has a shape of its own. */
+    const worldW = window.innerWidth <= MOBILE_BP
+        ? MOBILE_DESIGN_W : Math.max(900, window.innerWidth - MOBILE_GUTTER);
+    const world = worldLayout(fdata, worldW, Math.round(worldW * 0.70));
+
+    const placed = world ? [] : packFactions(fdata);
 
     let svgW = 0, svgH = 0;
-    for (const p of placed) {
-        svgW = Math.max(svgW, p.x+p.w+PAD);
-        svgH = Math.max(svgH, p.y+p.h+PAD);
+    if (world) {
+        svgW = worldW; svgH = Math.round(worldW * 0.70);
+    } else {
+        for (const p of placed) {
+            svgW = Math.max(svgW, p.x+p.w+PAD);
+            svgH = Math.max(svgH, p.y+p.h+PAD);
+        }
     }
 
     /*
@@ -300,13 +369,32 @@ function renderMap() {
     defs.appendChild(arrowMarker);
 
     // Pre-compute polygon for each placed faction using seeded RNG for stable shapes
-    const placedWithPoly = placed.map(p => {
+    const placedWithPoly = world ? world.placedWithPoly : placed.map(p => {
         const rng = mulberry32(hashStr(p.faction.name + '_territory'));
         const inset = PAD * 0.6;
         const jitter = Math.min(20, Math.min(p.w, p.h) * 0.09);
         const poly = chaikin(jitterRect(p.x+inset, p.y+inset, p.w-inset*2, p.h-inset*2, jitter, rng), 3);
         return Object.assign({}, p, { poly: poly });
     });
+
+    /*
+     * THE SEA AND THE COAST, UNDER EVERYTHING.
+     *
+     * Drawn first so every territory sits on land. The land fill is a
+     * shade off the page ground rather than a colour of its own: the
+     * point is that the map has an edge, not that the sea is blue.
+     */
+    if (world && world.coast) {
+        const cd = toPath(world.coast);
+        /* A soft halo outside the line, which is what reads as shallows
+           and is the cheapest thing on the map that says "coast". */
+        svg.appendChild(svgEl('path', { d: cd, fill: 'none',
+            stroke: 'rgba(120,200,230,0.20)', 'stroke-width': '14',
+            'stroke-linejoin': 'round' }));
+        svg.appendChild(svgEl('path', { d: cd, fill: 'rgba(90,150,190,0.10)',
+            stroke: 'rgba(150,215,240,0.55)', 'stroke-width': '2',
+            'stroke-linejoin': 'round' }));
+    }
 
     const R = 22;
     let clipIdx = 0;

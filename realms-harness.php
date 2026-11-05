@@ -1199,5 +1199,107 @@ ok(substr_count($rl_loader_off, '{') === substr_count($rl_loader_off, '}')
 ok(strpos($rsrc, 'value="Create Realm"') !== false,
    'there is no Create Realm form, so lifting the loader reveals an empty page');
 
+/* ---------------------------------------------------------------- *
+ * THE WORLD MAP
+ * ---------------------------------------------------------------- */
+echo "\nthe map is a world, and it is the same world next time\n";
+/*
+ * COMMENT-STRIPPED, AND THE FIRST VERSION OF THE VERY NEXT ASSERTION
+ * PROVED WHY. It searched map.js for 'Math.random()' and failed on a file
+ * that has none -- the only match was the comment explaining that it had
+ * been removed. Fifth time in this repo a bare string search has matched
+ * the prose about its own subject.
+ */
+require_once __DIR__ . '/harness-strip.php';
+$MAPJS = harness_strip_comments((string) file_get_contents(__DIR__ . '/map.js'));
+$RLM   = (string) file_get_contents(__DIR__ . '/realms.php');
+
+/*
+ * A FACTION'S COLOUR WAS Math.random() OUT OF A POOL, so every faction
+ * repainted itself on every page load. Nothing can feel like a place if it
+ * changes colour while you are looking away, and it was the cheapest fix
+ * on the map by a distance.
+ */
+ok(strpos($MAPJS, 'Math.random()') === false,
+   'the map still uses Math.random(), so something about it changes on every load');
+ok(strpos($MAPJS, 'function stableColors(') !== false,
+   'faction colours are not assigned stably any more');
+ok(strpos($MAPJS, 'colors[f.name]') !== false,
+   'buildFactionData() does not take its colour from the stable assignment');
+
+/* THE GENERATOR LOADS BEFORE THE MAP, the same ordering map-kit.js needs
+   and for the same reason -- map.js calls mwWorld() while rendering. */
+$kitAt   = strpos($RLM, 'src="map-kit.js');
+$worldAt = strpos($RLM, 'src="map-world.js');
+$mapAt   = strpos($RLM, 'src="map.js');
+ok($worldAt !== false, 'realms.php never loads map-world.js, so the map silently stays a grid');
+ok($kitAt !== false && $worldAt > $kitAt && $mapAt > $worldAt,
+   'map-world.js does not load between map-kit.js and map.js');
+
+/*
+ * AND IT FALLS BACK. This is the realms map on a live platform: an error
+ * in new geometry must cost the coastline, not the page. worldLayout()
+ * has to check the function exists, catch what it calls, and refuse a
+ * result that leaves any faction without land.
+ */
+$wl = substr($MAPJS, strpos($MAPJS, 'function worldLayout('));
+$wl = substr($wl, 0, strpos($wl, "\nfunction "));
+ok(strpos($wl, "typeof mwWorld !== 'function'") !== false,
+   'worldLayout() assumes map-world.js loaded; a failed script tag then takes the map down');
+/* THE try HAS TO COME BEFORE THE CALL. Checking for 'catch' anywhere in
+   the function passed with `try {` turned into a bare block -- the catch
+   clause was still in the text (and the file no longer parsed, which
+   nothing here was checking either; see the parse assertion below). */
+$tryAt  = strpos($wl, 'try {');
+$callAt = strpos($wl, 'world = mwWorld(');
+ok($tryAt !== false && $callAt !== false && $tryAt < $callAt,
+   'the world build is not inside a try, so a throw in new geometry loses the whole map');
+ok(strpos($wl, 'catch') !== false, 'there is a try with no catch');
+ok(strpos($wl, 'placedWithPoly.length !== fdata.length') !== false,
+   'a faction that got no land is drawn anyway, which puts somebody on a map with no '
+ . 'territory to click');
+ok(strpos($MAPJS, 'world ? world.placedWithPoly : placed.map(') !== false,
+   'the old packing is no longer the fallback, so there is nothing to fall back TO');
+
+/* The sea is drawn under the territories or it is not a coast.
+   ANCHORED ON CODE, NOT ON A SECTION COMMENT: this read is
+   comment-stripped, so '// Layer 1: territory fills' is not in it -- which
+   is how the first spelling of this failed on a correct file. */
+$seaAt  = strpos($MAPJS, "stroke: 'rgba(150,215,240,0.55)'");
+$terrAt = strpos($MAPJS, 'hexToRgba(faction.color, 0.13)');
+ok($seaAt !== false, 'the coastline is never stroked, so the map has no coast');
+ok($terrAt !== false, 'the territory fill is gone');
+ok($seaAt !== false && $terrAt !== false && $seaAt < $terrAt,
+   'the coastline is drawn over the territories instead of under them');
+/* AND IT IS ACTUALLY REACHED. `if (false)` leaves every string in place,
+   so a positional check alone passes over a coast that never draws. */
+ok(strpos($MAPJS, 'if (world && world.coast) {') !== false,
+   'the coast is behind a condition that is not "there is a world with a coast"');
+
+/*
+ * THE SHIPPED JAVASCRIPT PARSES.
+ *
+ * There is no build step: map.js, map-kit.js and map-world.js go to the
+ * browser exactly as written, and a syntax error in any of them is a blank
+ * map with a console message nobody is looking at. Nothing checked this
+ * until a mutation produced an unparseable map.js and every assertion here
+ * still passed.
+ */
+foreach (array('map.js', 'map-kit.js', 'map-world.js') as $js) {
+	$o = array(); $c = 0;
+	exec('node --check ' . escapeshellarg(__DIR__ . '/' . $js) . ' 2>&1', $o, $c);
+	ok($c === 0, $js . ' does not parse: ' . implode(' ', array_slice($o, 0, 3)));
+}
+
+/* The geometry itself has its own harness -- reported here as one line,
+   the same arrangement nft-dossier-harness.php uses for the panel. */
+$out = array(); $rc = 0;
+exec('node ' . escapeshellarg(__DIR__ . '/map-world-harness.js') . ' 2>&1', $out, $rc);
+if ($rc !== 0) {
+	echo "  --- map-world-harness.js ---\n";
+	foreach ($out as $line) if (strpos($line, 'FAIL') !== false) echo "  $line\n";
+}
+ok($rc === 0, 'map-world-harness.js failed: the generated geography is wrong');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);
