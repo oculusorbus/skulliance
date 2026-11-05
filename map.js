@@ -309,9 +309,28 @@ const NS = 'http://www.w3.org/2000/svg';
 /* Distances in screen pixels. His 4-20 scales to 13-67 here, which is
    the full-shelf version the owner turned down; these are the tight
    surf numbers kept from that round. */
+/*
+ * HALF HIS TEMPO, ON THE OWNER'S CALL: "the example takes about 6
+ * seconds to complete a wave and ours is running at 3".
+ *
+ * One factor on both clocks rather than two separate numbers, so the
+ * relationship his shader sets between the foam breathing and the waves
+ * arriving survives the change -- retiming them independently is how
+ * the foam stops landing with the crest.
+ *
+ * Measured off the clip for the record: at a fixed point near the shore
+ * a crest passes every 2.1-2.3s, which is FASTER than this. The visible
+ * journey of one line is the longer thing, and it is what a reader
+ * actually times. This is the owner's reading of his own map against
+ * ours, not a number derived from the video, and that is the right
+ * authority for how busy the page should feel.
+ */
+const WATER_TEMPO = 0.5;
 const WATER = {
-    foamMid: 7.4, foamSwing: 3.7, foamHz: 2.5,   /* his 2.2 +/- 1.1, scaled */
-    waveLo: 3, waveHi: 22, spacing: 14, width: 3, speed: 10,
+    foamMid: 7.4, foamSwing: 3.7,                /* his 2.2 +/- 1.1, scaled */
+    foamHz: 2.5 * WATER_TEMPO,                   /* his sin(TIME * 2.5) */
+    waveLo: 3, waveHi: 22, spacing: 14, width: 3,
+    speed: 10 * WATER_TEMPO,
     foam: [168, 226, 243, 0.42], wave: [190, 232, 248, 0.5]
 };
 

@@ -869,7 +869,9 @@ console.log('\nthe shallows reach the drawing, and the surf actually moves');
 		return (i >= 0 && j > i) ? src.slice(i, j + 3) : '';
 	};
 	const sl = lift('function seaLayers('), wl = lift('function worldLayout(');
-	const sh = lift('function surfShade('), wc = src.slice(src.indexOf('const WATER = {'),
+	/* WATER_TEMPO is declared just above WATER and is referenced inside
+	   it, so the slice has to start there or the sandbox throws. */
+	const sh = lift('function surfShade('), wc = src.slice(src.indexOf('const WATER_TEMPO'),
 		src.indexOf('};', src.indexOf('const WATER = {')) + 2);
 	ok(sl && wl && sh && wc, 'seaLayers / worldLayout / surfShade / WATER could not be lifted from map.js');
 
@@ -889,34 +891,85 @@ console.log('\nthe shallows reach the drawing, and the surf actually moves');
 	 * ring slides continuously. Measured as: where is the ring at t, and
 	 * how far did it travel in one frame at 60fps?
 	 */
+	/*
+	 * The leading ring, measured ABOVE THE FOAM'S REACH.
+	 *
+	 * surfShade tests foam before waves, so anything under the foam edge
+	 * comes back as foam and a naive scan from waveLo tracks the foam
+	 * edge instead of the ring -- which reported the waves rolling out
+	 * to sea, because the breathing edge happened to be moving outward
+	 * at that moment. Start past where the foam can ever reach.
+	 */
+	const _wLo = () => Math.max(ctx._W.waveLo, ctx._W.foamMid + ctx._W.foamSwing) + 0.05;
+	const _wHi = () => ctx._W.waveHi;
 	const ringAt = (t) => {
-		/* the smallest d inside the surf zone that is lit as a wave */
 		for (let d = _wLo(); d < _wHi(); d += 0.02) if (ctx._shade(d, t) === 2) return d;
 		return -1;
 	};
-	function _wLo() { return ctx._W.waveLo + 0.01; }
-	function _wHi() { return ctx._W.waveHi; }
+	/*
+	 * Sampled every frame for a second and a half, and judged on the
+	 * MEDIAN step rather than on two endpoints. A ring eventually
+	 * travels past the bottom of the window and the scan picks up the
+	 * next one out, which is a jump outward that says nothing about the
+	 * direction of travel; comparing one pair of samples can land
+	 * exactly on it, and did.
+	 */
 	const frame = 1 / 60;
+	const samples = [];
+	for (let k = 0; k <= 90; k++) samples.push(ringAt(1 + k * frame));
 	const steps = [];
-	for (let k = 0; k < 40; k++) {
-		const a0 = ringAt(1 + k * frame), a1 = ringAt(1 + (k + 1) * frame);
-		if (a0 > 0 && a1 > 0 && a1 < a0) steps.push(a0 - a1);
+	for (let k = 1; k < samples.length; k++) {
+		if (samples[k] > 0 && samples[k - 1] > 0) steps.push(samples[k] - samples[k - 1]);
 	}
-	ok(steps.length > 25,
-	   'the leading ring only moved shoreward on ' + steps.length + ' of 40 frames');
-	const biggest = Math.max.apply(null, steps);
+	ok(steps.length > 60, 'only ' + steps.length + ' usable samples of the ring position');
+	const sorted = steps.slice().sort((a, b) => a - b);
+	const median = sorted[Math.floor(sorted.length / 2)];
+	ok(median < 0,
+	   'the ring moves ' + median.toFixed(3) + 'px per frame on the median, so the waves '
+	 + 'are rolling out to sea rather than toward the shore');
+
+	const inward = steps.filter(v => v < 0).map(v => -v);
+	ok(inward.length > steps.length * 0.7,
+	   'the ring only moved shoreward on ' + inward.length + ' of ' + steps.length + ' frames');
+
+	/*
+	 * AND BY LESS THAN A PIXEL EACH FRAME. THIS IS THE WHOLE POINT OF
+	 * THE REWRITE. Reported twice as "flashing lights in succession":
+	 * the surf was N fixed contours cross-faded, so the ring only ever
+	 * had N positions 2.2px apart and what moved was opacity, not the
+	 * line. His shader evaluates the distance per PIXEL, so it slides.
+	 */
+	const biggest = Math.max.apply(null, inward);
 	ok(biggest < 1,
 	   'the ring jumps ' + biggest.toFixed(2) + 'px between frames; anything near a pixel '
 	 + 'reads as a step rather than as water');
-	ok(Math.min.apply(null, steps) > 0.01,
+	ok(Math.min.apply(null, inward) > 0.005,
 	   'the ring is not actually moving between frames');
 
-	/* AND IT MOVES SHOREWARD, not out to sea. Same trap as before: the
-	   wrong sign still animates and still looks busy. */
-	const early = ringAt(1), later = ringAt(1 + 10 * frame);
-	ok(later < early,
-	   'the ring sits at ' + early.toFixed(2) + 'px and ' + later.toFixed(2)
-	 + 'px ten frames later, so the waves are rolling out to sea');
+	/*
+	 * AND IT IS NOT FRANTIC.
+	 *
+	 * "The example takes about 6 seconds to complete a wave and ours is
+	 * running at 3." Speed is the one thing here that can be perfectly
+	 * smooth and still wrong: a sub-pixel step per frame says nothing
+	 * about how busy the page feels, so the journey is timed as well as
+	 * the step. One crest crosses the surf in 3.8s at the shipped tempo.
+	 */
+	const crossing = (ctx._W.waveHi - ctx._W.waveLo) / ctx._W.speed;
+	ok(crossing > 3,
+	   'a crest crosses the surf in ' + crossing.toFixed(2) + 's, which reads as busy '
+	 + 'rather than as water');
+	ok(crossing < 12,
+	   'a crest takes ' + crossing.toFixed(2) + 's to cross, slow enough that nothing '
+	 + 'appears to be moving at all');
+
+	/* AND THE FOAM KEEPS ITS RELATIONSHIP TO THE WAVES. Both clocks are
+	   scaled by one factor, so retiming cannot quietly unhook the bloom
+	   from the arrival the way two independent numbers would. */
+	const breath = 2 * Math.PI / ctx._W.foamHz;
+	ok(breath > crossing * 0.8 && breath < crossing * 2,
+	   'the foam breathes every ' + breath.toFixed(2) + 's against a ' + crossing.toFixed(2)
+	 + 's crossing, so the bloom has drifted away from the wave arriving');
 
 	/* THE FOAM EDGE BREATHES, which is his sine on the threshold. */
 	let lo = Infinity, hi = -Infinity;
