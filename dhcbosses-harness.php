@@ -1849,6 +1849,38 @@ dhcb_announce_day(new HBConn(), '2026-10-25',
 $wk2 = $GLOBALS['HB_POSTS'] ? $GLOBALS['HB_POSTS'][0]['desc'] : '';
 ok(strpos($wk2, '37%') !== false && stripos($wk2, 'DEFEATED') === false,
    'a week that dropped nothing either loses its number or claims a clear: ' . $wk2);
+/*
+ * AND IT DOES NOT PROMISE A CREW ON A DAY NOTHING HAPPENS.
+ *
+ * Every one of these posts used to end "A new crew stands up on
+ * Monday", which was wrong twice: nothing in this platform turns on a
+ * Monday (the week turns THURSDAY at 4pm), and a new crew is not a
+ * weekly event at all -- dhcb_spawn() stands the next wave up the
+ * moment the current one runs out of health, the same week. It was
+ * reported on a Thursday, under a post announcing nine crews defeated.
+ */
+ok(stripos($wk, 'monday') === false && stripos($wk2, 'monday') === false,
+   'the day-close post still names a day of the week that nothing happens on: ' . $wk);
+/* Held: the same three are still there, so it must not claim a new one. */
+ok(stripos($wk2, 'new crew') === false,
+   'a post about a crew that HELD announces a new crew anyway: ' . $wk2);
+ok(stripos($wk2, 'still standing') !== false,
+   'a post about a crew that held does not say the crew is still standing: ' . $wk2);
+/* Down: the replacement is already up, and it says which wave. */
+$GLOBALS['HB_POSTS'] = array();
+dhcb_announce_day(new HBConn(), '2026-10-25',
+	array('pct'=>1.0, 'cleared'=>true, 'wave'=>3, 'downed'=>3,
+	      'max'=>9000, 'left'=>0, 'dealt'=>9000, 'dead'=>3, 'total'=>3),
+	'placement_1', 11, 52);
+$wkC = $GLOBALS['HB_POSTS'] ? $GLOBALS['HB_POSTS'][0]['desc'] : '';
+ok(stripos($wkC, 'stands up now') !== false,
+   'a crew that went down does not tell anyone the next one is already up: ' . $wkC);
+ok(strpos($wkC, 'wave 4') !== false,
+   'the post does not name the wave that just stood up, which is the one number '
+ . 'that says it got harder: ' . $wkC);
+ok(stripos($wkC, 'monday') === false,
+   'the clear post still names Monday: ' . $wkC);
+
 /* And a week that ended one hit short is not reported as a clear. */
 $GLOBALS['HB_POSTS'] = array();
 dhcb_announce_day(new HBConn(), '2026-10-25',

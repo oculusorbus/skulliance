@@ -2756,7 +2756,25 @@ function dhcb_announce_day($conn, $day, $prog, $table, $paid, $traits = 0) {
 			. number_format((int)$traits) . ' traits between them · '
 			. number_format((int)$prog['dealt']) . ' of '
 			. number_format((int)$prog['max']) . ' damage'
-			. "\n\nA new crew stands up on Monday.";
+			/*
+			 * WHAT HAPPENS NEXT, AND IT DEPENDS ON WHETHER THEY FELL.
+			 *
+			 * This said "A new crew stands up on Monday." on every post,
+			 * which was wrong twice over. Nothing in this platform turns
+			 * on a Monday: the week turns THURSDAY AT 4PM. And a new crew
+			 * is not a weekly event at all -- dhcb_spawn() stands the next
+			 * wave up the moment the current one has no health left, the
+			 * same week, one wave higher. Reported on a Thursday, under a
+			 * post that had just announced nine crews defeated.
+			 *
+			 * So the line is read off the crew instead of off a calendar:
+			 * down means the replacement is already up, held means the
+			 * same three are still there with the damage on them.
+			 */
+			. "\n\n" . ($cleared
+				? 'A new crew stands up now, at wave '
+				  . ((int)(isset($prog['wave']) ? $prog['wave'] : 1) + 1) . '.'
+				: 'The same crew is still standing, damage and all.');
 		ob_start();
 		discordmsg($title, $desc,
 			'https://skulliance.io/staking/' . dhcb_art('d34thbrngr'),
