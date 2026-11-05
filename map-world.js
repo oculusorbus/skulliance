@@ -983,24 +983,48 @@ function mwWorld(factions, w, h, opts) {
 	 * wide enough to hold the shelf. The margin is a property of the
 	 * drawing, not of the terrain.
 	 */
-	const cs0 = w / gw;
+	/*
+	 * THE GRID COVERS THE WHOLE SHEET. THE LAND DOES NOT.
+	 *
+	 * The first version of this inset shrank the GRID to the inner
+	 * rectangle, which kept the land away from the frame but also moved
+	 * the edge of the distance field inward with it. The shelf is a
+	 * contour of that field, so it stopped where the field stopped: cut
+	 * off flat several cells short of the frame, with open sea beyond
+	 * it. Reported as "truncating the natural progression of the
+	 * underwater topography... there's enough breathing room to allow
+	 * the topography to play out naturally", and the cut was a straight
+	 * line in open water, which is worse than running off the sheet.
+	 *
+	 * So the grid spans the full canvas and the TERRAIN is generated
+	 * into an inner window of it, with the surrounding cells simply
+	 * water. Same noise, same archipelago, land still clear of the
+	 * frame -- and now the shallows have real grid to spread into and
+	 * fade out on their own terms.
+	 */
+	const cs = w / gw;
+	const gh = opts.gh || Math.max(40, Math.round(gw * (h / w)));
+	const ox = 0, oy = 0;
+	const cellH = h / gh;
+
 	const margin = opts.margin === undefined
-		? Math.ceil(mwShelfReach(gw) * cs0 * 1.08) : opts.margin;
-	const iw = Math.max(40, w - 2 * margin), ih = Math.max(40, h - 2 * margin);
-
-	const gh = opts.gh || Math.max(40, Math.round(gw * (ih / iw)));
-	const cs = iw / gw;
-	const ox = margin, oy = margin;
-
-	const cellH = ih / gh;
+		? Math.ceil(mwShelfReach(gw) * cs * 1.08) : opts.margin;
+	/* The window the terrain is generated into, in cells. */
+	const mC = Math.max(0, Math.round(margin / cs));
+	const inW = Math.max(16, gw - 2 * mC), inH = Math.max(16, gh - 2 * mC);
 
 	/* ---- the geography ---- */
-	const field = mwField(gw, gh, seed, opts);
+	const field = mwField(inW, inH, seed, opts);
 	/* 0.42 from the same sweep. Below 0.38 the map is mostly water and
 	   territories have nowhere to breathe; 0.62 is one continent. */
 	const sea = mwSeaLevel(field, opts.landFraction === undefined ? 0.42 : opts.landFraction);
+	/* The terrain window, dropped into the middle of a sheet of water. */
 	const land = new Uint8Array(gw * gh);
-	for (let k = 0; k < field.length; k++) land[k] = field[k] > sea ? 1 : 0;
+	for (let j = 0; j < inH; j++) {
+		for (let i = 0; i < inW; i++) {
+			if (field[j * inW + i] > sea) land[(j + mC) * gw + (i + mC)] = 1;
+		}
+	}
 
 	/* Specks flooded, masses returned largest first. A single-cell island
 	   is dirt; a real one is the best thing on the map. */
