@@ -19,22 +19,20 @@ is "No thanks", and that is the end of it. Writing one also stops the asking.
 
 ## What makes a good one
 
-The modal asks you a question rather than handing you a blank box: what keeps
-you coming back, what you would tell somebody deciding whether to start, or the
-best thing that has happened to you here.
+The modal asks you a question rather than handing you a blank box: what would
+you tell someone who is deciding whether to join?
 
-What helps is the specific thing a newcomer would not guess. What drew you in,
-what you keep showing up for, what surprised you. The point is to help people
-decide whether this is for them, and to grow the server for everybody already
-in it.
+Three prompts sit under it if you stall. What drew you in? What keeps you
+coming back? What is something that would attract a newcomer? The more
+specific it is, the more it helps the community grow.
 
 Links are not carried, and there is a minimum length, because one line cannot
 tell anybody anything.
 
 ## Who sees it
 
-Nothing is published automatically. An owner reads every testimonial before it
-appears anywhere.
+Nothing is published automatically. The founder reads every testimonial before
+it appears anywhere.
 
 You confirm it before it is sent. There is a box to tick saying your username
 and avatar may be published, and nothing is submitted until you tick it.
@@ -59,7 +57,7 @@ private. The site will stop showing it; Discord will not.
 ## If it is not published
 
 Sometimes one comes back. You will see it on your profile, marked as not
-published, along with whatever note the owner left: usually a nudge toward
+published, along with whatever note the founder left: usually a nudge toward
 something more specific.
 
 **That is an invitation, not a verdict.** The text is sitting in a box on the

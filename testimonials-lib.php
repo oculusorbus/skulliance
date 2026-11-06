@@ -43,18 +43,23 @@ if (!defined('TESTIMONIAL_NUDGE_DAYS')) define('TESTIMONIAL_NUDGE_DAYS', 14);
 if (!defined('TESTIMONIAL_WIN_HOURS'))  define('TESTIMONIAL_WIN_HOURS', 48);
 
 /**
- * The questions. Rotating, and stored with the answer so the public
- * card can show what was actually asked.
+ * The question. One, not a rotation.
  *
- * Each one is a question somebody can answer from their own week. "Why
- * do you play Skulliance" is a question about a product; "what keeps
- * you coming back" is a question about them, and gets a real sentence.
+ * There were three, dealt out by user id, on the theory that variety
+ * would produce variety. The founder replaced them with a single ask
+ * and moved the other two inside the brief as prompts, which is
+ * better: a reader answering "what would you tell someone who is
+ * deciding whether to join" is already writing the thing the page
+ * needs, and the follow-ups underneath give them somewhere to go if
+ * they stall.
+ *
+ * Still keyed and still stored with the answer, because the public
+ * card shows what was asked and a second question one day should not
+ * silently relabel every testimonial written under this one.
  */
 function testimonial_prompts() {
 	return array(
-		'back'   => 'What keeps you coming back to Skulliance?',
-		'tell'   => 'What would you tell someone who is deciding whether to start?',
-		'moment' => 'What is the best thing that has happened to you here?',
+		'join' => 'What would you tell someone who is deciding whether to join?',
 	);
 }
 

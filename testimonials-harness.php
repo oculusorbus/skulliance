@@ -159,7 +159,11 @@ ok(testimonial_validate(str_repeat('a', 80)) === '', 'a clean piece of the right
 
 echo "\nthe questions\n";
 $prompts = testimonial_prompts();
-ok(count($prompts) >= 3, 'fewer than three questions to rotate');
+/* One question now, with the old two moved inside the brief as
+   prompts. The count is not the point; what matters is that whatever
+   is asked is a question, and that the brief still says who is going
+   to read the answer. */
+ok(count($prompts) >= 1, 'there is no question to ask at all');
 foreach ($prompts as $k => $q) {
 	ok(substr(trim($q), -1) === '?', "prompt '$k' is not a question, which is what gets a real answer");
 	ok(stripos($q, 'testimonial') === false,
@@ -427,13 +431,19 @@ ok(strlen($long) < 1200, 'a long testimonial makes an intent URL nobody can post
 ok(substr_count($long, '...') === 1, 'a trimmed share text does not say it was trimmed');
 
 echo "\nthe copy says what it is for\n";
-ok(stripos($modal, 'deciding whether to start') !== false,
-   'the modal never says who the testimonial is for, which is how you get "its fun"');
 /* The rule is about user-facing copy; comments and docblocks are
    exempt, and this file's own header carries one. Strip them first or
    the assertion fails on prose no player will ever read. */
 $modalCopy = preg_replace('~/\*.*?\*/~s', '', $modal);
 $modalCopy = preg_replace('~^\s*//.*$~m', '', $modalCopy);
+ok(stripos($modalCopy, 'deciding whether to join') !== false,
+   'the modal never says who the testimonial is for, which is how you get "its fun"');
+/* The brief carries the follow-up prompts that used to be separate
+   questions; without them somebody who stalls has nowhere to go. */
+ok(substr_count($modalCopy, '?') >= 4,
+   'the brief has lost its prompting questions, leaving one ask and a blank box');
+ok(stripos($modalCopy, 'the founder reads it') !== false,
+   'the modal no longer says who reads it before publication');
 ok(preg_match('~\x{2014}~u', $modalCopy) === 0, 'the modal copy contains an em dash');
 
 echo "\nthe pieces are wired up\n";

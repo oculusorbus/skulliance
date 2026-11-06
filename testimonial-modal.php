@@ -54,10 +54,10 @@ if ($tst_offer):
 		 * give a friend.
 		 */
 		?>
-		<p class="tst-brief">We are collecting a few honest words from players who stuck around,
-		   to show people who are deciding whether to start. What drew you in, what you keep
-		   coming back for, what a newcomer would not guess. The more specific it is, the more
-		   it helps the server grow.</p>
+		<p class="tst-brief">We are collecting a few honest words from active players, to show
+		   visitors who are deciding whether to join. What drew you in? What keeps you coming
+		   back? What's something that would attract a newcomer? The more specific it is, the
+		   more it helps our community grow.</p>
 
 		<textarea id="tst-body" maxlength="<?php echo (int) $tst_offer['max']; ?>"
 		          placeholder="In your own words..."></textarea>
@@ -75,8 +75,8 @@ if ($tst_offer):
 		 * changing their mind actually goes.
 		 */
 		?>
-		<p class="tst-fine">An owner reads it before anything is published, and you can withdraw
-		   it from your profile at any time. A Discord post cannot be unposted.</p>
+		<p class="tst-fine">The founder reads it before anything is published, and you can revise
+		   it or withdraw it from your profile at any time.</p>
 		<label class="tst-consent">
 			<input type="checkbox" id="tst-consent">
 			<span>Publish this with my username and avatar.</span>
@@ -99,7 +99,7 @@ if ($tst_offer):
 <div class="tst-overlay" id="tst-thanks" role="dialog" aria-modal="true">
 	<div class="tst-card tst-card-thanks">
 		<h2>Thank you</h2>
-		<p class="tst-brief">It goes to an owner to read. If you want to put it out now,
+		<p class="tst-brief">It goes to the founder to read. If you want to put it out now,
 		   the Skulliance account can pick it up from X.</p>
 		<a class="tst-x" id="tst-share" href="#" target="_blank" rel="noopener">Share it on X</a>
 		<button type="button" class="tst-skip" id="tst-done">Close</button>
