@@ -14,8 +14,33 @@
  * it checks both.
  */
 if (!function_exists('testimonial_offer')) require_once __DIR__ . '/testimonials-lib.php';
+require_once __DIR__ . '/lib/realm-preview.php';
 $tst_uid   = isset($_SESSION['userData']['user_id']) ? (int) $_SESSION['userData']['user_id'] : 0;
 $tst_offer = ($tst_uid > 0 && isset($conn) && is_object($conn)) ? testimonial_offer($conn, $tst_uid) : null;
+
+/*
+ * THE PREVIEW, FOR SOMEBODY WHO HAS TO READ THIS SCREEN ON PURPOSE.
+ *
+ * The modal is otherwise unreachable on demand: it offers after a raid
+ * win, three times at most, and never again once somebody has written
+ * one. Winning a raid to check a layout is not a review process.
+ *
+ * It writes NOTHING. No ask is counted, dismissing does not mute the
+ * account, and sending does not save -- otherwise one look would spend
+ * a real nudge and the second look would be of a modal that no longer
+ * offers.
+ */
+$tst_preview = testimonial_preview_requested($_GET, $_SESSION);
+if ($tst_preview && !$tst_offer) {
+	$tst_keys = array_keys(testimonial_prompts());
+	$tst_offer = array(
+		'prompt_key' => $tst_keys[0],
+		'prompt'     => testimonial_prompts()[$tst_keys[0]],
+		'last_call'  => isset($_GET['last']),
+		'min'        => (int) TESTIMONIAL_MIN,
+		'max'        => (int) TESTIMONIAL_MAX,
+	);
+}
 if ($tst_offer):
 ?>
 <div class="tst-overlay" id="tst-overlay" role="dialog" aria-modal="true" aria-labelledby="tst-title">
@@ -92,6 +117,7 @@ if ($tst_offer):
 	var offer   = <?php echo json_encode(array(
 		'prompt_key' => $tst_offer['prompt_key'],
 		'min'        => (int) $tst_offer['min'],
+		'preview'    => (bool) $tst_preview,
 	)); ?>;
 	var overlay = document.getElementById('tst-overlay');
 	var thanks  = document.getElementById('tst-thanks');
@@ -101,12 +127,22 @@ if ($tst_offer):
 	var sent    = false, opened = false;
 
 	function post(data) {
+		/* A preview is a look, not a session. Nothing it does reaches
+		   the database, including the "shown" count. */
+		if (offer.preview) return Promise.resolve({ success: true, share: '#', preview: true });
 		var p = new URLSearchParams(data);
 		return fetch('ajax/testimonial.php', {
 			method: 'POST', credentials: 'same-origin',
 			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 			body: p.toString()
 		}).then(function (r) { return r.json(); });
+	}
+
+	/* In preview it opens itself: there is no raid to finish. */
+	if (offer.preview) {
+		document.addEventListener('DOMContentLoaded', function () {
+			overlay.classList.add('on');
+		});
 	}
 
 	window.skTestimonialOffer = function () {

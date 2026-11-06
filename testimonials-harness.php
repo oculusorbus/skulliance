@@ -48,7 +48,17 @@ class FakeConn {
 		 * screen.
 		 */
 		if (!$this->tables && stripos($sql, 'testimonial') !== false) return false;
-		if (!empty($this->queue)) return new FakeRes(array_shift($this->queue));
+		if (!empty($this->queue)) {
+			/* A queued entry may be one row or a list of them. An assoc
+			   array is one row: handed straight to FakeRes it would be
+			   read as a list of FIELDS, and fetch_assoc() would return
+			   a single value where the caller expects a record. */
+			$next = array_shift($this->queue);
+			if (is_array($next) && $next !== array() && array_keys($next) !== range(0, count($next) - 1)) {
+				$next = array($next);
+			}
+			return new FakeRes($next);
+		}
 		return new FakeRes(array());
 	}
 	function real_escape_string($s) { return str_replace("'", "\\'", $s); }
@@ -293,6 +303,83 @@ ok(preg_match('~testimonial_current~', $off) === 1,
 $modal = file_get_contents(__DIR__ . '/testimonial-modal.php');
 ok(strpos($modal, 'This is the last time we will ask') !== false,
    'the modal never warns that a reminder is the last one');
+
+/*
+ * A REJECTION HAS TO GO SOMEWHERE.
+ *
+ * It used to go nowhere: the rejected row stayed current, so the modal
+ * -- which refuses anybody who already has one -- never asked again,
+ * and the profile said "not published" with no reason and no way to
+ * rewrite. The review note was stored and shown to nobody.
+ */
+$lib = $src;
+$panel = substr($lib, strpos($lib, 'function testimonial_self_panel('));
+$panel = substr($panel, 0, strpos($panel, "\n}\n"));
+/*
+ * RENDERED, NOT GREPPED. Searching the source for 'review_note' passes
+ * on `if (false) { echo $t['review_note']; }`, which is exactly the
+ * regression worth catching: the note was already being stored and
+ * shown to nobody. So the panel is actually run against a rejected row
+ * and the output is read.
+ */
+$pc = new FakeConn();
+$pc->queue[] = array('id' => 3, 'user_id' => 9, 'prompt_key' => 'back',
+	'body' => 'The faction chat is the reason I log in.', 'visibility' => 'named',
+	'status' => 'rejected', 'is_current' => 1, 'created_date' => '2026-01-01 00:00:00',
+	'review_note' => 'Could you say more about the raids?', 'discord_posted' => 0);
+ob_start(); testimonial_self_panel($pc, 9); $out = ob_get_clean();
+ok(strpos($out, 'Could you say more about the raids?') !== false,
+   'a rejected testimonial does not show the owner\'s note, so the player is told nothing');
+ok(strpos($out, 'not published') !== false, 'a rejected testimonial does not say it was not published');
+ok(strpos($out, 'rewrite it below') !== false, 'a rejection does not invite another go');
+ok(preg_match('~<textarea~', $out) === 1, 'the panel has no way to rewrite, so a rejection is a dead end');
+ok(strpos($out, 'The faction chat is the reason I log in.') !== false,
+   'the rewrite box does not start from what they already wrote');
+ok(strpos($out, 'value="save"') !== false, 'the rewrite does not post a save, so it cannot resubmit');
+ok(strpos($out, 'name="consent"') !== false, 'the rewrite skips the confirmation that the submit requires');
+
+/* An approved one says what editing costs, and offers no reason text. */
+$pa = new FakeConn();
+$pa->queue[] = array('id' => 4, 'user_id' => 9, 'prompt_key' => 'back',
+	'body' => 'Good people and a map worth looking at.', 'visibility' => 'named',
+	'status' => 'approved', 'is_current' => 1, 'created_date' => '2026-01-01 00:00:00',
+	'review_note' => '', 'discord_posted' => 1);
+ob_start(); testimonial_self_panel($pa, 9); $outA = ob_get_clean();
+ok(strpos($outA, 'live on the site') !== false, 'an approved testimonial does not say it is live');
+ok(strpos($outA, 'rewrite it below') === false, 'an approved testimonial is told it was rejected');
+ok(strpos($outA, 'come off the site until it is approved') !== false,
+   'editing a live testimonial does not warn that it comes down until re-approved');
+
+/* And nothing at all for somebody who never wrote one. */
+ob_start(); testimonial_self_panel(new FakeConn(), 9); $outN = ob_get_clean();
+ok(trim($outN) === '', 'the panel renders for a player with no testimonial');
+/* Rewriting is the same insert-and-retire as a first submission, so a
+   revision is re-reviewed rather than going live on an old approval. */
+$rev = new FakeConn();
+testimonial_save($rev, 9, 'back', str_repeat('b', 90), 'named', true);
+ok($rev->said('UPDATE testimonials SET is_current = 0') && $rev->said('INSERT INTO testimonials'),
+   'a revision does not retire the old row and insert a new one');
+ok($rev->said("'pending'"), 'a revision does not go back to pending');
+
+echo "\nthe preview is a look, not a session\n";
+require_once __DIR__ . '/lib/realm-preview.php';
+$owner  = array('userData' => array('user_id' => 1));
+$player = array('userData' => array('user_id' => 42));
+ok(testimonial_preview_requested(array('preview' => 'testimonial'), $owner) === true,
+   'the owner cannot open the testimonial preview');
+ok(testimonial_preview_requested(array('preview' => 'testimonial'), $player) === false,
+   'any player can open the testimonial preview');
+ok(testimonial_preview_requested(array('preview' => 'newcomer'), $owner) === false,
+   'the newcomer preview also opens the testimonial modal');
+ok(testimonial_preview_requested(array(), $owner) === false,
+   'the testimonial preview turns itself on without being asked');
+ok(testimonial_preview_requested(array('preview' => 'testimonial'), array()) === false,
+   'a request with no session opens the preview');
+$modalP = file_get_contents(__DIR__ . '/testimonial-modal.php');
+ok(strpos($modalP, 'if (offer.preview) return Promise.resolve') !== false,
+   'the preview posts to the endpoint, so looking at it spends a real nudge');
+ok(strpos($modalP, 'testimonial_preview_requested') !== false,
+   'the modal does not honour the preview at all');
 
 echo "\nthe modal is offered, not forced\n";
 ok(strpos($modal, 'window.skTestimonialOffer') !== false,

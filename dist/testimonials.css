@@ -113,3 +113,22 @@
 }
 .tst-consent input { margin-top: 2px; flex: 0 0 auto; }
 .tst-consent span { font-size: 13px; line-height: 1.5; color: rgba(214,232,245,0.88); }
+
+/* A rejection, and the way back from it. */
+.tst-reject {
+    margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; text-align: left;
+    background: rgba(255,196,97,0.10); border: 1px solid rgba(255,196,97,0.28);
+    color: rgba(240,224,200,0.92); font-size: 13px; line-height: 1.5;
+}
+.tst-reject b { color: #ffc461; font-weight: 600; }
+.tst-edit { display: flex; flex-direction: column; gap: 10px; margin: 0 0 16px; text-align: left; }
+.tst-edit textarea {
+    width: 100%; min-height: 110px; resize: vertical;
+    padding: 11px 12px; box-sizing: border-box;
+    border: 1px solid rgba(132,178,208,0.30); border-radius: 9px;
+    background: #0a1a29; color: #e8f2fa; font: inherit; font-size: 14px; line-height: 1.5;
+}
+.tst-edit textarea:focus { outline: none; border-color: #00c8a0; box-shadow: 0 0 0 3px rgba(0,200,160,0.18); }
+.tst-edit .tst-go, .tst-vis .tst-go { align-self: flex-start; }
+.tst-saved { font-size: 13px; color: #4fdcb8; margin-left: 10px; }
+.tst-mine blockquote { margin: 0 0 12px; font-size: 14px; line-height: 1.6; color: #e4eff8; }

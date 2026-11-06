@@ -444,25 +444,61 @@ function testimonial_wall($conn, $limit = 6, $heading = 'Why people stay') {
 }
 
 /**
- * The player's own piece, on their own profile: its state, and the one
- * control they may use without going back through review.
+ * Your own testimonial, on your own profile: what happened to it, and
+ * the two things you may do about it.
  *
- * Visibility is editable on an approved row because taking your name
- * off something you wrote must not wait on a queue. The TEXT is not:
- * editing it writes a new row at pending, which is what stops an
- * approval being swapped out for something else.
+ * REJECTION HAS TO SAY SOMETHING. Before this, a rejected piece sat
+ * here reading "not published" with no reason and no way forward,
+ * while the modal -- which refuses to ask anybody who already has a
+ * current row -- never offered again. The review note was written,
+ * stored, and shown to nobody. That is not a decision, it is a bin.
+ *
+ * So a rejection is an invitation to try again: the note is shown, and
+ * the text is editable. Rewriting writes a NEW row at pending and
+ * retires this one, which is the same rule that stops an approved
+ * piece being swapped, working in the player's favour for once.
+ *
+ * VISIBILITY IS THE OTHER CONTROL AND IT IS INSTANT. It changes no
+ * word of what was approved, and somebody taking their name off
+ * something must not wait in a queue to do it.
  */
 function testimonial_self_panel($conn, $user_id) {
 	$t = testimonial_current($conn, $user_id);
 	if (!$t) return;
 	$state = $t['status'];
-	$label = array('pending' => 'waiting to be read', 'approved' => 'live on the site',
+	$label = array('pending'  => 'waiting to be read',
+	               'approved' => 'live on the site',
 	               'rejected' => 'not published');
 	echo '<div class="tst-mine">';
 	echo '<h3>Your testimonial<span class="tst-state tst-state-' . htmlspecialchars($state) . '">'
 	   . htmlspecialchars(isset($label[$state]) ? $label[$state] : $state) . '</span></h3>';
-	echo '<blockquote>' . nl2br(htmlspecialchars($t['body'])) . '</blockquote>';
-	echo '<form method="post" action="ajax/testimonial.php" class="tst-vis" id="tst-vis-form">';
+
+	if ($state === 'rejected') {
+		echo '<p class="tst-reject">This one was not published.';
+		if (trim((string) $t['review_note']) !== '') {
+			echo ' <b>' . htmlspecialchars($t['review_note']) . '</b>';
+		}
+		echo ' You are welcome to rewrite it below and send it again.</p>';
+	}
+
+	/* THE TEXT, EDITABLE WHATEVER ITS STATE. Changing it sends it back
+	   to be read again, which the note under the box says plainly so
+	   nobody edits a live testimonial expecting it to stay live. */
+	echo '<form class="tst-edit" id="tst-edit-form">';
+	echo '<input type="hidden" name="action" value="save">';
+	echo '<input type="hidden" name="prompt_key" value="' . htmlspecialchars($t['prompt_key']) . '">';
+	echo '<textarea name="body" maxlength="' . (int) TESTIMONIAL_MAX . '">'
+	   . htmlspecialchars($t['body']) . '</textarea>';
+	echo '<label class="tst-consent"><input type="checkbox" name="consent" value="1">'
+	   . '<span>Publish this with my username and avatar.</span></label>';
+	echo '<p class="tst-fine">Changing the words sends it back to be read again'
+	   . ($state === 'approved' ? ', so it will come off the site until it is approved' : '')
+	   . '. Your previous versions are kept.</p>';
+	echo '<button type="submit" class="tst-go">Send the new version</button>';
+	echo '<span class="tst-saved" id="tst-edit-said" hidden></span>';
+	echo '</form>';
+
+	echo '<form class="tst-vis" id="tst-vis-form">';
 	echo '<input type="hidden" name="action" value="visibility">';
 	foreach (array('named'   => 'Published, with my username and avatar',
 	               'private' => 'Withdraw it from the site') as $v => $text) {
@@ -472,14 +508,21 @@ function testimonial_self_panel($conn, $user_id) {
 	echo '<button type="submit" class="tst-go">Save</button>';
 	echo '<span class="tst-saved" id="tst-saved" hidden>Saved.</span>';
 	echo '</form>';
-	/* The endpoint answers JSON, so the form is posted by fetch. Left as
-	   a plain submit it navigates the player to a page of raw JSON. */
-	echo '<script>(function(){var f=document.getElementById("tst-vis-form");if(!f)return;'
+
+	/* Both forms post to an endpoint that answers JSON, so neither is
+	   a plain submit: left as one the player lands on a page of raw
+	   JSON with no way back. */
+	echo '<script>(function(){'
+	   . 'function wire(id,said,done){var f=document.getElementById(id);if(!f)return;'
 	   . 'f.addEventListener("submit",function(e){e.preventDefault();'
 	   . 'var d=new URLSearchParams(new FormData(f));'
 	   . 'fetch("ajax/testimonial.php",{method:"POST",credentials:"same-origin",'
 	   . 'headers:{"Content-Type":"application/x-www-form-urlencoded"},body:d.toString()})'
-	   . '.then(function(r){return r.json();}).then(function(j){'
-	   . 'var s=document.getElementById("tst-saved");if(s){s.hidden=!j||!j.success;}});});})();</script>';
+	   . '.then(function(r){return r.json();}).then(function(j){var s=document.getElementById(said);'
+	   . 'if(!s)return;s.hidden=false;s.textContent=(j&&j.success)?done:((j&&j.error)||"That did not save.");'
+	   . 'if(j&&j.success&&id==="tst-edit-form")setTimeout(function(){location.reload();},900);});});}'
+	   . 'wire("tst-vis-form","tst-saved","Saved.");'
+	   . 'wire("tst-edit-form","tst-edit-said","Sent to be read again.");'
+	   . '})();</script>';
 	echo '</div>';
 }

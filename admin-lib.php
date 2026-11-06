@@ -910,6 +910,10 @@ function admin_tabs() {
 		/* Players in their own words, waiting to be read. Nothing they
 		   write reaches the site or Discord until it is approved here. */
 		'testimonials' => array('admin-testimonials.php', 'Testimonials'),
+		/* The ask itself, forced open. Not an admin page -- it is the
+		   modal a player meets, which is otherwise reachable only by
+		   winning a raid at the right moment. Writes nothing. */
+		'testimonial-ask' => array('realms.php?preview=testimonial', 'Testimonial Ask'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }

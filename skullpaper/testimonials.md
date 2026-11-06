@@ -56,11 +56,23 @@ the site on the next page load, and you do not need anybody's permission.
 the testimonials channel, that message stays, even if you later set yours to
 private. The site will stop showing it; Discord will not.
 
+## If it is not published
+
+Sometimes one comes back. You will see it on your profile, marked as not
+published, along with whatever note the owner left: usually a nudge toward
+something more specific.
+
+**That is an invitation, not a verdict.** The text is sitting in a box on the
+same page. Rewrite it, send it again, and it goes back into the queue.
+
 ## Changing what it says
 
-Editing the words writes a new testimonial and sends it back to be read again.
-That is deliberate: an approval that could be edited afterwards would not be an
-approval of anything.
+You can rewrite yours at any time from your profile, whatever state it is in.
+
+Editing the words writes a new testimonial and sends it back to be read again,
+which means a published one comes off the site until it is approved. That is
+deliberate: an approval that could be edited afterwards would not be an
+approval of anything, and the box says so before you send.
 
 Your previous versions are kept. Nothing you have written is deleted.
 
