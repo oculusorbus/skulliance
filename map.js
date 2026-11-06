@@ -325,12 +325,170 @@ const NS = 'http://www.w3.org/2000/svg';
  * ours, not a number derived from the video, and that is the right
  * authority for how busy the page should feel.
  */
+/* What renderMap() paints under the shelf bands: the wrapper's own
+   background colour and the whole-sheet sea rect over it. The bed has
+   to start from the same two or the canvas would not match the SVG it
+   covers. */
+const SEA_BED = { page: '#07111d', sheet: 'rgba(10,32,52,0.55)',
+                  mottle: 58, mottleAmp: 3 };
+
 const WATER_TEMPO = 0.5;
 const WATER = {
     foamMid: 7.4, foamSwing: 3.7,                /* his 2.2 +/- 1.1, scaled */
     foamHz: 2.5 * WATER_TEMPO,                   /* his sin(TIME * 2.5) */
     waveLo: 3, waveHi: 22, spacing: 14, width: 3,
     speed: 10 * WATER_TEMPO,
+    /*
+     * THE OPEN SEA: A WAVE FIELD, DRIVEN BUT NEVER STRUCK.
+     *
+     * The owner found two canvas water demos and both are the classic
+     * two-buffer height field. Built here, it gave the best result on
+     * the page -- but only after several ripples had spread and
+     * interfered: "the dynamic that occurs after it settles into a
+     * nice undulation feels the most natural, but the initial circle
+     * animations were spreading out and blending together to achieve
+     * that, so it needs a catalyst, and the catalyst is what is
+     * jarring." Exactly right. A circle appearing in open water means
+     * something the size of a comet just hit it.
+     *
+     * So the simulation stays and the IMPULSES GO. Instead of striking
+     * the water in one place, every wet cell is pushed every frame by a
+     * tiny amount read from a slow scrolling field -- thousands of
+     * times too small to see as an event, and never the same across
+     * two neighbouring cells. The wave equation does the rest: it
+     * spreads that forcing, interferes it with itself, and bounces it
+     * off the coastlines, which is the settled state the owner liked,
+     * arrived at without anything visibly causing it.
+     *
+     * It is also deterministic. The drop version wanted Math.random(),
+     * which this map has banned since faction colours repainted on
+     * every load.
+     *
+     * THE FORCING FIELD IS BUILT FROM WHOLE HARMONICS of its grid, so
+     * that reading it at a wrapped offset has no seam; the swell
+     * arrives from a direction and keeps arriving.
+     *
+     * swellFade keeps the drawing out of the shallows: the surf owns
+     * that band, and two moving things in the same pixels is mush.
+     */
+    /*
+     * AND THE WEATHER COMES FROM OVER THE HORIZON.
+     *
+     * The impulse is what made a comet of it: a circle appearing in
+     * open water, with a rim, that the eye tracks back to a point. The
+     * owner's fix is better than removing it -- "if that type of
+     * catalyst happens outside of the container, the user wouldn't see
+     * the comet, only the results of the impact". Which is also how a
+     * real swell works: it is made by weather somewhere else and
+     * arrives already spread out.
+     *
+     * So the simulation grid is BIGGER THAN THE MAP. simPad cells of
+     * open ocean surround the visible sheet on every side, the strikes
+     * all land out there, and only the wavefronts they send inward are
+     * ever drawn. Nothing visible starts anything.
+     *
+     * DAMPING HAD TO RISE FOR IT TO WORK. At 0.982 a wave fades over
+     * about 55 cells and would die in the margin without ever reaching
+     * the map. It travels roughly a cell a step, so the damping sets
+     * how far offshore the weather can be, and these two numbers have
+     * to be chosen together.
+     *
+     * The strikes are deterministic -- mwRng seeded off the world, not
+     * Math.random, which this map has banned since faction colours
+     * repainted on every load.
+     */
+    simDiv: 2, simPad: 44, damping: 0.9945, simHz: 20,
+    /*
+     * AND THE WEATHER IS FRENZIED, NOT PUNCTUAL.
+     *
+     * One strike every half second out in the margin still arrives as
+     * one wavefront: a clean arc crossing the coast, which is the
+     * comet again with a longer fuse. "The activity outside the
+     * container should be so random and frenzied that I don't see
+     * individual circles spreading out into the map."
+     *
+     * So it is a storm rather than a drumbeat: several small strikes
+     * every single frame, scattered right round the ring, each far too
+     * weak to be followed. What crosses into the map is their sum,
+     * which has no shape to recognise.
+     */
+    /* Large and weak, not small and sharp: a small source makes a
+       short wavelength, and a sea full of short wavelengths is static.
+       Measured over radius 4 / 10 / 20 / 30, the picture gets steadily
+       smoother as the sources get broader. */
+    /*
+     * AND THE STORMS ARE NEARLY OFF, BECAUSE THE RIM WAS THE PROBLEM.
+     *
+     * Every strike lands just outside the sheet, so the rim of the map
+     * sees the weather at close range -- short, sharp, newly made
+     * chop -- while only the long wavelengths survive the crossing to
+     * the middle. That is a gradient in CHARACTER, not just strength,
+     * and the owner picked it out exactly: "the activity on the
+     * outskirts is way too busy, very staticy and distracting... the
+     * center water actually looks more natural than the outer water".
+     *
+     * The centre looks better because out there the sea is driven
+     * almost entirely by the scrolling forcing field, which is smooth,
+     * even, and the same everywhere. So that becomes the main driver
+     * and the storms drop to an occasional broad nudge -- big enough
+     * to keep the field from settling into the forcing's own rhythm,
+     * too soft and too wide to read as weather arriving.
+     */
+    stormsPerFrame: 1, stormForce: 0.09, stormRadius: 18,
+    /*
+     * REFRACTION, NOT AN OVERLAY. THIS IS THE ONE THAT WORKS.
+     *
+     * Everything before this painted a translucent colour ON TOP of the
+     * sea -- pale on a crest, dark in a trough -- and every single
+     * complaint the owner made about it traces to that one decision.
+     * An overlay has no good setting. Turn it down and the sea is
+     * flat; turn it up and you get "nearly zebra stripes", "large
+     * swaths of undulating light high contrast color", and under the
+     * pointer "a long swath of color, like a ghost flying over the
+     * world, or fog". Adding a stipple to break the swaths up only
+     * swapped one complaint for another: "textured instead of water
+     * like".
+     *
+     * His own reference never adds colour at all. Almeros's canvas
+     * water takes the image underneath and SAMPLES IT AT AN OFFSET
+     * read off the slope of the wave field, which is what a water
+     * surface actually does to what is under it. Every pixel on screen
+     * is still a sea pixel; it has just moved a little. So it cannot
+     * blow out, cannot band, and cannot fog, because there is no
+     * second colour anywhere in it to do any of those things.
+     *
+     * What it needs is something worth bending, and this map already
+     * has it: the shelf bands. Those contours ring every coast and
+     * island, and seen through moving water they ripple like a seabed
+     * through a swell. The bed below is drawn from seaLayers(), the
+     * same function the SVG draws, so the canvas is an exact copy of
+     * the sea it covers and the only difference a reader can see is
+     * the movement.
+     *
+     * refract is the offset in canvas pixels per unit of slope;
+     * lightGain is Almeros's shading term, the small lightening on a
+     * face tilted towards the light, added to the sampled pixel rather
+     * than painted over it.
+     */
+    /*
+     * TUNED AT EQUILIBRIUM, NOT ON THE WAY UP.
+     *
+     * The sea takes the better part of a minute to settle: forced
+     * continuously and damped at 0.9945, its amplitude climbs and then
+     * levels off. Tuned by eye a few seconds after a reload, it is
+     * being judged while still quiet, and it goes on getting busier
+     * after the judging stops -- which is what happened here, twice.
+     * Measured, the mean rose from 1.79 through 1.04 and settled at
+     * 1.02, half again as lively as the moment it was signed off.
+     *
+     * So this number is set against the SETTLED field. Anything
+     * re-tuned here has to be read after thirty seconds or more.
+     */
+    forceGain: 0.008, refract: 22, lightGain: 15,
+    swellFade: 2.2,
+    swellDrift: [[15.0, 5.4], [-6.6, -9.0], [3.3, -4.2]],
+    /* The wake. Wide and shallow on purpose: see waterWake(). */
+    wakeRadius: 14, wakeForce: 0.22, wakeSpeedRef: 320,
     /*
      * SOFT EDGES, WHICH HIS SHADER DOES NOT HAVE, AND WHY.
      *
@@ -428,12 +586,274 @@ function surfBox(vx, vy, vw, fitW, svgW, svgH) {
     };
 }
 
+/**
+ * The baked swell: one value per pixel, built from whole harmonics of
+ * the canvas so that sampling it at a wrapped offset has no seam.
+ *
+ * WHOLE HARMONICS IS THE WHOLE TRICK. The field is scrolled rather
+ * than recomputed, which means it is read at (x + ox) mod W. If the
+ * wave numbers were not integer multiples of the canvas, that wrap
+ * would put a visible straight seam down the open sea every time the
+ * offset passed zero -- and it is open sea, so there is nothing to
+ * hide it behind.
+ *
+ * Pulled out so the harness can check the seam: the first column and
+ * the last must meet, and so must the first row and the last.
+ */
+function swellField(w, h) {
+    const f = new Float32Array(w * h);
+    for (let y = 0; y < h; y++) {
+        const v = y / h;
+        for (let x = 0; x < w; x++) {
+            const u = x / w;
+            f[y * w + x] =
+                  Math.sin(2 * Math.PI * (2 * u + 1 * v)) * 0.55
+                + Math.sin(2 * Math.PI * (3 * u - 2 * v)) * 0.28
+                + Math.sin(2 * Math.PI * (5 * u + 4 * v)) * 0.17;
+        }
+    }
+    return f;
+}
+
+/**
+ * One step of the height field, written into `nxt`.
+ *
+ * The classic two-buffer wave equation both of the owner's references
+ * use: each cell becomes the average of its four neighbours minus its
+ * own previous value, then damped. `wet` lists the cells that are
+ * water AND off the outer ring, so land is never written and never
+ * stepped -- which is what makes a coastline a wall that swell
+ * reflects off instead of a hole it drains into. Those reflections
+ * are most of why this reads as a sea and not a screensaver.
+ *
+ * DAMPING MUST BE BELOW 1. The equation has no friction of its own,
+ * and this field is forced continuously, so the only thing standing
+ * between it and a basin that rings louder every second is this
+ * multiply.
+ *
+ * Out here at module scope so the harness can run it on a pond small
+ * enough to reason about: energy must fall, land must stay at zero,
+ * and a disturbance must spread the same way in all four directions.
+ */
+function waterStep(cur, nxt, wet, w, damping) {
+    for (let n = 0; n < wet.length; n++) {
+        const k = wet[n];
+        nxt[k] = ((cur[k - 1] + cur[k + 1] + cur[k - w] + cur[k + w]) * 0.5 - nxt[k]) * damping;
+    }
+    return nxt;
+}
+
+/**
+ * A soft push into the height field, under the pointer.
+ *
+ * THE SHAPE IS THE WHOLE DIFFERENCE between a wake and a comet. A
+ * hard-edged disc of constant force reads as something ARRIVING: an
+ * event, with a rim, that the eye tracks back to a point. The owner's
+ * verdict on those was exact -- "a massive comet would have to hit the
+ * ocean to create that effect". The same energy spread with a smooth
+ * falloff, wide and shallow, reads as something PASSING: "more like a
+ * motorboat that disrupts the ocean as the user moves the mouse, and
+ * that makes the user feel in control."
+ *
+ * So the profile is (1 - (r/R)^2)^2, with no edge anywhere in it, and
+ * the amplitude rides on how fast the pointer is travelling, because a
+ * boat sitting still does not leave a wake either.
+ *
+ * IT REFUSES LAND, AND THAT IS NOT COSMETIC. A land cell is never
+ * stepped and never damped, so a value written to one stays for the
+ * life of the page, and waterStep reads its neighbours: it becomes a
+ * permanent source quietly pumping the sea. The paint loop skips land,
+ * so it is invisible in a screenshot and only shows up minutes later
+ * as a bright patch that will not fade. The outer ring is refused for
+ * the same reason.
+ */
+function waterWake(cur, land, w, h, cx, cy, radius, force) {
+    const r = Math.max(1, radius | 0), r2 = r * r;
+    let hit = 0;
+    for (let j = -r; j <= r; j++) {
+        const y = cy + j;
+        if (y < 1 || y >= h - 1) continue;
+        for (let i = -r; i <= r; i++) {
+            const x = cx + i;
+            if (x < 1 || x >= w - 1) continue;
+            const q = (i * i + j * j) / r2;
+            if (q >= 1) continue;
+            const k = y * w + x;
+            if (land[k]) continue;
+            const soft = (1 - q) * (1 - q);
+            cur[k] += force * soft;
+            hit++;
+        }
+    }
+    return hit;
+}
+
+/**
+ * The sea, as pixels, for the water to bend.
+ *
+ * An exact copy of what the SVG paints under the canvas: the page's
+ * own background, the whole-sheet sea rect over it, then the shelf
+ * bands from seaLayers() -- the same function the renderer draws from,
+ * so the two cannot drift apart. The land rings are skipped; the water
+ * never samples them and the canvas leaves those pixels transparent so
+ * the real land, its texture and its avatars show through.
+ *
+ * Built once. It is the seabed: it does not move, the water over it
+ * does.
+ */
+function seaBed(world, w, h, scale) {
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    const g = cv.getContext('2d', { willReadFrequently: true });
+    if (!g) return null;
+    g.fillStyle = SEA_BED.page;
+    g.fillRect(0, 0, w, h);
+    g.fillStyle = SEA_BED.sheet;
+    g.fillRect(0, 0, w, h);
+    for (const L of seaLayers(world)) {
+        if (L.band < 0) continue;                  /* land is not seabed */
+        g.fillStyle = L.fill;
+        g.beginPath();
+        const rings = L.rings || [L.ring];
+        for (const ring of rings) {
+            for (let i = 0; i < ring.length; i++) {
+                const x = ring[i].x * scale, y = ring[i].y * scale;
+                if (i) g.lineTo(x, y); else g.moveTo(x, y);
+            }
+            g.closePath();
+        }
+        g.fill('nonzero');
+    }
+    /*
+     * AND A SEABED OUT IN THE DEEP, OR THE OPEN WATER CANNOT MOVE.
+     *
+     * Refraction can only show what is already there: offset a flat
+     * colour by a few pixels and you get the same flat colour back.
+     * Measured on the finished canvas, the shelf bands rippled on 11
+     * to 13 per cent of their pixels each frame while the open middle
+     * -- one flat fill, nothing in it -- moved 0.2 per cent. The sea
+     * was alive only where it happened to have contours.
+     *
+     * So the deep gets a seabed too: very large, very faint mottling,
+     * a handful of levels either side of the fill, far too soft to
+     * read as a pattern when the water is still. It is not decoration.
+     * It is the thing the swell is seen THROUGH, and the whole visible
+     * amplitude of the open ocean is set by how much of it there is --
+     * which is also why this effect cannot blow out the way the
+     * overlay did. The contrast has a ceiling, and the ceiling is the
+     * bed's own.
+     */
+    const img = g.getImageData(0, 0, w, h);
+    const px = img.data;
+    const rnd = (typeof mwRng === 'function')
+        ? mwRng(((world && world.seed) || 1) ^ 0xbed5ea) : null;
+    if (rnd) {
+        const sc = SEA_BED.mottle, amp = SEA_BED.mottleAmp;
+        const gw = Math.ceil(w / sc) + 2, gh = Math.ceil(h / sc) + 2;
+        const n1 = new Float32Array(gw * gh);
+        for (let i = 0; i < n1.length; i++) n1[i] = rnd() * 2 - 1;
+        /* a second octave at half the size, a third of the weight */
+        const sc2 = sc / 2.3;
+        const gw2 = Math.ceil(w / sc2) + 2, gh2 = Math.ceil(h / sc2) + 2;
+        const n2 = new Float32Array(gw2 * gh2);
+        for (let i = 0; i < n2.length; i++) n2[i] = rnd() * 2 - 1;
+        const samp = (n, nw, scale, x, y) => {
+            const fx = x / scale, ix = fx | 0, tx = fx - ix;
+            const fy = y / scale, iy = fy | 0, ty = fy - iy;
+            const sx = tx * tx * (3 - 2 * tx), sy = ty * ty * (3 - 2 * ty);
+            const a = n[iy * nw + ix], b = n[iy * nw + ix + 1];
+            const c = n[(iy + 1) * nw + ix], d = n[(iy + 1) * nw + ix + 1];
+            return (a + (b - a) * sx) * (1 - sy) + (c + (d - c) * sx) * sy;
+        };
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                const v = (samp(n1, gw, sc, x, y) + samp(n2, gw2, sc2, x, y) * 0.34) * amp;
+                const i = (y * w + x) * 4;
+                px[i] = Math.max(0, Math.min(255, px[i] + v));
+                px[i + 1] = Math.max(0, Math.min(255, px[i + 1] + v));
+                px[i + 2] = Math.max(0, Math.min(255, px[i + 2] + v * 1.25));
+            }
+        }
+        g.putImageData(img, 0, 0);
+    }
+    return new Uint32Array(img.data.buffer);
+}
+
+/**
+ * One pixel of moving water: read the bed at an offset and shade it.
+ *
+ * `gx, gy` is the slope of the height field at this pixel's cell, `d`
+ * the displacement per unit slope, `sh` the shading to add. The bed is
+ * read BETWEEN pixels -- the offset is a float and the four
+ * neighbours are blended -- which is the whole point of pulling this
+ * out where it can be tested.
+ *
+ * Truncating that offset to a whole pixel is a bug that looks like a
+ * rounding detail and is not: below one pixel of displacement the
+ * sample index stops changing, so gentle water does not move a little,
+ * it stops dead. Measured when it was wrong, 9 per cent of pixels over
+ * the shelf bands moved each frame against 0.2 per cent out in the
+ * deep, with a line between them.
+ *
+ * Writes r, g, b into `rgb` rather than returning a triple: this runs
+ * a few hundred thousand times a second and an array per pixel is a
+ * few hundred thousand allocations.
+ */
+function waterPixel(bedR, bedG, bedB, w, h, x, y, gx, gy, d, sh, rgb) {
+    let fx = x + gx * d, fy = y + gy * d;
+    if (fx < 0) fx = 0; else if (fx > w - 1.001) fx = w - 1.001;
+    if (fy < 0) fy = 0; else if (fy > h - 1.001) fy = h - 1.001;
+    const ix = fx | 0, iy = fy | 0;
+    const tx = fx - ix, ty = fy - iy;
+    const p0 = iy * w + ix, p1 = p0 + w;
+    const w00 = (1 - tx) * (1 - ty), w10 = tx * (1 - ty);
+    const w01 = (1 - tx) * ty, w11 = tx * ty;
+    let r = bedR[p0] * w00 + bedR[p0 + 1] * w10 + bedR[p1] * w01 + bedR[p1 + 1] * w11 + sh;
+    let g = bedG[p0] * w00 + bedG[p0 + 1] * w10 + bedG[p1] * w01 + bedG[p1 + 1] * w11 + sh;
+    let b = bedB[p0] * w00 + bedB[p0 + 1] * w10 + bedB[p1] * w01 + bedB[p1 + 1] * w11 + sh;
+    rgb[0] = r < 0 ? 0 : (r > 255 ? 255 : r);
+    rgb[1] = g < 0 ? 0 : (g > 255 ? 255 : g);
+    rgb[2] = b < 0 ? 0 : (b > 255 ? 255 : b);
+}
+
+/**
+ * Where offshore weather strikes: a cell in the margin, never on the map.
+ *
+ * THE WHOLE POINT IS THAT IT IS NEVER VISIBLE. A strike inside the
+ * sheet is a circle appearing in open water with a rim on it, which
+ * the eye tracks straight back to a point: "a massive comet would have
+ * to hit the ocean to create that effect". Out in the margin the same
+ * strike is unseen and only its wavefront ever arrives.
+ *
+ * So this returns a cell on the ring of ocean OUTSIDE the visible
+ * rectangle, and the harness checks that it cannot do otherwise --
+ * that is the one property of this feature that a screenshot cannot
+ * verify, because a strike that lands one pixel inside the frame looks
+ * fine in a still and awful in motion.
+ *
+ * `rnd` is the world's own seeded generator, not Math.random: this map
+ * has banned that since faction colours repainted on every load.
+ */
+function waterStormCell(rnd, w, h, pad, vw, vh) {
+    if (pad < 3) return null;
+    const pick = (n) => 1 + ((rnd() * Math.max(1, n - 2)) | 0);
+    const side = (rnd() * 4) | 0;
+    if (side === 0) return [pick(pad), pick(h)];                    /* west */
+    if (side === 1) return [w - 1 - pick(pad), pick(h)];            /* east */
+    if (side === 2) return [pick(w), pick(pad)];                    /* north */
+    return [pick(w), h - 1 - pick(pad)];                            /* south */
+}
+
 let waterRAF = 0;
+/* The pointer listener lives on #container, which survives a redraw,
+   so it has to be taken off by hand or every rebuild adds another. */
+let waterCleanup = null;
 
 /* map.js rebuilds the whole map on resize and on every filter change; an
    orphaned loop would keep painting a canvas that has left the document. */
 function stopWater() {
     if (waterRAF) { cancelAnimationFrame(waterRAF); waterRAF = 0; }
+    if (waterCleanup) { waterCleanup(); waterCleanup = null; }
 }
 
 /**
@@ -501,9 +921,88 @@ function waterLayer(container, world, svgW, svgH, box) {
     if (!ctx) return null;
     container.appendChild(cv);
 
+    /*
+     * THE SIMULATION GRID: half the surf canvas again, a quarter of the
+     * screen. Almeros's own notes on this algorithm say JavaScript is
+     * too slow for it and to shrink the canvas and drop the resolution,
+     * which is exactly what makes it affordable. A swell is low
+     * frequency, so it loses nothing by being coarse, and the browser's
+     * bilinear upscale does the smoothing for free.
+     */
+    const SD = Math.max(1, WATER.simDiv | 0);
+    const PAD = Math.max(0, WATER.simPad | 0);
+    /* The visible sheet in sim cells, and then the ocean around it. */
+    const VW = Math.max(3, Math.ceil(W / SD)), VH = Math.max(3, Math.ceil(H / SD));
+    const SW = VW + 2 * PAD, SH = VH + 2 * PAD;
+    const simLand = new Uint8Array(SW * SH);
+    for (let y = 0; y < VH; y++) {
+        for (let x = 0; x < VW; x++) {
+            const px = Math.min(W - 1, x * SD), py = Math.min(H - 1, y * SD);
+            if (dist[py * W + px] <= 0) simLand[(y + PAD) * SW + (x + PAD)] = 1;
+        }
+    }
+    /* Water, and off the outer ring: anything outside this list is
+       never stepped, so anything left in one would sit there forever
+       feeding its neighbours. */
+    const wetL = [], wfx = [], wfy = [];
+    for (let y = 1; y < SH - 1; y++) {
+        for (let x = 1; x < SW - 1; x++) {
+            if (simLand[y * SW + x]) continue;
+            wetL.push(y * SW + x); wfx.push(x); wfy.push(y);
+        }
+    }
+    if (!wetL.length) return null;
+    const wetIdx = new Int32Array(wetL);
+    const fX = new Int16Array(wfx), fY = new Int16Array(wfy);
+    const force = swellField(SW, SH);
+    let cur = new Float32Array(SW * SH), prev = new Float32Array(SW * SH);
+    const lum = new Float32Array(SW * SH);
+
+    /*
+     * THE OPEN SEA, as pixels. Position and depth weight worked out
+     * once: recovering x and y from a flat index inside the frame loop
+     * is a divide and a modulo per pixel, a few hundred thousand times
+     * a second, for two numbers that never change.
+     */
+    const surfEnd = reach * 2;
+    const sis = [], sfs = [], sks = [], sxs = [], sys = [];
+    for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+            const i = y * W + x;
+            if (dist[i] <= 0) continue;                    /* land stays untouched */
+            /*
+             * EVERY water pixel is drawn now, not just the ones past
+             * the surf. The canvas is opaque over the sea, so a pixel
+             * it skipped would be a hole. The weight still fades to
+             * nothing at the beach -- the surf owns that band, and
+             * where the weight is zero the pixel is simply the bed,
+             * which is exactly what the SVG underneath already shows.
+             */
+            sis.push(i); sxs.push(x); sys.push(y);
+            sfs.push(smoothEdge(surfEnd, surfEnd * WATER.swellFade, dist[i] * 2));
+            sks.push((Math.min(VH - 1, (y / SD) | 0) + PAD) * SW
+                   + (Math.min(VW - 1, (x / SD) | 0) + PAD));
+        }
+    }
+    const swI = new Int32Array(sis), swF = new Float32Array(sfs), swK = new Int32Array(sks);
+    const swX = new Int16Array(sxs), swY = new Int16Array(sys);
+
+    const little = new Uint8Array(new Uint32Array([0x11223344]).buffer)[0] === 0x44;
+    const bed = seaBed(world, W, H, SCALE);
+    if (!bed) return null;
+    /* Split into planes once. The sampler reads four neighbours per
+       pixel and unpacking a word four times costs more than three
+       plane reads do. */
+    const bedR = new Uint8Array(W * H), bedG = new Uint8Array(W * H), bedB = new Uint8Array(W * H);
+    for (let i = 0; i < bed.length; i++) {
+        const c = bed[i];
+        if (little) { bedR[i] = c & 255; bedG[i] = (c >> 8) & 255; bedB[i] = (c >> 16) & 255; }
+        else { bedR[i] = (c >>> 24) & 255; bedG[i] = (c >> 16) & 255; bedB[i] = (c >> 8) & 255; }
+    }
+
+    const rgb = new Uint8Array(3);   /* scratch for waterPixel */
     const frame = ctx.createImageData(W, H);
     const out = new Uint32Array(frame.data.buffer);
-    const little = new Uint8Array(new Uint32Array([0x11223344]).buffer)[0] === 0x44;
     const F = WATER.foam, V = WATER.wave;
 
     /*
@@ -514,8 +1013,77 @@ function waterLayer(container, world, svgW, svgH, box) {
      * hoisted out: a Math.sin per pixel would be thirty thousand of
      * them a frame for one number.
      */
+    const DR = WATER.swellDrift;
+
+    /*
+     * PUSH, THEN LET IT SPREAD.
+     *
+     * Three scrolled reads of the forcing field, summed and scaled
+     * right down, added to every wet cell. No cell gets enough in one
+     * frame to be seen arriving; the wave equation accumulates it,
+     * carries it, and reflects it off the coasts.
+     */
+    const driveAndStep = (t, damping) => {
+        let ax = ((t * DR[0][0]) | 0) % SW, ay = ((t * DR[0][1]) | 0) % SH;
+        let bx = ((t * DR[1][0]) | 0) % SW, by = ((t * DR[1][1]) | 0) % SH;
+        let cx = ((t * DR[2][0]) | 0) % SW, cy = ((t * DR[2][1]) | 0) % SH;
+        if (ax < 0) ax += SW; if (ay < 0) ay += SH;
+        if (bx < 0) bx += SW; if (by < 0) by += SH;
+        if (cx < 0) cx += SW; if (cy < 0) cy += SH;
+        /* Per second, not per step: the drive is quoted at 60Hz like
+           the damping, so changing simHz slows the sea down without
+           also starving it. */
+        const g = WATER.forceGain * (60 / SIM_HZ);
+        for (let n = 0; n < wetIdx.length; n++) {
+            const x = fX[n], y = fY[n];
+            let xa = x + ax; if (xa >= SW) xa -= SW;
+            let ya = y + ay; if (ya >= SH) ya -= SH;
+            let xb = x + bx; if (xb >= SW) xb -= SW;
+            let yb = y + by; if (yb >= SH) yb -= SH;
+            let xc = x + cx; if (xc >= SW) xc -= SW;
+            let yc = y + cy; if (yc >= SH) yc -= SH;
+            cur[wetIdx[n]] +=
+                (force[ya * SW + xa] + force[yb * SW + xb] + force[yc * SW + xc]) * g;
+        }
+        waterStep(cur, prev, wetIdx, SW, damping);
+        const t2 = cur; cur = prev; prev = t2;
+    };
+
     const paint = (t) => {
         const edge = foamEdgeAt(t), shift = t * WATER.speed;
+        const RF = WATER.refract, LG = WATER.lightGain;
+
+        /*
+         * THE SEA, BENT. For each water pixel: read the slope of the
+         * field at its cell, step that far across the bed, and take
+         * the colour that is there. Nothing is mixed in and nothing is
+         * laid over; the pixel is a sea pixel that has moved.
+         *
+         * The sample is clamped to the sheet and rejected if it lands
+         * on land -- a crest near a coast would otherwise drag the
+         * shoreline colour out into the water, which reads as the land
+         * smearing rather than the water moving.
+         *
+         * Then Almeros's shading: a face tilted towards the light is
+         * lifted a few levels, away from it dropped. Added to the
+         * sampled colour, so the brightest water on the map is still
+         * the bed's own brightest colour plus a little.
+         */
+        for (let n = 0; n < swI.length; n++) {
+            const i = swI[n], k = swK[n], wgt = swF[n];
+            const d = RF * wgt;
+            const gx = cur[k - 1] - cur[k + 1];
+            const gy = cur[k - SW] - cur[k + SW];
+            /* waterPixel reads the bed between pixels and adds the
+               shading; no land test, because seaBed() never draws the
+               land rings and there is nothing to smear out of a coast. */
+            waterPixel(bedR, bedG, bedB, W, H, swX[n], swY[n], gx, gy, d,
+                       gy * LG * wgt, rgb);
+            out[i] = little
+                ? ((255 << 24) | (rgb[2] << 16) | (rgb[1] << 8) | rgb[0]) >>> 0
+                : ((rgb[0] << 24) | (rgb[1] << 16) | (rgb[2] << 8) | 255) >>> 0;
+        }
+
         for (let k = 0; k < idx.length; k++) {
             const i = idx[k], d = dist[i] * 2;
             const fa = surfFoam(d, edge) * F[3];
@@ -523,24 +1091,136 @@ function waterLayer(container, world, svgW, svgH, box) {
             /* foam over wave, both over nothing */
             const under = wa * (1 - fa);
             const a = fa + under;
-            if (a < 0.004) { out[i] = 0; continue; }
-            const r = (F[0] * fa + V[0] * under) / a;
-            const g = (F[1] * fa + V[1] * under) / a;
-            const b = (F[2] * fa + V[2] * under) / a;
-            const al = a > 1 ? 255 : (a * 255) | 0;
+            if (a < 0.004) continue;          /* leave whatever the swell put there */
+            let r = (F[0] * fa + V[0] * under) / a;
+            let g = (F[1] * fa + V[1] * under) / a;
+            let b = (F[2] * fa + V[2] * under) / a;
+            /*
+             * OVER THE SEA, NOT OVER NOTHING. The sea pixels are opaque
+             * now -- the canvas IS the water -- so the surf has to be
+             * composited onto what the pass above wrote. Left as a
+             * translucent write it would punch the foam's own alpha
+             * into the water and show the page through the breakers.
+             */
+            const u = out[i], k2 = a > 1 ? 1 : a, inv = 1 - k2;
+            let ur, ug, ub;
+            if (little) { ur = u & 255; ug = (u >> 8) & 255; ub = (u >> 16) & 255; }
+            else { ur = (u >>> 24) & 255; ug = (u >> 16) & 255; ub = (u >> 8) & 255; }
+            r = r * k2 + ur * inv; g = g * k2 + ug * inv; b = b * k2 + ub * inv;
             out[i] = little
-                ? ((al << 24) | ((b | 0) << 16) | ((g | 0) << 8) | (r | 0)) >>> 0
-                : (((r | 0) << 24) | ((g | 0) << 16) | ((b | 0) << 8) | al) >>> 0;
+                ? ((255 << 24) | ((b | 0) << 16) | ((g | 0) << 8) | (r | 0)) >>> 0
+                : (((r | 0) << 24) | ((g | 0) << 16) | ((b | 0) << 8) | 255) >>> 0;
         }
         ctx.putImageData(frame, 0, 0);
     };
 
     const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (still) { paint(0); return cv; }
+    /* Reduced motion gets a sea, not a flat colour: the field is run
+       forward far enough to settle, then drawn once and left alone. */
+    if (still) {
+        const hz = Math.max(1, WATER.simHz || 60);
+        for (let n = 0; n < 600; n++) {
+            for (let q = WATER.stormsPerFrame; q > 0; q--) strike();
+            driveAndStep(n / hz, Math.pow(WATER.damping, 60 / hz));
+        }
+        paint(0);
+        return cv;
+    }
+
+    /*
+     * THE MOTORBOAT. Nothing disturbs this sea on its own: the ambient
+     * undulation comes from forcing nobody can see arriving, and the
+     * only thing that leaves a mark is the reader's own pointer.
+     *
+     * The listener goes on the CONTAINER, not the canvas, because the
+     * canvas is pointer-events:none so that it cannot swallow a realm
+     * click. One wake a frame at most, or a slow drag lays down sixty.
+     */
+    let lastAt = 0, lastX = 0, lastY = 0, haveLast = false;
+    const onMove = (ev) => {
+        const now = (window.performance && performance.now) ? performance.now() : Date.now();
+        if (now - lastAt < 16) return;
+        const rc = cv.getBoundingClientRect();
+        if (!rc.width || !rc.height) return;
+        const x = ((ev.clientX - rc.left) / rc.width) * VW + PAD;
+        const y = ((ev.clientY - rc.top) / rc.height) * VH + PAD;
+        const dt = (now - lastAt) / 1000;
+        let speed = 0;
+        if (haveLast && dt > 0 && dt < 0.25) {
+            speed = Math.sqrt((x - lastX) * (x - lastX) + (y - lastY) * (y - lastY)) / dt;
+        }
+        lastAt = now; lastX = x; lastY = y; haveLast = true;
+        if (x < PAD || y < PAD || x >= PAD + VW || y >= PAD + VH) return;
+        /* A still pointer leaves no wake; a brisk drag leaves a full one. */
+        const drive = Math.min(1, speed / WATER.wakeSpeedRef);
+        if (drive <= 0.02) return;
+        waterWake(cur, simLand, SW, SH, x | 0, y | 0, WATER.wakeRadius,
+                  WATER.wakeForce * drive);
+    };
+    container.addEventListener('pointermove', onMove, { passive: true });
+    waterCleanup = () => { container.removeEventListener('pointermove', onMove); };
+
+    /*
+     * THE WEATHER, OUT PAST THE EDGE OF THE SHEET.
+     *
+     * Every strike lands in the margin, never on the map, so what a
+     * reader sees is only ever the wavefront arriving. Positions come
+     * from the world's own seeded generator, so the sea is the same
+     * sea on every load -- Math.random() has been banned here since
+     * faction colours repainted themselves between page views.
+     */
+    const stormRnd = (typeof mwRng === 'function')
+        ? mwRng(((world.seed || 1) ^ 0x5eed10) >>> 0) : null;
+    const strike = () => {
+        if (!stormRnd) return;
+        const at = waterStormCell(stormRnd, SW, SH, PAD, VW, VH);
+        if (!at) return;
+        waterWake(cur, simLand, SW, SH, at[0], at[1], WATER.stormRadius, WATER.stormForce);
+    };
+
+    /*
+     * THE SEA KEEPS ITS OWN CLOCK, SLOWER THAN THE SCREEN.
+     *
+     * Stepped once per rendered frame, a wave crosses one cell every
+     * sixteen milliseconds -- sixty cells a second -- and the whole
+     * ocean hurries: "you've got a good undulation going, it's just
+     * too fast and frantic to give the laid back water vibe". The
+     * undulation was right; only its speed was wrong, and the speed of
+     * a wave in this scheme is one cell per STEP. So the fix is to
+     * take fewer steps per second, not to change anything about the
+     * water.
+     *
+     * A fixed-rate accumulator does it: the field advances at simHz
+     * whatever the display is doing, which also makes the sea run at
+     * the same speed on a 120Hz screen as on a 60Hz one -- tied to the
+     * frame rate it would have run at double speed there.
+     *
+     * DAMPING IS PER STEP, so it has to move with simHz or the sea
+     * changes character as well as speed: a third as many steps a
+     * second means a third as much decay, and the field rings on and
+     * builds up. WATER.damping is therefore quoted for 60Hz and
+     * rescaled here to preserve the decay PER SECOND, which is the
+     * thing a reader can actually see.
+     */
+    const SIM_HZ = Math.max(1, WATER.simHz || 60);
+    const STEP = 1 / SIM_HZ;
+    const damp = Math.pow(WATER.damping, 60 / SIM_HZ);
 
     const t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+    let simT = 0, acc = 0, prevT = 0;
     const tick = (now) => {
-        paint((now - t0) / 1000);
+        const t = (now - t0) / 1000;
+        /* Clamped: a backgrounded tab comes back with a huge gap and
+           would otherwise try to catch up in one frame. */
+        acc += Math.min(0.25, t - prevT);
+        prevT = t;
+        while (acc >= STEP) {
+            for (let n = WATER.stormsPerFrame; n > 0; n--) strike();
+            driveAndStep(simT, damp);
+            simT += STEP;
+            acc -= STEP;
+        }
+        paint(t);
         waterRAF = requestAnimationFrame(tick);
     };
     waterRAF = requestAnimationFrame(tick);

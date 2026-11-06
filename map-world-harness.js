@@ -1166,6 +1166,79 @@ console.log('\nthe shallows reach the drawing, and the surf actually flows');
 	   'the shoreline is still stroked, which crowds the foam that now draws that edge');
 	ok(joined[joined.length - 1].band === -1, 'the land is not drawn last, over the shelf');
 
+	/*
+	 * THE SWELL, AND THE SEAM THAT WOULD GIVE IT AWAY.
+	 *
+	 * The open sea undulates by SCROLLING a baked field rather than
+	 * simulating one: the two canvas water demos the owner found are
+	 * both the classic two-buffer height field, which was built here
+	 * and then thrown away, because raindrops and pointer ripples are a
+	 * cup of water seen from six inches and this is an ocean seen from
+	 * orbit. (It also wanted Math.random(), which this map has banned
+	 * since faction colours repainted on every load.)
+	 *
+	 * Scrolling means the field is read at (x + offset) mod W, so it
+	 * MUST be built from whole harmonics of the canvas. If it is not,
+	 * the wrap puts a dead straight seam down the open sea every time
+	 * the offset passes zero, and open sea is precisely where there is
+	 * nothing to hide it behind.
+	 */
+	const sf = lift('function swellField(');
+	ok(sf, 'swellField() could not be lifted out of map.js');
+	vm.runInContext(sf + '\nvar _swell = swellField;', ctx);
+	const FW = 96, FH = 64, fld = ctx._swell(FW, FH);
+	ok(fld.length === FW * FH, 'the swell field is the wrong size');
+
+	/* The step ACROSS the wrap must be an ordinary step, not a cliff. */
+	let inner = 0, seamX = 0, seamY = 0;
+	for (let y = 0; y < FH; y++) {
+		for (let x = 1; x < FW; x++) inner = Math.max(inner, Math.abs(fld[y * FW + x] - fld[y * FW + x - 1]));
+		seamX = Math.max(seamX, Math.abs(fld[y * FW] - fld[y * FW + FW - 1]));
+	}
+	for (let x = 0; x < FW; x++) seamY = Math.max(seamY, Math.abs(fld[x] - fld[(FH - 1) * FW + x]));
+	ok(seamX <= inner * 1.5,
+	   'the swell jumps ' + seamX.toFixed(3) + ' across the left/right wrap against ' + inner.toFixed(3)
+	 + ' between ordinary columns, so a straight seam travels across the open sea');
+	ok(seamY <= inner * 1.5,
+	   'the swell jumps ' + seamY.toFixed(3) + ' across the top/bottom wrap, same problem sideways');
+
+	/* Bounded, or the gain means nothing and the sea blows out white. */
+	let amp = 0;
+	for (let i = 0; i < fld.length; i++) amp = Math.max(amp, Math.abs(fld[i]));
+	ok(amp > 0.3 && amp <= 1.0001,
+	   'the swell peaks at ' + amp.toFixed(3) + ', so the gain is calibrated against nothing');
+
+	/* The same sea every visit, like the coastline. */
+	const fld2 = ctx._swell(FW, FH);
+	let same = true;
+	for (let i = 0; i < fld.length; i++) if (fld[i] !== fld2[i]) { same = false; break; }
+	ok(same, 'the swell is not deterministic, so the sea is a different sea on every load');
+
+	/*
+	 * THE SEA IS DRAWN BY DISPLACEMENT NOW, NOT BY AN OVERLAY COLOUR
+	 * (swellGain and its cap are gone; see map-water-harness.js). The
+	 * two numbers that decide whether anything is visible are how far
+	 * the water bends what is under it and how hard the slope is lit.
+	 * At zero the ocean is a still picture; far too high and the bed
+	 * is torn apart rather than rippled.
+	 */
+	ok(WAT.refract > 0 && WAT.refract < 80,
+	   'refract is ' + WAT.refract + ': the sea is either frozen or shredded');
+	ok(WAT.lightGain >= 0 && WAT.lightGain < 120,
+	   'lightGain is ' + WAT.lightGain + ', which is past shading and into painting');
+	ok(WAT.simHz > 0 && WAT.simHz <= 60,
+	   'simHz is ' + WAT.simHz + '; above the frame rate it cannot be reached, at zero nothing moves');
+	ok(WAT.forceGain > 0 && WAT.forceGain < 0.5,
+	   'the forcing is off, or hard enough to be seen arriving, which is the thing it '
+	 + 'exists to avoid');
+	ok(WAT.damping > 0.9 && WAT.damping < 1,
+	   'the shipped damping is ' + WAT.damping + '; at 1 or above a continuously forced '
+	 + 'field gains energy without limit');
+	ok(WAT.swellFade > 1,
+	   'the swell is not faded out of the shallows, so it fights the surf in the same pixels');
+	ok(Array.isArray(WAT.swellDrift) && WAT.swellDrift.length >= 2,
+	   'there is only one drift, so the swell reads as a single sheet sliding past');
+
 	/* THE CANVAS IS OVER THE MAP AND CANNOT EAT A CLICK. */
 	const css = fs.readFileSync(__dirname + '/dist/map.css', 'utf8');
 	const surfCss = css.slice(css.indexOf('#container .sea-surf'));
