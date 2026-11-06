@@ -166,13 +166,22 @@ if ($tst_offer):
 		overlay.classList.remove('on');
 	});
 
-	/* The send button stays out of reach until the box is ticked, so
-	   nobody can publish their name by clicking past a sentence. */
+	/*
+	 * THE BUTTON SAYS WHY, IT DOES NOT JUST STOP WORKING.
+	 *
+	 * This disabled Send until the box was ticked. Nothing can get
+	 * past a disabled button, which sounds like the safe choice and
+	 * is a worse one: somebody writes three sentences, presses a
+	 * button that does nothing, and is told nothing. The modal
+	 * already explains the length problem when they press it, so
+	 * consent is checked the same way and in the same place.
+	 *
+	 * The guarantee was never here in any case. testimonial_save()
+	 * refuses without the confirmation, so the tick is enforced on the
+	 * server whatever the page does.
+	 */
 	var consent = document.getElementById('tst-consent');
 	var sendBtn = document.getElementById('tst-send');
-	function syncConsent() { sendBtn.disabled = !consent.checked; }
-	consent.addEventListener('change', syncConsent);
-	syncConsent();
 
 	sendBtn.addEventListener('click', function () {
 		var txt = (body.value || '').trim();
@@ -180,6 +189,12 @@ if ($tst_offer):
 		if (txt.length < offer.min) {
 			err.textContent = 'A line or two more would help. At least ' + offer.min + ' characters.';
 			err.hidden = false;
+			return;
+		}
+		if (!consent.checked) {
+			err.textContent = 'Tick the box to confirm your username and avatar can be published.';
+			err.hidden = false;
+			consent.focus();
 			return;
 		}
 		this.disabled = true;

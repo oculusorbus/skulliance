@@ -282,8 +282,17 @@ ok(testimonial_save($defc, 9, 'back', str_repeat('a', 90), 'named') !== '',
    'consent defaults to true, so a caller that omits it publishes a username');
 ok(strpos($modal0, 'id="tst-consent"') !== false,
    'the modal has no confirmation control');
-ok(strpos($modal0, 'sendBtn.disabled = !consent.checked') !== false,
-   'the send button does not wait on the confirmation');
+/*
+ * AND IT SAYS WHY. A disabled Send stops the submission and explains
+ * nothing: three sentences written, a dead button, no reason given.
+ * The check belongs where the length check already is.
+ */
+ok(strpos($modal0, 'sendBtn.disabled = !consent.checked') === false,
+   'the send button is disabled rather than explaining itself');
+ok(preg_match('~if \(!consent\.checked\) \{\s*err\.textContent~', $modal0) === 1,
+   'pressing send without the tick does not say why nothing happened');
+ok(preg_match('~if \(!consent\.checked\)[^}]*consent\.focus\(\)~s', $modal0) === 1,
+   'the message does not point at the control it is about');
 $ajax0 = file_get_contents(__DIR__ . '/ajax/testimonial.php');
 ok(strpos($ajax0, "!empty(\$_POST['consent'])") !== false,
    'the endpoint never forwards the confirmation, so the save always refuses');
