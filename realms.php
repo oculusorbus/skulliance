@@ -1164,6 +1164,9 @@ if(!$realm_status){
 	                </div>
 	                <div id="popup-raid-chips"></div>
 	            </div>
+	            <!-- The dossier: levels, garrison and named raids, filled by
+	                 map.js from ajax/realm-dossier.php when the card opens. -->
+	            <div class="popup-dossier" id="popup-dossier"></div>
 	        </div>
 	    </div>
 	</div>

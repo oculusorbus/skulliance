@@ -92,11 +92,141 @@ function showPopup(realmSrc, avatarSrc, userName, realmName, factionName, factio
         chipsEl.innerHTML = '<span class="popup-stat popup-badge-peace">Peaceful</span>';
     }
 
+    /*
+     * AND THEN THE DOSSIER, WHICH IS THE REST OF THE CARD.
+     *
+     * Everything above is what the map already holds in memory, so it
+     * paints instantly and the card is never empty. The levels, the
+     * garrison and the named raids come from one fetch, because a
+     * reader on the map is "evaluating the raids that are happening"
+     * and a count of two tells them nothing about who is on it.
+     *
+     * The request is fired per open and raced by generation: clicking
+     * three realms quickly must not let the first reply land in the
+     * third card.
+     */
+    popupDossierGen++;
+    renderDossier(null, popupDossierGen);
+    fetchDossier(realmId, popupDossierGen);
+
     /* Zoom out FIRST, so the card opens against the whole map rather than
        over a corner of it, then anchor -- see both functions below. */
     resetPageZoom();
     popupOverlay.style.display = 'flex';
     anchorPopup();
+}
+
+let popupDossierGen = 0;
+const popupDossierCache = {};
+
+function fetchDossier(realmId, gen) {
+    const hit = popupDossierCache[realmId];
+    if (hit) { renderDossier(hit, gen); return; }
+    fetch('ajax/realm-dossier.php?realm_id=' + encodeURIComponent(realmId))
+        .then(r => r.json())
+        .then(d => {
+            if (!d || !d.success || !d.card) { renderDossier(false, gen); return; }
+            popupDossierCache[realmId] = d.card;
+            renderDossier(d.card, gen);
+        })
+        .catch(() => renderDossier(false, gen));
+}
+
+/** One location chip: level, name, and a shield when it is protected. */
+function dossierChip(loc) {
+    const sh = loc.shield ? ' rd-shielded' : '';
+    return '<span class="rd-chip' + sh + '">'
+         + '<b>' + (loc.level | 0) + '</b> ' + mapEsc(loc.name)
+         + (loc.shield ? '<i class="rd-shield" title="Shielded"></i>' : '')
+         + '</span>';
+}
+
+function mapEsc(v) {
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+/** How long ago, in the roughest unit that is still true. */
+function dossierAgo(when) {
+    const t = Date.parse((when || '').replace(' ', 'T'));
+    if (!t) return '';
+    const mins = Math.max(0, Math.round((Date.now() - t) / 60000));
+    if (mins < 60) return mins + 'm ago';
+    const hrs = Math.round(mins / 60);
+    if (hrs < 48) return hrs + 'h ago';
+    return Math.round(hrs / 24) + 'd ago';
+}
+
+/**
+ * Paint the dossier. `card` is the data, null while it is in flight,
+ * and false if the fetch failed -- three states, because a card that
+ * silently shows nothing when the network drops looks like a realm
+ * with no locations rather than like a page that did not load.
+ */
+function renderDossier(card, gen) {
+    if (gen !== popupDossierGen) return;          /* a later click owns the card */
+    const el = document.getElementById('popup-dossier');
+    if (!el) return;
+    if (card === null) { el.innerHTML = '<div class="rd-wait">Reading the realm...</div>'; return; }
+    if (card === false) { el.innerHTML = '<div class="rd-wait">Could not reach this realm just now.</div>'; return; }
+
+    let h = '';
+    if (card.defense && card.defense.length) {
+        h += '<div class="rd-row"><span class="rd-head rd-def">Defense</span>'
+           + '<span class="rd-avg">avg ' + (card.def_avg | 0) + '</span></div>'
+           + '<div class="rd-chips">' + card.defense.map(dossierChip).join('') + '</div>';
+    }
+    if (card.offense && card.offense.length) {
+        h += '<div class="rd-row"><span class="rd-head rd-off">Offense</span>'
+           + '<span class="rd-avg">avg ' + (card.off_avg | 0) + '</span></div>'
+           + '<div class="rd-chips">' + card.offense.map(dossierChip).join('') + '</div>';
+    }
+
+    const sol = card.soldiers || {};
+    const bits = [];
+    if (sol.ready) bits.push('<b>' + sol.ready + '</b> ready');
+    if (sol.training) bits.push('<b>' + sol.training + '</b> training');
+    h += '<div class="rd-row"><span class="rd-head">Garrison</span>'
+       + '<span class="rd-avg">' + (bits.length ? bits.join(' / ') : 'empty') + '</span></div>';
+
+    /* THE RECORD, so a reader can tell a hard target from a quiet one. */
+    const rec = card.record || {};
+    const fought = (rec.won | 0) + (rec.lost | 0) + (rec.held | 0) + (rec.fell | 0);
+    if (fought) {
+        h += '<div class="rd-row"><span class="rd-head">Record</span><span class="rd-avg">'
+           + '<b>' + (rec.won | 0) + '</b> taken / <b>' + (rec.held | 0) + '</b> held'
+           + '</span></div>';
+    }
+
+    const raids = card.raids || {};
+    const act = raids.active || [];
+    if (act.length) {
+        h += '<div class="rd-row"><span class="rd-head rd-live">Under way</span></div><ul class="rd-list">';
+        for (const r of act) {
+            h += '<li>' + (r.attacking
+                ? '<span class="rd-dir rd-att">Raiding</span> '
+                : '<span class="rd-dir rd-def2">Raided by</span> ')
+               + mapEsc(r.other) + ' <em>' + mapEsc(r.other_user) + '</em>'
+               + '<span class="rd-when">' + dossierAgo(r.when) + '</span></li>';
+        }
+        h += '</ul>';
+    }
+    const rec2 = raids.recent || [];
+    if (rec2.length) {
+        h += '<div class="rd-row"><span class="rd-head">Lately</span></div><ul class="rd-list">';
+        for (const r of rec2) {
+            const word = { won: 'Took', lost: 'Failed against', held: 'Held off', fell: 'Fell to' }[r.result] || '';
+            h += '<li><span class="rd-res rd-res-' + r.result + '">' + word + '</span> '
+               + mapEsc(r.other) + ' <em>' + mapEsc(r.other_user) + '</em>'
+               + '<span class="rd-when">' + dossierAgo(r.when) + '</span></li>';
+        }
+        h += '</ul>';
+    }
+    if (!act.length && !rec2.length) {
+        h += '<div class="rd-wait">No raids on record.</div>';
+    }
+    el.innerHTML = h;
 }
 
 /*
@@ -1895,7 +2025,6 @@ function renderMap() {
     let clipIdx = 0;
 
     // ── Layer 1: territory fills ──────────────────────────────────────────────
-    const LOGO_MAX = 96; // max natural size cap in px
     for (const {faction, poly, polys, borders} of placedWithPoly) {
         /* EVERY PIECE A FACTION HOLDS. polys is the body plus its offshore
            islands; the old layout had one shape per faction and this read
@@ -1941,18 +2070,18 @@ function renderMap() {
         }
 
         // Project logo watermark centered in territory
-        if (faction.currency) {
-            const c = centroid(poly);
-            const logoImg = svgEl('image', {
-                href: 'icons/' + faction.currency + '.png',
-                x: c.x - LOGO_MAX/2, y: c.y - LOGO_MAX/2,
-                width: LOGO_MAX, height: LOGO_MAX,
-                opacity: '0.13',
-                'pointer-events': 'none',
-                preserveAspectRatio: 'xMidYMid meet'
-            });
-            svg.appendChild(logoImg);
-        }
+        /*
+         * NO WATERMARK ON THE TERRITORY ANY MORE.
+         *
+         * A faction's currency icon used to sit at the centroid of
+         * every territory at 13% opacity. It was there to fill
+         * space on the treemap, which was flat colour and needed
+         * something in the middle of it. The ground has relief now,
+         * and a logo lying across hills reads as a sticker on the
+         * photograph: "an overlay icon takes away from the vibe".
+         * The label pill carries the same icon a few pixels away,
+         * so nothing is lost but the clutter.
+         */
     }
 
     /*

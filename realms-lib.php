@@ -266,3 +266,141 @@ function realm_starter_pack($conn) {
 	}
 	return $out;
 }
+
+/**
+ * realm_dossier() — everything the map's card needs about one realm.
+ *
+ * WHY THIS EXISTS. The card used to carry what the map already had in
+ * hand: an avatar, a name, an average level, and a count of raids. A
+ * reader on the map is doing the one thing that data cannot answer --
+ * "the owner put it best: they're exploring the map and evaluating the
+ * raids that are happening" -- and a count of two raids tells you
+ * nothing about whether the realm is worth attacking or who is already
+ * on it.
+ *
+ * SO IT IS THE ATTACK SCREEN'S OWN DATA. getRealmLocationsWithShields()
+ * is what realms.php's raid preview filters into its defense and offense
+ * columns, shields and all, so the card shows the same levels from the
+ * same function rather than a second opinion assembled here.
+ *
+ * READ ONLY, AND SAFE TO SHOW A STRANGER. Every field is something the
+ * platform already publishes: profile.php serves any username and avatar
+ * without a login, and a realm's levels are what an attacker sees before
+ * committing. Nothing here is the viewer's own position -- no success
+ * chance, no "your offense", because on a public map there is no viewer
+ * to compute it against.
+ *
+ * ONE ARRAY, NO ECHO, so the harness can read it without a page.
+ */
+function realm_dossier($conn, $realm_id) {
+	$realm_id = intval($realm_id);
+	if ($realm_id <= 0) return null;
+
+	$sql = "SELECT realms.id, realms.name AS realm_name, realms.theme_id, realms.active,
+	               users.username, users.discord_id, users.avatar,
+	               projects.name AS faction_name, projects.currency AS faction_currency
+	        FROM realms
+	        INNER JOIN users ON users.id = realms.user_id
+	        INNER JOIN projects ON projects.id = realms.project_id
+	        WHERE realms.id = " . $realm_id . " LIMIT 1";
+	$res = $conn->query($sql);
+	if (!$res || $res->num_rows === 0) return null;
+	$r = $res->fetch_assoc();
+
+	/* The attack screen's own list, so the two cannot disagree. */
+	$locs = function_exists('getRealmLocationsWithShields')
+		? getRealmLocationsWithShields($conn, $realm_id) : array();
+	$defense = array(); $offense = array(); $portal = null;
+	foreach ($locs as $l) {
+		$row = array(
+			'name'       => $l['name'],
+			'level'      => (int) $l['level'],
+			'shield'     => !empty($l['has_shield']),
+			'boost'      => (int) $l['success_boost'],
+			'id'         => (int) $l['location_id'],
+		);
+		/* The portal is location 1 and is neither column: realms.php
+		   pulls it out of the offense list for the same reason. */
+		if ((int) $l['location_id'] === 1) { $portal = $row; continue; }
+		if ($l['location_type'] === 'defense') $defense[] = $row; else $offense[] = $row;
+	}
+	$avg = function ($rows) {
+		if (!count($rows)) return 0;
+		$s = 0; foreach ($rows as $x) $s += $x['level'];
+		return (int) round($s / count($rows));
+	};
+
+	/* Soldiers, counted rather than listed: the card says how many can
+	   march, not which NFTs they are. */
+	$ready = 0; $training = 0;
+	if (function_exists('getBarracksSoldiers')) {
+		$now = time();
+		foreach (getBarracksSoldiers($conn, $realm_id) as $s) {
+			if (!empty($s['dead'])) continue;
+			if (!empty($s['ready_at']) && strtotime($s['ready_at']) > $now) $training++;
+			else $ready++;
+		}
+	}
+
+	/*
+	 * THE RAIDS, NAMED. outcome 0 is a raid still running, 1 is the
+	 * attacker through, 2 is the defender holding -- the same reading
+	 * db.php settles them by.
+	 */
+	$rs = $conn->query(
+		"SELECT r.id, r.offense_id, r.defense_id, r.outcome, r.created_date,
+		        orl.name AS off_realm, ou.username AS off_user,
+		        drl.name AS def_realm, du.username AS def_user
+		 FROM raids r
+		 INNER JOIN realms orl ON orl.id = r.offense_id
+		 INNER JOIN users ou ON ou.id = orl.user_id
+		 INNER JOIN realms drl ON drl.id = r.defense_id
+		 INNER JOIN users du ON du.id = drl.user_id
+		 WHERE r.offense_id = " . $realm_id . " OR r.defense_id = " . $realm_id . "
+		 ORDER BY r.created_date DESC LIMIT 40");
+	$active = array(); $recent = array();
+	$won = 0; $lost = 0; $held = 0; $fell = 0;
+	if ($rs) {
+		while ($q = $rs->fetch_assoc()) {
+			$attacking = ((int) $q['offense_id'] === $realm_id);
+			$row = array(
+				'raid_id'    => (int) $q['id'],
+				'attacking'  => $attacking,
+				'other'      => $attacking ? $q['def_realm'] : $q['off_realm'],
+				'other_user' => $attacking ? $q['def_user']  : $q['off_user'],
+				'other_id'   => $attacking ? (int) $q['defense_id'] : (int) $q['offense_id'],
+				'when'       => $q['created_date'],
+			);
+			if ((int) $q['outcome'] === 0) { $active[] = $row; continue; }
+			$success = ((int) $q['outcome'] === 1);
+			$row['result'] = $attacking
+				? ($success ? 'won' : 'lost')
+				: ($success ? 'fell' : 'held');
+			if ($row['result'] === 'won')  $won++;
+			if ($row['result'] === 'lost') $lost++;
+			if ($row['result'] === 'held') $held++;
+			if ($row['result'] === 'fell') $fell++;
+			if (count($recent) < 6) $recent[] = $row;
+		}
+	}
+
+	return array(
+		'realm_id'  => $realm_id,
+		'realm'     => $r['realm_name'],
+		'owner'     => $r['username'],
+		'avatar'    => function_exists('avatar_url')
+			? avatar_url($r['discord_id'], $r['avatar']) : '',
+		'theme_id'  => (int) $r['theme_id'],
+		'faction'   => $r['faction_name'],
+		'currency'  => strtolower((string) $r['faction_currency']),
+		'active'    => (int) $r['active'] === 1,
+		'defense'   => $defense,
+		'offense'   => $offense,
+		'portal'    => $portal,
+		'def_avg'   => $avg($defense),
+		'off_avg'   => $avg($offense),
+		'soldiers'  => array('ready' => $ready, 'training' => $training),
+		'raids'     => array('active' => $active, 'recent' => $recent),
+		'record'    => array('won' => $won, 'lost' => $lost, 'held' => $held, 'fell' => $fell),
+	);
+}

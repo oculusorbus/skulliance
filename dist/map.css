@@ -285,3 +285,96 @@
     pointer-events: none;
 }
 #container .map-over > * { pointer-events: auto; }
+
+/* ── THE REALM DOSSIER ───────────────────────────────────────────────────
+ * The lower half of the card a reader opens from the map. Everything above
+ * it is what the map already had in memory and paints instantly; this
+ * arrives from ajax/realm-dossier.php a moment later, so it must hold its
+ * own height rather than shoving the card around as it lands.
+ *
+ * It reads as a briefing, not a table: a label, a figure, then the chips.
+ * The levels are the same numbers the raid screen shows an attacker, which
+ * is the whole point of putting them here.
+ */
+#popup-dossier {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(132,178,208,0.18);
+    min-height: 58px;
+    text-align: left;
+}
+.rd-wait { color: rgba(205,225,240,0.55); font-size: 12px; padding: 6px 2px; }
+.rd-row {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 10px; margin: 8px 0 4px;
+}
+.rd-head {
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: rgba(168,200,224,0.75);
+}
+.rd-def  { color: #7fd1c6; }
+.rd-off  { color: #e3a877; }
+.rd-live { color: #ff8da1; }
+.rd-avg  { font-size: 12px; color: rgba(222,236,247,0.82); }
+.rd-avg b { color: #fff; }
+.rd-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.rd-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 6px;
+    background: rgba(18,54,82,0.75);
+    border: 1px solid rgba(132,178,208,0.22);
+    font-size: 12px; color: rgba(226,239,248,0.92);
+    white-space: nowrap;
+}
+.rd-chip b { color: #fff; font-size: 13px; }
+/* A shielded location is the one thing on the card that changes an
+   attacker's plan, so it gets the only accent colour in the chip row. */
+.rd-shielded { border-color: rgba(255,196,97,0.55); }
+.rd-shield {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #ffc461; display: inline-block;
+}
+.rd-list { list-style: none; margin: 2px 0 0; padding: 0; }
+.rd-list li {
+    display: flex; align-items: baseline; gap: 6px;
+    font-size: 12px; color: rgba(226,239,248,0.9);
+    padding: 3px 0; border-bottom: 1px solid rgba(132,178,208,0.08);
+}
+.rd-list li:last-child { border-bottom: 0; }
+.rd-list em { color: rgba(168,200,224,0.8); font-style: normal; }
+.rd-when { margin-left: auto; color: rgba(168,200,224,0.55); white-space: nowrap; }
+.rd-dir, .rd-res { font-weight: 600; }
+.rd-att   { color: #ff9d8a; }
+.rd-def2  { color: #8ab6ff; }
+.rd-res-won  { color: #7fe0a8; }
+.rd-res-held { color: #7fd1c6; }
+.rd-res-lost { color: rgba(226,239,248,0.6); }
+.rd-res-fell { color: #ff8da1; }
+@media (max-width: 420px) {
+    .rd-list li { flex-wrap: wrap; }
+    .rd-when { margin-left: 0; width: 100%; }
+}
+
+/* ── THE PUBLIC MAP PAGE ─────────────────────────────────────────────────
+ * realms-map.php only. The map itself is identical to the one on
+ * realms.php; this is the copy around it.
+ */
+.rm-intro { padding: 0 20px 14px; }
+.rm-intro h1 { margin: 0 0 6px; font-size: 26px; color: #eaf3fa; }
+/* Full width, not a narrow measure: there is nothing beside it to make
+   room for, and a capped column next to empty space reads as wasted. */
+.rm-intro p { margin: 0; color: rgba(205,225,240,0.78); line-height: 1.5; }
+.rm-join {
+    margin: 18px 20px 0; padding: 16px 18px;
+    border: 1px solid rgba(132,178,208,0.22); border-radius: 10px;
+    background: rgba(18,54,82,0.45);
+}
+.rm-join p { margin: 0 0 12px; color: rgba(214,232,245,0.88); line-height: 1.5; }
+/* flexbox.css styles bare anchors globally, so .button inside a scoped
+   block has to restate both the alignment and the colour. */
+.rm-join .button { display: inline-block; text-align: center; }
+@media (max-width: 700px) {
+    .rm-intro { padding: 0 14px 12px; }
+    .rm-intro h1 { font-size: 22px; }
+    .rm-join { margin: 16px 14px 0; }
+}

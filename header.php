@@ -158,7 +158,11 @@
    * form looked like 2009: it was unstyled, and so was the map on any
    * other realms.php link that ever carries a query string.
    */
-  if (basename(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)) === "realms.php") {
+  /* realms-map.php is the same map on a public page and needs the same
+     stylesheet; without this it renders unstyled for every stranger,
+     which is the exact bug the comment above was written about. */
+  $sk_path = basename(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
+  if ($sk_path === "realms.php" || $sk_path === "realms-map.php") {
   ?>
 	  <link href="dist/map.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
 	  <link href="dist/realms-onboarding.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
