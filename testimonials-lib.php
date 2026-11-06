@@ -41,6 +41,9 @@ if (!defined('TESTIMONIAL_NUDGE_DAYS')) define('TESTIMONIAL_NUDGE_DAYS', 14);
    in the right mood and has something concrete to say. This is how
    recent that win has to be. */
 if (!defined('TESTIMONIAL_WIN_HOURS'))  define('TESTIMONIAL_WIN_HOURS', 48);
+/* Where a shared testimonial sends a reader: the public site, not a
+   page inside the platform. */
+if (!defined('TESTIMONIAL_SHARE_URL')) define('TESTIMONIAL_SHARE_URL', 'https://skulliance.io');
 /* And the platform-wide version of the same idea: somebody who has
    done this many things in this many days is playing, whatever they
    play. Counted over the activity log, which every feature writes to. */
@@ -625,23 +628,51 @@ function testimonial_public($conn, $limit = 12) {
  * The X intent URL.
  *
  * IT HAS TO MENTION THE ACCOUNT. The whole point is that Skulliance can
- * retweet it, and an untagged post is one the account never sees. The
- * link is the public map rather than the front page: it is the best
- * thing there is to look at, it needs no login, and the person sharing
- * is on it.
+ * retweet it, and an untagged post is one the account never sees.
+ *
+ * AND IT LINKS TO THE FRONT DOOR. This pointed at the realms map,
+ * chosen when the map was where testimonials were shown -- so the
+ * link went to the one page that proved the quote. The wall came off
+ * the map and that reasoning went with it, leaving a testimonial
+ * about Skulliance sending strangers to a page about one feature of
+ * it. skulliance.io is the pitch, and it is what somebody reading a
+ * recommendation should land on.
  */
 function testimonial_share_url($body) {
 	$body = trim((string) $body);
-	/* Intent text is capped; trim on a word so it does not end mid-syllable. */
-	$room = 180;
-	if (function_exists('mb_strlen') ? mb_strlen($body) > $room : strlen($body) > $room) {
-		$cut = substr($body, 0, $room);
+	/*
+	 * THE BUDGET, WORKED OUT RATHER THAN GUESSED.
+	 *
+	 * This reserved 180 characters for the quote, a number with no
+	 * derivation behind it, and the rest of the post is small: X
+	 * counts EVERY link as 23 characters through t.co whatever its
+	 * real length, so shortening the URL does not buy room directly
+	 * -- but budgeting as though the literal URL were counted did
+	 * cost room, and that is what 180 was doing.
+	 *
+	 * 280, less the link, the space before it and the mention, leaves
+	 * 244 for the words. Most testimonials now fit whole;
+	 * TESTIMONIAL_MAX is 420, so the longest still need trimming.
+	 *
+	 * AND NO QUOTATION MARKS. The Discord post wraps the body in
+	 * quotes because Skull Bot is quoting somebody. Here the player
+	 * is posting their own words from their own account, and quoting
+	 * yourself reads as reporting what you said rather than saying
+	 * it.
+	 */
+	$mention = ' @skulliance';
+	$room = 280 - 23 /* t.co */ - 1 /* space before the link */ - strlen($mention);
+	$len = function_exists('mb_strlen') ? mb_strlen($body) : strlen($body);
+	if ($len > $room) {
+		/* Room for the ellipsis too, and cut on a word so it does not
+		   end mid-syllable. */
+		$cut = function_exists('mb_substr') ? mb_substr($body, 0, $room - 3) : substr($body, 0, $room - 3);
 		$sp  = strrpos($cut, ' ');
 		$body = rtrim($sp ? substr($cut, 0, $sp) : $cut) . '...';
 	}
-	$text = '"' . $body . '" @skulliance';
+	$text = $body . $mention;
 	return 'https://x.com/intent/tweet?text=' . rawurlencode($text)
-	     . '&url=' . rawurlencode('https://skulliance.io/staking/realms-map.php');
+	     . '&url=' . rawurlencode(TESTIMONIAL_SHARE_URL);
 }
 
 /**

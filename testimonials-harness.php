@@ -718,11 +718,35 @@ $url = testimonial_share_url('I came for the raids and stayed for the people in 
 ok(strpos($url, 'x.com/intent/tweet') !== false, 'the share link does not go to an X intent');
 ok(strpos($url, rawurlencode('@skulliance')) !== false || strpos($url, '%40skulliance') !== false,
    'the share text does not mention @skulliance, so the account never sees it to retweet');
-ok(strpos($url, rawurlencode('https://skulliance.io/staking/realms-map.php')) !== false,
-   'the share link does not point at the public map');
+/* The front door, not a page inside the platform. It pointed at the
+   realms map, chosen when the map was where testimonials appeared;
+   the wall came off the map and the link outlived the reason. */
+ok(strpos($url, rawurlencode(TESTIMONIAL_SHARE_URL)) !== false,
+   'the share link does not carry the site URL');
+ok(TESTIMONIAL_SHARE_URL === 'https://skulliance.io',
+   'the share link points at ' . TESTIMONIAL_SHARE_URL . ' rather than the front door');
+ok(strpos($url, 'realms-map') === false,
+   'the share link still sends readers to one feature of the platform');
 $long = testimonial_share_url(str_repeat('word ', 120));
 ok(strlen($long) < 1200, 'a long testimonial makes an intent URL nobody can post');
 ok(substr_count($long, '...') === 1, 'a trimmed share text does not say it was trimmed');
+/*
+ * THE BUDGET. X counts every link as 23 characters through t.co
+ * whatever its length, so the room for the quote is 280 less the
+ * link, the space before it and the mention. The old reservation was
+ * 180 with no derivation behind it, which trimmed testimonials that
+ * would have fitted whole.
+ */
+$fits = str_repeat('a', 240);
+parse_str((string) parse_url(testimonial_share_url($fits), PHP_URL_QUERY), $q240);
+ok(strpos($q240['text'], '...') === false,
+   'a 240-character testimonial is trimmed, when it fits inside a post');
+parse_str((string) parse_url(testimonial_share_url(str_repeat('a', TESTIMONIAL_MAX)), PHP_URL_QUERY), $qMax);
+ok(strlen($qMax['text']) + 23 + 1 <= 280,
+   'the longest allowed testimonial makes a post X will refuse (' . (strlen($qMax['text']) + 24) . ')');
+/* The player is posting their own words from their own account. */
+ok(strpos($q240['text'], '"') === false,
+   'the share text quotes the player back to themselves');
 
 echo "\nthe copy says what it is for\n";
 /* The rule is about user-facing copy; comments and docblocks are

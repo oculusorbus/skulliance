@@ -94,6 +94,6 @@ After you send one you can post it to X in one tap, and once it is published
 the same button is on your profile for good, so a change of mind later is not
 a missed chance. It is prefilled with your
 words, a mention of the Skulliance account so it can be picked up, and a link
-to the [[realms]] world map.
+to skulliance.io.
 
 Related: [[realms]]
