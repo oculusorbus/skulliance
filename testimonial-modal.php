@@ -79,8 +79,7 @@ if ($tst_offer):
 		   it from your profile at any time. A Discord post cannot be unposted.</p>
 		<label class="tst-consent">
 			<input type="checkbox" id="tst-consent">
-			<span>Publish this with my username and avatar. Both are already on my public
-			      profile and the world map.</span>
+			<span>Publish this with my username and avatar.</span>
 		</label>
 
 		<div class="tst-err" id="tst-err" hidden></div>
