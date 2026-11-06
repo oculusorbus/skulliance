@@ -95,9 +95,36 @@ include 'header.php';
 			</div>
 		</div>
 		<?php if (!isset($name)) { ?>
+		<?php
+		/*
+		 * WHAT IT TAKES TO APPEAR HERE, STATED CORRECTLY.
+		 *
+		 * This said "you are on this map from the first week", which
+		 * the query flatly contradicts: getFactionsRealmsMapData()
+		 * selects realms that have raided or been raided inside
+		 * REALM_MAP_ACTIVE_DAYS, so a realm claimed today and left
+		 * alone is not drawn at all. Telling a newcomer they will be
+		 * on the map and then leaving them off it is the worst
+		 * possible first week.
+		 *
+		 * THE NUMBER COMES FROM THE CONSTANT, not from a sentence
+		 * somebody typed next to it, so the copy cannot drift from the
+		 * filter it describes.
+		 *
+		 * AND THE BUTTON IS NOT .button. flexbox.css gives that class
+		 * width:100%, font-size:2rem and a 6px drop shadow -- the old
+		 * platform slab, which is exactly the "old UI style" this
+		 * block was called out for. rm-go is the realms-onboarding
+		 * treatment instead: same accent, sane size, sized to its text.
+		 */
+		?>
 		<div class="rm-join">
-			<p>Free to start. You are on this map from the first week.</p>
-			<a class="button" href="realms.php">Claim a realm</a>
+			<div class="rm-join-copy">
+				<strong>Claim a plot and play.</strong>
+				<span>Free to start. Realms show here once they have raided
+				      or been raided in the last <?php echo (int) REALM_MAP_ACTIVE_DAYS; ?> days.</span>
+			</div>
+			<a class="rm-go" href="realms.php">Start a realm</a>
 		</div>
 		<?php } ?>
 	</div>

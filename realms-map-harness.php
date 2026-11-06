@@ -148,6 +148,34 @@ ok(strpos($jsCode, 'LOGO_MAX') === false,
 ok(substr_count($jsCode, "'icons/' + faction.currency") === 1,
    'the faction icon should appear once, in the label pill');
 
+echo "\nthe signup bar tells the truth and is not the old slab\n";
+/*
+ * THE CLAIM HAS ALREADY BEEN WRONG ONCE. It read "you are on this map
+ * from the first week", which getFactionsRealmsMapData() contradicts:
+ * the map draws realms that have raided inside REALM_MAP_ACTIVE_DAYS,
+ * so a realm claimed today and left alone is not on it. A newcomer
+ * told otherwise goes looking for themselves and is not there.
+ */
+/* $mapCode, not $map: the comment above the bar quotes the wrong
+   copy verbatim to explain why it went, so a search of the raw file
+   finds the explanation and fails on a page that is already fixed. */
+ok(stripos($mapCode, 'from the first week') === false,
+   'realms-map.php still promises a newcomer the map in their first week, which the query does not');
+ok(strpos($mapCode, 'REALM_MAP_ACTIVE_DAYS') !== false,
+   'the signup copy does not cite REALM_MAP_ACTIVE_DAYS, so it can drift from the filter it describes');
+ok(preg_match('~\b(30|thirty)\s*day~i', $mapCode) === 0,
+   'the signup copy hardcodes the window instead of echoing the constant');
+/* The global .button is width:100%, font-size:2rem and a drop shadow --
+   the old platform slab the bar was called out for wearing. */
+ok(preg_match('~class="button"~', $mapCode) === 0,
+   'realms-map.php uses the global .button, which is the old 2rem full-width slab');
+ok(strpos($mapCode, 'class="rm-go"') !== false, 'the signup bar has no call to action');
+ok(preg_match('~\.rm-go\s*[,{]~', $css) === 1, 'dist/map.css has no rule for .rm-go');
+ok(preg_match('~\.rm-go\s*\{[^}]*text-decoration~s', $css) === 1,
+   '.rm-go does not restate text-decoration, so flexbox.css underlines it as a link');
+ok(preg_match('~\.rm-go\s*\{[^}]*color~s', $css) === 1,
+   '.rm-go does not restate colour, so it inherits the global link blue');
+
 echo "\nthe dossier is styled\n";
 /* The selector itself, not a prefix of a longer one: a plain strpos for
    ".rd-chip" is satisfied by ".rd-chip-x", so renaming the rule passes. */

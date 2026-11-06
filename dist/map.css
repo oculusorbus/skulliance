@@ -359,15 +359,47 @@
  * realms-map.php only. The map itself is identical to the one on
  * realms.php; this is the copy around it.
  */
+/*
+ * THE SIGNUP BAR. It was a plain bordered box with the global .button
+ * inside it, which is 100% wide at 2rem with a drop shadow: the old
+ * platform slab, filling the width of a 1950px map with one word on it.
+ *
+ * A row instead of a stack, so the button is the size of its own label
+ * and the line of copy sits beside it rather than above a wall of
+ * green. The accent is the same #00c8a0 the onboarding page uses, so a
+ * newcomer who follows this through sees the same colour on the form.
+ */
 .rm-join {
-    margin: 18px 20px 0; padding: 16px 18px;
-    border: 1px solid rgba(132,178,208,0.22); border-radius: 10px;
-    background: rgba(18,54,82,0.45);
+    margin: 16px 20px 0;
+    padding: 14px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap;
+    border: 1px solid rgba(132,178,208,0.20);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(23,62,92,0.55), rgba(14,38,58,0.55));
 }
-.rm-join p { margin: 0 0 12px; color: rgba(214,232,245,0.88); line-height: 1.5; }
-/* flexbox.css styles bare anchors globally, so .button inside a scoped
-   block has to restate both the alignment and the colour. */
-.rm-join .button { display: inline-block; text-align: center; }
+.rm-join-copy { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rm-join-copy strong { color: #eaf3fa; font-size: 15px; }
+.rm-join-copy span { color: rgba(205,225,240,0.72); font-size: 13px; line-height: 1.45; }
+/* flexbox.css styles bare anchors globally, so a link used as a button
+   has to restate colour, weight and decoration or it inherits the link
+   blue and the page's centring. */
+.rm-go {
+    flex: 0 0 auto;
+    display: inline-block;
+    padding: 11px 22px;
+    border-radius: 8px;
+    background: #00c8a0;
+    color: #04131b !important;
+    font-weight: 700;
+    font-size: 15px;
+    text-decoration: none;
+    text-align: center;
+    white-space: nowrap;
+}
+.rm-go:hover { background: #00a882; color: #04131b !important; }
+.rm-go:focus-visible { outline: 3px solid rgba(0,200,160,0.5); outline-offset: 2px; }
 @media (max-width: 700px) {
-    .rm-join { margin: 16px 14px 0; }
+    .rm-join { margin: 16px 14px 0; align-items: stretch; }
+    .rm-go { width: 100%; }
 }
