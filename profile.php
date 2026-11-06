@@ -1261,10 +1261,11 @@ include 'header.php';
  * YOUR TESTIMONIAL, WHERE YOU CAN GET AT IT.
  *
  * The modal asks once, on a good day; this is the page somebody comes
- * back to when they want to change their mind. Only the visibility
- * control is here -- rewriting the text means a new row at pending,
- * because an approval that could be edited afterwards is not an
- * approval. Prints nothing if they never wrote one.
+ * back to when they want to change their mind. Two controls: rewrite
+ * the words, which writes a new row at pending because an approval
+ * that could be edited afterwards is not an approval, and withdraw it,
+ * which is instant because taking your name off something must not
+ * wait in a queue. Prints nothing if they never wrote one.
  */
 if ($is_own_profile && function_exists('testimonial_self_panel')) {
 	testimonial_self_panel($conn, (int) $_SESSION['userData']['user_id']);
