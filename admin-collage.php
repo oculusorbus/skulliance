@@ -36,6 +36,19 @@ require_once __DIR__ . '/avatar-lib.php';
 /* ---- options, all in the query string so a layout can be linked ---- */
 $cg_publiconly = !empty($_GET['publiconly']);
 $cg_names      = !empty($_GET['names']);
+/*
+ * SQUARE OR ROUND.
+ *
+ * Discord's CDN serves the ORIGINAL SQUARE image -- the circles
+ * everybody associates with an avatar are border-radius in Discord's
+ * own client, not the file. This wall was clipping every tile to a
+ * circle, which throws away the corners of art somebody chose, and
+ * for pixel and framed pieces that is most of the composition.
+ *
+ * Round stays the default because it is what the wall has always
+ * looked like; the box turns it off.
+ */
+$cg_square     = !empty($_GET['square']);
 $cg_sort       = (isset($_GET['sort']) && $_GET['sort'] === 'recent') ? 'recent' : 'oldest';
 
 /*
@@ -96,6 +109,8 @@ admin_chrome('collage');
          Public profiles only</label>
   <label><input type="checkbox" name="names" value="1" <?php echo $cg_names ? 'checked' : ''; ?>>
          Show usernames</label>
+  <label><input type="checkbox" name="square" value="1" <?php echo $cg_square ? 'checked' : ''; ?>>
+         Square avatars</label>
   <label>Order
     <select name="sort">
       <option value="oldest" <?php echo $cg_sort === 'oldest' ? 'selected' : ''; ?>>Oldest first</option>
@@ -107,7 +122,7 @@ admin_chrome('collage');
 
 <p class="cg-opts">
   <button class="adm-btn" id="cg-draw" type="button">Draw</button>
-  <a class="adm-btn" id="cg-dl" download="skulliance-avatar-wall.png" hidden>Download PNG</a>
+  <a class="adm-btn" id="cg-dl" download="<?php echo $cg_square ? "skulliance-avatar-wall-square.png" : "skulliance-avatar-wall.png"; ?>" hidden>Download PNG</a>
   <span id="cg-status" class="cg-note"></span>
 </p>
 
@@ -119,6 +134,7 @@ admin_chrome('collage');
   var dlUrl   = null;   /* revoked before each redraw, so repeated draws do not leak */
   var USERS   = <?php echo json_encode($cg_users, JSON_UNESCAPED_SLASHES); ?>;
   var SHOWNAM = <?php echo $cg_names ? 'true' : 'false'; ?>;
+  var SQUARE  = <?php echo $cg_square ? 'true' : 'false'; ?>;
   var canvas  = document.getElementById('cg-canvas');
   var status  = document.getElementById('cg-status');
   var missing = document.getElementById('cg-missing');
@@ -177,12 +193,19 @@ admin_chrome('collage');
 
       kept.forEach(function (k, i) {
         var x = PAD + (i % cols) * cellW, y = PAD + Math.floor(i / cols) * cellH;
-        c.save();
-        c.beginPath();
-        c.arc(x + TILE / 2, y + TILE / 2, TILE / 2, 0, Math.PI * 2);
-        c.closePath(); c.clip();
-        c.drawImage(k.im, x, y, TILE, TILE);
-        c.restore();
+        /* The file from Discord is square; the circle is ours. Clip
+           only when asked, so square keeps the corners of art
+           somebody picked. */
+        if (SQUARE) {
+          c.drawImage(k.im, x, y, TILE, TILE);
+        } else {
+          c.save();
+          c.beginPath();
+          c.arc(x + TILE / 2, y + TILE / 2, TILE / 2, 0, Math.PI * 2);
+          c.closePath(); c.clip();
+          c.drawImage(k.im, x, y, TILE, TILE);
+          c.restore();
+        }
         if (SHOWNAM) {
           c.fillStyle = '#7a9eb0';
           c.font = '11px system-ui, sans-serif';

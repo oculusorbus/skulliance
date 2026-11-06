@@ -754,6 +754,26 @@ $cgNo  = preg_replace('~(?<![:/])//[^\n]*~', '', $cgNo);
    silently tainted, and the only symptom is toDataURL() throwing once all 399
    have loaded -- the worst possible place to discover it. Asserted by ORDER,
    because both lines being present is exactly the broken version. */
+/*
+ * ROUND OR SQUARE, AND THE DEFAULT IS ROUND.
+ *
+ * Discord's CDN serves the original SQUARE image; the circles are
+ * border-radius in Discord's own client, and this wall was clipping
+ * every tile to one. That throws away the corners of art somebody
+ * chose, which for pixel and framed pieces is most of the picture.
+ * The clip has to be conditional, and it has to still exist -- the
+ * wall has always looked round and that stays the default.
+ */
+ok(strpos($cgNo, "\$cg_square") !== false, 'the avatar wall has no square option');
+ok(strpos($cgNo, 'name="square"') !== false, 'the square option has no control to set it');
+ok(strpos($cgNo, 'var SQUARE') !== false, 'the square option never reaches the canvas');
+ok(preg_match('~if \(SQUARE\)\s*\{\s*c\.drawImage~s', $cgNo) === 1,
+   'square still goes through the circular clip');
+ok(preg_match('~\} else \{[^}]*c\.arc\(~s', $cgNo) === 1,
+   'the circular clip is gone, so round is no longer available');
+ok(strpos($cgNo, "!empty(\$_GET['square'])") !== false,
+   'the square option is not read from the query string, so the form cannot set it');
+
 $xo = strpos($cgNo, "im.crossOrigin = 'anonymous'");
 $sr = strpos($cgNo, 'im.src = src');
 ok($xo !== false && $sr !== false && $xo < $sr,
