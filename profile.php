@@ -1256,22 +1256,6 @@ include 'header.php';
 </div>
 <?php endif; ?>
 
-<?php
-/*
- * YOUR TESTIMONIAL, WHERE YOU CAN GET AT IT.
- *
- * The modal asks once, on a good day; this is the page somebody comes
- * back to when they want to change their mind. Two controls: rewrite
- * the words, which writes a new row at pending because an approval
- * that could be edited afterwards is not an approval, and withdraw it,
- * which is instant because taking your name off something must not
- * wait in a queue. Prints nothing if they never wrote one.
- */
-if ($is_own_profile && function_exists('testimonial_self_panel')) {
-	testimonial_self_panel($conn, (int) $_SESSION['userData']['user_id']);
-}
-?>
-
 <!-- ── Hero ──────────────────────────────────────────────────────────── -->
 <div class="profile-hero"<?php if ($realm_theme_id): ?> style="background-image:url('images/themes/<?php echo $realm_theme_id; ?>.jpg')"<?php endif; ?>>
     <div class="hero-overlay"></div>
@@ -1292,6 +1276,25 @@ if ($is_own_profile && function_exists('testimonial_self_panel')) {
         </div>
     </div>
 </div>
+
+<?php
+/*
+ * YOUR TESTIMONIAL, WHERE YOU CAN GET AT IT.
+ *
+ * The modal asks once, on a good day; this is the page somebody comes
+ * back to when they want to change their mind. Below the hero on
+ * purpose: it is set once and rarely touched, and above it the panel
+ * pushed somebody's own profile down the page to make room for a box
+ * they had already finished with. Two controls: rewrite
+ * the words, which writes a new row at pending because an approval
+ * that could be edited afterwards is not an approval, and withdraw it,
+ * which is instant because taking your name off something must not
+ * wait in a queue. Prints nothing if they never wrote one.
+ */
+if ($is_own_profile && function_exists('testimonial_self_panel')) {
+	testimonial_self_panel($conn, (int) $_SESSION['userData']['user_id']);
+}
+?>
 
 <!-- ── Summary Stats ─────────────────────────────────────────────────── -->
 <div class="stat-grid" style="--stat-cols:<?php echo $swap_best_score > 0 ? 7 : 6; ?>">

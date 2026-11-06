@@ -443,8 +443,17 @@ ok(strpos(file_get_contents(__DIR__ . '/webhooks.php'), 'getTestimonialsWebhook'
    'webhooks.php has no testimonials channel');
 ok(strpos(file_get_contents(__DIR__ . '/header.php'), 'dist/testimonials.css') !== false,
    'the stylesheet is never linked');
-ok(strpos(file_get_contents(__DIR__ . '/profile.php'), 'testimonial_self_panel') !== false,
+$prof = file_get_contents(__DIR__ . '/profile.php');
+ok(strpos($prof, 'testimonial_self_panel') !== false,
    'a player cannot change their mind later');
+/* BELOW THE HERO. Above it, a box somebody set once and finished with
+   pushed their own profile down the page. */
+$heroAt  = strpos($prof, '<div class="profile-hero"');
+$panelAt = strpos($prof, 'testimonial_self_panel($conn');
+ok($heroAt !== false && $panelAt > $heroAt,
+   'the testimonial panel sits above the hero, pushing the profile down');
+ok(strpos($prof, '$is_own_profile && function_exists') !== false,
+   'the panel is drawn on other people\'s profiles, not only your own');
 ok(strpos(file_get_contents(__DIR__ . '/realms-onboarding.php'), 'testimonial_wall') !== false,
    'the pitch page does not show any of them');
 ok(is_file(__DIR__ . '/testimonials-schema.md'), 'the schema is not written down anywhere');
