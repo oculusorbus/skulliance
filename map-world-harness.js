@@ -998,11 +998,159 @@ console.log('\nthe shallows reach the drawing, and the surf actually flows');
 	               'function surfWave(', 'function seaLayers(', 'function worldLayout('].map(lift);
 	ok(consts && parts.every(Boolean), 'the water functions could not be lifted out of map.js');
 
-	const ctx = { mwWorld: W.mwWorld, Math: Math, console: { warn: () => {} } };
+	const ctx = { mwWorld: W.mwWorld, Math: Math, console: { warn: () => {} },
+	               /* the relief builds on the terrain's own primitives */
+	               mwNoise: W.mwNoise, mwDistance: W.mwDistance };
 	vm.createContext(ctx);
 	vm.runInContext(consts + '\n' + parts.join('\n')
 		+ '\nvar _W = WATER, _foam = surfFoam, _wave = surfWave, _edge = foamEdgeAt;'
 		+ '\nvar _joined = (f, w, h) => seaLayers(worldLayout(f, w, h));', ctx);
+
+	/*
+	 * SHADED RELIEF ON THE LAND.
+	 *
+	 * The land was flat while the sea moved, so it carries a height
+	 * field lit from the north-west. Two things about it are easy to
+	 * get wrong and invisible when you do.
+	 *
+	 * THE COAST MUST NOT BECOME A CLIFF. Sea is not low ground, it is
+	 * not ground; differencing a shore pixel against the water would
+	 * light every coastline on the map as one enormous escarpment.
+	 *
+	 * AND THE AMPLITUDE IS SET BY THE RAMP, NOT BY THE NOISE. Measured
+	 * on the real world, no land pixel is more than 26px from water at
+	 * half scale and the median is 6 -- these are ribbons. So the
+	 * coastal-plain ramp never reaches 1 and holds the whole relief
+	 * down to roughly a tenth, which is the gentle look that was
+	 * chosen over the crisp one. Anybody who "fixes" plainPx for the
+	 * ribbons turns the relief up tenfold.
+	 */
+	vm.runInContext(
+		src.slice(src.indexOf('const LAND_RELIEF = {'),
+			src.indexOf('\n};', src.indexOf('const LAND_RELIEF = {')) + 3)
+		+ lift('function smoothEdge(')
+		+ lift('function landHeightField(') + lift('function reliefShade(')
+		+ '\nvar _hf = landHeightField, _rs = reliefShade, _LR = LAND_RELIEF;', ctx);
+
+	console.log('\nthe land has a surface, and the coast is not a cliff');
+	{
+		/* An island with a wide interior, so the ramp can top out and
+		   "inland is higher than the beach" means something. */
+		const LW = 260, LH = 200;
+		const lm = new Uint8Array(LW * LH);
+		for (let y = 20; y < LH - 20; y++) for (let x = 20; x < LW - 20; x++) lm[y * LW + x] = 1;
+		const hf = ctx._hf(lm, LW, LH, 1234, ctx._LR);
+
+		let seaNonZero = 0;
+		for (let i = 0; i < lm.length; i++) if (!lm[i] && hf[i] !== 0) seaNonZero++;
+		ok(seaNonZero === 0, 'the height field is zero everywhere that is sea (' + seaNonZero + ' leaked)');
+
+		let lo = Infinity, hi = -Infinity;
+		for (let i = 0; i < lm.length; i++) if (lm[i]) { if (hf[i] < lo) lo = hf[i]; if (hf[i] > hi) hi = hf[i]; }
+		ok(lo >= 0 && hi <= 1, 'the height stays inside 0..1 (' + lo.toFixed(3) + '..' + hi.toFixed(3) + ')');
+		ok(hi > 0.15, 'there is actually terrain on the land (peak ' + hi.toFixed(3) + ')');
+
+		/* The beach is flat and the interior is not: the ramp's whole job. */
+		const mean = (pred) => {
+			let s = 0, n = 0;
+			for (let y = 0; y < LH; y++) for (let x = 0; x < LW; x++) {
+				const i = y * LW + x;
+				if (lm[i] && pred(x, y)) { s += hf[i]; n++; }
+			}
+			return n ? s / n : 0;
+		};
+		const beach = mean((x, y) => x < 23 || x > LW - 24 || y < 23 || y > LH - 24);
+		const inner = mean((x, y) => x > 80 && x < LW - 80 && y > 70 && y < LH - 70);
+		ok(beach < inner * 0.35,
+		   'the shoreline stays flat against the interior (' + beach.toFixed(3) + ' vs ' + inner.toFixed(3) + ')');
+
+		/* The same world every visit, like the coastline it sits on. */
+		const hf2 = ctx._hf(lm, LW, LH, 1234, ctx._LR);
+		let same = true;
+		for (let i = 0; i < hf.length; i++) if (hf[i] !== hf2[i]) { same = false; break; }
+		ok(same, 'the terrain is deterministic, so the land is the same land on every load');
+		const hf3 = ctx._hf(lm, LW, LH, 999, ctx._LR);
+		let diff = 0;
+		for (let i = 0; i < hf.length; i++) if (hf[i] !== hf3[i]) diff++;
+		ok(diff > hf.length * 0.2, 'and a different seed is a different terrain (' + diff + ' cells differ)');
+
+		/*
+		 * THE RAMP IS NOT THE WHOLE TERRAIN.
+		 *
+		 * On this world the coastal ramp dominates the picture -- that is
+		 * what makes the relief follow each landmass organically -- and it
+		 * would go on doing so with the noise disconnected entirely,
+		 * leaving a soft bevel inside every coastline and no landforms at
+		 * all. A bevel is radially symmetric on a disc and terrain is not,
+		 * so a disc separates them: sample a ring at constant radius,
+		 * where the ramp is by definition constant, and the spread that
+		 * remains is the landforms.
+		 *
+		 * (The earlier version of this test compared the two diagonals of
+		 * the gradient, to catch the octave hatching that rotation fixed.
+		 * It was measured against the actual bug and could not see it --
+		 * 1.13 against a threshold of 1.25 -- so it was removed rather
+		 * than left standing as assurance it could not give.)
+		 */
+		const DR = 120, DD = DR * 2 + 40;
+		const dm = new Uint8Array(DD * DD);
+		for (let y = 0; y < DD; y++) for (let x = 0; x < DD; x++) {
+			const dx = x - DD / 2, dy = y - DD / 2;
+			if (dx * dx + dy * dy < DR * DR) dm[y * DD + x] = 1;
+		}
+		const dh = ctx._hf(dm, DD, DD, 4242, ctx._LR);
+		const ring = [];
+		for (let t = 0; t < 720; t++) {
+			const a2 = t / 720 * Math.PI * 2;
+			const x = Math.round(DD / 2 + Math.cos(a2) * (DR - 34));
+			const y = Math.round(DD / 2 + Math.sin(a2) * (DR - 34));
+			const i = y * DD + x;
+			if (dm[i]) ring.push(dh[i]);
+		}
+		const rMean = ring.reduce((p, q) => p + q, 0) / ring.length;
+		const rSd = Math.sqrt(ring.reduce((p, q) => p + (q - rMean) * (q - rMean), 0) / ring.length);
+		ok(ring.length > 600 && rSd > rMean * 0.15,
+		   'at constant distance from the coast the height still varies, so there are landforms and not just a bevel'
+		   + ' (sd ' + rSd.toFixed(3) + ' on mean ' + rMean.toFixed(3) + ')');
+
+		/* And the shading. */
+		const sh = ctx._rs(hf, lm, LW, LH, -0.7071, -0.7071, ctx._LR.shade, ctx._LR.height);
+		let shSea = 0;
+		for (let i = 0; i < lm.length; i++) if (!lm[i] && sh[i] !== 0) shSea++;
+		ok(shSea === 0, 'the shading never touches the sea (' + shSea + ' leaked)');
+
+		let up = 0, down = 0;
+		for (let i = 0; i < lm.length; i++) if (lm[i]) { if (sh[i] > 0.02) up++; else if (sh[i] < -0.02) down++; }
+		ok(up > 0 && down > 0, 'slopes are lit on one side and shadowed on the other (' + up + ' lit, ' + down + ' dark)');
+
+		/* Flat ground is flat: no height, no shading beyond the height
+		   term, which is what stops a level plain glowing. */
+		const flat = new Float32Array(LW * LH);
+		const shFlat = ctx._rs(flat, lm, LW, LH, -0.7071, -0.7071, ctx._LR.shade, ctx._LR.height);
+		let anyFlat = 0;
+		for (let i = 0; i < lm.length; i++) if (shFlat[i] !== 0) anyFlat++;
+		ok(anyFlat === 0, 'a perfectly flat island shades to nothing (' + anyFlat + ' lit)');
+
+		/*
+		 * THE CLIFF TEST. A plateau: every land pixel at full height and
+		 * perfectly level, so there is no real slope anywhere on it. If
+		 * the shader differenced a shore pixel against the water it would
+		 * read a full unit of fall right round the coastline and light
+		 * the island like a mesa. Level ground must shade to the height
+		 * term and nothing else, at the beach as much as in the middle.
+		 */
+		const plateau = new Float32Array(LW * LH);
+		for (let i = 0; i < lm.length; i++) if (lm[i]) plateau[i] = 1;
+		const shFlatTop = ctx._rs(plateau, lm, LW, LH, -0.7071, -0.7071, ctx._LR.shade, ctx._LR.height);
+		let worst = 0;
+		for (let i = 0; i < lm.length; i++) {
+			if (!lm[i]) continue;
+			worst = Math.max(worst, Math.abs(shFlatTop[i] - ctx._LR.height));
+		}
+		ok(worst < 1e-6,
+		   'a level plateau shades evenly to its coast, so the shore is not differenced against the sea (worst ' + worst.toFixed(4) + ')');
+	}
+
 	const WAT = ctx._W, F = 1 / 60;
 
 	/*

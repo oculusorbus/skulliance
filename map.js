@@ -1286,6 +1286,255 @@ const LAND_TEX = {
     ]
 };
 
+/*
+ * THE LAND HAS A SURFACE NOW, FOR THE SAME REASON THE SEA DOES.
+ *
+ * With the ocean moving, the territories read as flat paper laid on
+ * top of it: "there's so much going on now with the water and all the
+ * land mass is just flat space". The fix is the oldest trick in
+ * cartography -- shaded relief. Build a height field over the land,
+ * light it from one direction, and draw only the lighting.
+ *
+ * LIGHTING IS LUMINANCE ONLY, NEVER HUE. The faction colour is the
+ * map's primary information and it arrives as a 22% wash over the
+ * land, so anything that tints the terrain changes what a territory
+ * looks like it belongs to. The relief is therefore white where a
+ * slope faces the light and black where it faces away, both at low
+ * alpha: it darkens and lightens, and every hue on the map survives
+ * it untouched.
+ *
+ * AND IT GOES UNDER THE WASH, not over it. Painted on top it is a
+ * grey film lying across the colours; underneath, each faction's wash
+ * tints its own hills and the relief belongs to the ground.
+ *
+ * THE TERRAIN IGNORES THE BORDERS, which is the whole point of
+ * putting it in. Mountains are older than politics, so the height
+ * field is built across the landmass and the territories are drawn on
+ * top of whatever geography they happen to contain. A per-faction
+ * treatment would turn the relief back into a second way of drawing
+ * the same borders.
+ *
+ * LIT FROM THE NORTH-WEST, the same direction as the water's own
+ * shading. Two light sources on one picture is the fastest way to
+ * make a scene look assembled rather than seen.
+ */
+const LAND_RELIEF = {
+    /*
+     * COASTS ARE FLAT. Height is multiplied by a ramp that is zero at
+     * the shoreline, so hills start inland and the beach stays level.
+     * Without it the relief fights the shore animation and the rims
+     * for the same pixels, and a mountain that runs straight into the
+     * sea at full height reads as a cliff round the entire coastline.
+     */
+    /*
+     * COASTS ARE FLAT -- AND ON THIS WORLD THAT RAMP IS ALSO THE
+     * VOLUME KNOB, WHICH IS WORTH KNOWING BEFORE TOUCHING IT.
+     *
+     * Height is multiplied by a ramp that is zero at the shoreline,
+     * so hills start inland and the beach stays level. But measured
+     * on the real world, no land pixel is more than 26px from water
+     * at half scale and the median is 6: these territories are
+     * ribbons, not continents, so the ramp never reaches 1 anywhere
+     * and holds the whole relief to roughly a tenth of its nominal
+     * height.
+     *
+     * That gentleness is the look that was chosen, out of several
+     * passes. Cutting the ramp to suit the ribbons -- the obviously
+     * "correct" fix -- turns the relief up by a factor of ten and
+     * gives crisp rocky terrain, which was rejected beside water this
+     * quiet. So this number controls amplitude far more than it
+     * controls the beach, and shade has to move with it.
+     */
+    plainPx: 30,
+    /*
+     * HILLS AND RIDGES, MIXED. Plain fBm gives rounded lumps -- hills,
+     * but no mountains, because a mountain range has a CREST and
+     * smooth noise has none. Ridged noise (1 - |2n-1|) folds the
+     * field at its midline, which turns every zero crossing into a
+     * sharp line, and those lines chain up into ranges. Neither is
+     * right alone: all fBm is a golf course, all ridges is crumpled
+     * foil.
+     */
+    cell: 104, octaves: 4, ridgeMix: 0.46, gamma: 1.35,
+    /* The lighting. shade is the slope term and is what you actually
+       see; height lifts the high ground a touch on top of it, which
+       keeps a long even slope from disappearing. */
+    /*
+     * shade is large because it is a gradient PER PIXEL: the height
+     * field runs 0..1 across cells about a hundred pixels wide, so a
+     * typical slope is around a hundredth, and a gain near 1 draws a
+     * peak alpha of 11/255 -- which is nothing. It scales with cell:
+     * halve the cell and the same terrain is twice as steep.
+     */
+    light: [-0.7071, -0.7071], shade: 22, height: 0.12,
+    lit: [214, 234, 246], dark: [2, 8, 16],
+    litMax: 0.30, darkMax: 0.34
+};
+
+/**
+ * The height field over the land, 0..1, zero everywhere that is sea.
+ *
+ * `mask` is 1 for land. Pure, and the shape of the terrain is decided
+ * entirely here, so the harness can ask the questions that matter --
+ * does the coast stay flat, is there anything inland, is it the same
+ * terrain every visit -- against a mask it built itself.
+ */
+function landHeightField(mask, w, h, seed, cfg) {
+    cfg = cfg || LAND_RELIEF;
+    const out = new Float32Array(w * h);
+    if (typeof mwDistance !== 'function' || typeof mwNoise !== 'function') return out;
+
+    /* Depth inland. mwDistance zeroes the cells you give it and grows
+       outward, so handing it the SEA gives every land pixel its
+       distance from the nearest shore -- in chamfer units, where an
+       orthogonal step is 3. */
+    const sea = new Uint8Array(w * h);
+    for (let i = 0; i < mask.length; i++) sea[i] = mask[i] ? 0 : 1;
+    const inland = mwDistance(sea, w, h);
+
+    /*
+     * EVERY OCTAVE ON ITS OWN AXIS, AND ITS OWN SEED.
+     *
+     * Stacked on one lattice this produced diagonal hatching across
+     * whole territories rather than hills. Value noise on a square
+     * grid has axis- and diagonal-aligned structure; summing octaves
+     * that share the lattice lines them all up, the ridge fold turns
+     * every one of those lines into a crease, and lighting the result
+     * from 45 degrees -- straight down the lattice diagonal -- shows
+     * them off as well as it possibly could.
+     *
+     * So each octave is rotated by an angle that is no fraction of a
+     * right angle and offset by an unrelated amount, and draws from
+     * its own hash. Nothing lines up with anything, and the creases
+     * go back to being ridges that wander.
+     */
+    const oct = Math.max(1, cfg.octaves | 0);
+    const fbN = [], rgN = [], rc = [], rs = [], ro = [];
+    for (let o = 0; o < oct; o++) {
+        fbN.push(mwNoise((seed ^ Math.imul(o + 1, 0x9e3779b9)) >>> 0));
+        rgN.push(mwNoise((seed ^ Math.imul(o + 1, 0x85ebca6b) ^ 0x51ed) >>> 0));
+        const th = 0.683 * (o + 1);
+        rc.push(Math.cos(th)); rs.push(Math.sin(th));
+        ro.push([o * 37.13, o * 19.77]);
+    }
+    /* Normaliser, so cell/octaves can be retuned without the height
+       silently leaving 0..1 and clipping every peak to the same flat
+       white. */
+    let norm = 0;
+    for (let o = 0; o < oct; o++) norm += Math.pow(0.5, o);
+
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const i = y * w + x;
+            if (!mask[i]) continue;
+            const deep = inland[i] / 3;
+            if (deep <= 0) continue;
+            const ramp = smoothEdge(0, cfg.plainPx, deep);
+            let fb = 0, rg = 0, amp = 1, cell = cfg.cell;
+            for (let o = 0; o < oct; o++) {
+                const xr = (x * rc[o] - y * rs[o]) / cell + ro[o][0];
+                const yr = (x * rs[o] + y * rc[o]) / cell + ro[o][1];
+                fb += fbN[o](xr, yr) * amp;
+                /* Folded at the midline: the crease is the ridge. */
+                rg += (1 - Math.abs(2 * rgN[o](xr, yr) - 1)) * amp;
+                amp *= 0.5; cell *= 0.5;
+            }
+            fb /= norm; rg /= norm;
+            let v = fb * (1 - cfg.ridgeMix) + rg * cfg.ridgeMix;
+            out[i] = Math.pow(v < 0 ? 0 : (v > 1 ? 1 : v), cfg.gamma) * ramp;
+        }
+    }
+
+    return out;
+}
+
+/**
+ * Hillshade: how much each land pixel faces the light, -1..1.
+ *
+ * The same arithmetic the water uses on its own field -- the surface
+ * normal of a height field is (-dh/dx, -dh/dy, 1) and this is that
+ * dotted with the light -- which is why the two read as one scene.
+ *
+ * Differences are taken against the pixel itself at a coast rather
+ * than against the sea, so the shoreline does not light up as one
+ * enormous cliff edge: the sea is not lower ground, it is not ground.
+ */
+function reliefShade(height, mask, w, h, lx, ly, gain, hGain) {
+    const out = new Float32Array(w * h);
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const i = y * w + x;
+            if (!mask[i]) continue;
+            const l = (x > 0 && mask[i - 1]) ? height[i - 1] : height[i];
+            const r = (x < w - 1 && mask[i + 1]) ? height[i + 1] : height[i];
+            const u = (y > 0 && mask[i - w]) ? height[i - w] : height[i];
+            const d = (y < h - 1 && mask[i + w]) ? height[i + w] : height[i];
+            const v = -((r - l) * lx + (d - u) * ly) * gain + height[i] * hGain;
+            out[i] = v < -1 ? -1 : (v > 1 ? 1 : v);
+        }
+    }
+    return out;
+}
+
+/**
+ * The relief, as an <image> to slide under the territory washes.
+ *
+ * Rendered at half the sheet and upscaled, like the water: this is
+ * all low-frequency shading and the browser's bilinear is free
+ * smoothing. Returns null rather than throwing if there is no canvas
+ * to draw on, because the map without relief is still a map.
+ */
+function landReliefImage(world, svgW, svgH) {
+    if (!world || !world.coast || !world.coast.length) return null;
+    if (typeof mwDistance !== 'function') return null;
+    const SCALE = 0.5;
+    const w = Math.max(1, Math.round(svgW * SCALE)), h = Math.max(1, Math.round(svgH * SCALE));
+
+    const cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    const g = cv.getContext('2d', { willReadFrequently: true });
+    if (!g) return null;
+    g.fillStyle = '#000';
+    g.fillRect(0, 0, w, h);
+    g.fillStyle = '#fff';
+    g.beginPath();
+    for (const ring of world.coast) {
+        for (let i = 0; i < ring.length; i++) {
+            const x = ring[i].x * SCALE, y = ring[i].y * SCALE;
+            if (i) g.lineTo(x, y); else g.moveTo(x, y);
+        }
+        g.closePath();
+    }
+    /* nonzero, so the lakes stay holes -- the same rule the coast is
+       filled with everywhere else, and it keeps terrain out of them. */
+    g.fill('nonzero');
+
+    const px = g.getImageData(0, 0, w, h);
+    const mask = new Uint8Array(w * h);
+    for (let i = 0; i < mask.length; i++) mask[i] = px.data[i * 4] > 127 ? 1 : 0;
+
+    const C = LAND_RELIEF;
+    const height = landHeightField(mask, w, h, ((world.seed || 1) ^ 0x1a4d) >>> 0, C);
+    const shade = reliefShade(height, mask, w, h, C.light[0], C.light[1], C.shade, C.height);
+
+    const img = g.createImageData(w, h);
+    const d = img.data;
+    const L = C.lit, D = C.dark;
+    for (let i = 0; i < mask.length; i++) {
+        if (!mask[i]) continue;
+        const v = shade[i];
+        const up = v > 0;
+        const a = (up ? v : -v) * (up ? C.litMax : C.darkMax);
+        if (a < 0.004) continue;
+        const c = up ? L : D;
+        const o = i * 4;
+        d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2];
+        d[o + 3] = (a * 255) | 0;
+    }
+    g.putImageData(img, 0, 0);
+    return cv.toDataURL('image/png');
+}
+
 /**
  * One layer's flecks over a whole w x h sheet, as plain data.
  *
@@ -1625,7 +1874,20 @@ function renderMap() {
             svg.appendChild(el);
             /* The land is the last sea layer; its texture goes straight
                on top, under the territory washes that follow. */
-            if (L.band === -1 && L.rings) paintLandTexture(svg, defs, world, attrs.d, svgW, svgH);
+            if (L.band === -1 && L.rings) {
+                /* Relief first, flecks on top of it: the flecks are
+                   ground cover and belong on the hills, not under
+                   them. Both sit under the territory washes. */
+                const relief = landReliefImage(world, svgW, svgH);
+                if (relief) {
+                    svg.appendChild(svgEl('image', {
+                        x: 0, y: 0, width: svgW, height: svgH,
+                        href: relief, 'image-rendering': 'auto',
+                        preserveAspectRatio: 'none', 'pointer-events': 'none'
+                    }));
+                }
+                paintLandTexture(svg, defs, world, attrs.d, svgW, svgH);
+            }
         }
     }
 
