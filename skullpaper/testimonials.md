@@ -67,6 +67,16 @@ something more specific.
 **That is an invitation, not a verdict.** The text is sitting in a box on the
 same page. Rewrite it, send it again, and it goes back into the queue.
 
+## Wording
+
+The founder may adjust the wording of a published testimonial for readability.
+The modal says so before you send.
+
+**Your words are kept exactly as you wrote them.** The adjustment is stored
+beside them, never over them, and if yours has been adjusted you can read the
+published version on your profile under "As published". Rewriting yours clears
+any adjustment, because it was written for the old wording.
+
 ## Changing what it says
 
 You can rewrite yours at any time from your profile, whatever state it is in.

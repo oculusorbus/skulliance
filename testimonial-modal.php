@@ -110,8 +110,9 @@ if ($tst_offer):
 		 * changing their mind actually goes.
 		 */
 		?>
-		<p class="tst-fine">The founder reads it before anything is published, and you can revise
-		   it or withdraw it from your profile at any time.</p>
+		<p class="tst-fine">The founder reads it before anything is published and may adjust the
+		   wording for readability. Your words are kept exactly as you wrote them, and you can
+		   revise it or withdraw it from your profile at any time.</p>
 		<label class="tst-consent">
 			<input type="checkbox" id="tst-consent">
 			<span>Publish this with my username and avatar.</span>

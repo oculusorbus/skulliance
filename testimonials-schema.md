@@ -13,6 +13,7 @@ CREATE TABLE testimonials (
   user_id        INT NOT NULL,
   prompt_key     VARCHAR(32)  NOT NULL DEFAULT '',
   body           TEXT         NOT NULL,
+  edited_body    TEXT         NULL,
   visibility     ENUM('named','private') NOT NULL DEFAULT 'named',
   status         ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
   is_current     TINYINT(1)   NOT NULL DEFAULT 1,
@@ -32,6 +33,33 @@ CREATE TABLE testimonial_nudges (
   muted       TINYINT(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
+
+## Already run the tables? One ALTER
+
+`edited_body` was added after the first install. Run this once; everything
+works without it (the player's own words are published unchanged) and the
+admin screen says so until you do.
+
+```sql
+ALTER TABLE testimonials ADD COLUMN edited_body TEXT NULL AFTER body;
+```
+
+## Why the edit is a second column, not a change to `body`
+
+The founder can adjust wording for public readability. That has to leave the
+original exactly as written, for two reasons:
+
+**It is evidence.** The player agreed to publish what they wrote. If their
+words are overwritten there is nothing left to check that against, and no way
+to answer "I didn't say that".
+
+**It must expire with the text it was written for.** `edited_body` lives on the
+row, and a player editing their testimonial writes a NEW row, so a polish of
+the old wording cannot survive onto words it was never applied to. That falls
+out of keeping every submission rather than needing a rule of its own.
+
+Everything public reads `edited_body` when it is set and `body` when it is not.
+Nothing anywhere reads `body` for display once an edit exists.
 
 ## Why every submission is kept, not one row per player
 

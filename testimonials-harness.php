@@ -34,10 +34,15 @@ class FakeRes {
 	function fetch_assoc() { return array_shift($this->rows); }
 }
 class FakeConn {
-	public $log = array(); public $queue = array(); public $tables = true;
+	public $log = array(); public $queue = array(); public $tables = true; public $columns = true;
 	function query($sql) {
 		$this->log[] = preg_replace('~\s+~', ' ', trim($sql));
 		if (stripos($sql, 'SHOW TABLES') === 0) return new FakeRes($this->tables ? array(array('x')) : array());
+		/* SHOW COLUMNS answers the edited_body probe. Without this the
+		   fake said the column was absent, testimonials_can_edit()
+		   cached false for the whole process, and every editorial
+		   assertion tested a function that had already returned. */
+		if (stripos($sql, 'SHOW COLUMNS') === 0) return new FakeRes($this->columns ? array(array('x')) : array());
 		/*
 		 * FALSE, LIKE THE REAL ONE. mysqli::query() returns false when
 		 * the table does not exist, and the next line is usually
@@ -227,8 +232,14 @@ ok(strpos($adm, 'testimonial_queue($conn, \'approved\')') !== false,
    'the admin page cannot list approved testimonials, so none can be pulled down');
 ok(strpos($adm, 'testimonial_queue($conn, \'rejected\')') !== false,
    'the admin page cannot list rejected testimonials, so none can be let through');
-ok(substr_count($adm, "name=\"verdict\"") >= 1 && strpos($adm, '$verdicts') !== false,
-   'the verdict buttons are not rendered per card, so a judged testimonial has no controls');
+/* The card moved to the library, so the admin page no longer holds
+   the button markup -- it holds the three calls that pass the
+   verdicts. Check those, and the rendering is checked where it now
+   lives, by running it. */
+ok(substr_count($adm, 'testimonial_admin_card($t, array(') === 3,
+   'the admin page no longer renders all three lists through one card');
+ok(function_exists('testimonial_admin_card'),
+   'the review card is not in the library, so nothing can run it');
 $q = new FakeConn();
 $q->queue[] = array();
 testimonial_queue($q, 'approved');
@@ -408,6 +419,101 @@ ok(strpos($ajax0, "!empty(\$_POST['consent'])") !== false,
    'the endpoint never forwards the confirmation, so the save always refuses');
 ok(stripos($modal0, 'username and avatar') !== false,
    'the modal never says what sending it publishes, so sending it is not informed consent');
+
+/*
+ * THE FOUNDER'S WORDING, SEPARATE FROM THE PLAYER'S WORDS.
+ *
+ * A testimonial can be adjusted for public readability without the
+ * player being asked again. The original must survive untouched --
+ * it is the only thing that can answer "I did not say that" -- so the
+ * polish is a second column and everything public reads through one
+ * function.
+ */
+ok(testimonial_display_body(array('body' => 'raw')) === 'raw',
+   'with no edit, the player\'s own words are not what publishes');
+ok(testimonial_display_body(array('body' => 'raw', 'edited_body' => null)) === 'raw',
+   'a null edit does not fall back to the original');
+ok(testimonial_display_body(array('body' => 'raw', 'edited_body' => '   ')) === 'raw',
+   'a whitespace-only edit publishes as blank instead of falling back');
+ok(testimonial_display_body(array('body' => 'raw', 'edited_body' => 'polished')) === 'polished',
+   'the founder\'s wording is not what publishes');
+/* A row from an install without the ALTER has no key at all. */
+$noCol = array('body' => 'raw');
+ok(testimonial_display_body($noCol) === 'raw',
+   'a row with no edited_body column does not publish the original');
+
+/* Everything public has to go through that one function. */
+$pubFn = substr($src, strpos($src, 'function testimonial_public('));
+$pubFn = substr($pubFn, 0, strpos($pubFn, "\n}\n"));
+ok(strpos($pubFn, 'testimonial_display_body($row)') !== false,
+   'the public wall reads body directly, so an edited testimonial publishes the raw words');
+ok(strpos($annSrc, 'testimonial_display_body($row)') !== false,
+   'the Discord post reads body directly, so an edited testimonial posts the raw words');
+$panelFn = substr($src, strpos($src, 'function testimonial_self_panel('));
+$panelFn = substr($panelFn, 0, strpos($panelFn, "\n}\n"));
+ok(strpos($panelFn, 'testimonial_share_url($pubText)') !== false,
+   'the share link posts the raw words rather than what is published');
+ok(strpos($panelFn, 'As published') !== false,
+   'a player cannot see the wording that is published under their name');
+
+/* The original is never written by the editorial path. */
+$setFn = substr($src, strpos($src, 'function testimonial_set_public_text('));
+$setFn = substr($setFn, 0, strpos($setFn, "\n}\n"));
+ok(strpos($setFn, 'edited_body =') !== false && strpos($setFn, 'SET body') === false,
+   'the editorial save writes body, which destroys the words the player agreed to');
+$sp = new FakeConn();
+testimonial_set_public_text($sp, 5, 'tidied up');
+ok($sp->said("edited_body = 'tidied up'"), 'the wording is not stored');
+$sp2 = new FakeConn();
+testimonial_set_public_text($sp2, 5, '   ');
+ok($sp2->said('edited_body = NULL'), 'clearing the wording does not restore the original');
+$sp3 = new FakeConn();
+ok(testimonial_set_public_text($sp3, 5, str_repeat('x', TESTIMONIAL_MAX + 1)) === false,
+   'an over-long editorial rewrite is accepted');
+
+/* And the modal has to say it may happen. */
+$modalNow = file_get_contents(__DIR__ . '/testimonial-modal.php');
+ok(stripos($modalNow, 'adjust the') !== false && stripos($modalNow, 'wording') !== false,
+   'the modal never warns that the wording may be adjusted');
+ok(stripos($modalNow, 'kept exactly as you wrote them') !== false,
+   'the modal says the wording may change without saying the original is kept');
+/* The revision box sits under the quote it revises. */
+/*
+ * RENDERED, NOT GREPPED. The card was a function inside the admin
+ * page, so the only available check was searching its source -- which
+ * passes just as happily when the whole revision block sits behind
+ * `if (false)`. It is in the library now and this runs it.
+ */
+$cardRow = array('id' => 7, 'user_id' => 9, 'username' => 'someone',
+                 'created_date' => '2026-01-01 00:00:00', 'visibility' => 'named',
+                 'discord_posted' => 0, 'prompt_key' => $pk[0],
+                 'body' => 'THE ORIGINAL LINE', 'edited_body' => 'THE TIDIED LINE',
+                 'review_note' => '', 'status' => 'approved');
+ob_start();
+testimonial_admin_card($cardRow, array('reject' => 'Pull it down'), true);
+$cardOut = ob_get_clean();
+$quoteAt   = strpos($cardOut, 'THE ORIGINAL LINE');
+$reviseAt  = strpos($cardOut, 'adm-revise');
+$verdictAt = strpos($cardOut, 'adm-verdict');
+ok($quoteAt !== false && $reviseAt !== false && $verdictAt !== false
+   && $quoteAt < $reviseAt && $reviseAt < $verdictAt,
+   'the revision box is not directly under the quote, which is where it is used from');
+ok(strpos($cardOut, 'THE TIDIED LINE') !== false,
+   'the revision box does not start from the wording already saved');
+ok(strpos($cardOut, 'value="revise"') !== false,
+   'the revision form posts no verdict of its own, so saving wording is a verdict');
+/* The original is always what the card quotes: the point of the
+   column is being able to compare the two. */
+ok(strpos($cardOut, 'THE ORIGINAL LINE') !== false,
+   'the card quotes the edit instead of what the player wrote');
+/* And with no column, no box -- but still a card. */
+ob_start();
+testimonial_admin_card($cardRow, array('reject' => 'Pull it down'), false);
+$cardNoEdit = ob_get_clean();
+ok(strpos($cardNoEdit, 'adm-revise') === false,
+   'the revision box renders on an install with no edited_body column');
+ok(strpos($cardNoEdit, 'adm-verdict') !== false,
+   'losing the revision box takes the verdict buttons with it');
 
 echo "\nthe asking stops\n";
 ok(TESTIMONIAL_MAX_NUDGES > 0 && TESTIMONIAL_MAX_NUDGES <= 5,

@@ -132,3 +132,10 @@
 .tst-edit .tst-go, .tst-vis .tst-go { align-self: flex-start; }
 .tst-saved { font-size: 13px; color: #4fdcb8; margin-left: 10px; }
 .tst-mine blockquote { margin: 0 0 12px; font-size: 14px; line-height: 1.6; color: #e4eff8; }
+
+/* The published wording, when it differs from what they wrote. */
+.tst-asedited {
+    border-left: 2px solid rgba(0,200,160,0.5);
+    padding-left: 12px; margin: 0 0 12px;
+    color: #dceaf5;
+}

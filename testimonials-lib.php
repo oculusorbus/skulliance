@@ -476,7 +476,7 @@ function testimonial_announce($conn, $row) {
 	   no use for. */
 	$thumb = (isset($row['discord_id'], $row['avatar']) && function_exists('avatar_url'))
 		? avatar_url($row['discord_id'], $row['avatar']) : '';
-	skl_discordmsg($who, '"' . $row['body'] . '"', '', '', 'testimonials', $thumb,
+	skl_discordmsg($who, '"' . testimonial_display_body($row) . '"', '', '', 'testimonials', $thumb,
 	               '2ECC71', null, $footer, '', (int) $row['user_id'], 0);
 	/*
 	 * FLAGGED AFTER THE POST, NOT BEFORE.
@@ -494,6 +494,63 @@ function testimonial_announce($conn, $row) {
 	 */
 	$conn->query("UPDATE testimonials SET discord_posted = 1 WHERE id = " . (int) $row['id']);
 	return true;
+}
+
+/**
+ * Does this install have the editorial column?
+ *
+ * edited_body arrived after the first schema was run, so the ALTER may
+ * not have been. Checked once per request, the same way the tables
+ * are: without it the player's own words publish unchanged, which is
+ * the behaviour that existed before and is never wrong, only
+ * unpolished.
+ */
+function testimonials_can_edit($conn) {
+	static $can = null;
+	if ($can !== null) return $can;
+	$can = false;
+	if (!testimonials_ready($conn)) return $can;
+	$r = @$conn->query("SHOW COLUMNS FROM testimonials LIKE 'edited_body'");
+	if ($r && $r->num_rows > 0) $can = true;
+	return $can;
+}
+
+/**
+ * What the public sees: the founder's wording if there is one, the
+ * player's own if there is not.
+ *
+ * ONE FUNCTION, CALLED BY EVERYTHING THAT DISPLAYS. The wall, the
+ * Discord post and the share link all have to agree, and "use the
+ * edit if present" repeated in three places is three chances to
+ * publish a sentence nobody approved.
+ */
+function testimonial_display_body($row) {
+	if (is_array($row) && isset($row['edited_body'])) {
+		$e = trim((string) $row['edited_body']);
+		if ($e !== '') return $e;
+	}
+	return isset($row['body']) ? (string) $row['body'] : '';
+}
+
+/**
+ * Store the founder's public wording, or clear it.
+ *
+ * NEVER TOUCHES body. The player agreed to publish what they wrote,
+ * and the original is the only thing that can answer "I did not say
+ * that" -- so it stays exactly as submitted, and this is a second
+ * column beside it.
+ *
+ * An empty string clears the edit and publishes the original again.
+ */
+function testimonial_set_public_text($conn, $id, $text) {
+	if (!testimonials_can_edit($conn)) return false;
+	$id = intval($id);
+	if ($id <= 0) return false;
+	$text = trim((string) $text);
+	$len  = function_exists('mb_strlen') ? mb_strlen($text) : strlen($text);
+	if ($len > TESTIMONIAL_MAX) return false;
+	$v = ($text === '') ? 'NULL' : "'" . $conn->real_escape_string($text) . "'";
+	return (bool) $conn->query("UPDATE testimonials SET edited_body = $v WHERE id = $id");
 }
 
 /** One row by id, with who wrote it. What announce() needs. */
@@ -535,6 +592,8 @@ function testimonial_public($conn, $limit = 12) {
 	$limit = max(1, min(50, intval($limit)));
 	$r = $conn->query(
 		"SELECT t.body, t.prompt_key, t.visibility, t.created_date,
+		        " . (testimonials_can_edit($conn) ? 't.edited_body,' : '') . "
+
 		        users.username, users.discord_id, users.avatar,
 		        projects.name AS faction_name
 		 FROM testimonials t
@@ -550,7 +609,7 @@ function testimonial_public($conn, $limit = 12) {
 	   'private' and there is no third state. */
 	if ($r) while ($row = $r->fetch_assoc()) {
 		$out[] = array(
-			'body'    => $row['body'],
+			'body'    => testimonial_display_body($row),
 			'asked'   => isset($prompts[$row['prompt_key']]) ? $prompts[$row['prompt_key']] : '',
 			'name'    => $row['username'],
 			'avatar'  => function_exists('avatar_url')
@@ -657,6 +716,20 @@ function testimonial_self_panel($conn, $user_id) {
 	   to be read again, which the note under the box says plainly so
 	   nobody edits a live testimonial expecting it to stay live. */
 	/*
+	 * IF IT WAS POLISHED, SHOW THEM THE POLISH.
+	 *
+	 * The founder may adjust wording for readability and the modal
+	 * says so. What that must not mean is somebody's name and avatar
+	 * on a sentence they cannot read. Their own words stay in the box
+	 * below, editable; this is what the site is showing.
+	 */
+	$pubText = testimonial_display_body($t);
+	if ($pubText !== trim((string) $t['body'])) {
+		echo '<p class="tst-asked">As published</p>';
+		echo '<blockquote class="tst-asedited">' . nl2br(htmlspecialchars($pubText)) . '</blockquote>';
+	}
+
+	/*
 	 * THE SHARE, ONCE IT IS ACTUALLY PUBLISHED.
 	 *
 	 * The thank-you card offers this the moment somebody submits and
@@ -669,7 +742,7 @@ function testimonial_self_panel($conn, $user_id) {
 	 */
 	if ($state === 'approved') {
 		echo '<a class="tst-x" target="_blank" rel="noopener" href="'
-		   . htmlspecialchars(testimonial_share_url($t['body'])) . '">Share it on X</a>';
+		   . htmlspecialchars(testimonial_share_url($pubText)) . '">Share it on X</a>';
 	}
 
 	echo '<form class="tst-edit" id="tst-edit-form">';
@@ -713,4 +786,70 @@ function testimonial_self_panel($conn, $user_id) {
 	   . 'wire("tst-edit-form","tst-edit-said","Sent to be read again.");'
 	   . '})();</script>';
 	echo '</div>';
+}
+
+/**
+ * One review card, used for all three lists.
+ *
+ * IN THE LIBRARY SO IT CAN BE RUN. It was a function inside the admin
+ * page, where the only available check was grepping its source -- and
+ * a grep for "the revision box is under the quote" passes just as
+ * happily when the whole block sits behind `if (false)`. Rendered,
+ * the order is a fact about output rather than about text.
+ *
+ * ONE CARD FOR ALL THREE LISTS.
+ *
+ * Every testimonial carries the verdict it does not currently have, so
+ * a decision is never final: approved ones can be pulled, rejected
+ * ones can be let through. The first cut rendered the approved list
+ * through testimonial_public(), which drops the row id, so there was
+ * no control to press and changing your mind meant editing the
+ * database.
+ */
+function testimonial_admin_card($t, $verdicts, $canEdit = true) {
+	$prompts = testimonial_prompts();
+	echo '<div class="adm-card">';
+	echo '<div class="adm-card-head"><strong>' . htmlspecialchars($t['username']) . '</strong> ';
+	echo '<span>' . htmlspecialchars($t['created_date']) . '</span> ';
+	echo '<span>shows as: ' . htmlspecialchars($t['visibility']) . '</span>';
+	if ((int) $t['discord_posted'] === 1) echo ' <span>posted to Discord</span>';
+	echo '</div>';
+	if (isset($prompts[$t['prompt_key']])) {
+		echo '<p class="adm-asked">' . htmlspecialchars($prompts[$t['prompt_key']]) . '</p>';
+	}
+	echo '<blockquote>' . nl2br(htmlspecialchars($t['body'])) . '</blockquote>';
+	/*
+	 * THE REVISION SITS DIRECTLY UNDER THE QUOTE, because that is how
+	 * it is used: read the line, retype the line. A box further down
+	 * the card, past the note and the buttons, means scrolling
+	 * between the sentence and the place you rewrite it.
+	 *
+	 * Its own form, so saving wording is not a verdict. Empty clears
+	 * the edit and publishes the player's own words again.
+	 */
+	if ($canEdit) {
+		$pub = isset($t['edited_body']) ? (string) $t['edited_body'] : '';
+		echo '<form method="post" class="adm-revise">';
+		echo '<input type="hidden" name="tid" value="' . (int) $t['id'] . '">';
+		echo '<input type="hidden" name="verdict" value="revise">';
+		echo '<textarea name="public_text" rows="3" maxlength="' . (int) TESTIMONIAL_MAX . '"'
+		   . ' placeholder="As published. Leave empty to publish their words unchanged.">'
+		   . htmlspecialchars($pub) . '</textarea>';
+		echo '<button type="submit" class="adm-yes">Save wording</button>';
+		if ($pub !== '') echo '<span class="adm-edited">published as edited</span>';
+		echo '</form>';
+	}
+	if (trim((string) $t['review_note']) !== '') {
+		echo '<p class="adm-note">Your note: ' . htmlspecialchars($t['review_note']) . '</p>';
+	}
+	echo '<form method="post" class="adm-verdict">';
+	echo '<input type="hidden" name="tid" value="' . (int) $t['id'] . '">';
+	echo '<input type="text" name="note" placeholder="Note to the player (optional)" maxlength="255"'
+	   . ' value="' . htmlspecialchars($t['review_note']) . '">';
+	foreach ($verdicts as $v => $label) {
+		echo '<button type="submit" name="verdict" value="' . $v . '" class="'
+		   . (($v === 'approve' || $v === 'repost') ? 'adm-yes' : 'adm-no') . '">'
+		   . htmlspecialchars($label) . '</button>';
+	}
+	echo '</form></div>';
 }

@@ -92,4 +92,13 @@
 .adm-art small{display:block;color:#5a7888;font-size:.78rem;margin-top:10px}
 @media (max-width:560px){.adm-head{flex-direction:column;align-items:flex-start}
   .adm-art img,.adm-art video{max-width:100%}}
+/* The revision box, directly under the quote it revises. */
+.adm-revise{display:flex;flex-direction:column;gap:8px;margin:0 0 14px}
+.adm-revise textarea{width:100%;box-sizing:border-box;padding:9px 11px;border-radius:7px;
+  border:1px solid rgba(0,200,160,.22);background:#07131f;color:#e8f2fa;font:inherit;
+  font-size:13px;line-height:1.5;resize:vertical}
+.adm-revise textarea:focus{outline:none;border-color:#00c8a0}
+.adm-revise button{align-self:flex-start}
+.adm-edited{font-size:.78rem;color:#4fdcb8}
+.adm-asked{font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:#5a7888;margin:0 0 6px}
 </style>

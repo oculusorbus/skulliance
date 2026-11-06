@@ -41,7 +41,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tid'])) {
 	 * channel. This lifts it deliberately and sends again, without
 	 * touching the status or the note.
 	 */
+	$revise = (isset($_POST['verdict']) && $_POST['verdict'] === 'revise');
 	$repost = (isset($_POST['verdict']) && $_POST['verdict'] === 'repost');
+	if ($revise) {
+		/* Wording only. Not a verdict, not a re-post: a published
+		   testimonial stays published and the player is not asked
+		   for anything, which is the whole point of the column. */
+		$ok = testimonial_set_public_text($conn, $tid, isset($_POST['public_text']) ? $_POST['public_text'] : '');
+		$tst_said = $ok
+			? 'Wording saved. That is what the site shows now.'
+			: 'Could not save that wording. Run the ALTER in testimonials-schema.md.';
+	} else
 	if ($repost) {
 		testimonial_unpost($conn, $tid);
 		$row = testimonial_row($conn, $tid);
@@ -80,47 +90,12 @@ if ($tst_said !== '') echo '<div class="row"><div class="adm"><p class="adm-note
  */
 $tst_hook = function_exists('getTestimonialsWebhook');
 
+$GLOBALS['tst_can_edit'] = testimonials_can_edit($conn);
 $ready    = testimonials_ready($conn);
 $pending  = $ready ? testimonial_queue($conn, 'pending')  : array();
 $live     = $ready ? testimonial_queue($conn, 'approved') : array();
 $rejected = $ready ? testimonial_queue($conn, 'rejected') : array();
 
-/*
- * ONE CARD, USED FOR ALL THREE LISTS.
- *
- * Every testimonial carries the verdict it does not currently have, so
- * a decision is never final: approved ones can be pulled, rejected
- * ones can be let through. The first cut rendered the approved list
- * through testimonial_public(), which drops the row id, so there was
- * no control to press and changing your mind meant editing the
- * database.
- */
-function tst_admin_card($t, $verdicts) {
-	$prompts = testimonial_prompts();
-	echo '<div class="adm-card">';
-	echo '<div class="adm-card-head"><strong>' . htmlspecialchars($t['username']) . '</strong> ';
-	echo '<span>' . htmlspecialchars($t['created_date']) . '</span> ';
-	echo '<span>shows as: ' . htmlspecialchars($t['visibility']) . '</span>';
-	if ((int) $t['discord_posted'] === 1) echo ' <span>posted to Discord</span>';
-	echo '</div>';
-	if (isset($prompts[$t['prompt_key']])) {
-		echo '<p class="adm-asked">' . htmlspecialchars($prompts[$t['prompt_key']]) . '</p>';
-	}
-	echo '<blockquote>' . nl2br(htmlspecialchars($t['body'])) . '</blockquote>';
-	if (trim((string) $t['review_note']) !== '') {
-		echo '<p class="adm-note">Your note: ' . htmlspecialchars($t['review_note']) . '</p>';
-	}
-	echo '<form method="post" class="adm-verdict">';
-	echo '<input type="hidden" name="tid" value="' . (int) $t['id'] . '">';
-	echo '<input type="text" name="note" placeholder="Note to the player (optional)" maxlength="255"'
-	   . ' value="' . htmlspecialchars($t['review_note']) . '">';
-	foreach ($verdicts as $v => $label) {
-		echo '<button type="submit" name="verdict" value="' . $v . '" class="'
-		   . (($v === 'approve' || $v === 'repost') ? 'adm-yes' : 'adm-no') . '">'
-		   . htmlspecialchars($label) . '</button>';
-	}
-	echo '</form></div>';
-}
 ?>
 <div class="row"><div class="adm">
 <?php if (!$ready): ?>
@@ -140,7 +115,7 @@ function tst_admin_card($t, $verdicts) {
 	</p>
 	<h3>Waiting on you (<?php echo count($pending); ?>)</h3>
 	<?php if (!$pending): ?><p class="adm-note">Nothing pending.</p><?php endif; ?>
-	<?php foreach ($pending as $t) tst_admin_card($t, array('approve' => 'Approve', 'reject' => 'Reject')); ?>
+	<?php foreach ($pending as $t) testimonial_admin_card($t, array('approve' => 'Approve', 'reject' => 'Reject'), $GLOBALS['tst_can_edit']); ?>
 
 	<h3>Live on the site (<?php echo count($live); ?>)</h3>
 	<?php if (!$live): ?><p class="adm-note">Nothing published yet.</p><?php endif; ?>
@@ -148,12 +123,12 @@ function tst_admin_card($t, $verdicts) {
 	/* Approve again is how a testimonial that failed to post gets sent:
 	   discord_posted is only set once a post actually went out, so a
 	   row that never reached Discord will on the next approval. */
-	foreach ($live as $t) tst_admin_card($t, array('reject' => 'Pull it down', 'repost' => 'Send to Discord'));
+	foreach ($live as $t) testimonial_admin_card($t, array('reject' => 'Pull it down', 'repost' => 'Send to Discord'), $GLOBALS['tst_can_edit']);
 	?>
 
 	<h3>Not published (<?php echo count($rejected); ?>)</h3>
 	<?php if (!$rejected): ?><p class="adm-note">Nothing rejected.</p><?php endif; ?>
-	<?php foreach ($rejected as $t) tst_admin_card($t, array('approve' => 'Approve after all')); ?>
+	<?php foreach ($rejected as $t) testimonial_admin_card($t, array('approve' => 'Approve after all'), $GLOBALS['tst_can_edit']); ?>
 <?php endif; ?>
 </div></div>
 <?php $conn->close(); ?>
