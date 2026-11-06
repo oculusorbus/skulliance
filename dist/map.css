@@ -359,11 +359,6 @@
  * realms-map.php only. The map itself is identical to the one on
  * realms.php; this is the copy around it.
  */
-.rm-intro { padding: 0 20px 14px; }
-.rm-intro h1 { margin: 0 0 6px; font-size: 26px; color: #eaf3fa; }
-/* Full width, not a narrow measure: there is nothing beside it to make
-   room for, and a capped column next to empty space reads as wasted. */
-.rm-intro p { margin: 0; color: rgba(205,225,240,0.78); line-height: 1.5; }
 .rm-join {
     margin: 18px 20px 0; padding: 16px 18px;
     border: 1px solid rgba(132,178,208,0.22); border-radius: 10px;
@@ -374,7 +369,5 @@
    block has to restate both the alignment and the colour. */
 .rm-join .button { display: inline-block; text-align: center; }
 @media (max-width: 700px) {
-    .rm-intro { padding: 0 14px 12px; }
-    .rm-intro h1 { font-size: 22px; }
     .rm-join { margin: 16px 14px 0; }
 }

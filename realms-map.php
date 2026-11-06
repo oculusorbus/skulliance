@@ -43,6 +43,7 @@ if (isset($_SESSION['userData'])) {
 	if ($name === null) unset($name);
 }
 
+$page_title_override = 'Skulliance Realms world map';
 $extra_head = '<meta name="description" content="The live world map of Skulliance Realms: faction territories, active raids and every realm on the board.">'
 	. '<meta property="og:title" content="Skulliance Realms world map">'
 	. '<meta property="og:description" content="Faction territories, active raids and every realm on the board, updated as the week turns.">';
@@ -51,12 +52,20 @@ include 'header.php';
 ?>
 <div class="row" id="map">
 	<div class="main">
-		<div class="rm-intro">
-			<h1>The world map</h1>
-			<p>Every active realm on the board, laid out by faction. Territory size follows
-			   how many realms a faction holds, and the coastline is the same coastline every
-			   visit. Pick any realm to see its locations, its garrison and the raids it is in.</p>
-		</div>
+		<?php
+		/*
+		 * NO HEADING AND NO EXPLAINER. There was a title and a
+		 * paragraph here describing what the map is, how territory
+		 * size works and what a click does. The owner cut it: "we
+		 * don't need all this verbiage, the map speaks for itself".
+		 * That is right, and it generalises -- a page whose whole point
+		 * is a picture should open on the picture. The name of the
+		 * page lives in the tab ($page_title_override) and the
+		 * sentence that described it lives in the meta description,
+		 * where it does its job for search without standing between
+		 * the reader and the art.
+		 */
+		?>
 		<div id="container-wrapper">
 			<div id="container"></div>
 		</div>
@@ -87,8 +96,7 @@ include 'header.php';
 		</div>
 		<?php if (!isset($name)) { ?>
 		<div class="rm-join">
-			<p>Realms is free to start. You get a plot, a faction and a starter pack of
-			   materials, and you are on this map from the first week.</p>
+			<p>Free to start. You are on this map from the first week.</p>
 			<a class="button" href="realms.php">Claim a realm</a>
 		</div>
 		<?php } ?>
