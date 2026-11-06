@@ -1510,6 +1510,18 @@ if($realm_status && isset($_SESSION['userData']['user_id'])){
 $_raidDeployConfig = isset($_SESSION['raidDeployConfig']) ? $_SESSION['raidDeployConfig'] : array('amount'=>'tactical','weapon'=>'balanced','armor'=>'medium');
 }
 // Close DB Connection
+/*
+ * THE TESTIMONIAL ASK, WHILE THE CONNECTION IS STILL OPEN.
+ *
+ * It emits nothing unless this player is due to be asked, but deciding
+ * that is a query -- so it has to run above this line. The first cut
+ * put the include down with the other script tags, twenty lines after
+ * the close, which is the same mistake realms-harness.php exists to
+ * catch: a PHP warning printed into the middle of a <script> block
+ * takes the whole block with it.
+ */
+require_once __DIR__ . '/testimonial-modal.php';
+
 $conn->close();
 ?>
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
@@ -3334,6 +3346,22 @@ $rl_loader_off = "(function () {\n"
 		}
 		if (resultCard) { resultCard.innerHTML = ''; resultCard.classList.remove('visible'); }
 		if (statusEl)   { statusEl.style.color = ''; }
+		/*
+		 * THE TESTIMONIAL ASK GOES HERE AND NOWHERE ELSE.
+		 *
+		 * Somebody who has just watched themselves take a realm is in
+		 * the one mood where "why do you keep playing" has an answer
+		 * ready. On arrival it is an interruption; here it is a
+		 * question at the end of a good thing.
+		 *
+		 * Only when the queue is empty, or it would land on top of the
+		 * next animation. The server has already decided whether this
+		 * player is asked at all -- the function does not exist on the
+		 * page unless they are.
+		 */
+		if (!moreQueued && typeof window.skTestimonialOffer === 'function') {
+			setTimeout(window.skTestimonialOffer, 600);
+		}
 		overlay && overlay.querySelectorAll('.rla-realm-win,.rla-realm-lose,.rla-glow-green,.rla-glow-red').forEach(function(el){
 			el.classList.remove('rla-realm-win','rla-realm-lose','rla-glow-green','rla-glow-red');
 		});

@@ -726,7 +726,14 @@ foreach ($PAGES as $f) ok(in_array($f, $navPages, true), "the admin menu no long
    are deliberately not in it, so nothing checked their filenames at all -- a
    typo in admin_tabs() is a menu item that 404s and no test would notice. */
 foreach (admin_tabs() as $key => $t) {
-	ok(is_file(__DIR__ . '/' . $t[0]),
+	/* THE PATH, NOT THE WHOLE TARGET. A tab may legitimately carry a
+	   query string -- 'onboarding' points at realms.php?preview=newcomer,
+	   which is Realms drawn the way a newcomer sees it -- and is_file()
+	   on the whole string says it does not exist. That failure has been
+	   standing since the tab was added, which is exactly how a real typo
+	   would have gone unnoticed in the noise. */
+	$tabPath = parse_url($t[0], PHP_URL_PATH);
+	ok(is_file(__DIR__ . '/' . $tabPath),
 	   "the admin tab '$key' points at {$t[0]}, which does not exist");
 }
 

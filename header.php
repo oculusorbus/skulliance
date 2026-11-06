@@ -168,6 +168,14 @@
 	  <link href="dist/realms-onboarding.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
   <?php
   }
+  /* The testimonial modal hangs off the raid screen, the cards show on
+     the public pitch pages, and the edit form is on a profile. Those
+     share no other stylesheet, so this one is gated on its own list. */
+  if (in_array($sk_path, array('realms.php', 'realms-map.php', 'profile.php', 'index.php'), true)) {
+  ?>
+	  <link href="dist/testimonials.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
+  <?php
+  }
   ?>
   <script type="text/javascript">
 	  // Toggle burger menu

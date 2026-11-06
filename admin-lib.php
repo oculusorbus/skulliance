@@ -907,6 +907,9 @@ function admin_tabs() {
 		   the way somebody with no realm sees it, which is the only view
 		   of it nobody on this side has ever had. */
 		'onboarding'  => array('realms.php?preview=newcomer', 'Onboarding'),
+		/* Players in their own words, waiting to be read. Nothing they
+		   write reaches the site or Discord until it is approved here. */
+		'testimonials' => array('admin-testimonials.php', 'Testimonials'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }

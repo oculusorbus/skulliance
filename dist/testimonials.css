@@ -1,0 +1,107 @@
+/*
+ * testimonials.css — the ask, the thank-you, and the public cards.
+ *
+ * Its own stylesheet because it loads on realms.php, profile.php and
+ * the public pitch pages, which otherwise share nothing.
+ *
+ * Everything here restates alignment and colour. flexbox.css sets
+ * `.main { text-align: center }` and styles bare anchors globally, so
+ * a scoped block that does not say otherwise is centred and link-blue
+ * for reasons nothing in this file would explain.
+ */
+.tst-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 9000;
+    background: rgba(4,12,20,0.78);
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 16px
+             calc(20px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+}
+.tst-overlay.on { display: flex; align-items: center; justify-content: center; }
+.tst-card {
+    width: 100%; max-width: 520px;
+    margin: auto;
+    padding: 22px;
+    text-align: left;
+    border: 1px solid rgba(132,178,208,0.22);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #14324b, #0e2438);
+    box-shadow: 0 18px 50px rgba(0,0,0,0.55);
+}
+.tst-card h2 { margin: 0 0 10px; font-size: 20px; line-height: 1.3; color: #eaf3fa; }
+.tst-brief { margin: 0 0 14px; font-size: 13.5px; line-height: 1.55; color: rgba(205,225,240,0.8); }
+.tst-card textarea {
+    width: 100%; min-height: 128px; resize: vertical;
+    padding: 12px 13px; box-sizing: border-box;
+    border: 1px solid rgba(132,178,208,0.30); border-radius: 9px;
+    background: #0a1a29; color: #e8f2fa;
+    font: inherit; font-size: 14px; line-height: 1.5;
+}
+.tst-card textarea:focus { outline: none; border-color: #00c8a0; box-shadow: 0 0 0 3px rgba(0,200,160,0.18); }
+.tst-meter { margin: 6px 2px 14px; font-size: 12px; color: rgba(168,200,224,0.65); }
+.tst-min { float: right; }
+.tst-vis { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
+.tst-vis label {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13.5px; color: rgba(222,236,247,0.9); cursor: pointer;
+}
+.tst-fine { margin: 0 0 14px; font-size: 12px; line-height: 1.5; color: rgba(168,200,224,0.6); }
+.tst-err {
+    margin: 0 0 12px; padding: 9px 11px; border-radius: 8px;
+    background: rgba(255,90,110,0.12); border: 1px solid rgba(255,90,110,0.35);
+    color: #ffc2cb; font-size: 13px;
+}
+.tst-actions { display: flex; gap: 10px; justify-content: flex-end; align-items: center; }
+/* Not .button: that global is a 2rem full-width slab. */
+.tst-go, .tst-skip, .tst-x {
+    display: inline-block; padding: 11px 20px;
+    border: 0; border-radius: 8px;
+    font-size: 14px; font-weight: 700;
+    text-decoration: none; text-align: center; cursor: pointer;
+}
+.tst-go { background: #00c8a0; color: #04131b; }
+.tst-go:hover { background: #00a882; }
+.tst-go[disabled] { opacity: 0.6; cursor: default; }
+.tst-skip {
+    background: transparent; color: rgba(205,225,240,0.75) !important;
+    border: 1px solid rgba(132,178,208,0.28);
+}
+.tst-skip:hover { color: #eaf3fa !important; border-color: rgba(132,178,208,0.5); }
+.tst-last { margin: 12px 0 0; font-size: 12px; color: rgba(255,196,97,0.85); text-align: right; }
+.tst-card-thanks { text-align: left; }
+.tst-x {
+    background: #000; color: #fff !important;
+    border: 1px solid rgba(255,255,255,0.25);
+    margin-right: 10px;
+}
+.tst-x:hover { background: #111; color: #fff !important; }
+
+/* ── The public cards ──────────────────────────────────────────────── */
+.tst-wall { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.tst-quote {
+    padding: 16px 18px; text-align: left;
+    border: 1px solid rgba(132,178,208,0.18); border-radius: 12px;
+    background: rgba(18,54,82,0.42);
+}
+.tst-quote blockquote { margin: 0 0 12px; font-size: 14.5px; line-height: 1.6; color: #e4eff8; }
+.tst-asked { margin: 0 0 8px; font-size: 11px; letter-spacing: 0.06em;
+             text-transform: uppercase; color: rgba(168,200,224,0.6); }
+.tst-by { display: flex; align-items: center; gap: 9px; }
+.tst-by img { width: 28px; height: 28px; border-radius: 50%; flex: 0 0 auto; }
+.tst-by b { font-size: 13px; color: #eaf3fa; font-weight: 600; }
+.tst-by span { font-size: 12px; color: rgba(168,200,224,0.65); }
+
+/* ── Editing it later, on your own profile ─────────────────────────── */
+.tst-mine { padding: 16px 18px; text-align: left;
+    border: 1px solid rgba(132,178,208,0.2); border-radius: 12px;
+    background: rgba(18,54,82,0.42); margin-top: 16px; }
+.tst-mine h3 { margin: 0 0 8px; font-size: 15px; color: #eaf3fa; }
+.tst-state { font-size: 12px; padding: 2px 8px; border-radius: 20px; margin-left: 8px; }
+.tst-state-pending  { background: rgba(255,196,97,0.16); color: #ffc461; }
+.tst-state-approved { background: rgba(0,200,160,0.16);  color: #4fdcb8; }
+.tst-state-rejected { background: rgba(255,90,110,0.14); color: #ff8da1; }
+@media (max-width: 520px) {
+    .tst-actions { flex-direction: column-reverse; align-items: stretch; }
+    .tst-go, .tst-skip, .tst-x { width: 100%; }
+    .tst-x { margin: 0 0 10px; }
+}

@@ -198,6 +198,17 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 			// Safe to remove this guard once getCryptConquestWebhook() is
 			// actually added.
 			$webhook = function_exists('getCryptConquestWebhook') ? getCryptConquestWebhook() : "";
+		}else if($channel == "testimonials"){
+			// The testimonial archive, posted only when an owner approves
+			// one on admin-testimonials.php -- never on submit, because a
+			// webhook post cannot be unposted and the point of the channel
+			// is that a newcomer can read it.
+			// Same function_exists guard as its neighbours: until the
+			// credential is added this skips the post rather than fataling
+			// the approval that triggered it.
+			// Expected in credentials/webhooks_credentials.php as:
+			//   function getTestimonialsWebhook(){ return "https://discord.com/api/webhooks/..."; }
+			$webhook = function_exists('getTestimonialsWebhook') ? getTestimonialsWebhook() : "";
 		}else if($channel == "obscura"){
 			// Same guard as the two below: if the credential has not been added
 			// yet -- or was added under a different name -- this skips the post

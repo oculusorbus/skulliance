@@ -57,6 +57,7 @@ $skullpaper_nav = [
 		['slug' => 'realms-raids',     'title' => 'Raids',     'emoji' => '🐉'],
 		['slug' => 'realms-factions',  'title' => 'Factions',  'emoji' => '🚩'],
 	]],
+	['slug' => 'testimonials', 'title' => 'Testimonials', 'emoji' => '💬', 'children' => []],
 	['slug' => 'diamond-skulls', 'title' => 'Diamond Skulls', 'emoji' => '💎', 'children' => [
 		['slug' => 'diamond-skulls-carbon-emissions', 'title' => 'Carbon Emissions', 'emoji' => '♻️'],
 		['slug' => 'diamond-skulls-skulliverse',      'title' => 'Skulliverse',      'emoji' => '🌌'],

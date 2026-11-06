@@ -1,6 +1,7 @@
 <?php
 include_once 'db.php';
 require_once 'profile-lib.php';
+require_once __DIR__ . '/testimonials-lib.php';   // the player's own testimonial panel
 
 // Set up session variables for header.php without forcing a login redirect
 $name = "";
@@ -1254,6 +1255,21 @@ include 'header.php';
     <a href="wallets.php">Change visibility</a>
 </div>
 <?php endif; ?>
+
+<?php
+/*
+ * YOUR TESTIMONIAL, WHERE YOU CAN GET AT IT.
+ *
+ * The modal asks once, on a good day; this is the page somebody comes
+ * back to when they want to change their mind. Only the visibility
+ * control is here -- rewriting the text means a new row at pending,
+ * because an approval that could be edited afterwards is not an
+ * approval. Prints nothing if they never wrote one.
+ */
+if ($is_own_profile && function_exists('testimonial_self_panel')) {
+	testimonial_self_panel($conn, (int) $_SESSION['userData']['user_id']);
+}
+?>
 
 <!-- ── Hero ──────────────────────────────────────────────────────────── -->
 <div class="profile-hero"<?php if ($realm_theme_id): ?> style="background-image:url('images/themes/<?php echo $realm_theme_id; ?>.jpg')"<?php endif; ?>>
