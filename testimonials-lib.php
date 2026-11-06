@@ -420,6 +420,22 @@ function testimonial_announce($conn, $row) {
 	if ($row['status'] !== 'approved') return false;        /* approval is the trigger */
 	if ($row['visibility'] === 'private') return false;      /* they asked us not to */
 	if ((int) $row['discord_posted'] !== 0) return false;    /* already out there */
+	/*
+	 * LOAD THE POSTER IF THE CALLER HAS NOT.
+	 *
+	 * skl_discordmsg() is defined in webhooks.php, which is pulled in
+	 * by verify.php -- and admin-testimonials.php has no reason to
+	 * include verify.php, so it did not. function_exists() was false,
+	 * this returned early, and an approval published to the site and
+	 * posted nothing, silently, exactly like a missing credential.
+	 *
+	 * Fixed here rather than only in the admin page so that the next
+	 * caller cannot repeat it. webhooks.php is safe to include twice
+	 * and loads its own credentials.
+	 */
+	if (!function_exists('skl_discordmsg') && is_file(__DIR__ . '/webhooks.php')) {
+		include_once __DIR__ . '/webhooks.php';
+	}
 	if (!function_exists('skl_discordmsg')) return false;
 
 	$conn->query("UPDATE testimonials SET discord_posted = 1 WHERE id = " . (int) $row['id']);

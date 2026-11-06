@@ -19,6 +19,10 @@ include 'skulliance.php';
 require_once __DIR__ . '/admin-lib.php';
 admin_require();   // before any output, and before header.php
 require_once __DIR__ . '/testimonials-lib.php';
+/* skl_discordmsg() and the webhook credentials. Normally these arrive
+   through verify.php, which an admin page has no reason to include --
+   so the first approval published to the site and posted nothing. */
+include_once __DIR__ . '/webhooks.php';
 
 /*
  * THE VERDICT IS TAKEN BEFORE ANY OUTPUT, so a reject can redirect

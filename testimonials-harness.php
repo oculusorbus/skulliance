@@ -202,6 +202,35 @@ $adm = file_get_contents(__DIR__ . '/admin-testimonials.php');
 /* A missing OR MISNAMED credential is silent by design, so the admin
    page has to say which it is -- the alternative is noticing weeks
    later that a channel went quiet. */
+/*
+ * THE POSTER HAS TO BE LOADED, NOT ASSUMED.
+ *
+ * skl_discordmsg() lives in webhooks.php, which arrives through
+ * verify.php -- and an admin page has no reason to include verify.php.
+ * It did not, so function_exists() was false, testimonial_announce()
+ * returned early, and the first real approval went live on the site
+ * and posted nothing. Silently, and indistinguishable from a missing
+ * credential, which is what the status line then blamed.
+ */
+ok(strpos($adm, "include_once __DIR__ . '/webhooks.php'") !== false,
+   'the admin page never loads webhooks.php, so approving posts nothing');
+/* Extracted here, not borrowed from a $ann defined further down the
+   file. Reading a variable a section before it is assigned is how
+   three assertions in this harness have quietly tested empty strings. */
+$annSrc = substr($src, strpos($src, 'function testimonial_announce('));
+$annSrc = substr($annSrc, 0, strpos($annSrc, "\n}\n"));
+ok(strpos($annSrc, "include_once __DIR__ . '/webhooks.php'") !== false,
+   'testimonial_announce() does not load its own poster, so the next caller repeats the bug');
+/* The load has to come BEFORE the bail, or it changes nothing. */
+$loadAt = strpos($annSrc, "include_once __DIR__ . '/webhooks.php'");
+$bailAt = strpos($annSrc, "if (!function_exists('skl_discordmsg')) return false;");
+$flagAt = strpos($annSrc, 'discord_posted = 1');
+ok($loadAt !== false && $bailAt !== false && $loadAt < $bailAt,
+   'webhooks.php is loaded after the function_exists bail, which is too late to help');
+/* And the bail must come before the flag, or a failed post marks the
+   row as posted and nothing will ever send it. */
+ok($bailAt !== false && $flagAt !== false && $bailAt < $flagAt,
+   'a missing poster still flags the row as posted, so the testimonial can never be sent');
 ok(strpos($adm, "function_exists('getTestimonialsWebhook')") !== false,
    'the admin page does not check whether the Discord credential is wired');
 ok(strpos($adm, 'getTestimonialsWebhook()') !== false,
