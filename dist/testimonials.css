@@ -105,3 +105,11 @@
     .tst-go, .tst-skip, .tst-x { width: 100%; }
     .tst-x { margin: 0 0 10px; }
 }
+
+/* The confirmation. One control, and the send button waits on it. */
+.tst-consent {
+    display: flex; align-items: flex-start; gap: 9px;
+    margin: 0 0 14px; text-align: left; cursor: pointer;
+}
+.tst-consent input { margin-top: 2px; flex: 0 0 auto; }
+.tst-consent span { font-size: 13px; line-height: 1.5; color: rgba(214,232,245,0.88); }

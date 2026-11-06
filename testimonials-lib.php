@@ -215,10 +215,24 @@ function testimonial_visibilities() {
  * rather than overwritten, which is what keeps the archive and what
  * forces a re-review after an edit.
  */
-function testimonial_save($conn, $user_id, $prompt_key, $body, $visibility) {
+function testimonial_save($conn, $user_id, $prompt_key, $body, $visibility, $consent = false) {
 	if (!testimonials_ready($conn)) return 'Testimonials are not switched on yet.';
 	$user_id = intval($user_id);
 	if ($user_id <= 0) return 'Sign in first.';
+	/*
+	 * THE CONFIRMATION IS CHECKED HERE, NOT ONLY IN THE MODAL.
+	 *
+	 * A tick box is a user interface; anything can post to the
+	 * endpoint without it. Publishing somebody's username and avatar
+	 * because a checkbox was missing from a request is exactly the
+	 * mistake worth refusing to make, so the save is the thing that
+	 * requires it.
+	 *
+	 * The row's created_date is the record of when they agreed: it
+	 * cannot exist without this having been true, so a separate
+	 * consent column would record nothing the row does not.
+	 */
+	if (!$consent) return 'Tick the box to confirm your username and avatar can be published.';
 	$err = testimonial_validate($body);
 	if ($err !== '') return $err;
 	if (!in_array($visibility, testimonial_visibilities(), true)) $visibility = 'named';

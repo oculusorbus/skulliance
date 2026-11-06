@@ -236,11 +236,40 @@ ok(testimonial_announce(new FakeConn(), $priv) === false, 'a private piece posts
 ok(testimonial_visibilities() === array('named', 'private'),
    'the visibility states are ' . implode('/', testimonial_visibilities()) . ', not named/private');
 $anon = new FakeConn();
-testimonial_save($anon, 9, 'back', str_repeat('a', 90), 'anonymous');
+testimonial_save($anon, 9, 'back', str_repeat('a', 90), 'anonymous', true);
 ok($anon->said("'named'"), 'an unknown visibility is not coerced to named on save');
 ok(!$anon->said("'anonymous'"), 'a save accepted a visibility outside the two states');
 ok(strpos($modal0, 'name="tst-vis"') === false,
    'the modal still offers a visibility picker, which is the thing that was cut');
+
+/*
+ * THE CONFIRMATION, AND THE FACT THAT THE SERVER ENFORCES IT.
+ *
+ * A tick box is a user interface. Publishing somebody's username and
+ * avatar because a checkbox was missing from a POST is the mistake
+ * worth refusing to make, so the save has to be what requires it.
+ */
+$noc = new FakeConn();
+ok(testimonial_save($noc, 9, 'back', str_repeat('a', 90), 'named', false) !== '',
+   'a testimonial saves with no confirmation, so a bare POST publishes a username');
+ok(!$noc->said('INSERT INTO testimonials'),
+   'the unconfirmed save still wrote a row');
+$yesc = new FakeConn();
+ok(testimonial_save($yesc, 9, 'back', str_repeat('a', 90), 'named', true) === '',
+   'a confirmed testimonial of the right length is refused');
+ok($yesc->said('INSERT INTO testimonials'), 'a confirmed save wrote nothing');
+/* And the default is no: a caller that forgets the argument must not
+   be treated as having agreed on the player's behalf. */
+$defc = new FakeConn();
+ok(testimonial_save($defc, 9, 'back', str_repeat('a', 90), 'named') !== '',
+   'consent defaults to true, so a caller that omits it publishes a username');
+ok(strpos($modal0, 'id="tst-consent"') !== false,
+   'the modal has no confirmation control');
+ok(strpos($modal0, 'sendBtn.disabled = !consent.checked') !== false,
+   'the send button does not wait on the confirmation');
+$ajax0 = file_get_contents(__DIR__ . '/ajax/testimonial.php');
+ok(strpos($ajax0, "!empty(\$_POST['consent'])") !== false,
+   'the endpoint never forwards the confirmation, so the save always refuses');
 ok(stripos($modal0, 'username and avatar') !== false,
    'the modal never says what sending it publishes, so sending it is not informed consent');
 

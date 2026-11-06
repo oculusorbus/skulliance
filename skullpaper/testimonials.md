@@ -36,6 +36,9 @@ tell anybody anything.
 Nothing is published automatically. An owner reads every testimonial before it
 appears anywhere.
 
+You confirm it before it is sent. There is a box to tick saying your username
+and avatar may be published, and nothing is submitted until you tick it.
+
 A published testimonial carries your username and avatar. Those are the same
 two things your public profile and the world map already show to anyone, with
 or without a login, so writing one publishes nothing new about you. There is no

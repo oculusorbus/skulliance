@@ -50,10 +50,13 @@ if ($tst_offer):
 		 * changing their mind actually goes.
 		 */
 		?>
-		<p class="tst-fine">It goes out with your username and avatar, the same two things your
-		   public profile and the world map already show. An owner reads it before anything is
-		   published, and you can withdraw it from your profile at any time. A Discord post
-		   cannot be unposted.</p>
+		<p class="tst-fine">An owner reads it before anything is published, and you can withdraw
+		   it from your profile at any time. A Discord post cannot be unposted.</p>
+		<label class="tst-consent">
+			<input type="checkbox" id="tst-consent">
+			<span>Publish this with my username and avatar. Both are already on my public
+			      profile and the world map.</span>
+		</label>
 
 		<div class="tst-err" id="tst-err" hidden></div>
 
@@ -128,7 +131,15 @@ if ($tst_offer):
 		overlay.classList.remove('on');
 	});
 
-	document.getElementById('tst-send').addEventListener('click', function () {
+	/* The send button stays out of reach until the box is ticked, so
+	   nobody can publish their name by clicking past a sentence. */
+	var consent = document.getElementById('tst-consent');
+	var sendBtn = document.getElementById('tst-send');
+	function syncConsent() { sendBtn.disabled = !consent.checked; }
+	consent.addEventListener('change', syncConsent);
+	syncConsent();
+
+	sendBtn.addEventListener('click', function () {
 		var txt = (body.value || '').trim();
 		err.hidden = true;
 		if (txt.length < offer.min) {
@@ -138,7 +149,8 @@ if ($tst_offer):
 		}
 		this.disabled = true;
 		var btn = this;
-		post({ action: 'save', prompt_key: offer.prompt_key, body: txt, visibility: 'named' })
+		post({ action: 'save', prompt_key: offer.prompt_key, body: txt,
+		       visibility: 'named', consent: consent.checked ? 1 : 0 })
 			.then(function (d) {
 				btn.disabled = false;
 				if (!d || !d.success) {

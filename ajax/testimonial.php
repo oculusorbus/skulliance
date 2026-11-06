@@ -51,7 +51,9 @@ if ($action === 'save') {
 		$conn, $user_id,
 		isset($_POST['prompt_key']) ? (string) $_POST['prompt_key'] : '',
 		isset($_POST['body']) ? (string) $_POST['body'] : '',
-		isset($_POST['visibility']) ? (string) $_POST['visibility'] : 'named');
+		isset($_POST['visibility']) ? (string) $_POST['visibility'] : 'named',
+		/* The explicit confirmation. The save refuses without it. */
+		!empty($_POST['consent']));
 	if ($err !== '') tst_out(array('success' => false, 'error' => $err));
 	tst_out(array(
 		'success' => true,
