@@ -36,15 +36,18 @@ tell anybody anything.
 Nothing is published automatically. An owner reads every testimonial before it
 appears anywhere.
 
-When you write one you choose how it is attached to you:
+A published testimonial carries your username and avatar. Those are the same
+two things your public profile and the world map already show to anyone, with
+or without a login, so writing one publishes nothing new about you. There is no
+anonymous option: an unattributed quote helps nobody decide anything, and
+hiding the name while showing the avatar would not be the private choice it
+looks like.
 
-- **With your name and avatar.** The default, and the most useful to a reader.
-- **Without your name.** It shows as "A Skulliance player".
-- **Off the site entirely.** Kept, never shown.
+Nobody here uses a real name. A username is a handle you can change whenever
+you like.
 
-You can change that any time from your profile, including after it is
-published, and it takes effect on the next page load. You do not need anybody's
-permission to take your name off something you wrote.
+**You can withdraw it at any time** from your profile. It stops appearing on
+the site on the next page load, and you do not need anybody's permission.
 
 **A Discord post cannot be unposted.** Once an approved testimonial has gone to
 the testimonials channel, that message stays, even if you later set yours to

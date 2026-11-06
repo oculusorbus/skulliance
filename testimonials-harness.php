@@ -205,6 +205,7 @@ ok(preg_match("~status'\]\s*!==\s*'approved'~", $ann) === 1,
  * page -- where the only check available was grepping for the function
  * name, which passes just as happily on `false && skl_discordmsg(...)`.
  */
+$modal0 = file_get_contents(__DIR__ . '/testimonial-modal.php');
 $warm = new FakeConn();
 $row = array('id' => 5, 'user_id' => 9, 'status' => 'approved', 'visibility' => 'named',
              'discord_posted' => 0, 'prompt_key' => 'back', 'body' => 'Good people.',
@@ -223,11 +224,25 @@ $pend = $row; $pend['status'] = 'pending';
 ok(testimonial_announce(new FakeConn(), $pend) === false, 'a pending piece posts to Discord');
 $priv = $row; $priv['visibility'] = 'private';
 ok(testimonial_announce(new FakeConn(), $priv) === false, 'a private piece posts to Discord');
-$anon = $row; $anon['visibility'] = 'anonymous';
-$GLOBALS['tst_posts'] = array();
-testimonial_announce(new FakeConn(), $anon);
-ok(!empty($GLOBALS['tst_posts']) && stripos($GLOBALS['tst_posts'][0]['title'], 'someone') === false,
-   'an anonymous testimonial is posted to Discord under the player\'s name');
+/*
+ * TWO STATES, AND NO PICKER AT SUBMIT TIME.
+ *
+ * 'anonymous' was removed: an unattributed quote is weak proof, and it
+ * does not buy privacy, because the avatar URL carries the permanent
+ * Discord id while a username does not. Anything that reaches the wall
+ * is named, so a third state creeping back in is a change to who gets
+ * published and must fail here.
+ */
+ok(testimonial_visibilities() === array('named', 'private'),
+   'the visibility states are ' . implode('/', testimonial_visibilities()) . ', not named/private');
+$anon = new FakeConn();
+testimonial_save($anon, 9, 'back', str_repeat('a', 90), 'anonymous');
+ok($anon->said("'named'"), 'an unknown visibility is not coerced to named on save');
+ok(!$anon->said("'anonymous'"), 'a save accepted a visibility outside the two states');
+ok(strpos($modal0, 'name="tst-vis"') === false,
+   'the modal still offers a visibility picker, which is the thing that was cut');
+ok(stripos($modal0, 'username and avatar') !== false,
+   'the modal never says what sending it publishes, so sending it is not informed consent');
 
 echo "\nthe asking stops\n";
 ok(TESTIMONIAL_MAX_NUDGES > 0 && TESTIMONIAL_MAX_NUDGES <= 5,

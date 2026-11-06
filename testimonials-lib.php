@@ -186,8 +186,28 @@ function testimonial_validate($body) {
 	return '';
 }
 
+/**
+ * TWO STATES, NOT THREE. You are in, or you have withdrawn.
+ *
+ * There was an 'anonymous' option. It went because it is the worst of
+ * both: an unattributed quote is weak proof -- the handle and the face
+ * are most of why a stranger believes it -- and it does not buy the
+ * privacy it appears to, because the avatar alone is MORE identifying
+ * than the username. avatar_url() builds
+ * cdn.discordapp.com/avatars/<discord id>/..., so the image URL
+ * carries the permanent Discord snowflake, while a username is
+ * something its owner can change this afternoon.
+ *
+ * None of this is new exposure in any case: profile.php serves any
+ * username and avatar without a login, and the public map and the
+ * onboarding showcase both render them.
+ *
+ * 'private' is not an option at submit time -- nobody writes a
+ * testimonial in order to hide it. It is the withdrawal, reachable
+ * from your own profile afterwards.
+ */
 function testimonial_visibilities() {
-	return array('named', 'anonymous', 'private');
+	return array('named', 'private');
 }
 
 /**
@@ -311,8 +331,7 @@ function testimonial_announce($conn, $row) {
 	$conn->query("UPDATE testimonials SET discord_posted = 1 WHERE id = " . (int) $row['id']);
 	$prompts = testimonial_prompts();
 	$asked   = isset($prompts[$row['prompt_key']]) ? $prompts[$row['prompt_key']] : '';
-	$who     = ($row['visibility'] === 'named' && isset($row['username']))
-		? $row['username'] : 'A Skulliance player';
+	$who     = isset($row['username']) ? $row['username'] : 'A Skulliance player';
 	skl_discordmsg($who, '"' . $row['body'] . '"', '', '', 'testimonials', '',
 	               '2ECC71', null, $asked, '', (int) $row['user_id'], 0);
 	return true;
@@ -341,15 +360,16 @@ function testimonial_public($conn, $limit = 12) {
 		 ORDER BY t.created_date DESC LIMIT $limit");
 	$out = array();
 	$prompts = testimonial_prompts();
+	/* Anything that reaches here is 'named': the query excludes
+	   'private' and there is no third state. */
 	if ($r) while ($row = $r->fetch_assoc()) {
-		$named = ($row['visibility'] === 'named');
 		$out[] = array(
 			'body'    => $row['body'],
 			'asked'   => isset($prompts[$row['prompt_key']]) ? $prompts[$row['prompt_key']] : '',
-			'name'    => $named ? $row['username'] : 'A Skulliance player',
-			'avatar'  => ($named && function_exists('avatar_url'))
+			'name'    => $row['username'],
+			'avatar'  => function_exists('avatar_url')
 				? avatar_url($row['discord_id'], $row['avatar']) : '',
-			'faction' => $named ? (string) $row['faction_name'] : '',
+			'faction' => (string) $row['faction_name'],
 			'when'    => $row['created_date'],
 		);
 	}
@@ -430,9 +450,8 @@ function testimonial_self_panel($conn, $user_id) {
 	echo '<blockquote>' . nl2br(htmlspecialchars($t['body'])) . '</blockquote>';
 	echo '<form method="post" action="ajax/testimonial.php" class="tst-vis" id="tst-vis-form">';
 	echo '<input type="hidden" name="action" value="visibility">';
-	foreach (array('named' => 'Show my name and avatar',
-	               'anonymous' => 'Publish it without my name',
-	               'private' => 'Keep it off the site entirely') as $v => $text) {
+	foreach (array('named'   => 'Published, with my username and avatar',
+	               'private' => 'Withdraw it from the site') as $v => $text) {
 		echo '<label><input type="radio" name="visibility" value="' . $v . '"'
 		   . ($t['visibility'] === $v ? ' checked' : '') . '> ' . htmlspecialchars($text) . '</label>';
 	}

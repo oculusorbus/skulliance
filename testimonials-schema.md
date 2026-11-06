@@ -13,7 +13,7 @@ CREATE TABLE testimonials (
   user_id        INT NOT NULL,
   prompt_key     VARCHAR(32)  NOT NULL DEFAULT '',
   body           TEXT         NOT NULL,
-  visibility     ENUM('named','anonymous','private') NOT NULL DEFAULT 'named',
+  visibility     ENUM('named','private') NOT NULL DEFAULT 'named',
   status         ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
   is_current     TINYINT(1)   NOT NULL DEFAULT 1,
   created_date   DATETIME     NOT NULL,
@@ -58,6 +58,23 @@ counter would put blank entries in the archive and in the review queue.
 
 `muted` is set when somebody uses the last reminder, or asks never to be asked.
 Nothing clears it but the player.
+
+## Why there is no 'anonymous'
+
+An unattributed quote is weak proof: the handle and the face are most of why a
+stranger believes a sentence. And it does not buy the privacy it appears to.
+`avatar_url()` builds `cdn.discordapp.com/avatars/<discord id>/...`, so showing
+somebody's avatar publishes their permanent Discord snowflake, while a username
+is something they can change this afternoon. Dropping the name and keeping the
+face is the more identifying of the two options, not the less.
+
+None of it is new exposure either way: `profile.php` serves any username and
+avatar with no login, and both the public map and the onboarding showcase
+already render them.
+
+So there are two states. `named` is in, `private` is withdrawn, and `private`
+is not offered at submit time because nobody writes a testimonial in order to
+hide it.
 
 ## What is NOT stored
 

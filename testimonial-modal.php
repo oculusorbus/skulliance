@@ -39,15 +39,21 @@ if ($tst_offer):
 		<div class="tst-meter"><span id="tst-count">0</span> / <?php echo (int) $tst_offer['max']; ?>
 		     <span class="tst-min">at least <?php echo (int) $tst_offer['min']; ?></span></div>
 
-		<div class="tst-vis">
-			<label><input type="radio" name="tst-vis" value="named" checked>
-			       Show my name and avatar</label>
-			<label><input type="radio" name="tst-vis" value="anonymous">
-			       Post it without my name</label>
-		</div>
-		<p class="tst-fine">An owner reads it before anything is published. Once it is posted to
-		   Discord it cannot be unposted. You can change your mind, or take your name off it,
-		   any time from your profile.</p>
+		<?php
+		/*
+		 * NO PICKER. Sending it is the consent, and the line below
+		 * says exactly what sending it means. An "anonymous" choice
+		 * was here and went: an unattributed quote is weak proof, and
+		 * it does not buy the privacy it looks like it does, because
+		 * the avatar URL carries the Discord id while a username does
+		 * not. Withdrawing later is on the profile, where somebody
+		 * changing their mind actually goes.
+		 */
+		?>
+		<p class="tst-fine">It goes out with your username and avatar, the same two things your
+		   public profile and the world map already show. An owner reads it before anything is
+		   published, and you can withdraw it from your profile at any time. A Discord post
+		   cannot be unposted.</p>
 
 		<div class="tst-err" id="tst-err" hidden></div>
 
@@ -124,7 +130,6 @@ if ($tst_offer):
 
 	document.getElementById('tst-send').addEventListener('click', function () {
 		var txt = (body.value || '').trim();
-		var vis = document.querySelector('input[name="tst-vis"]:checked');
 		err.hidden = true;
 		if (txt.length < offer.min) {
 			err.textContent = 'A line or two more would help. At least ' + offer.min + ' characters.';
@@ -133,8 +138,7 @@ if ($tst_offer):
 		}
 		this.disabled = true;
 		var btn = this;
-		post({ action: 'save', prompt_key: offer.prompt_key, body: txt,
-		       visibility: vis ? vis.value : 'named' })
+		post({ action: 'save', prompt_key: offer.prompt_key, body: txt, visibility: 'named' })
 			.then(function (d) {
 				btn.disabled = false;
 				if (!d || !d.success) {
