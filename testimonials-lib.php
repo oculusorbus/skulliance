@@ -353,19 +353,39 @@ function testimonial_set_visibility($conn, $user_id, $visibility) {
 		"UPDATE testimonials SET visibility = '$v' WHERE user_id = $user_id AND is_current = 1");
 }
 
-/** The review queue, oldest first, with who wrote each one. */
-function testimonial_pending($conn, $limit = 50) {
+/**
+ * The queue for one status, with who wrote each one.
+ *
+ * ANY STATUS, BECAUSE A VERDICT IS NOT FINAL. The first cut listed
+ * `pending` only and rendered the approved ones through the public
+ * shaping function, which drops the row id -- so once a testimonial
+ * had been judged there was no control left anywhere to judge it
+ * again. Rejecting something that turned out to be fine, or pulling
+ * something that should not have gone out, both meant editing the
+ * database by hand.
+ */
+function testimonial_queue($conn, $status = 'pending', $limit = 50) {
 	if (!testimonials_ready($conn)) return array();
+	$allowed = array('pending', 'approved', 'rejected');
+	if (!in_array($status, $allowed, true)) $status = 'pending';
 	$limit = max(1, min(200, intval($limit)));
+	/* Pending oldest first -- it is a queue. Judged ones newest first,
+	   because that is the one you just changed your mind about. */
+	$order = ($status === 'pending') ? 'ASC' : 'DESC';
 	$r = $conn->query(
 		"SELECT t.*, users.username, users.discord_id, users.avatar
 		 FROM testimonials t
 		 INNER JOIN users ON users.id = t.user_id
-		 WHERE t.status = 'pending' AND t.is_current = 1
-		 ORDER BY t.created_date ASC LIMIT $limit");
+		 WHERE t.status = '" . $conn->real_escape_string($status) . "' AND t.is_current = 1
+		 ORDER BY t.created_date $order LIMIT $limit");
 	$out = array();
 	if ($r) while ($row = $r->fetch_assoc()) $out[] = $row;
 	return $out;
+}
+
+/** Still here: the pending queue is what most callers want. */
+function testimonial_pending($conn, $limit = 50) {
+	return testimonial_queue($conn, 'pending', $limit);
 }
 
 /** Everything ever written by one player, newest first. The archive. */

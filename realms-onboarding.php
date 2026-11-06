@@ -1,4 +1,3 @@
-<?php require_once __DIR__ . '/testimonials-lib.php'; ?>
 <?php
 /**
  * realms-onboarding.php — the page somebody sees before they have a realm.
@@ -227,15 +226,4 @@ function ro_form($core, $partner, $id) {
 </div>
 </div>
 
-<?php
-/*
- * PLAYERS IN THEIR OWN WORDS, under the showcase of who is playing.
- * The showcase proves people are here; this says why they stayed,
- * which is the question somebody reading this page is actually asking.
- * Prints nothing until an owner has approved one.
- */
-if (function_exists('testimonial_wall') && isset($conn) && is_object($conn)) {
-	testimonial_wall($conn, 4, 'Why people stay');
-}
-?>
 </div>

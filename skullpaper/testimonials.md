@@ -35,6 +35,9 @@ tell anybody anything.
 Nothing is published automatically. The founder reads every testimonial before
 it appears anywhere.
 
+A verdict is never final. Something published can be pulled down later, and
+something that was not published can be let through after all.
+
 You confirm it before it is sent. There is a box to tick saying your username
 and avatar may be published, and nothing is submitted until you tick it.
 

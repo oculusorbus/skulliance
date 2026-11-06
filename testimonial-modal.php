@@ -31,7 +31,12 @@ $tst_offer = ($tst_uid > 0 && isset($conn) && is_object($conn))
  * a real nudge and the second look would be of a modal that no longer
  * offers.
  */
-$tst_preview = testimonial_preview_requested($_GET, $_SESSION);
+/* $_SESSION BY VALUE, AND IT MAY NOT EXIST. db.php only starts a
+   session when a cookie is already present, so a cookieless visitor
+   -- every first-time arrival and every crawler on the public map --
+   has no $_SESSION at all. isset() on an element is safe; handing the
+   whole array to a function is not, and warned into the page. */
+$tst_preview = testimonial_preview_requested($_GET, isset($_SESSION) ? $_SESSION : array());
 /*
  * WHO OPENS IT, DECIDED HERE RATHER THAN BY THE PAGE.
  *

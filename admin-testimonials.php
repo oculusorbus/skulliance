@@ -64,9 +64,46 @@ if ($tst_said !== '') echo '<div class="row"><div class="adm"><p class="adm-note
  */
 $tst_hook = function_exists('getTestimonialsWebhook');
 
-$ready   = testimonials_ready($conn);
-$pending = $ready ? testimonial_pending($conn) : array();
-$live    = $ready ? testimonial_public($conn, 50) : array();
+$ready    = testimonials_ready($conn);
+$pending  = $ready ? testimonial_queue($conn, 'pending')  : array();
+$live     = $ready ? testimonial_queue($conn, 'approved') : array();
+$rejected = $ready ? testimonial_queue($conn, 'rejected') : array();
+
+/*
+ * ONE CARD, USED FOR ALL THREE LISTS.
+ *
+ * Every testimonial carries the verdict it does not currently have, so
+ * a decision is never final: approved ones can be pulled, rejected
+ * ones can be let through. The first cut rendered the approved list
+ * through testimonial_public(), which drops the row id, so there was
+ * no control to press and changing your mind meant editing the
+ * database.
+ */
+function tst_admin_card($t, $verdicts) {
+	$prompts = testimonial_prompts();
+	echo '<div class="adm-card">';
+	echo '<div class="adm-card-head"><strong>' . htmlspecialchars($t['username']) . '</strong> ';
+	echo '<span>' . htmlspecialchars($t['created_date']) . '</span> ';
+	echo '<span>shows as: ' . htmlspecialchars($t['visibility']) . '</span>';
+	if ((int) $t['discord_posted'] === 1) echo ' <span>posted to Discord</span>';
+	echo '</div>';
+	if (isset($prompts[$t['prompt_key']])) {
+		echo '<p class="adm-asked">' . htmlspecialchars($prompts[$t['prompt_key']]) . '</p>';
+	}
+	echo '<blockquote>' . nl2br(htmlspecialchars($t['body'])) . '</blockquote>';
+	if (trim((string) $t['review_note']) !== '') {
+		echo '<p class="adm-note">Your note: ' . htmlspecialchars($t['review_note']) . '</p>';
+	}
+	echo '<form method="post" class="adm-verdict">';
+	echo '<input type="hidden" name="tid" value="' . (int) $t['id'] . '">';
+	echo '<input type="text" name="note" placeholder="Note to the player (optional)" maxlength="255"'
+	   . ' value="' . htmlspecialchars($t['review_note']) . '">';
+	foreach ($verdicts as $v => $label) {
+		echo '<button type="submit" name="verdict" value="' . $v . '" class="'
+		   . ($v === 'approve' ? 'adm-yes' : 'adm-no') . '">' . htmlspecialchars($label) . '</button>';
+	}
+	echo '</form></div>';
+}
 ?>
 <div class="row"><div class="adm">
 <?php if (!$ready): ?>
@@ -85,38 +122,21 @@ $live    = $ready ? testimonial_public($conn, 50) : array();
 		<?php endif; ?>
 	</p>
 	<h3>Waiting on you (<?php echo count($pending); ?>)</h3>
-	<?php if (!$pending): ?>
-		<p class="adm-note">Nothing pending.</p>
-	<?php endif; ?>
-	<?php foreach ($pending as $t): ?>
-	<div class="adm-card">
-		<div class="adm-card-head">
-			<strong><?php echo htmlspecialchars($t['username']); ?></strong>
-			<span><?php echo htmlspecialchars($t['created_date']); ?></span>
-			<span>shows as: <?php echo htmlspecialchars($t['visibility']); ?></span>
-		</div>
-		<p class="adm-asked"><?php
-			$prompts = testimonial_prompts();
-			echo htmlspecialchars(isset($prompts[$t['prompt_key']]) ? $prompts[$t['prompt_key']] : '');
-		?></p>
-		<blockquote><?php echo nl2br(htmlspecialchars($t['body'])); ?></blockquote>
-		<form method="post" class="adm-verdict">
-			<input type="hidden" name="tid" value="<?php echo (int) $t['id']; ?>">
-			<input type="text" name="note" placeholder="Note to self (optional)" maxlength="255">
-			<button type="submit" name="verdict" value="approve" class="adm-yes">Approve</button>
-			<button type="submit" name="verdict" value="reject" class="adm-no">Reject</button>
-		</form>
-	</div>
-	<?php endforeach; ?>
+	<?php if (!$pending): ?><p class="adm-note">Nothing pending.</p><?php endif; ?>
+	<?php foreach ($pending as $t) tst_admin_card($t, array('approve' => 'Approve', 'reject' => 'Reject')); ?>
 
 	<h3>Live on the site (<?php echo count($live); ?>)</h3>
-	<?php foreach ($live as $t): ?>
-	<div class="adm-card adm-card-live">
-		<div class="adm-card-head"><strong><?php echo htmlspecialchars($t['name']); ?></strong>
-			<span><?php echo htmlspecialchars($t['when']); ?></span></div>
-		<blockquote><?php echo nl2br(htmlspecialchars($t['body'])); ?></blockquote>
-	</div>
-	<?php endforeach; ?>
+	<?php if (!$live): ?><p class="adm-note">Nothing published yet.</p><?php endif; ?>
+	<?php
+	/* Approve again is how a testimonial that failed to post gets sent:
+	   discord_posted is only set once a post actually went out, so a
+	   row that never reached Discord will on the next approval. */
+	foreach ($live as $t) tst_admin_card($t, array('reject' => 'Pull it down', 'approve' => 'Re-post to Discord'));
+	?>
+
+	<h3>Not published (<?php echo count($rejected); ?>)</h3>
+	<?php if (!$rejected): ?><p class="adm-note">Nothing rejected.</p><?php endif; ?>
+	<?php foreach ($rejected as $t) tst_admin_card($t, array('approve' => 'Approve after all')); ?>
 <?php endif; ?>
 </div></div>
 <?php $conn->close(); ?>

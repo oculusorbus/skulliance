@@ -31,7 +31,6 @@
  * browsing the bare domain.
  */
 include_once 'db.php';
-require_once __DIR__ . '/testimonials-lib.php';   // the public wall, under the map
 
 /*
  * The member nav renders inside isset($name), so a signed-in reader
@@ -118,23 +117,6 @@ include 'header.php';
 		 * block was called out for. rm-go is the realms-onboarding
 		 * treatment instead: same accent, sane size, sized to its text.
 		 */
-		?>
-		<?php
-		/*
-		 * THE VOICES, WHERE A VISITOR CAN ACTUALLY READ THEM.
-		 *
-		 * The wall went on realms-onboarding.php first, which
-		 * realms.php includes -- behind the login gate, and only for
-		 * somebody who has no realm. Testimonials collected to
-		 * persuade visitors were therefore visible to logged-in
-		 * players and nobody else, which is the one audience that
-		 * does not need persuading. This page is public.
-		 *
-		 * Below the map rather than above it: the map is the
-		 * argument, and these are the people vouching for it. Prints
-		 * nothing until something is approved.
-		 */
-		testimonial_wall($conn, 3, 'From the people already here');
 		?>
 		<div class="rm-join">
 			<div class="rm-join-copy">

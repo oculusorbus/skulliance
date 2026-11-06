@@ -212,6 +212,26 @@ $adm = file_get_contents(__DIR__ . '/admin-testimonials.php');
  * and posted nothing. Silently, and indistinguishable from a missing
  * credential, which is what the status line then blamed.
  */
+/*
+ * EVERY VERDICT IS REVERSIBLE. The queue listed `pending` only and
+ * rendered the approved ones through testimonial_public(), which
+ * drops the row id -- so once something was judged there was no
+ * control anywhere to judge it again, and changing your mind meant
+ * editing the database by hand.
+ */
+ok(strpos($adm, 'testimonial_queue($conn, \'approved\')') !== false,
+   'the admin page cannot list approved testimonials, so none can be pulled down');
+ok(strpos($adm, 'testimonial_queue($conn, \'rejected\')') !== false,
+   'the admin page cannot list rejected testimonials, so none can be let through');
+ok(substr_count($adm, "name=\"verdict\"") >= 1 && strpos($adm, '$verdicts') !== false,
+   'the verdict buttons are not rendered per card, so a judged testimonial has no controls');
+$q = new FakeConn();
+$q->queue[] = array();
+testimonial_queue($q, 'approved');
+ok($q->said("status = 'approved'"), 'testimonial_queue() ignores the status it is given');
+$q2 = new FakeConn();
+testimonial_queue($q2, "'; DROP TABLE testimonials; --");
+ok($q2->said("status = 'pending'"), 'testimonial_queue() passes an unknown status straight into SQL');
 ok(strpos($adm, "include_once __DIR__ . '/webhooks.php'") !== false,
    'the admin page never loads webhooks.php, so approving posts nothing');
 /* Extracted here, not borrowed from a $ann defined further down the
@@ -477,6 +497,16 @@ ok($rev->said('UPDATE testimonials SET is_current = 0') && $rev->said('INSERT IN
    'a revision does not retire the old row and insert a new one');
 ok($rev->said("'pending'"), 'a revision does not go back to pending');
 
+/*
+ * A COOKIELESS VISITOR HAS NO $_SESSION AT ALL. db.php starts one only
+ * when a cookie is already there, so every first arrival and every
+ * crawler on a public page reaches the modal with the superglobal
+ * undefined. isset() on an element is safe; passing the whole array
+ * to a function is not, and warned into the page.
+ */
+ok(strpos($modalSrc, 'isset($_SESSION) ? $_SESSION : array()') !== false,
+   'the modal hands $_SESSION straight to a function, which warns for a visitor with no session');
+
 echo "\nthe preview is a look, not a session\n";
 require_once __DIR__ . '/lib/realm-preview.php';
 $owner  = array('userData' => array('user_id' => 1));
@@ -587,18 +617,20 @@ ok($heroAt !== false && $panelAt > $heroAt,
    'the testimonial panel sits above the hero, pushing the profile down');
 ok(strpos($prof, '$is_own_profile && function_exists') !== false,
    'the panel is drawn on other people\'s profiles, not only your own');
-ok(strpos(file_get_contents(__DIR__ . '/realms-onboarding.php'), 'testimonial_wall') !== false,
-   'the pitch page does not show any of them');
 /*
- * AND ON A PAGE WITHOUT A LOGIN. realms-onboarding.php is included by
- * realms.php, so a wall placed only there is read by signed-in players
- * who have no realm -- the one audience that does not need persuading.
+ * THE WALL IS NOT ON THE MAP OR THE ONBOARDING PAGE.
+ *
+ * Both were tried and both were wrong: the map is art and reads
+ * better without a column of quotes under it, and the onboarding page
+ * sits behind the login gate where no visitor reaches it.
+ * testimonial_wall() stays in the library for wherever it goes next.
  */
 $mapSrc = file_get_contents(__DIR__ . '/realms-map.php');
-ok(strpos($mapSrc, 'testimonial_wall($conn') !== false,
-   'no public page shows a testimonial, so visitors never see one');
-ok(strpos($mapSrc, "require_once __DIR__ . '/testimonials-lib.php'") !== false,
-   'the public map calls testimonial_wall() without loading the library');
+ok(strpos($mapSrc, 'testimonial_wall') === false,
+   'the wall is back on the map, which was asked to be left alone');
+ok(strpos(file_get_contents(__DIR__ . '/realms-onboarding.php'), 'testimonial_wall') === false,
+   'the wall is back on the onboarding page, behind the login gate');
+ok(function_exists('testimonial_wall'), 'testimonial_wall() was deleted rather than unplaced');
 /* The share has to outlive the thank-you card, and only once it is real. */
 ok(strpos($panelApproved = $outA, 'Share it on X') !== false,
    'an approved testimonial offers no way to share it after the thank-you card is closed');
