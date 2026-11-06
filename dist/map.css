@@ -378,7 +378,23 @@
     border-radius: 12px;
     background: linear-gradient(180deg, rgba(23,62,92,0.55), rgba(14,38,58,0.55));
 }
-.rm-join-copy { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+/*
+ * LEFT, EXPLICITLY. flexbox.css sets `.main { text-align: center }` and
+ * this bar sits inside .main, so prose here centres itself unless told
+ * otherwise -- two ragged lines floating in the middle of a wide bar.
+ * Any scoped block dropped into .main has to restate alignment; this is
+ * the same trap that catches anchors, which inherit the centring and
+ * the link colour together.
+ *
+ * flex: 1 1 320px rather than auto width, so the copy shares the row
+ * with the button instead of running to max-content and shoving it onto
+ * a line of its own.
+ */
+.rm-join-copy {
+    display: flex; flex-direction: column; gap: 3px;
+    flex: 1 1 320px; min-width: 0;
+    text-align: left;
+}
 .rm-join-copy strong { color: #eaf3fa; font-size: 15px; }
 .rm-join-copy span { color: rgba(205,225,240,0.72); font-size: 13px; line-height: 1.45; }
 /* flexbox.css styles bare anchors globally, so a link used as a button

@@ -175,6 +175,10 @@ ok(preg_match('~\.rm-go\s*\{[^}]*text-decoration~s', $css) === 1,
    '.rm-go does not restate text-decoration, so flexbox.css underlines it as a link');
 ok(preg_match('~\.rm-go\s*\{[^}]*color~s', $css) === 1,
    '.rm-go does not restate colour, so it inherits the global link blue');
+/* .main carries text-align:center in flexbox.css, so prose dropped into
+   it centres itself. Every scoped text block here must say otherwise. */
+ok(preg_match('~\.rm-join-copy\s*\{[^}]*text-align\s*:\s*left~s', $css) === 1,
+   '.rm-join-copy does not set text-align, so .main centres the signup copy');
 
 echo "\nthe dossier is styled\n";
 /* The selector itself, not a prefix of a longer one: a plain strpos for
