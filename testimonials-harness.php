@@ -195,6 +195,13 @@ ok(preg_match("~is_current\s*=\s*1~", $pub) === 1,
 ok(preg_match("~visibility\s*<>\s*'private'~", $pub) === 1,
    'the public wall shows pieces their author set to private');
 $adm = file_get_contents(__DIR__ . '/admin-testimonials.php');
+/* A missing OR MISNAMED credential is silent by design, so the admin
+   page has to say which it is -- the alternative is noticing weeks
+   later that a channel went quiet. */
+ok(strpos($adm, "function_exists('getTestimonialsWebhook')") !== false,
+   'the admin page does not check whether the Discord credential is wired');
+ok(strpos($adm, 'getTestimonialsWebhook()') !== false,
+   'the page never names the function a typo would have landed on');
 ok(preg_match('~testimonial_announce\(\$conn, \$row\)~', $adm) === 1,
    'the admin page does not hand an approved row to testimonial_announce()');
 $ajax = file_get_contents(__DIR__ . '/ajax/testimonial.php');

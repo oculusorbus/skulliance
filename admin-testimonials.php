@@ -46,6 +46,20 @@ admin_chrome('testimonials');
 if ($tst_said !== '') echo '<div class="row"><div class="adm"><p class="adm-note">'
 	. htmlspecialchars($tst_said) . '</p></div></div>';
 
+/*
+ * IS THE DISCORD SIDE ACTUALLY WIRED?
+ *
+ * Every webhook branch guards with function_exists(), so a credential
+ * that is missing OR MISNAMED behaves identically to one that was
+ * never set up: nothing posts and nothing complains. The only way to
+ * notice is that a channel stays quiet, which is a thing you notice
+ * weeks late.
+ *
+ * So the page says. It checks the exact name webhooks.php reaches for,
+ * which is the half a typo lands on.
+ */
+$tst_hook = function_exists('getTestimonialsWebhook');
+
 $ready   = testimonials_ready($conn);
 $pending = $ready ? testimonial_pending($conn) : array();
 $live    = $ready ? testimonial_public($conn, 50) : array();
@@ -56,6 +70,16 @@ $live    = $ready ? testimonial_public($conn, 50) : array();
 	   Run the SQL in <code>testimonials-schema.md</code> once and this screen fills itself.
 	   Until then the modal never offers and the public pages are unchanged.</p>
 <?php else: ?>
+	<p class="adm-note">
+		<?php if ($tst_hook): ?>
+			Discord: <strong>wired</strong>. Approving posts to the testimonials channel.
+		<?php else: ?>
+			Discord: <strong class="warn">no credential</strong>. Approving still publishes to the
+			site; the channel post is skipped. webhooks.php reaches for
+			<code>getTestimonialsWebhook()</code> in <code>credentials/webhooks_credentials.php</code>,
+			so a different function name reads exactly like this.
+		<?php endif; ?>
+	</p>
 	<h3>Waiting on you (<?php echo count($pending); ?>)</h3>
 	<?php if (!$pending): ?>
 		<p class="adm-note">Nothing pending.</p>
