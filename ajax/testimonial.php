@@ -32,12 +32,14 @@ $action = isset($_POST['action']) ? (string) $_POST['action'] : '';
 
 if ($action === 'shown') {
 	testimonial_mark_shown($conn, $user_id);
+	testimonial_offer_forget();
 	tst_out(array('success' => true));
 }
 
 if ($action === 'dismiss') {
 	$never = !empty($_POST['never']);
 	testimonial_dismiss($conn, $user_id, $never);
+	testimonial_offer_forget();
 	tst_out(array('success' => true, 'muted' => $never));
 }
 
@@ -55,6 +57,7 @@ if ($action === 'save') {
 		/* The explicit confirmation. The save refuses without it. */
 		!empty($_POST['consent']));
 	if ($err !== '') tst_out(array('success' => false, 'error' => $err));
+	testimonial_offer_forget();   /* they have one now; stop offering */
 	tst_out(array(
 		'success' => true,
 		/* The share link is built from the saved text, so what gets

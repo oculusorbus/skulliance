@@ -16,7 +16,8 @@
 if (!function_exists('testimonial_offer')) require_once __DIR__ . '/testimonials-lib.php';
 require_once __DIR__ . '/lib/realm-preview.php';
 $tst_uid   = isset($_SESSION['userData']['user_id']) ? (int) $_SESSION['userData']['user_id'] : 0;
-$tst_offer = ($tst_uid > 0 && isset($conn) && is_object($conn)) ? testimonial_offer($conn, $tst_uid) : null;
+$tst_offer = ($tst_uid > 0 && isset($conn) && is_object($conn))
+	? testimonial_offer_cached($conn, $tst_uid) : null;
 
 /*
  * THE PREVIEW, FOR SOMEBODY WHO HAS TO READ THIS SCREEN ON PURPOSE.
@@ -31,9 +32,20 @@ $tst_offer = ($tst_uid > 0 && isset($conn) && is_object($conn)) ? testimonial_of
  * offers.
  */
 $tst_preview = testimonial_preview_requested($_GET, $_SESSION);
-/* A page that has its own good moment says so by defining this before
-   the include; realms.php does, because a raid result beats a timer. */
-$tst_self_open = !isset($tst_self_open) ? true : (bool) $tst_self_open;
+/*
+ * WHO OPENS IT, DECIDED HERE RATHER THAN BY THE PAGE.
+ *
+ * This read a $tst_self_open the including page was supposed to set
+ * first. header.php includes this now, and header.php runs near the
+ * TOP of a page, so realms.php could not have set anything yet -- the
+ * flag would have been read before it was written, every time.
+ *
+ * The one page with a better moment is realms.php, which calls
+ * skTestimonialOffer() when a raid result closes. Asking the path is
+ * ugly and it is honest: there is exactly one exception and this is
+ * the only place that can know about it before the markup is written.
+ */
+$tst_self_open = basename(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)) !== 'realms.php';
 if ($tst_preview && !$tst_offer) {
 	$tst_keys = array_keys(testimonial_prompts());
 	$tst_offer = array(
@@ -46,6 +58,21 @@ if ($tst_preview && !$tst_offer) {
 }
 if ($tst_offer):
 ?>
+<?php
+/*
+ * THE ONE RULE THAT MATTERS, INLINE.
+ *
+ * Everything else about this modal is cosmetic; this single line is
+ * what keeps it from being page content. It shipped once without its
+ * stylesheet -- an allowlist in header.php that a new include site
+ * was never added to -- and both dialogs unrolled into the footer of
+ * Launchpad underneath somebody's game results.
+ *
+ * Forty bytes next to the markup it governs means that cannot happen
+ * again from a missing link, a cache miss or a 404 on the stylesheet.
+ */
+?>
+<style>.tst-overlay{display:none}</style>
 <div class="tst-overlay" id="tst-overlay" role="dialog" aria-modal="true" aria-labelledby="tst-title">
 	<div class="tst-card">
 		<h2 id="tst-title"><?php echo htmlspecialchars($tst_offer['prompt']); ?></h2>

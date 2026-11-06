@@ -193,6 +193,39 @@ function testimonial_offer($conn, $user_id) {
 	);
 }
 
+/**
+ * The same decision, taken at most once every half hour per session.
+ *
+ * WHY IT HAS TO BE CACHED. The ask belongs on every page a player can
+ * land on after finishing something, which is header.php -- 66 pages.
+ * testimonial_offer() is three queries, and three queries on every
+ * page view of the whole platform to find out that somebody was asked
+ * last Tuesday is not a trade worth making.
+ *
+ * A "no" is cached for half an hour. A "yes" is kept until it is acted
+ * on, because the answer cannot change in the player's favour while
+ * they sit on it, and the endpoint clears the cache the moment they
+ * send or dismiss.
+ */
+function testimonial_offer_cached($conn, $user_id) {
+	$user_id = intval($user_id);
+	if ($user_id <= 0) return null;
+	if (isset($_SESSION['tst_offer']) && is_array($_SESSION['tst_offer'])) {
+		$c = $_SESSION['tst_offer'];
+		if (isset($c['at']) && ($c['offer'] !== null || $c['at'] > time() - 1800)) {
+			return $c['offer'];
+		}
+	}
+	$offer = testimonial_offer($conn, $user_id);
+	$_SESSION['tst_offer'] = array('offer' => $offer, 'at' => time());
+	return $offer;
+}
+
+/** Forget the cached decision: they have just acted on it. */
+function testimonial_offer_forget() {
+	unset($_SESSION['tst_offer']);
+}
+
 /** Record that we asked, so the next ask is a fortnight away. */
 function testimonial_mark_shown($conn, $user_id) {
 	if (!testimonials_ready($conn)) return false;

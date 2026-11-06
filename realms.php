@@ -1510,22 +1510,6 @@ if($realm_status && isset($_SESSION['userData']['user_id'])){
 $_raidDeployConfig = isset($_SESSION['raidDeployConfig']) ? $_SESSION['raidDeployConfig'] : array('amount'=>'tactical','weapon'=>'balanced','armor'=>'medium');
 }
 // Close DB Connection
-/*
- * THE TESTIMONIAL ASK, WHILE THE CONNECTION IS STILL OPEN.
- *
- * It emits nothing unless this player is due to be asked, but deciding
- * that is a query -- so it has to run above this line. The first cut
- * put the include down with the other script tags, twenty lines after
- * the close, which is the same mistake realms-harness.php exists to
- * catch: a PHP warning printed into the middle of a <script> block
- * takes the whole block with it.
- */
-/* Realms has a better moment than a timer: the instant a raid result
-   closes. It calls skTestimonialOffer() itself, so the modal must not
-   also open itself here. */
-$tst_self_open = false;
-require_once __DIR__ . '/testimonial-modal.php';
-
 $conn->close();
 ?>
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>

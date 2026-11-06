@@ -168,15 +168,24 @@
 	  <link href="dist/realms-onboarding.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
   <?php
   }
-  /* The testimonial modal hangs off the raid screen, the cards show on
-     the public pitch pages, and the edit form is on a profile. Those
-     share no other stylesheet, so this one is gated on its own list. */
-  if (in_array($sk_path, array('realms.php', 'realms-map.php', 'profile.php', 'index.php'), true)) {
+  /*
+   * TESTIMONIALS: EVERY PAGE, NO LIST.
+   *
+   * This was gated on an allowlist -- realms, the map, profile, index
+   * -- back when the ask lived only on the raid screen. Then the ask
+   * went platform-wide onto launchpad.php and the list did not, so
+   * launchpad served the modal markup with no stylesheet behind it.
+   * `.tst-overlay { display: none }` is what hides that markup, so
+   * both dialogs rendered as plain content in the footer: a heading,
+   * a textarea and two buttons, sitting under the page.
+   *
+   * An allowlist for a component that can be included anywhere is a
+   * standing invitation to repeat that, and the file is small. It
+   * loads everywhere now, and the modal also carries its own inline
+   * guard so it cannot unroll even if this link fails.
+   */
   ?>
 	  <link href="dist/testimonials.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
-  <?php
-  }
-  ?>
   <script type="text/javascript">
 	  // Toggle burger menu
 	  function toggleMenu(){
@@ -2292,4 +2301,24 @@ if (is_file(__DIR__ . '/dhc-dropmodal.php')) include __DIR__ . '/dhc-dropmodal.p
 /* Yesterday's summary, once a day, for a signed-in player. It returns
    immediately for anyone else and renders nothing when they did nothing. */
 if (is_file(__DIR__ . '/player-digest.php')) include __DIR__ . '/player-digest.php';
+
+/*
+ * THE TESTIMONIAL ASK, ON EVERY PAGE A PLAYER CAN LAND ON.
+ *
+ * It was on realms.php and launchpad.php. Launchpad catches everybody
+ * at login, which is coverage by accident rather than a good moment:
+ * this platform has a lot of games and a lot of ways to win, and
+ * somebody who finishes one lands back on whichever page they came
+ * from. So it goes here, which is all 66 of them.
+ *
+ * NOT ON THE GAMES THEMSELVES. Those deliberately skip header.php, and
+ * that is the right answer twice over -- nothing should open a dialog
+ * over a game in progress, and they carry none of the platform's CSS.
+ *
+ * AFFORDABLE BECAUSE THE DECISION IS CACHED. testimonial_offer() is
+ * three queries; testimonial_offer_cached() keeps a "no" for half an
+ * hour in the session, so this costs nothing on almost every load.
+ * It renders nothing at all unless somebody is due to be asked.
+ */
+if (is_file(__DIR__ . '/testimonial-modal.php')) include __DIR__ . '/testimonial-modal.php';
 ?>

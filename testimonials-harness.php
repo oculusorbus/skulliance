@@ -329,13 +329,43 @@ ok(strpos($src, 'return testimonial_recent_win($conn, $user_id);') !== false,
    does, or an install without it is a warning printed mid-page. */
 ok(preg_match('~@\$conn->query\(\s*"SELECT COUNT\(\*\) AS n FROM activity~s', $src) === 1,
    'the activity count is not suppressed, so a missing table prints a warning into the page');
-$lp = file_get_contents(__DIR__ . '/launchpad.php');
-ok(strpos($lp, "testimonial-modal.php") !== false,
-   'launchpad does not carry the ask, so only Realms players are ever asked');
-$lpIncl = strpos($lp, "require_once __DIR__ . '/testimonial-modal.php'");
-$lpClose = strpos($lp, '$conn->close();');
-ok($lpIncl !== false && $lpClose !== false && $lpIncl < $lpClose,
-   'launchpad includes the ask after $conn->close()');
+/*
+ * EVERY PAGE A PLAYER LANDS ON, not a handful. This platform has a lot
+ * of games and a lot of ways to win, and somebody who finishes one
+ * comes back to whichever page they came from -- so the ask lives in
+ * header.php, which is all of them.
+ */
+$hdrSrc = file_get_contents(__DIR__ . '/header.php');
+ok(strpos($hdrSrc, "include __DIR__ . '/testimonial-modal.php'") !== false,
+   'header.php does not carry the ask, so it only appears where somebody remembered to add it');
+/* Three queries on every page view of the platform is not a trade
+   worth making to find out somebody was asked last Tuesday. */
+ok(strpos($src, 'function testimonial_offer_cached') !== false,
+   'the offer is not cached, so every page view costs three queries');
+ok(strpos(file_get_contents(__DIR__ . '/testimonial-modal.php'), 'testimonial_offer_cached($conn') !== false,
+   'the modal calls the uncached offer from a header included on every page');
+/* Every branch that changes the answer has to clear it: shown,
+   dismiss and save. Checking the string appears somewhere passes
+   while two of the three still have it. */
+ok(substr_count($ajax0, 'testimonial_offer_forget()') >= 3,
+   'not every endpoint branch clears the cached decision, so the modal returns after it is answered');
+/* In the save branch: after the error bail, before the success
+   reply. Ordering in the extracted branch, not a regex over the whole
+   file trying to describe a multi-line call. */
+$saveBranch = substr($ajax0, strpos($ajax0, "if (\$action === 'save')"));
+$bail   = strpos($saveBranch, "if (\$err !== '')");
+$forget = strpos($saveBranch, 'testimonial_offer_forget()');
+$reply  = strpos($saveBranch, "'success' => true");
+ok($bail !== false && $forget !== false && $reply !== false
+   && $bail < $forget && $forget < $reply,
+   'a successful save does not clear the cached decision, so somebody is asked again after writing one');
+/* The games themselves skip header.php on purpose: nothing should open
+   a dialog over a game in progress, and they carry none of this CSS. */
+foreach (array('dhcgame.php', 'skullswap.php', 'match3rpg.php') as $game) {
+	if (!is_file(__DIR__ . '/' . $game)) continue;
+	ok(strpos(file_get_contents(__DIR__ . '/' . $game), "include 'header.php'") === false,
+	   "$game now pulls header.php, which would open the ask over a game in progress");
+}
 /* Two openers would race: realms.php has a real moment, everywhere
    else falls back to a timer. */
 /* Read here rather than relying on a $realms/$modal defined further
@@ -344,8 +374,13 @@ ok($lpIncl !== false && $lpClose !== false && $lpIncl < $lpClose,
    now happened twice in this harness. */
 $realmsSrc = file_get_contents(__DIR__ . '/realms.php');
 $modalSrc  = file_get_contents(__DIR__ . '/testimonial-modal.php');
-ok(strpos($realmsSrc, '$tst_self_open = false;') !== false,
-   'realms.php lets the modal self-open as well as calling it, so it can appear mid-raid');
+/* header.php runs near the top of a page, so a flag the including
+   page was meant to set first would always be read before it was
+   written. The modal asks the path instead. */
+ok(strpos($modalSrc, "!== 'realms.php'") !== false,
+   'the modal no longer excludes realms.php from self-opening, so it can appear mid-raid');
+ok(strpos($realmsSrc, 'skTestimonialOffer') !== false,
+   'realms.php no longer opens the ask when a raid result closes');
 ok(strpos($modalSrc, 'selfOpen') !== false,
    'the modal cannot open itself, so pages without a raid never show it');
 ok(preg_match('~\} else if \(selfOpen\) \{\s*setTimeout~s', $modalSrc) === 1,
@@ -443,13 +478,18 @@ ok(strpos($realms, 'skTestimonialOffer') !== false,
    'realms.php never calls the offer, so the modal can never appear');
 ok(strpos($realms, 'moreQueued && typeof window.skTestimonialOffer') !== false,
    'the offer is not held back until the raid queue is empty, so it lands on the next animation');
-/* $conn->close() is far above the script block; an include that needs the
-   connection has to sit above it. realms-harness.php exists because of
-   exactly this class of mistake. */
-$incl = strpos($realms, "require_once __DIR__ . '/testimonial-modal.php'");
-$close = strpos($realms, '$conn->close();');
-ok($incl !== false && $close !== false && $incl < $close,
-   'the testimonial include runs after $conn->close(), so it warns inside a <script> block');
+/*
+ * THE MODAL IS INCLUDED FROM header.php NOW, which runs on pages with
+ * a connection and on pages without one -- public pages, error pages,
+ * anything that pulls the header before opening a database. It has to
+ * check rather than assume, or those pages take a fatal in the middle
+ * of their own markup.
+ */
+$mSrc = file_get_contents(__DIR__ . '/testimonial-modal.php');
+ok(strpos($mSrc, 'isset($conn) && is_object($conn)') !== false,
+   'the modal assumes a connection, so a header-only page fatals on it');
+ok(strpos($mSrc, '$tst_uid > 0') !== false,
+   'the modal queries for a signed-out visitor');
 
 echo "\nthe share link can actually be retweeted\n";
 $url = testimonial_share_url('I came for the raids and stayed for the people in my faction.');
@@ -483,8 +523,30 @@ ok(strpos(file_get_contents(__DIR__ . '/admin-lib.php'), "'testimonials'") !== f
    'there is no admin tab, so the queue cannot be reached');
 ok(strpos(file_get_contents(__DIR__ . '/webhooks.php'), 'getTestimonialsWebhook') !== false,
    'webhooks.php has no testimonials channel');
-ok(strpos(file_get_contents(__DIR__ . '/header.php'), 'dist/testimonials.css') !== false,
-   'the stylesheet is never linked');
+/*
+ * THE STYLESHEET IS WHAT HIDES THE MODAL, so a page that serves the
+ * markup without it does not degrade -- it prints a heading, a
+ * textarea and two buttons into the page. That shipped: the link was
+ * behind an allowlist written when the ask lived only on the raid
+ * screen, the ask moved to launchpad.php, and the list did not.
+ *
+ * No allowlist now, and the modal carries the one rule that matters
+ * inline so a missing link or a 404 cannot unroll it either.
+ */
+$hdr0 = file_get_contents(__DIR__ . '/header.php');
+ok(strpos($hdr0, 'dist/testimonials.css') !== false, 'the stylesheet is never linked');
+/* No path allowlist anywhere in the header. map.css uses an explicit
+   === comparison for two pages that genuinely are the only two; an
+   in_array list of page names is the shape that went stale. */
+ok(strpos($hdr0, 'in_array($sk_path') === false,
+   'the header gates a stylesheet on a page allowlist again, which is how launchpad lost this one');
+ok(strpos($modalSrc2 = file_get_contents(__DIR__ . '/testimonial-modal.php'),
+   '<style>.tst-overlay{display:none}</style>') !== false,
+   'the modal has no inline guard, so a missing stylesheet dumps it into the page');
+/* And the rule it relies on must still be the one in the file. */
+ok(preg_match('~\.tst-overlay\s*\{[^}]*display:\s*none~s',
+   file_get_contents(__DIR__ . '/dist/testimonials.css')) === 1,
+   'dist/testimonials.css no longer hides .tst-overlay by default');
 $prof = file_get_contents(__DIR__ . '/profile.php');
 ok(strpos($prof, 'testimonial_self_panel') !== false,
    'a player cannot change their mind later');
