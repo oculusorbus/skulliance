@@ -33,12 +33,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tid'])) {
 	$tid     = (int) $_POST['tid'];
 	$approve = (isset($_POST['verdict']) && $_POST['verdict'] === 'approve');
 	$admin   = isset($_SESSION['userData']['user_id']) ? (int) $_SESSION['userData']['user_id'] : 0;
-	$row     = testimonial_review($conn, $tid, $approve, $admin, isset($_POST['note']) ? $_POST['note'] : '');
-	/* The announce rule lives in the lib so it can be tested; see
-	   testimonial_announce(). */
-	if ($row && $approve) testimonial_announce($conn, $row);
-	$tst_said = $row ? ($approve ? 'Approved, and posted to Discord.' : 'Rejected.')
-	                 : 'Nothing to review there.';
+	/*
+	 * RE-POST IS ITS OWN VERDICT. The post flag stops a second
+	 * approval double-posting, which is right -- and useless when the
+	 * first post was REJECTED rather than delivered, because then the
+	 * flag is the only thing keeping the testimonial out of the
+	 * channel. This lifts it deliberately and sends again, without
+	 * touching the status or the note.
+	 */
+	$repost = (isset($_POST['verdict']) && $_POST['verdict'] === 'repost');
+	if ($repost) {
+		testimonial_unpost($conn, $tid);
+		$row = testimonial_row($conn, $tid);
+		$tst_said = ($row && testimonial_announce($conn, $row))
+			? 'Sent to Discord again.'
+			: 'Could not send that one. Check the credential above.';
+	} else {
+		$row = testimonial_review($conn, $tid, $approve, $admin, isset($_POST['note']) ? $_POST['note'] : '');
+		/* The announce rule lives in the lib so it can be tested; see
+		   testimonial_announce(). */
+		if ($row && $approve) testimonial_announce($conn, $row);
+		$tst_said = $row ? ($approve ? 'Approved.' : 'Rejected.') : 'Nothing to review there.';
+	}
 }
 
 include 'header.php';
@@ -100,7 +116,8 @@ function tst_admin_card($t, $verdicts) {
 	   . ' value="' . htmlspecialchars($t['review_note']) . '">';
 	foreach ($verdicts as $v => $label) {
 		echo '<button type="submit" name="verdict" value="' . $v . '" class="'
-		   . ($v === 'approve' ? 'adm-yes' : 'adm-no') . '">' . htmlspecialchars($label) . '</button>';
+		   . (($v === 'approve' || $v === 'repost') ? 'adm-yes' : 'adm-no') . '">'
+		   . htmlspecialchars($label) . '</button>';
 	}
 	echo '</form></div>';
 }
@@ -131,7 +148,7 @@ function tst_admin_card($t, $verdicts) {
 	/* Approve again is how a testimonial that failed to post gets sent:
 	   discord_posted is only set once a post actually went out, so a
 	   row that never reached Discord will on the next approval. */
-	foreach ($live as $t) tst_admin_card($t, array('reject' => 'Pull it down', 'approve' => 'Re-post to Discord'));
+	foreach ($live as $t) tst_admin_card($t, array('reject' => 'Pull it down', 'repost' => 'Send to Discord'));
 	?>
 
 	<h3>Not published (<?php echo count($rejected); ?>)</h3>

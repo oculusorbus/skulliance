@@ -458,13 +458,69 @@ function testimonial_announce($conn, $row) {
 	}
 	if (!function_exists('skl_discordmsg')) return false;
 
-	$conn->query("UPDATE testimonials SET discord_posted = 1 WHERE id = " . (int) $row['id']);
 	$prompts = testimonial_prompts();
 	$asked   = isset($prompts[$row['prompt_key']]) ? $prompts[$row['prompt_key']] : '';
 	$who     = isset($row['username']) ? $row['username'] : 'A Skulliance player';
-	skl_discordmsg($who, '"' . $row['body'] . '"', '', '', 'testimonials', '',
-	               '2ECC71', null, $asked, '', (int) $row['user_id'], 0);
+	/*
+	 * THE FOOTER IS A STRUCTURE, NOT A STRING.
+	 *
+	 * skl_discordmsg() assigns $footer straight into the embed, and
+	 * Discord's footer must be an object with a `text` key. Passing
+	 * the question as a bare string produced an embed Discord refused
+	 * outright: 400, {"embeds": ["0"]}, and Skull Bot reporting its
+	 * own post rejected.
+	 */
+	$footer = ($asked !== '') ? array('text' => $asked) : null;
+	/* Their avatar in the corner, which is also what the testimonial
+	   is published with. An empty thumbnail url is a field Discord has
+	   no use for. */
+	$thumb = (isset($row['discord_id'], $row['avatar']) && function_exists('avatar_url'))
+		? avatar_url($row['discord_id'], $row['avatar']) : '';
+	skl_discordmsg($who, '"' . $row['body'] . '"', '', '', 'testimonials', $thumb,
+	               '2ECC71', null, $footer, '', (int) $row['user_id'], 0);
+	/*
+	 * FLAGGED AFTER THE POST, NOT BEFORE.
+	 *
+	 * This was the other way round, to stop a webhook that timed out
+	 * after delivering from being retried into a double post. That
+	 * reasoning assumed the post would normally succeed. The first
+	 * real one was rejected, the row was already marked delivered,
+	 * and nothing could ever send it again.
+	 *
+	 * skl_discordmsg() returns nothing, so there is no success to
+	 * test. Flagging afterwards at least means a rejected post leaves
+	 * a row that can be retried, and the retry is a deliberate press
+	 * of a button rather than anything automatic.
+	 */
+	$conn->query("UPDATE testimonials SET discord_posted = 1 WHERE id = " . (int) $row['id']);
 	return true;
+}
+
+/** One row by id, with who wrote it. What announce() needs. */
+function testimonial_row($conn, $id) {
+	if (!testimonials_ready($conn)) return null;
+	$id = intval($id);
+	if ($id <= 0) return null;
+	$r = $conn->query(
+		"SELECT t.*, users.username, users.discord_id, users.avatar
+		 FROM testimonials t INNER JOIN users ON users.id = t.user_id
+		 WHERE t.id = $id LIMIT 1");
+	return ($r && $r->num_rows > 0) ? $r->fetch_assoc() : null;
+}
+
+/**
+ * Forget that we posted one, so it can be sent again.
+ *
+ * The flag exists to stop a second approval double-posting. When a
+ * post was rejected rather than delivered that guard is the only
+ * thing standing between the testimonial and the channel, so the
+ * admin screen needs a way to lift it deliberately.
+ */
+function testimonial_unpost($conn, $id) {
+	if (!testimonials_ready($conn)) return false;
+	$id = intval($id);
+	if ($id <= 0) return false;
+	return (bool) $conn->query("UPDATE testimonials SET discord_posted = 0 WHERE id = $id");
 }
 
 /**

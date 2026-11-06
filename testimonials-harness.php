@@ -80,7 +80,11 @@ if (!function_exists('skl_discordmsg')) {
 	function skl_discordmsg($title, $desc = '', $img = '', $url = '', $channel = '',
 	                        $thumb = '', $color = '', $author = null, $footer = null,
 	                        $content = '', $actor = null, $actor2 = 0) {
-		$GLOBALS['tst_posts'][] = array('title' => $title, 'desc' => $desc, 'channel' => $channel);
+		/* Record the whole shape, not three fields: the bug that got
+		   through was an embed Discord refused, and the refused part
+		   was the footer. */
+		$GLOBALS['tst_posts'][] = array('title' => $title, 'desc' => $desc, 'channel' => $channel,
+		                                'footer' => $footer, 'thumb' => $thumb, 'color' => $color);
 	}
 }
 
@@ -277,14 +281,67 @@ ok(preg_match("~status'\]\s*!==\s*'approved'~", $ann) === 1,
  */
 $modal0 = file_get_contents(__DIR__ . '/testimonial-modal.php');
 $warm = new FakeConn();
+/* A real prompt key: the fixture used 'back', left over from when
+   there were three questions, and an unrecognised key correctly
+   yields no footer -- which made the footer assertion fail against
+   code that was right. */
+$pk  = array_keys(testimonial_prompts());
 $row = array('id' => 5, 'user_id' => 9, 'status' => 'approved', 'visibility' => 'named',
-             'discord_posted' => 0, 'prompt_key' => 'back', 'body' => 'Good people.',
+             'discord_posted' => 0, 'prompt_key' => $pk[0], 'body' => 'Good people.',
              'username' => 'someone');
 ok(testimonial_announce($warm, $row) === true, 'approving does not post to Discord');
 ok(count($GLOBALS['tst_posts']) === 1, 'approving posted ' . count($GLOBALS['tst_posts']) . ' times, not once');
 ok($GLOBALS['tst_posts'][0]['channel'] === 'testimonials',
    'the post went to the wrong channel: ' . $GLOBALS['tst_posts'][0]['channel']);
 ok($warm->said('discord_posted = 1'), 'the row is not flagged, so the next approval posts it again');
+/*
+ * THE EMBED HAS TO BE ONE DISCORD WILL TAKE.
+ *
+ * skl_discordmsg() drops $footer straight into the embed and
+ * Discord's footer must be an object with a `text` key. A bare string
+ * produced 400 / {"embeds":["0"]} and Skull Bot announcing its own
+ * post rejected. The fake records what it was handed.
+ */
+ok(is_array($GLOBALS['tst_posts'][0]['footer'] ?? null)
+   && isset($GLOBALS['tst_posts'][0]['footer']['text']),
+   'the footer is not an object with a text key, so Discord rejects the embed');
+/*
+ * AND THE FLAG GOES ON AFTER THE POST. It was set first, to stop a
+ * timed-out-but-delivered post being retried into a double. The first
+ * real post was REJECTED, the row was already marked delivered, and
+ * nothing could ever send it again -- which is the worse failure of
+ * the two, and the one that actually happened.
+ */
+$annFlag = strpos($annSrc2 = $annSrc, 'discord_posted = 1');
+$annSend = strpos($annSrc, 'skl_discordmsg(');
+ok($annFlag !== false && $annSend !== false && $annSend < $annFlag,
+   'the row is flagged as posted before the post, so a rejected embed can never be retried');
+/* And a deliberate way to lift that flag when a post was refused. */
+/* An unrecognised prompt key -- a row written before the questions
+   changed -- must send NO footer rather than an empty one, which is
+   its own invalid embed. */
+$GLOBALS['tst_posts'] = array();
+$old = $row; $old['prompt_key'] = 'a-question-that-no-longer-exists';
+testimonial_announce(new FakeConn(), $old);
+/* array_key_exists, not ??. The null coalescing operator returns its
+   fallback for a value that IS null, so `$v ?? 'x'` can never equal
+   null and the test could only ever fail. */
+ok(array_key_exists('footer', $GLOBALS['tst_posts'][0])
+   && $GLOBALS['tst_posts'][0]['footer'] === null,
+   'a row with an unknown prompt key sends an empty footer instead of none');
+
+ok(function_exists('testimonial_unpost'), 'there is no way to clear the posted flag after a refusal');
+$un = new FakeConn();
+testimonial_unpost($un, 5);
+ok($un->said('discord_posted = 0'), 'testimonial_unpost() does not clear the flag');
+/* The BUTTON, not the word: 'repost' also appears in the POST
+   handler, so searching for it passes with no control to press. */
+ok(preg_match("~'repost'\s*=>\s*'~", $adm) === 1,
+   'the live cards offer no re-post control, so a rejected post is stuck');
+ok(strpos($adm, "\$_POST['verdict'] === 'repost'") !== false,
+   'the admin page has no handler for the re-post verdict');
+ok(strpos($adm, 'testimonial_unpost($conn, $tid)') !== false,
+   're-posting does not clear the flag first, so the guard still blocks it');
 
 $GLOBALS['tst_posts'] = array();
 $again = $row; $again['discord_posted'] = 1;
