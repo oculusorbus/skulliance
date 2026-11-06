@@ -1520,6 +1520,10 @@ $_raidDeployConfig = isset($_SESSION['raidDeployConfig']) ? $_SESSION['raidDeplo
  * catch: a PHP warning printed into the middle of a <script> block
  * takes the whole block with it.
  */
+/* Realms has a better moment than a timer: the instant a raid result
+   closes. It calls skTestimonialOffer() itself, so the modal must not
+   also open itself here. */
+$tst_self_open = false;
 require_once __DIR__ . '/testimonial-modal.php';
 
 $conn->close();

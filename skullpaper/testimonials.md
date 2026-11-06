@@ -5,13 +5,14 @@ deciding whether to start.
 
 ## How you get asked
 
-You are asked after you take a realm, not when you arrive. Somebody who has
-just won a raid has an answer ready; somebody who just opened the page came to
-play, not to write.
-
-You are only asked if you have a realm and have won a raid in the last couple
-of days. Signing up is not enough, because a testimonial from somebody who has
+You are asked if you have been playing, whatever you play. A week of real
+activity across the platform is the test: missions, battles, games, raids,
+streaks. Signing up is not enough, because a testimonial from somebody who has
 not played says nothing a stranger can use.
+
+On Realms you are asked the moment a raid result closes, which is the best
+moment there is. Everywhere else the ask follows you onto Launchpad a few
+seconds after the page settles, so it never greets you on arrival.
 
 **You will be asked three times at most**, at least a fortnight apart, and the
 last one says it is the last one. "Not now" is a fortnight. On the final ask it
@@ -76,7 +77,9 @@ Your previous versions are kept. Nothing you have written is deleted.
 
 ## Sharing it
 
-After you send one you can post it to X in one tap. It is prefilled with your
+After you send one you can post it to X in one tap, and once it is published
+the same button is on your profile for good, so a change of mind later is not
+a missed chance. It is prefilled with your
 words, a mention of the Skulliance account so it can be picked up, and a link
 to the [[realms]] world map.
 

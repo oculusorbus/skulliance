@@ -316,8 +316,40 @@ ok(preg_match('~TESTIMONIAL_NUDGE_DAYS~', $off) === 1,
    'the offer has no cooling-off period between asks');
 ok(preg_match('~last_call~', $off) === 1,
    'the last ask is not flagged, so nobody is told it is their last chance');
-ok(preg_match('~testimonial_recent_win~', $off) === 1,
-   'the offer does not require a recent win, so it interrupts people who came to play');
+/* PLATFORM-WIDE, not Realms-wide. Requiring a won raid made a
+   platform feature into a Realms one: somebody who plays the card
+   games nightly and never raids could not be asked. */
+ok(preg_match('~testimonial_recently_active~', $off) === 1,
+   'the offer does not require recent activity, so it interrupts people who came to play');
+ok(strpos($src, 'FROM activity') !== false,
+   'eligibility no longer reads the platform-wide activity log');
+ok(strpos($src, 'return testimonial_recent_win($conn, $user_id);') !== false,
+   'there is no fallback when the activity table is absent, so nobody would ever be asked');
+/* The activity read must tolerate a missing table the way activity_log()
+   does, or an install without it is a warning printed mid-page. */
+ok(preg_match('~@\$conn->query\(\s*"SELECT COUNT\(\*\) AS n FROM activity~s', $src) === 1,
+   'the activity count is not suppressed, so a missing table prints a warning into the page');
+$lp = file_get_contents(__DIR__ . '/launchpad.php');
+ok(strpos($lp, "testimonial-modal.php") !== false,
+   'launchpad does not carry the ask, so only Realms players are ever asked');
+$lpIncl = strpos($lp, "require_once __DIR__ . '/testimonial-modal.php'");
+$lpClose = strpos($lp, '$conn->close();');
+ok($lpIncl !== false && $lpClose !== false && $lpIncl < $lpClose,
+   'launchpad includes the ask after $conn->close()');
+/* Two openers would race: realms.php has a real moment, everywhere
+   else falls back to a timer. */
+/* Read here rather than relying on a $realms/$modal defined further
+   down the file: an assertion that runs before its own input is
+   loaded tests an empty string and passes for no reason. That has
+   now happened twice in this harness. */
+$realmsSrc = file_get_contents(__DIR__ . '/realms.php');
+$modalSrc  = file_get_contents(__DIR__ . '/testimonial-modal.php');
+ok(strpos($realmsSrc, '$tst_self_open = false;') !== false,
+   'realms.php lets the modal self-open as well as calling it, so it can appear mid-raid');
+ok(strpos($modalSrc, 'selfOpen') !== false,
+   'the modal cannot open itself, so pages without a raid never show it');
+ok(preg_match('~\} else if \(selfOpen\) \{\s*setTimeout~s', $modalSrc) === 1,
+   'the self-open is not on a delay, so it greets people on arrival');
 ok(preg_match('~testimonial_current~', $off) === 1,
    'somebody who already wrote one is asked again');
 $modal = file_get_contents(__DIR__ . '/testimonial-modal.php');
@@ -466,6 +498,21 @@ ok(strpos($prof, '$is_own_profile && function_exists') !== false,
    'the panel is drawn on other people\'s profiles, not only your own');
 ok(strpos(file_get_contents(__DIR__ . '/realms-onboarding.php'), 'testimonial_wall') !== false,
    'the pitch page does not show any of them');
+/*
+ * AND ON A PAGE WITHOUT A LOGIN. realms-onboarding.php is included by
+ * realms.php, so a wall placed only there is read by signed-in players
+ * who have no realm -- the one audience that does not need persuading.
+ */
+$mapSrc = file_get_contents(__DIR__ . '/realms-map.php');
+ok(strpos($mapSrc, 'testimonial_wall($conn') !== false,
+   'no public page shows a testimonial, so visitors never see one');
+ok(strpos($mapSrc, "require_once __DIR__ . '/testimonials-lib.php'") !== false,
+   'the public map calls testimonial_wall() without loading the library');
+/* The share has to outlive the thank-you card, and only once it is real. */
+ok(strpos($panelApproved = $outA, 'Share it on X') !== false,
+   'an approved testimonial offers no way to share it after the thank-you card is closed');
+ok(strpos($out, 'Share it on X') === false,
+   'a rejected testimonial is offered a share link');
 ok(is_file(__DIR__ . '/testimonials-schema.md'), 'the schema is not written down anywhere');
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");

@@ -31,6 +31,9 @@ $tst_offer = ($tst_uid > 0 && isset($conn) && is_object($conn)) ? testimonial_of
  * offers.
  */
 $tst_preview = testimonial_preview_requested($_GET, $_SESSION);
+/* A page that has its own good moment says so by defining this before
+   the include; realms.php does, because a raid result beats a timer. */
+$tst_self_open = !isset($tst_self_open) ? true : (bool) $tst_self_open;
 if ($tst_preview && !$tst_offer) {
 	$tst_keys = array_keys(testimonial_prompts());
 	$tst_offer = array(
@@ -137,11 +140,23 @@ if ($tst_offer):
 		}).then(function (r) { return r.json(); });
 	}
 
-	/* In preview it opens itself: there is no raid to finish. */
+	/*
+	 * WHO OPENS IT. realms.php calls skTestimonialOffer() when a raid
+	 * result closes, which is the best moment on the platform and
+	 * exists only for people who play Realms. Everywhere else the
+	 * modal opens itself a few seconds in -- long enough that it
+	 * follows the page rather than greeting somebody with it, and the
+	 * eligibility gate has already decided this is a player with a
+	 * week of activity behind them who has not been asked in a
+	 * fortnight.
+	 */
+	var selfOpen = <?php echo $tst_self_open ? 'true' : 'false'; ?>;
 	if (offer.preview) {
 		document.addEventListener('DOMContentLoaded', function () {
 			overlay.classList.add('on');
 		});
+	} else if (selfOpen) {
+		setTimeout(function () { window.skTestimonialOffer(); }, 4000);
 	}
 
 	window.skTestimonialOffer = function () {

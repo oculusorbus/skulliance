@@ -41,6 +41,11 @@ if (!defined('TESTIMONIAL_NUDGE_DAYS')) define('TESTIMONIAL_NUDGE_DAYS', 14);
    in the right mood and has something concrete to say. This is how
    recent that win has to be. */
 if (!defined('TESTIMONIAL_WIN_HOURS'))  define('TESTIMONIAL_WIN_HOURS', 48);
+/* And the platform-wide version of the same idea: somebody who has
+   done this many things in this many days is playing, whatever they
+   play. Counted over the activity log, which every feature writes to. */
+if (!defined('TESTIMONIAL_ACTIVE_DAYS'))   define('TESTIMONIAL_ACTIVE_DAYS', 7);
+if (!defined('TESTIMONIAL_ACTIVE_EVENTS')) define('TESTIMONIAL_ACTIVE_EVENTS', 8);
 
 /**
  * The question. One, not a rotation.
@@ -96,12 +101,49 @@ function testimonial_current($conn, $user_id) {
 	return $r->fetch_assoc();
 }
 
-/** Has this player taken a realm recently enough to be asked about it? */
+/**
+ * Has this player been doing things lately, anywhere on the platform?
+ *
+ * THIS IS NOT A REALMS FEATURE. The first cut asked for a realm and a
+ * won raid, because the modal was built onto the raid screen and the
+ * raid screen was where the good moment was. That quietly made the
+ * whole thing a Realms feature: somebody who plays the card games
+ * every night, runs missions and never touches Realms could not be
+ * asked, and they have as much to say as anybody.
+ *
+ * The `activity` table is the platform-wide answer. Every announced
+ * event writes a row through activity_log() -- missions, battles,
+ * purchases, streaks, raids -- so a count over a few days is "this
+ * person is playing", whatever they play.
+ *
+ * IT FALLS BACK RATHER THAN FAILING CLOSED. If the activity table is
+ * not there, the realms check is used instead, so the feature works
+ * on an install where one of the two was never deployed. Both missing
+ * means nobody is asked, which is the right silence.
+ */
+function testimonial_recently_active($conn, $user_id) {
+	$user_id = intval($user_id);
+	if ($user_id <= 0) return false;
+	$d = (int) TESTIMONIAL_ACTIVE_DAYS;
+	$n = (int) TESTIMONIAL_ACTIVE_EVENTS;
+	$r = @$conn->query(
+		"SELECT COUNT(*) AS n FROM activity
+		 WHERE user_id = $user_id AND created_at >= (NOW() - INTERVAL $d DAY)");
+	if ($r) {
+		$row = $r->fetch_assoc();
+		return ((int) $row['n']) >= $n;
+	}
+	/* No activity table on this install: fall back to the signal the
+	   feature started with rather than asking nobody. */
+	return testimonial_recent_win($conn, $user_id);
+}
+
+/** The original signal, kept as the fallback. */
 function testimonial_recent_win($conn, $user_id) {
 	$user_id = intval($user_id);
 	if ($user_id <= 0) return false;
 	$h = (int) TESTIMONIAL_WIN_HOURS;
-	$r = $conn->query(
+	$r = @$conn->query(
 		"SELECT 1 FROM raids r
 		 INNER JOIN realms ON realms.id = r.offense_id
 		 WHERE realms.user_id = $user_id AND r.outcome = '1'
@@ -136,7 +178,7 @@ function testimonial_offer($conn, $user_id) {
 	if ($muted) return null;
 	if ($shown >= TESTIMONIAL_MAX_NUDGES) return null;
 	if ($last !== null && strtotime($last) > time() - (TESTIMONIAL_NUDGE_DAYS * 86400)) return null;
-	if (!testimonial_recent_win($conn, $user_id)) return null;
+	if (!testimonial_recently_active($conn, $user_id)) return null;
 
 	$key = testimonial_prompt_for($user_id);
 	$prompts = testimonial_prompts();
@@ -489,6 +531,22 @@ function testimonial_self_panel($conn, $user_id) {
 	/* THE TEXT, EDITABLE WHATEVER ITS STATE. Changing it sends it back
 	   to be read again, which the note under the box says plainly so
 	   nobody edits a live testimonial expecting it to stay live. */
+	/*
+	 * THE SHARE, ONCE IT IS ACTUALLY PUBLISHED.
+	 *
+	 * The thank-you card offers this the moment somebody submits and
+	 * then it is gone for good: close that card and there is no link
+	 * anywhere. Worse, it offers while the piece is still pending, so
+	 * somebody can post a quote that is then rejected.
+	 *
+	 * Approved only, and here, where somebody who meant to share it
+	 * and did not can come back and find it.
+	 */
+	if ($state === 'approved') {
+		echo '<a class="tst-x" target="_blank" rel="noopener" href="'
+		   . htmlspecialchars(testimonial_share_url($t['body'])) . '">Share it on X</a>';
+	}
+
 	echo '<form class="tst-edit" id="tst-edit-form">';
 	echo '<input type="hidden" name="action" value="save">';
 	echo '<input type="hidden" name="prompt_key" value="' . htmlspecialchars($t['prompt_key']) . '">';

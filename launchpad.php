@@ -434,6 +434,22 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 </body>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <?php
+/*
+ * THE TESTIMONIAL ASK, PLATFORM-WIDE.
+ *
+ * realms.php opens it at the best moment there is -- the instant a
+ * raid result closes -- but that moment only exists for people who
+ * play Realms, which made a platform feature into a Realms one.
+ * Launchpad is what everybody sees after logging in, whatever they
+ * play, so it is the general case.
+ *
+ * It still only offers to somebody with a week of real activity
+ * behind them, and still at most three times a fortnight apart, so
+ * this is not a modal that greets people. Above $conn->close()
+ * because deciding whether to offer is a query.
+ */
+require_once __DIR__ . '/testimonial-modal.php';
+
 $conn->close();
 ?>
 </html>
