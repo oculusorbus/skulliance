@@ -827,6 +827,15 @@ ok(strpos($hpSrc, "'\\201C'") !== false,
    'the quotation marks are straight rather than typographic');
 ok(preg_match('~\.hp-voice blockquote \{[^}]*font-style:\s*italic~s', $hpSrc) === 1,
    'the quote is set in the same face as the body copy around it');
+/* Attribution to the right, name before the face -- in the markup as
+   well as the CSS, so it does not depend on a flex direction. */
+ok(preg_match('~\.hp-voice figcaption \{[^}]*justify-content:\s*flex-end~s', $hpSrc) === 1,
+   'the attribution is not pushed to the right edge of the card');
+$capStart = strpos($hpSrc, '<figcaption>');
+$capEnd   = strpos($hpSrc, '</figcaption>');
+$cap      = substr($hpSrc, $capStart, $capEnd - $capStart);
+ok($capStart !== false && strpos($cap, '<span>') < strpos($cap, '<img'),
+   'the avatar comes before the username, so the name does not sit to its left');
 
 echo "\nthe pieces are wired up\n";
 ok(strpos(file_get_contents(__DIR__ . '/admin-lib.php'), "'testimonials'") !== false,

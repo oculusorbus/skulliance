@@ -388,7 +388,10 @@
       font-style: italic; }
     .hp-voice blockquote::before { content: '\201C'; }
     .hp-voice blockquote::after  { content: '\201D'; }
-    .hp-voice figcaption { display: flex; align-items: center; gap: 10px; }
+    /* Pushed to the right edge of the card, name first and the face
+       last, so the attribution sits opposite the quote's opening mark
+       rather than under it. */
+    .hp-voice figcaption { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
     /* Square, not round: the file Discord serves is square and the
        corners are part of art somebody chose. A small radius keeps it
        from fighting the card. */
@@ -1264,12 +1267,16 @@
           <?php foreach ($hp_voices as $v): ?>
           <figure class="hp-voice">
             <blockquote><?php echo nl2br(htmlspecialchars($v['body'], ENT_QUOTES, 'UTF-8')); ?></blockquote>
+            <?php /* Name then avatar, in that order in the markup as well
+                     as on screen: the caption reads right to the face,
+                     and the avatar is decorative (alt="") so nothing is
+                     lost by it coming last. */ ?>
             <figcaption>
+              <span><?php echo htmlspecialchars($v['name'], ENT_QUOTES, 'UTF-8'); ?></span>
               <?php if ($v['avatar'] !== ''): ?>
               <img src="<?php echo htmlspecialchars($v['avatar'], ENT_QUOTES, 'UTF-8'); ?>"
                    alt="" width="36" height="36" loading="lazy" decoding="async">
               <?php endif; ?>
-              <span><?php echo htmlspecialchars($v['name'], ENT_QUOTES, 'UTF-8'); ?></span>
             </figcaption>
           </figure>
           <?php endforeach; ?>
