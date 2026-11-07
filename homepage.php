@@ -375,7 +375,19 @@
     .hp-voices { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
     .hp-voice { margin: 0; padding: 20px 22px; text-align: left;
       background: #0a1724; border: 1px solid rgba(255,255,255,.07); border-radius: 14px; }
-    .hp-voice blockquote { margin: 0 0 14px; font-size: 15px; line-height: 1.6; color: #dce8f2; }
+    /* QUOTATION MARKS HERE, AND NOT ON THE X SHARE. This is the site
+       quoting a player, so the marks are correct and the eye reads the
+       block as somebody speaking. The share button is that player
+       posting their own words from their own account, where quoting
+       yourself reads as reporting what you said rather than saying it.
+       In CSS so the escaped text stays exactly what they wrote. */
+    .hp-voice blockquote { margin: 0 0 14px; font-size: 15px; line-height: 1.6; color: #dce8f2;
+      /* Italic as well as the marks: together they say "somebody said
+         this" before a word is read, which is the one thing that
+         separates these cards from the body copy above them. */
+      font-style: italic; }
+    .hp-voice blockquote::before { content: '\201C'; }
+    .hp-voice blockquote::after  { content: '\201D'; }
     .hp-voice figcaption { display: flex; align-items: center; gap: 10px; }
     /* Square, not round: the file Discord serves is square and the
        corners are part of art somebody chose. A small radius keeps it

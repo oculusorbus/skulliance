@@ -816,6 +816,17 @@ ok(strpos($hpSrc, 'htmlspecialchars($v[\'body\']') !== false,
    'the homepage prints a testimonial without escaping it');
 ok(strpos($hpSrc, 'htmlspecialchars($v[\'name\']') !== false,
    'the homepage prints a username without escaping it');
+/* The site quoting a player takes quotation marks; the player posting
+   their own words does not. Both halves asserted, because the pair is
+   the point. */
+ok(preg_match('~blockquote::before\s*\{\s*content~', $hpSrc) === 1,
+   'the homepage quotes are gone, so the block does not read as somebody speaking');
+ok(preg_match('~blockquote::after\s*\{\s*content~', $hpSrc) === 1,
+   'the homepage opens a quotation mark it never closes');
+ok(strpos($hpSrc, "'\\201C'") !== false,
+   'the quotation marks are straight rather than typographic');
+ok(preg_match('~\.hp-voice blockquote \{[^}]*font-style:\s*italic~s', $hpSrc) === 1,
+   'the quote is set in the same face as the body copy around it');
 
 echo "\nthe pieces are wired up\n";
 ok(strpos(file_get_contents(__DIR__ . '/admin-lib.php'), "'testimonials'") !== false,
