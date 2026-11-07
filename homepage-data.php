@@ -373,6 +373,61 @@ function hp_dhc_fighters($limit = 24) {
  * be inflated by one whale with a thousand pieces, which is exactly why it
  * is the honest one to show.
  */
+/**
+ * Approved testimonials, for the homepage.
+ *
+ * SAME RULES AS THE PLATFORM'S OWN WALL, re-stated here rather than
+ * shared, because this file must not pull in testimonials-lib.php:
+ * that would reach db.php through avatar_url(), and the whole reason
+ * this file exists is keeping db.php out of WordPress. The three
+ * conditions are the ones that decide whether a stranger may read a
+ * testimonial -- approved, current, not withdrawn -- and they are
+ * asserted against the library's own query so the two cannot drift.
+ *
+ * edited_body first, exactly like the platform: the founder may tidy
+ * wording for readability, and the tidy is what publishes.
+ *
+ * The avatar URL is built here for the same reason, from the same CDN
+ * and the same two columns avatar_url() uses.
+ */
+function hp_testimonials($limit = 6) {
+	$limit = max(1, min(24, (int)$limit));
+	$raw = hp_cached('testimonials_' . $limit, function ($c) use ($limit) {
+		/* The column arrived in an ALTER, so an install without it
+		   still works and simply publishes the player's own words. */
+		$hasEdit = false;
+		$col = @$c->query("SHOW COLUMNS FROM testimonials LIKE 'edited_body'");
+		if ($col && $col->num_rows > 0) $hasEdit = true;
+		$sql = "SELECT t.body, " . ($hasEdit ? "t.edited_body," : "NULL AS edited_body,") . "
+		               t.created_date, users.username, users.discord_id, users.avatar
+		        FROM testimonials t
+		        INNER JOIN users ON users.id = t.user_id
+		        WHERE t.status = 'approved' AND t.is_current = 1
+		          AND t.visibility <> 'private'
+		        ORDER BY t.created_date DESC LIMIT " . $limit;
+		$r = @$c->query($sql);
+		if (!$r) return null;
+		$out = array();
+		while ($row = $r->fetch_assoc()) {
+			$body = trim((string)$row['edited_body']);
+			if ($body === '') $body = trim((string)$row['body']);
+			if ($body === '') continue;
+			$av = '';
+			$id = trim((string)$row['discord_id']);
+			$hash = trim((string)$row['avatar']);
+			if (preg_match('/^[0-9]{5,25}$/', $id) && preg_match('/^[A-Za-z0-9_]{8,64}$/', $hash)) {
+				$ext = (strpos($hash, 'a_') === 0) ? 'gif' : 'png';
+				$av  = 'https://cdn.discordapp.com/avatars/' . $id . '/' . $hash . '.' . $ext . '?size=128';
+			}
+			$out[] = array('body' => $body, 'name' => (string)$row['username'], 'avatar' => $av);
+		}
+		return json_encode($out);
+	}, '');
+
+	$list = $raw !== '' ? json_decode($raw, true) : array();
+	return is_array($list) ? $list : array();
+}
+
 function hp_stat_stakers($fallback = 0) {
 	return (int)hp_cached('stakers', function ($c) {
 		return hp_scalar($c, "SELECT COUNT(DISTINCT user_id) FROM nfts WHERE user_id > 0");

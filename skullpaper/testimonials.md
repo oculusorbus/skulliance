@@ -30,6 +30,11 @@ specific it is, the more it helps the community grow.
 Links are not carried, and there is a minimum length, because one line cannot
 tell anybody anything.
 
+## Where it appears
+
+Approved testimonials are featured on the Skulliance homepage, with your
+username and avatar, under "Why people stay".
+
 ## Who sees it
 
 Nothing is published automatically. The founder reads every testimonial before

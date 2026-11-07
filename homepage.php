@@ -369,6 +369,20 @@
     }
     .hp-layer + .hp-layer { border-top: 0; }
     .hp-layer.alt { background: #0a1724; }
+    /* VOICES. Quotes vary wildly in length, so the grid auto-fits and
+       each card sizes to its own text rather than every card being as
+       tall as the longest one. */
+    .hp-voices { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .hp-voice { margin: 0; padding: 20px 22px; text-align: left;
+      background: #0a1724; border: 1px solid rgba(255,255,255,.07); border-radius: 14px; }
+    .hp-voice blockquote { margin: 0 0 14px; font-size: 15px; line-height: 1.6; color: #dce8f2; }
+    .hp-voice figcaption { display: flex; align-items: center; gap: 10px; }
+    /* Square, not round: the file Discord serves is square and the
+       corners are part of art somebody chose. A small radius keeps it
+       from fighting the card. */
+    .hp-voice figcaption img { width: 36px; height: 36px; border-radius: 6px; flex: 0 0 auto; }
+    .hp-voice figcaption span { font-size: 13px; font-weight: 600; color: #8fb3c7; }
+    @media (max-width: 640px) { .hp-voices { grid-template-columns: 1fr; } }
     /* The chain band. Logos are white monochrome marks on transparent --
        the same files the wallet modal uses -- so they sit on this dark
        ground without a plate behind them. Cardano's is a 128px source and
@@ -1209,13 +1223,56 @@
       </div>
     </section>
 
+    <?php
+    /*
+     * VOICES. The only section on this page a visitor can check.
+     *
+     * Everything above it is us describing ourselves, which is free to
+     * write and worth accordingly. These are players saying why they
+     * play, in their own words, with the name and face they play
+     * under. It sits immediately before the membership ask for that
+     * reason: somebody deciding is deciding right here.
+     *
+     * NOTHING IS WRITTEN FOR IT. Each one was submitted by a player,
+     * read by the founder and approved; the founder may tidy wording
+     * for readability and the tidy is what publishes. Withdraw it on
+     * the platform and it leaves this page on the next cache cycle.
+     *
+     * THE WHOLE SECTION DISAPPEARS WHEN THERE ARE NONE. A heading over
+     * an empty row says the opposite of what it is here to say.
+     */
+    $hp_voices = function_exists('hp_testimonials') ? hp_testimonials(6) : array();
+    if ($hp_voices):
+    ?>
+    <section id="voices" class="hp-layer">
+      <div class="wrap">
+        <span class="hp-kick">In their words</span>
+        <h2>Why people stay.</h2>
+        <div class="hp-voices">
+          <?php foreach ($hp_voices as $v): ?>
+          <figure class="hp-voice">
+            <blockquote><?php echo nl2br(htmlspecialchars($v['body'], ENT_QUOTES, 'UTF-8')); ?></blockquote>
+            <figcaption>
+              <?php if ($v['avatar'] !== ''): ?>
+              <img src="<?php echo htmlspecialchars($v['avatar'], ENT_QUOTES, 'UTF-8'); ?>"
+                   alt="" width="36" height="36" loading="lazy" decoding="async">
+              <?php endif; ?>
+              <span><?php echo htmlspecialchars($v['name'], ENT_QUOTES, 'UTF-8'); ?></span>
+            </figcaption>
+          </figure>
+          <?php endforeach; ?>
+        </div>
+      </div>
+    </section>
+    <?php endif; ?>
+
     <?php /* MEMBERSHIP. Three tiers, 806 characters, and NOT ONE LINK --
              the most conversion-shaped section on the page had nowhere to
              go from it. The heading also led with "Tiers", which is a
              structure, not a reason. It now leads with the thing that
              stops a newcomer bouncing: none of this is required to
              start. */ ?>
-    <section id="membership" class="hp-layer">
+    <section id="membership" class="hp-layer alt">
       <div class="wrap">
         <span class="hp-kick">Membership</span>
         <h2>Staking needs nothing.<br>Membership gets you further.</h2>
@@ -1246,7 +1303,7 @@
     <?php /* TEAM. Thin, like the Skull Paper -- four faces do not need a
              full band, and giving them one would say the team matters
              more than the games. */ ?>
-    <section id="team" class="hp-layer alt hp-thin">
+    <section id="team" class="hp-layer hp-thin">
       <div class="wrap">
         <span class="hp-kick">Who builds it</span>
         <h2>A small team, in public.</h2>

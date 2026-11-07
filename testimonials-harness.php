@@ -764,6 +764,59 @@ ok(stripos($modalCopy, 'the founder reads it') !== false,
    'the modal no longer says who reads it before publication');
 ok(preg_match('~\x{2014}~u', $modalCopy) === 0, 'the modal copy contains an em dash');
 
+/*
+ * THE HOMEPAGE SHOWS THEM, AND IT CANNOT USE THE LIBRARY.
+ *
+ * homepage.php is included by WordPress, so it reaches the database
+ * through homepage-data.php -- deliberately tiny, its own connection,
+ * no db.php, no sessions. testimonials-lib.php cannot be pulled in
+ * there (avatar_url() alone would drag db.php into WordPress), so the
+ * visibility rules exist in two places.
+ *
+ * That is the drift worth testing: three conditions decide whether a
+ * stranger may read a testimonial, and if the homepage copy loses one
+ * it publishes something nobody approved, or something somebody
+ * withdrew.
+ */
+$hpData = file_get_contents(__DIR__ . '/homepage-data.php');
+$hpFn   = substr($hpData, strpos($hpData, 'function hp_testimonials('));
+$hpFn   = substr($hpFn, 0, strpos($hpFn, "\n}\n"));
+ok(strpos($hpData, 'function hp_testimonials(') !== false,
+   'the homepage has no way to read testimonials');
+foreach (array("status = 'approved'" => 'publishes testimonials nobody approved',
+               'is_current = 1'      => 'publishes retired versions alongside current ones',
+               "visibility <> 'private'" => 'publishes testimonials their author withdrew') as $cond => $why) {
+	ok(strpos($hpFn, $cond) !== false, "the homepage query dropped \"$cond\", so it $why");
+}
+/* The founder's wording wins there too, or the homepage prints a
+   sentence the rest of the platform has already stopped showing. */
+/* The PREFERENCE, not the mention: edited_body appears in the SELECT
+   either way, so searching for the name passes with the fallback
+   logic deleted. */
+ok(preg_match("~edited_body'\\]\\);\\s*if \\(\\\$body === ''\\)[^\\n]*body'\\]~", $hpFn) === 1,
+   'the homepage does not prefer the edited wording, so it prints the raw submission');
+/* And it must not reach for the platform library. Checked against the
+   comment-stripped source: hp_testimonials()'s own header explains
+   why it does not include either file, and names both. */
+$hpCode = preg_replace('~/\*.*?\*/~s', '', $hpData);
+$hpCode = preg_replace('~^\s*//.*$~m', '', $hpCode);
+ok(preg_match('~(include|require)[^;\n]*testimonials-lib~', $hpCode) === 0,
+   'homepage-data.php includes the platform library, which drags db.php into WordPress');
+ok(preg_match("~(include|require)[^;\n]*['\"/]db\.php~", $hpCode) === 0,
+   'homepage-data.php reaches for db.php, which is the one thing it exists to avoid');
+
+$hpSrc = file_get_contents(__DIR__ . '/homepage.php');
+ok(strpos($hpSrc, 'id="voices"') !== false, 'the homepage has no testimonials section');
+ok(strpos($hpSrc, 'hp_testimonials(') !== false, 'the section is there but never asks for any');
+/* An empty row under a heading says the opposite of what the section
+   is for, so the whole thing has to disappear. */
+ok(preg_match('~if \(\$hp_voices\):~', $hpSrc) === 1,
+   'the section renders its heading even with no testimonials approved');
+ok(strpos($hpSrc, 'htmlspecialchars($v[\'body\']') !== false,
+   'the homepage prints a testimonial without escaping it');
+ok(strpos($hpSrc, 'htmlspecialchars($v[\'name\']') !== false,
+   'the homepage prints a username without escaping it');
+
 echo "\nthe pieces are wired up\n";
 ok(strpos(file_get_contents(__DIR__ . '/admin-lib.php'), "'testimonials'") !== false,
    'there is no admin tab, so the queue cannot be reached');
