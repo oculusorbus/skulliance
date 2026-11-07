@@ -574,11 +574,14 @@
 		           picking DHC. dropship/dropship.php validates the id against
 		           getProjects() before storing it.
 		           Ids are the ones in dropshipArtThemes(): 1 Drop Ship,
-		           2 Dread City, 3 Filthy Mermaid, 4 Oculus Lounge. -->
+		           2 Dread City, 3 Filthy Mermaid, 4 Oculus Lounge; only the
+		           first two are listed, see below. -->
 		      <a href="dropship/dashboard.php?project_id=1">Drop Ship</a>
 		      <a href="dropship/dashboard.php?project_id=2">Dread City</a>
-		      <a href="dropship/dashboard.php?project_id=3">Filthy Mermaid</a>
-		      <a href="dropship/dashboard.php?project_id=4">Oculus Lounge</a>
+		      <!-- Filthy Mermaid (3) and Oculus Lounge (4) are deliberately
+		           absent: both are reached from inside Drop Ship, and the
+		           Lounge is NSFW, so neither belongs in a menu that opens
+		           on every page. The ids still resolve if linked directly. -->
 		    </div>
 		  </div>
 

@@ -103,13 +103,24 @@ foreach ($lp_sections as $sec) {
 $ds_games = array(
 	1 => 'Drop Ship',
 	2 => 'Dread City',
-	3 => 'Filthy Mermaid',
-	4 => 'Oculus Lounge',
 	5 => 'DHC Drop Ship',
 );
+/*
+ * FILTHY MERMAID (3) AND OCULUS LOUNGE (4) ARE DELIBERATELY NOT LISTED.
+ *
+ * Both are reskins reached from inside Drop Ship, and the Lounge is
+ * NSFW -- neither belongs front and centre on the page a player lands
+ * on after logging in, or in a menu that opens on every page. The
+ * ids still resolve if something links them directly; they are simply
+ * not advertised.
+ *
+ * Asserted as an ABSENCE below rather than dropped from the test, so
+ * putting either back is a decision somebody makes on purpose.
+ */
+$ds_hidden = array(3 => 'Filthy Mermaid', 4 => 'Oculus Lounge');
 ok(count($ds_tiles) === count($ds_games),
    'there are ' . count($ds_tiles) . ' Drop Ship tiles for ' . count($ds_games)
- . ' Drop Ship games: ' . implode(', ', array_keys($ds_tiles)));
+ . ' advertised Drop Ship games: ' . implode(', ', array_keys($ds_tiles)));
 $seen_ids = array();
 foreach ($ds_tiles as $label => $href) {
 	ok(preg_match('~project_id=(\d+)~', $href, $pm) === 1,
@@ -128,6 +139,10 @@ foreach ($ds_games as $id => $label) {
 	ok(isset($seen_ids[$id]),
 	   "$label (project $id) is a Drop Ship game with no tile on the launchpad");
 }
+foreach ($ds_hidden as $id => $label) {
+	ok(!isset($seen_ids[$id]),
+	   "$label (project $id) is back on the launchpad; it is reached from inside Drop Ship");
+}
 /* AND EVERY ONE OF THEM HAS A BOARD. The launchpad and the leaderboard
    catalogue are two lists of the same games, and they drifted once already. */
 $dbsrc = file_get_contents(__DIR__ . '/db.php');
@@ -135,16 +150,26 @@ foreach ($ds_games as $id => $label) {
 	ok(strpos($dbsrc, "'label'=>'" . $label . "',") !== false,
 	   $label . ' is on the launchpad and has no board in $SKULLIANCE_BOARDS');
 }
+/* The unadvertised two still have boards: not being on the launchpad
+   is a decision about where they are LINKED, not about whether they
+   are played or scored. */
+foreach ($ds_hidden as $id => $label) {
+	ok(strpos($dbsrc, "'label'=>'" . $label . "',") !== false,
+	   $label . ' lost its board in $SKULLIANCE_BOARDS; it is unlisted, not retired');
+}
 
 /* NSFW IS IN THE DESCRIPTION, not a badge. It was a badge briefly and the
    pill was the wrong shape for it; what matters is only that the warning is
    on screen before the click, so the check is on the text a player reads,
    not on the markup that carries it. */
+/* The NSFW warning mattered while the Lounge was a tile somebody
+   could click from the launchpad. It is not one now, so the thing to
+   check is that it has not come back WITHOUT the warning: if a tile
+   ever returns, the description has to carry it. */
 $lounge = null;
 foreach ($lp_sections as $sec) foreach ($sec['items'] as $it) if ($it[2] === 'Oculus Lounge') $lounge = $it;
-ok($lounge !== null, 'the Oculus Lounge tile is gone');
-ok($lounge !== null && stripos($lounge[3], 'NSFW') !== false,
-   'the Oculus Lounge description no longer says NSFW: "' . ($lounge[3] ?? '') . '"');
+ok($lounge === null || stripos($lounge[3], 'NSFW') !== false,
+   'the Oculus Lounge tile is back and its description does not say NSFW: "' . ($lounge[3] ?? '') . '"');
 
 /* ---------------------------------------------------------------- *
  * The Play menu in the nav pins its Drop Ship links the same way.
@@ -171,21 +196,27 @@ foreach ($nav[1] as $i => $href) {
 /* Each by name, so a reshuffle that swaps two hrefs is caught rather than
    averaged out by a count. */
 ok(($nav_ids['Drop Ship'] ?? 0) === 1, 'the Play menu\'s Drop Ship no longer pins project 1');
-ok(($nav_ids['Oculus Lounge'] ?? 0) === 4, 'Oculus Lounge is not in the Play menu, or no longer pins project 4');
 ok(($nav_ids['DHC Drop Ship'] ?? 0) === 5, 'DHC Drop Ship is not in the Play menu, or no longer pins project 5');
 
 /*
- * THE NAV AND THE LAUNCHPAD LIST THE SAME FIVE NOW.
+ * THE NAV AND THE LAUNCHPAD LIST THE SAME GAMES.
  *
- * This note used to say DHC Drop Ship was deliberately nav-only and
- * predicted that if it ever got a tile it would sit in the DHC group
- * beside Fighters and Arena pinning project_id=5. It did, and it does.
- * Dread City and Filthy Mermaid came with it, so the two surfaces are
- * back in step and the check below is per game rather than a count.
+ * They have drifted twice: once when DHC Drop Ship was nav-only, and
+ * once the other way. Checked per game rather than by count, in both
+ * directions -- what is advertised must be in both places, and what
+ * is unadvertised must be in neither.
+ *
+ * Filthy Mermaid and Oculus Lounge are the unadvertised two: reskins
+ * reached from inside Drop Ship, one of them NSFW, neither belonging
+ * in a menu that opens on every page.
  */
 foreach ($ds_games as $id => $label) {
 	ok(($nav_ids[$label] ?? 0) === $id,
 	   $label . ' is not in the Play menu, or no longer pins project ' . $id);
+}
+foreach ($ds_hidden as $id => $label) {
+	ok(!isset($nav_ids[$label]),
+	   $label . ' is back in the Play menu; it is reached from inside Drop Ship');
 }
 /* NO NSFW IN THE MENU, deliberately -- the nav is a plain list of game names
    and the label went in the launchpad description instead, which is the one

@@ -99,8 +99,12 @@ $lp_sections = array(
 			// 4 Oculus Lounge.
 			array('dropship/dashboard.php?project_id=1', '🪖', 'Drop Ship',      'NFT battler'),
 			array('dropship/dashboard.php?project_id=2', '🌃', 'Dread City',     'NFT battler, Dread City theme'),
-			array('dropship/dashboard.php?project_id=3', '🧜‍♀️', 'Filthy Mermaid', 'NFT battler, Filthy Mermaid theme'),
-			array('dropship/dashboard.php?project_id=4', '🪩', 'Oculus Lounge',  'NSFW Club Crawler'),
+			// FILTHY MERMAID AND OCULUS LOUNGE ARE NOT LISTED HERE.
+			// Both are reskins reachable from inside Drop Ship, and
+			// the Lounge is NSFW -- neither needs to be the first
+			// thing a player meets on the page they land on after
+			// logging in. They still work: the ?project_id= links are
+			// unchanged and the game's own picker reaches all four.
 		),
 	),
 	'Collect' => array(
