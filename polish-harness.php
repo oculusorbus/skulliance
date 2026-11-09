@@ -326,5 +326,64 @@ ok(preg_match('~#quick-menu\s*\{[^}]*border-top:[^}]*rgba\(0,200,160~s', $platCs
 ok(preg_match('~\.navbar a:hover[^{]*\{[^}]*box-shadow:\s*inset~s', $platCss) === 1,
    'nav hover is still a wash with no edge');
 
+
+echo "\nthe DHC pages are covered too, and the same way\n";
+/*
+ * THEY WERE MISSING ENTIRELY. Every DHC surface is declared in an inline
+ * <style> block, which is later in the document than any <link>, so
+ * dist/polish.css could never reach them -- the same reason missions.php
+ * has its own layer. Reported as "I don't see the new gradient style
+ * applied to any of the DHC Fighter pages".
+ */
+$dhc  = (string) @file_get_contents(__DIR__ . '/polish-dhc.php');
+$dhcCss = $dhc === '' ? '' : preg_replace('~/\*.*?\*/~s',
+	'', substr($dhc, strpos($dhc, '<style>') + 7, strpos($dhc, '</style>') - strpos($dhc, '<style>') - 7));
+ok($dhc !== '', 'the DHC layer is gone');
+ok(strpos($dhc, "\$_GET['polish']") !== false, 'the DHC layer has no off switch');
+ok(strpos($dhc, "defined('DHC_POLISH')") !== false, 'the DHC layer is not guarded against a second include');
+ok(strpos($dhcCss, '!important') === false, 'the DHC layer needs !important');
+/* Included AFTER each page's own stylesheet, or it is outranked. */
+foreach (array('dhcfighters.php', 'dhcgallery.php', 'dhcarena.php') as $dhcPage) {
+	$src = preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(__DIR__ . '/' . $dhcPage));
+	$at  = strpos($src, 'polish-dhc.php');
+	ok(substr_count($src, "include __DIR__ . '/polish-dhc.php'") === 1,
+	   "$dhcPage includes the DHC layer more than once, or not at all");
+	ok($at !== false && strrpos(substr($src, 0, $at), '</style>') !== false,
+	   "$dhcPage includes the DHC layer before its own stylesheet ends, so it is outranked");
+}
+/* .dhcf-panel had a BORDER AND NO BACKGROUND -- a rectangle drawn on the
+   page, not a panel sitting on it, with nothing for a gradient to light. */
+ok(preg_match('~(^|\n)\s*\.dhcf-panel\s*(,[^{}]*)?\{\s*background:\s*var\(--msp-lift~', $dhcCss) === 1,
+   '.dhcf-panel still has no fill, so there is nothing to light');
+/* --panel2 is the platform field colour. Wells stay flat here too. */
+foreach (array('.dhcg-art', '.boardwrap') as $dhcWell) {
+	ok(strpos($dhcCss, $dhcWell) === false,
+	   "the DHC layer lights $dhcWell, which is --panel2: a recess, not a surface");
+}
+/* Read the TOKEN, not a hex: the Arena retunes --panel on its battle
+   board, and a pinned colour would ignore that. */
+/* The count of token uses was a second assertion that could not fail on
+   its own: anything that pinned a hex also dropped the count, so it only
+   ever duplicated the check below. */
+/* The `, none` fallback sits inside the var(), so [a-z-]+ stopped at the
+   comma and this matched nothing either way. */
+/*
+ * ONLY THE SURFACE COLOURS, not every hex. The Arena's primary button is
+ * the platform teal and has no DHC token to read, so #00c8a0 there is
+ * correct; a first pass flagged it and failed on a clean tree. What must
+ * never be pinned is a colour the pages DO tokenise -- --ink, --panel,
+ * --panel2 -- because the Arena's battle board retunes all three and a
+ * pinned hex would ignore that.
+ */
+ok(preg_match('~background:\s*var\(--msp-[a-z-]+(?:,\s*none)?\),\s*#(07111d|0a1929|0d1e2e)~i', $dhcCss) !== 1,
+   'the DHC layer hardcodes a surface hex, so a page that retunes that token is ignored');
+/* Same fallbacks as the missions layer, for the same reason. */
+preg_match_all('~var\((--msp-[a-z-]+)(,[^)]*)?\)~', $dhcCss, $dv, PREG_SET_ORDER);
+$dnofall = array();
+foreach ($dv as $v) if (trim((string) (isset($v[2]) ? $v[2] : '')) !== ', none') $dnofall[] = $v[1];
+ok(count($dnofall) === 0,
+   'these DHC tokens have no `none` fallback, so dropping the platform layer blanks the panel: '
+   . implode(', ', array_unique($dnofall)));
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

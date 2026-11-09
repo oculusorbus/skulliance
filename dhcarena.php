@@ -1809,6 +1809,9 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 #ag-foot{flex:0 0 auto;padding:11px 16px;border-top:1px solid #1b3346;font-size:11px;color:#7a9eb0}
 #ag-foot a{color:#00c8a0}
 </style>
+<?php /* The gradient layer. It has to come after this page's inline
+         stylesheet: a <link> cannot outrank one. One line to revert. */ ?>
+<?php include __DIR__ . '/polish-dhc.php'; ?>
 
   <!-- One masthead row: the blurb takes what it needs and the counts sit hard
        right, the same shape DHC Fighters uses. Two sibling pages in one feature

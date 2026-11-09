@@ -467,6 +467,9 @@ a.dhcf-stat span{opacity:.85}
 .dhcf-save button:disabled{background:transparent;border-color:var(--line);color:var(--dim);cursor:not-allowed;filter:none}
 .dhcf-say{font-size:11.5px;min-height:16px;opacity:.85}
 </style>
+<?php /* The gradient layer. It has to come after this page's inline
+         stylesheet: a <link> cannot outrank one. One line to revert. */ ?>
+<?php include __DIR__ . '/polish-dhc.php'; ?>
 
 <div class="dhcf-wrap">
 

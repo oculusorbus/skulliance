@@ -635,6 +635,9 @@ include 'header.php';
 /* The Fighter detail panel -- its CSS, markup and behaviour are all in
    dhc-fighter-modal.php now, shared with the assembler. */
 </style>
+<?php /* The gradient layer. It has to come after this page's inline
+         stylesheet: a <link> cannot outrank one. One line to revert. */ ?>
+<?php include __DIR__ . '/polish-dhc.php'; ?>
 
 <div class="dhcg-wrap">
 
