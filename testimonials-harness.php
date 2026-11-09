@@ -819,8 +819,21 @@ ok(!empty($hpN) && (int) $hpN[1] >= 24,
    unused while the div went back to the plain wrap. */
 ok(strpos($hpSrc, 'class="wrap hp-voices-wrap"') !== false,
    'the voices section uses the standard wrap, so it is capped at the text measure');
-ok(preg_match('~\.hp-voices-wrap\s*\{[^}]*max-width:\s*none~s', $hpSrc) === 1,
-   'the voices wrap does not release the max-width, so the section is not full width');
+/*
+ * AND IT HAS TO WIN. The first version of this rule existed and did
+ * nothing: `.hp-layer .wrap` is two classes, `.hp-voices-wrap` was
+ * one, and the 1120px stood. The assertion passed, because a rule
+ * being present says nothing about whether it applies.
+ *
+ * So both halves are checked -- at least as specific as the rule it
+ * overrides, and declared after it.
+ */
+ok(preg_match('~\.hp-layer \.hp-voices-wrap\s*\{[^}]*max-width:\s*none~s', $hpSrc) === 1,
+   'the full-width rule is not scoped under .hp-layer, so .hp-layer .wrap outranks it');
+$capAt  = strpos($hpSrc, '.hp-layer .wrap {');
+$freeAt = strpos($hpSrc, '.hp-layer .hp-voices-wrap {');
+ok($capAt !== false && $freeAt !== false && $freeAt > $capAt,
+   'the full-width rule is declared before the max-width it overrides, so it loses on order');
 /*
  * AND THE BANDS ALTERNATE END TO END.
  *

@@ -378,7 +378,6 @@
        is already 100vw -- it is .hp-layer .wrap's 1120px that holds
        the content in, so this one overrides it and keeps only a
        gutter that grows with the viewport. */
-    .hp-voices-wrap { max-width: none; padding: 0 clamp(20px, 4vw, 72px); }
     .hp-voices { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
     .hp-voice { margin: 0; padding: 20px 22px; text-align: left;
       background: #0a1724; border: 1px solid rgba(255,255,255,.07); border-radius: 14px; }
@@ -421,6 +420,14 @@
     .hp-chain-name { font-weight: 600; color: #e8eaed; }
     .hp-chain-n { font-size: .78rem; color: #7a9eb0; line-height: 1.45; }
     .hp-layer .wrap { max-width: 1120px; margin: 0 auto; padding: 0 22px; }
+    /*
+     * AND THE VOICES RELEASE IT. Written as a single class first,
+     * which could never win: `.hp-layer .wrap` above is two classes
+     * and this was one, so the 1120px stood and the section rendered
+     * at the measure it was supposed to escape. Same specificity and
+     * declared after it, so it takes both the cascade and the order.
+     */
+    .hp-layer .hp-voices-wrap { max-width: none; padding: 0 clamp(20px, 4vw, 72px); }
     /* A layer heading is BIG and can sit left. A centred 1.5rem h2 over a
        centred paragraph is the shape of a 2009 brochure. */
     .hp-layer h2 {
