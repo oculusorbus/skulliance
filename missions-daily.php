@@ -12,7 +12,8 @@
  * dailyReward() does the claim and then writes into #reward, #claimed,
  * #progress_bar and #remaining and hides #claimRewardButton -- and it is
  * also what reveals the day-seven DHC Fighters trait through
- * DHC_SHOW_DROP(). Claiming works and pays out; this markup is shaped to
+ * DHC_SHOW_DROP() -- which missions-claim-modal.php now sequences after its
+ * own reveal. Claiming works and pays out; this markup is shaped to
  * fit it rather than the other way round. All five ids are kept, and
  * dailyReward() sets display:flex on three of them, so their styling has
  * to survive being made a flex box.
@@ -68,6 +69,9 @@ foreach ($ms_daily['days'] as $d) if (!empty($d['current'])) $md_today = $d;
 			<div class="ms-daily-line" id="remaining" style="display:none;"></div>
 			<input id="claimRewardButton" type="button" value="Claim reward"
 				class="button" onclick="javascript:dailyReward();">
+			<?php /* The reveal. Only reachable from a claim, so it is only
+			         rendered on a day there is one to make. */ ?>
+			<?php include __DIR__ . '/missions-claim-modal.php'; ?>
 		<?php else: ?>
 			<div class="ms-daily-line ms-daily-done"><strong>Claimed today</strong></div>
 			<div class="ms-daily-line ms-daily-next"><?php echo $ms_daily['remaining']; ?></div>

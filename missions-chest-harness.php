@@ -1,31 +1,49 @@
 <?php
 /* missions-chest-harness.php — CLI only. Static. No database.
  *
- * THE CHEST IS DECORATION OVER A CONTROL THAT ALREADY WORKED.
+ * TWO FILES, ONE FEATURE, AND A CLEAN SPLIT BETWEEN THEM.
  *
- * Claiming the daily reward is #claimRewardButton calling dailyReward().
- * That button is what is focusable, what a screen reader announces, and
- * what skulliance.js knows about. The chest forwards a click to it. The
- * failure worth testing is the one where that stops being true: a chest
- * that claims on its own, or that replaces the button, strands anybody
- * who cannot click a picture of a box.
+ * missions-chest.php is the state of the daily reward in the missions
+ * action column: closed while there is something to take, open and lit
+ * once it has been. missions-claim-modal.php is the moment it is taken:
+ * a 210px chest, a burst, and the day's real consumable and currency
+ * icons flying out of its mouth into their own row.
  *
- * AND THE HOOK IS OPTIONAL BY CONSTRUCTION. dailyReward() must check for
- * SK_CHEST_OPEN before calling it, exactly as it does for DHC_SHOW_DROP,
- * or every page that claims without this partial throws instead.
+ * The split is the thing worth testing. The strip used to do the whole
+ * performance at 96px, where the burst was all that read and the rewards
+ * were a line of 20px icons beside it. If animation creeps back into the
+ * strip, or the modal stops naming what was actually paid, the feature is
+ * back to where it started.
+ *
+ * AND BOTH HOOKS ARE OPTIONAL BY CONSTRUCTION. dailyReward() must check
+ * for SK_CHEST_OPEN and SK_CLAIM_SHOW before calling them, exactly as it
+ * does for DHC_SHOW_DROP, or every page that claims without these
+ * partials throws instead of claiming.
  */
 $fail = 0;
 function ok($c, $w) { global $fail; if (!$c) { $fail++; echo "  FAIL  $w\n"; } }
 
-$chest = (string) file_get_contents(__DIR__ . '/missions-chest.php');
-$daily = (string) file_get_contents(__DIR__ . '/missions-daily.php');
-$js    = (string) file_get_contents(__DIR__ . '/skulliance.js');
 $strip = function ($s) {
 	$s = preg_replace('~/\*.*?\*/~s', '', $s);
 	return preg_replace('~^\s*//.*$~m', '', $s);
 };
+$chest = (string) file_get_contents(__DIR__ . '/missions-chest.php');
+$modal = (string) file_get_contents(__DIR__ . '/missions-claim-modal.php');
+$daily = (string) file_get_contents(__DIR__ . '/missions-daily.php');
+$adm   = (string) file_get_contents(__DIR__ . '/admin-chest.php');
+$lib   = (string) file_get_contents(__DIR__ . '/missions-lib.php');
+$js    = (string) file_get_contents(__DIR__ . '/skulliance.js');
+
+/* EVERY assertion reads the comment-stripped text. The prose in these
+   files describes the behaviour closely enough to satisfy a plain search
+   on its own, which is how an earlier version of this harness passed
+   with the code deleted and the comment left behind. */
 $chestCode = $strip($chest);
+$modalCode = $strip($modal);
+$admCode   = $strip($adm);
 $jsCode    = $strip($js);
+$libCode   = $strip($lib);
+$dailyCode = $strip($daily);
 
 echo "the button still does the claiming\n";
 ok(strpos($chestCode, 'dailyReward(') === false,
@@ -38,86 +56,143 @@ ok(strpos($chestCode, 'if (btn.disabled) return;') !== false,
    'the chest forwards a click to a disabled button, which is the second-claim guard');
 ok(strpos($chestCode, 'aria-hidden="true"') !== false,
    'the chest is not aria-hidden, so a screen reader meets a second nameless control');
-ok(strpos($daily, 'claimRewardButton') !== false,
+ok(strpos($dailyCode, 'claimRewardButton') !== false,
    'the claim button has gone from the strip, leaving only the picture');
+ok(strpos($modalCode, 'dailyReward(') === false,
+   'the reveal can reach dailyReward(), so showing it could claim');
 
-echo "\nthe hook is optional, like the one beside it\n";
+echo "\nthe strip icon is state, not animation\n";
+/*
+ * THE WHOLE POINT OF THE SPLIT. The strip is a status light. A status
+ * light that breathes, bursts and throws sparks at 96px is asking for
+ * attention it does not need, and it was where the reveal used to live.
+ * Transitions are allowed -- the open state crossfading in is the state
+ * changing, and the hover scale is feedback on a pointer event.
+ */
+ok(strpos($chestCode, '@keyframes') === false,
+   'the strip icon has keyframes again, so it animates on its own');
+ok(preg_match('~(^|[;{\s])animation\s*:~', $chestCode) !== 1,
+   'the strip icon sets an animation property, so it is not purely state');
+foreach (array('ms-chest-spark', 'ms-chest-flash', 'is-bursting', '--mcrise') as $gone) {
+	ok(strpos($chestCode, $gone) === false,
+	   "the strip icon still carries $gone, which belongs to the reveal");
+}
+/* The two states themselves must still be there. */
+ok(preg_match('~\.ms-chest\.is-open \.ms-chest-open\s*\{[^}]*opacity:\s*1~s', $chestCode) === 1,
+   'the open state never shows the open chest');
+ok(preg_match('~\.ms-chest\.is-open \.ms-chest-glow\s*\{[^}]*opacity:\s*1~s', $chestCode) === 1,
+   'the open state is not lit, so a claimed chest looks the same as an empty one');
+ok(preg_match('~\.ms-chest-open,\s*\.ms-chest-glow\s*\{[^}]*opacity:\s*0~s', $chestCode) === 1,
+   'the open chest and the glow are not hidden to start, so the closed state shows all three');
+
+echo "\nboth hooks are optional, like the one beside them\n";
 ok(strpos($jsCode, 'if (window.SK_CHEST_OPEN) SK_CHEST_OPEN();') !== false,
-   'dailyReward() calls the chest hook without checking it exists');
-$at   = strpos($jsCode, 'SK_CHEST_OPEN');
-$rew  = strpos($jsCode, "getElementById('reward').style.opacity");
-ok($at !== false && $rew !== false && $at < $rew,
-   'the chest opens after the reward line is written, so the art lags the numbers');
-/* The already-claimed reply returns null and must not fire a burst. */
+   'dailyReward() calls the strip hook without checking it exists');
+ok(strpos($jsCode, 'if (window.SK_CLAIM_SHOW) SK_CLAIM_SHOW(obj);') !== false,
+   'dailyReward() calls the reveal without checking it exists');
+ok(strpos($chestCode, 'window.SK_CHEST_OPEN = function') !== false,
+   'the strip partial never defines the hook it is called through');
+ok(strpos($modalCode, 'window.SK_CLAIM_SHOW = function') !== false,
+   'the reveal partial never defines the hook it is called through');
+$atChest = strpos($jsCode, 'SK_CHEST_OPEN');
+$atShow  = strpos($jsCode, 'SK_CLAIM_SHOW');
+$rew     = strpos($jsCode, "getElementById('reward').style.opacity");
+ok($atChest !== false && $rew !== false && $atChest < $rew,
+   'the strip switches after the reward line is written, so the art lags the numbers');
+ok($atShow !== false && $rew !== false && $atShow < $rew,
+   'the reveal opens after the reward line is written, so it lags the numbers');
+/* The already-claimed reply returns null and must not open anything. */
 $nullBranch = substr($jsCode, strpos($jsCode, 'if(obj == null)'));
 $nullBranch = substr($nullBranch, 0, strpos($nullBranch, '}else{'));
 ok(strpos($nullBranch, 'SK_CHEST_OPEN') === false,
-   'an already-claimed reply still bursts the chest');
-ok(strpos($chestCode, 'window.SK_CHEST_OPEN = function') !== false,
-   'the partial never defines the hook it is called through');
+   'an already-claimed reply still switches the strip chest');
+ok(strpos($nullBranch, 'SK_CLAIM_SHOW') === false,
+   'an already-claimed reply still opens the reveal, with nothing to reveal');
 /* INSIDE THE HOOK, not anywhere in the file: the same test appears in the
    click binding, so a plain search passes with the guard deleted. */
 $hook = substr($chestCode, strpos($chestCode, 'window.SK_CHEST_OPEN = function'));
 $hook = substr($hook, 0, strpos($hook, '};'));
 ok(strpos($hook, "el.classList.contains('is-open')") !== false,
-   'the hook does not guard against opening twice');
-ok(strpos($hook, "add('is-open'") !== false, 'the hook never opens the chest');
+   'the strip hook does not guard against switching twice');
+ok(strpos($hook, "add('is-open')") !== false, 'the strip hook never opens the chest');
 
-echo "\nthree layers, because the light has to move on its own\n";
-foreach (array('closed.webp', 'open.webp', 'glow.webp') as $f) {
-	ok(strpos($chest, $f) !== false, "the chest does not reference $f");
-}
-ok(substr_count($chestCode, 'ms-chest-l') >= 4,
-   'the three art layers are not all present');
-/* The RESTING state specifically. A bare `.ms-chest-glow {` also matches
-   the tail of `.ms-chest.is-open .ms-chest-glow {`, so dropping the start
-   scale and keeping the end one passed. */
-ok(preg_match('~(^|\s)\.ms-chest-glow\s*\{[^}]*transform:\s*scale\(\.?7~m', $chest) === 1,
-   'the glow has no starting scale, so the burst is a fade rather than an ignition');
-/* In the MAIN stylesheet, not the reduced-motion block: that one sets
-   scale(1) too, so an unscoped search passes with the real transition
-   deleted. */
-$mainCss = substr($chest, 0, strpos($chest, '@media (prefers-reduced-motion'));
-ok(preg_match('~\.is-open \.ms-chest-glow\s*\{[^}]*transform:\s*scale\(1\)~s', $mainCss) === 1,
-   'the glow never scales up to rest, so it stays shrunken when open');
+echo "\nthe reveal names what was actually paid\n";
 /*
- * Only transform and opacity animate: anything else is a layout thrash on
- * a page that already does a lot.
- *
- * The block is extracted by counting braces. A regex bounded with [^@]*
- * runs straight past the closing brace into whatever rule follows, which
- * is how the first version of this reported `left: 50%` on .ms-chest-flash
- * as a keyframe property.
+ * THE REWARD ICONS ARE THE REVEAL. Not generic sparkles: the real
+ * icons/*.png for the day's consumable and the currency that was drawn,
+ * which are the same two pictures the reward line has always shown. A
+ * modal that shows light and a number is a receipt.
  */
-$bad = array();
-$pos = 0;
-while (($k = strpos($chest, '@keyframes', $pos)) !== false) {
-	$open = strpos($chest, '{', $k);
-	$d = 0; $end = $open;
-	for ($i = $open; $i < strlen($chest); $i++) {
-		if ($chest[$i] === '{') $d++;
-		elseif ($chest[$i] === '}') { $d--; if (!$d) { $end = $i; break; } }
-	}
-	$body = substr($chest, $open, $end - $open);
-	$name = trim(substr($chest, $k + 10, $open - $k - 10));
-	if (preg_match('~(^|[;{\s])(width|height|top|left|right|bottom|margin|padding)\s*:~', $body)) {
-		$bad[] = $name;
-	}
-	$pos = $end + 1;
+ok(strpos($modalCode, "'icons/' + String(obj.currency).toLowerCase() + '.png'") !== false,
+   'the reveal does not show the currency that was actually drawn');
+ok(strpos($modalCode, 'DAYS[day]') !== false,
+   'the reveal does not look up the day, so it cannot name the consumable');
+ok(strpos($modalCode, 'info.icon') !== false && strpos($modalCode, 'info.name') !== false,
+   'the reveal has the day but shows neither its icon nor its name');
+/*
+ * AND THE DAY MAP IS NOT A THIRD COPY. mission_daily_items() defines the
+ * cycle; the modal is handed $ms_daily['days'], which is built from it.
+ * A hardcoded list here would be a fourth place to forget to change.
+ */
+ok(strpos($modalCode, "\$ms_daily['days']") !== false,
+   'the reveal does not read the cycle from the data it is given');
+foreach (array('random-reward', 'fast-forward', '100-success') as $slugish) {
+	ok(strpos($modalCode, $slugish) === false,
+	   "the reveal hardcodes $slugish, so it is a second copy of the cycle");
 }
-ok(count($bad) === 0,
-   'these keyframes animate layout properties instead of transform/opacity: ' . implode(', ', $bad));
-ok($pos > 0, 'no @keyframes were found at all, so the extraction is reading the wrong file');
+ok(strpos($libCode, 'function mission_daily_items()') !== false,
+   'the cycle has no single definition to read');
+/* mission_daily() must USE it rather than keep its own inline copy. */
+$md = substr($libCode, strpos($libCode, 'function mission_daily($conn)'));
+$md = substr($md, 0, strpos($md, "\n}"));
+ok(strpos($md, 'mission_daily_items()') !== false,
+   'mission_daily() does not use the shared cycle, so the ladder and the reveal can disagree');
+ok(strpos($md, "'random-reward'") === false,
+   'mission_daily() still carries its own inline cycle beside the shared one');
+/* A missing icon file must not leave a hole where a reward was. */
+ok(strpos($modalCode, 'onerror=') !== false,
+   'a missing icon leaves a blank where a reward was, with nothing naming it');
+
+echo "\nthe rewards fly from the mouth to their row\n";
+/*
+ * Each item starts translated back to the chest's mouth and transitions
+ * to transform:none, which is its own resting layout position. Two
+ * things make that work and both are easy to lose:
+ *
+ *   the offsets are custom properties, read in JS and consumed in CSS;
+ *   the rect is read BEFORE the .in class, because .in is the transition.
+ *
+ * The read is exact despite scale() already being applied, because
+ * transform-origin is the centre and the centre is all that is read.
+ */
+ok(preg_match('~\.mcm-item\s*\{[^}]*transform:\s*translate\(var\(--mcmdx~s', $modalCode) === 1,
+   'the items do not start at the mouth, so they fade in where they already are');
+ok(preg_match('~\.mcm-item\.in\s*\{[^}]*transform:\s*none~s', $modalCode) === 1,
+   'the items never return to their resting position, so they stay on the chest');
+ok(preg_match('~\.mcm-item\.in\s*\{[^}]*transition:[^}]*transform~s', $modalCode) === 1,
+   'the flight is not transitioned, so the items appear in place');
+ok(strpos($modalCode, "setProperty('--mcmdx'") !== false
+   && strpos($modalCode, "setProperty('--mcmdy'") !== false,
+   'the offsets are never measured, so every item flies from the same nowhere');
+ok(strpos($modalCode, 'getBoundingClientRect()') !== false,
+   'the offsets are not measured off the real layout');
+/* ORDER: measure, then fly. Reversed, the rect read includes the
+   transition's own transform and every item flies from the wrong place. */
+$show = substr($modalCode, strpos($modalCode, 'window.SK_CLAIM_SHOW = function'));
+$mdx  = strpos($show, "setProperty('--mcmdx'");
+$inCl = strpos($show, "classList.add('in')");
+ok($mdx !== false && $inCl !== false && $mdx < $inCl,
+   'the .in class is added before the offsets are measured, so the flight starts from nowhere');
+ok(strpos($show, 'cr.height * 0.47') !== false,
+   'the flight does not start at the mouth of the chest');
 
 echo "\nthe burst leaves along the mouth, which is not horizontal\n";
 /*
  * The chest is drawn in three-quarter view, so its front rim rises to
  * the right. Six sparks sharing one origin and fanning sideways read as
- * a horizontal line crossing a tilted object -- and the origin they
- * shared, 56% down, was the middle of the skull rather than the
- * opening, so they came out of the front panel.
+ * a horizontal line crossing a tilted object.
  */
-preg_match_all('~\.ms-chest-spark\.s(\d)\s*\{[^}]*left:\s*([\d.]+)%[^}]*top:\s*([\d.]+)%~', $chest, $sp, PREG_SET_ORDER);
+preg_match_all('~\.mcm-spark\.s(\d)\s*\{[^}]*left:\s*([\d.]+)%[^}]*top:\s*([\d.]+)%~', $modalCode, $sp, PREG_SET_ORDER);
 ok(count($sp) >= 6, 'the sparks do not each have their own origin (' . count($sp) . ' found)');
 $lefts = array_map(function ($m) { return (float) $m[2]; }, $sp);
 $tops  = array_map(function ($m) { return (float) $m[3]; }, $sp);
@@ -127,83 +202,210 @@ $descending = true;
 for ($i = 1; $i < count($sp); $i++) if ($tops[$i] >= $tops[$i-1]) $descending = false;
 ok($descending,
    'the spark origins do not rise to the right, so the burst ignores the angle of the chest');
-ok(min($lefts) > 20 && max($lefts) < 80,
-   'the sparks start outside the opening (' . min($lefts) . '% to ' . max($lefts) . '%)');
-/* Spread ALONG the rim, not stacked on one point: distinct, ordered,
-   and covering a real span of it. */
-ok(count(array_unique($lefts)) === count($lefts),
-   'two sparks share a horizontal origin, so they are not spread along the rim');
 $ordered = true;
 for ($i = 1; $i < count($lefts); $i++) if ($lefts[$i] <= $lefts[$i-1]) $ordered = false;
 ok($ordered, 'the spark origins are not ordered across the rim');
+ok(count(array_unique($lefts)) === count($lefts),
+   'two sparks share a horizontal origin, so they are not spread along the rim');
+ok(min($lefts) > 20 && max($lefts) < 80,
+   'the sparks start outside the opening (' . min($lefts) . '% to ' . max($lefts) . '%)');
 ok(max($lefts) - min($lefts) > 25,
    'the sparks only cover ' . (max($lefts) - min($lefts)) . '% of the opening, so they read as one point');
-/* 56% was the skull. The mouth sits around 45-50%. */
+/* 56% was the middle of the skull. The mouth sits around 45-50%. */
 ok(max($tops) < 52 && min($tops) > 40,
    'the sparks start off the opening, at ' . min($tops) . '% to ' . max($tops) . '% down');
-ok(preg_match('~\.ms-chest-flash\s*\{[^}]*top:\s*4[0-9](\.\d+)?%~s', $chest) === 1,
+ok(preg_match('~\.mcm-flash\s*\{[^}]*top:\s*4[0-9](\.\d+)?%~s', $modalCode) === 1,
    'the flash is not centred on the mouth of the chest');
-/* The rise is in px, so it must track the rendered size or it is half a
-   chest on mobile and a third of one on the preview. */
-ok(strpos($chest, 'var(--mcrise)') !== false,
+ok(strpos($modalCode, 'var(--mcrise)') !== false,
    'the spark rise is hardcoded, so it does not scale with the chest');
-ok(preg_match('~\.ms-chest\s*\{[^}]*--mcrise~s', $chest) === 1,
-   '--mcrise has no default, so the sparks do not travel at all');
-ok(preg_match('~max-width:\s*760px[^}]*--mcrise~s', $chest) === 1,
-   'the mobile size does not scale the spark rise');
-ok(strpos((string) file_get_contents(__DIR__ . '/admin-chest.php'), '--mcrise') !== false,
-   'the preview renders the chest larger without scaling the spark rise');
 
-echo "\nreduced motion keeps the feedback and drops the movement\n";
-ok(strpos($chest, 'prefers-reduced-motion') !== false,
-   'the chest ignores prefers-reduced-motion');
-$rm = substr($chest, strpos($chest, 'prefers-reduced-motion'));
+echo "\nthe burst cannot grow the dialog a scrollbar\n";
+/*
+ * A transform that escapes a scrollable ancestor adds scrollable
+ * overflow to it. The one thing that must not happen at the moment a
+ * reward lands is the dialog scrolling, so the stage clips -- and it is
+ * sized so that it does not have to. Measured here rather than asserted:
+ * the numbers are the only reason the clip is invisible.
+ */
+ok(preg_match('~#mcm-stage\s*\{[^}]*overflow:\s*hidden~s', $modalCode) === 1,
+   'the stage does not clip, so the burst adds scrollable overflow to the dialog');
+$sizes = array();
+preg_match('~#mcm-stage\s*\{[^}]*height:\s*(\d+)px~s', $modalCode, $m) && $sizes['stage'] = (int) $m[1];
+preg_match('~\.mcm-chest\s*\{[^}]*height:\s*(\d+)px~s', $modalCode, $m) && $sizes['chest'] = (int) $m[1];
+preg_match('~\.mcm-chest\s*\{[^}]*--mcrise:\s*(-?\d+)px~s', $modalCode, $m) && $sizes['rise'] = (int) $m[1];
+ok(count($sizes) === 3, 'the stage, chest and rise are not all declared in px, so nothing can be checked');
+if (count($sizes) === 3) {
+	/* Bottom-aligned chest: the mouth is 47% down the chest, measured
+	   from the stage floor upward. */
+	$mouth = $sizes['stage'] - $sizes['chest'] + $sizes['chest'] * 0.47;
+	ok($mouth + $sizes['rise'] > 0,
+	   'the sparks are clipped: they rise ' . abs($sizes['rise']) . 'px off a mouth '
+	   . round($mouth) . 'px down a ' . $sizes['stage'] . 'px stage');
+	ok($sizes['chest'] <= $sizes['stage'],
+	   'the chest is taller than its stage, so the clip cuts the art itself');
+	/* And it must still be worth the modal: the strip renders it at 99px. */
+	ok($sizes['chest'] >= 180,
+	   'the reveal chest is only ' . $sizes['chest'] . 'px, which is the size the strip already was');
+}
+/* THE WHOLE @media BLOCK, by counting braces. `[^}]*` stops at the first
+   nested rule's closing brace, which is why a correct declaration two
+   rules further down read as missing. */
+$block = function ($src, $at) {
+	$open = strpos($src, '{', $at);
+	if ($open === false) return '';
+	$d = 0;
+	for ($i = $open; $i < strlen($src); $i++) {
+		if ($src[$i] === '{') $d++;
+		elseif ($src[$i] === '}') { $d--; if (!$d) return substr($src, $open, $i - $open); }
+	}
+	return '';
+};
+$phone = strpos($modalCode, 'max-width: 480px');
+ok($phone !== false && strpos($block($modalCode, $phone), '--mcrise') !== false,
+   'the phone size does not scale the spark rise');
+
+echo "\nonly transform and opacity animate\n";
+/*
+ * Anything else is a layout thrash. The block is extracted by counting
+ * braces: a regex bounded with [^@]* runs straight past the closing
+ * brace into whatever rule follows, which is how an earlier version of
+ * this reported `left: 50%` on the flash as a keyframe property.
+ */
+$bad = array(); $pos = 0; $found = 0;
+while (($k = strpos($modalCode, '@keyframes', $pos)) !== false) {
+	$open = strpos($modalCode, '{', $k);
+	$d = 0; $end = $open;
+	for ($i = $open; $i < strlen($modalCode); $i++) {
+		if ($modalCode[$i] === '{') $d++;
+		elseif ($modalCode[$i] === '}') { $d--; if (!$d) { $end = $i; break; } }
+	}
+	$body = substr($modalCode, $open, $end - $open);
+	$name = trim(substr($modalCode, $k + 10, $open - $k - 10));
+	if (preg_match('~(^|[;{\s])(width|height|top|left|right|bottom|margin|padding)\s*:~', $body)) $bad[] = $name;
+	$found++;
+	$pos = $end + 1;
+}
+ok(count($bad) === 0,
+   'these keyframes animate layout properties instead of transform/opacity: ' . implode(', ', $bad));
+ok($found >= 3, 'only ' . $found . ' @keyframes were found, so the extraction is reading the wrong file');
+
+echo "\none reveal at a time\n";
+/*
+ * dhc-dropmodal.php is included by header.php on EVERY page, and a full
+ * streak pays a trait, so dailyReward() used to open its veil 900ms
+ * after a claim -- straight on top of the claim modal, which is up by
+ * then. The claim modal takes the drop and reveals it on close. The
+ * timer stays as the fallback for a page without the modal.
+ */
+ok(strpos($jsCode, 'obj.dhc_drop && window.DHC_SHOW_DROP && !window.SK_CLAIM_SHOW') !== false,
+   'the trait reveal still fires on a timer, so it opens on top of the claim modal');
+/* IN close(), not in show(): handing it over on open is the collision. */
+$closeFn = substr($modalCode, strpos($modalCode, 'function close()'));
+$closeFn = substr($closeFn, 0, strpos($closeFn, "\n\t}"));
+ok(strpos($closeFn, 'DHC_SHOW_DROP') !== false,
+   'the trait is revealed somewhere other than on close, which is the collision this fixes');
+ok(strpos($show, 'window.DHC_SHOW_DROP) ? obj.dhc_drop : null') !== false,
+   'the reveal takes the drop without checking the trait modal is even there');
+
+echo "\nit closes, and nothing leaks between claims\n";
+ok(strpos($modalCode, "e.key === 'Escape'") !== false, 'Escape does not close the reveal');
+ok(strpos($modalCode, 'if (e.target === veil) close()') !== false,
+   'clicking the veil does not close the reveal');
+ok(strpos($modalCode, "getElementById('mcm-close').addEventListener('click', close)") !== false,
+   'the Collect button does not close the reveal');
+/* reset() exists because the admin preview plays it repeatedly, and a
+   second play with the first one's timers still pending opens a chest
+   that is already open and leaves the old items in the row. */
+ok(strpos($modalCode, 'function reset()') !== false,
+   'a second reveal keeps the first one state, so the chest is already open');
+ok(strpos($show, 'reset();') !== false, 'the reveal does not reset before it plays');
+ok(substr_count($modalCode, 'timers.forEach(clearTimeout)') >= 2,
+   'pending timers survive a close, so a burst fires into a closed dialog');
+
+echo "\nreduced motion keeps the reveal and drops the travel\n";
+ok(strpos($modalCode, 'prefers-reduced-motion') !== false,
+   'the reveal ignores prefers-reduced-motion');
+$rm = substr($modalCode, strpos($modalCode, 'prefers-reduced-motion'));
 $rm = substr($rm, 0, strpos($rm, '</style>'));
-ok(strpos($rm, 'animation: none') !== false, 'reduced motion does not stop the animations');
-ok(strpos($rm, '.ms-chest-spark { display: none') !== false
-   || strpos($rm, '.ms-chest-flash, .ms-chest-spark { display: none') !== false,
+ok(strpos($rm, '.mcm-flash, .mcm-spark { display: none') !== false,
    'reduced motion still fires the sparks');
-ok(preg_match('~prefers-reduced-motion.*\.ms-chest\.is-open \.ms-chest-glow~s', $chest) === 1,
-   'reduced motion also removes the glow, so a claim gives no visible feedback at all');
+ok(preg_match('~\.mcm-item\s*\{\s*transform:\s*none~', $rm) === 1,
+   'reduced motion still flies the rewards across the dialog');
+ok(preg_match('~\.mcm-chest\.is-open \.mcm-glow~', $rm) === 1,
+   'reduced motion also removes the glow, so the chest opens dark');
+ok(strpos($rm, '#mcm-box { animation: none') !== false,
+   'the dialog still springs in under reduced motion');
+/* The rewards must still ARRIVE, or reduced motion is a blank row. */
+ok(strpos($rm, 'transform: none') !== false && strpos($rm, 'opacity: 0') === false,
+   'reduced motion leaves the rewards invisible rather than simply still');
 
-echo "\nit is included once, and in both states\n";
-ok(substr_count($daily, "include __DIR__ . '/missions-chest.php'") === 1,
-   'the chest partial is included more than once, or not at all');
-$inc = strpos($daily, 'missions-chest.php');
-$br  = strpos($daily, "if (\$ms_daily['eligible']): ?>", strpos($daily, 'ms-daily-right'));
-ok($inc !== false && $br !== false && $inc < $br,
-   'the chest is inside the eligible branch, so a claimed day shows no chest');
+echo "\nincluded once each, in the right state\n";
+ok(substr_count($dailyCode, "include __DIR__ . '/missions-chest.php'") === 1,
+   'the strip chest is included more than once, or not at all');
+ok(substr_count($dailyCode, "include __DIR__ . '/missions-claim-modal.php'") === 1,
+   'the reveal is included more than once, or not at all');
+/* COMMENT-STRIPPED, because this file's header comment names both partials
+   above everything else: read raw, the first match for either name is the
+   prose and both of these ordering checks are measuring the wrong thing. */
+$incChest = strpos($dailyCode, 'missions-chest.php');
+$br       = strpos($dailyCode, "if (\$ms_daily['eligible']): ?>", strpos($dailyCode, 'ms-daily-right'));
+ok($incChest !== false && $br !== false && $incChest < $br,
+   'the strip chest is inside the eligible branch, so a claimed day shows no chest');
+/* The reveal is the opposite: only a claimable day can produce a claim,
+   so rendering it on a claimed day is markup nothing can reach. */
+ok($br !== false && strpos($dailyCode, 'missions-claim-modal.php') > $br,
+   'the reveal renders on a day with nothing to claim');
 ok(strpos($chestCode, "defined('MS_CHEST_CSS')") !== false,
-   'the stylesheet is not guarded, so a second include duplicates it');
-ok(strpos($chestCode, 'images/chest/') !== false && strpos($chestCode, 'https://') === false,
-   'the art is referenced absolutely; cookies here are host-only, so paths stay relative');
+   'the strip stylesheet is not guarded, so a second include duplicates it');
+ok(strpos($modalCode, "defined('MS_CLAIM_MODAL')") !== false,
+   'the reveal is not guarded, so a second include duplicates its ids');
+foreach (array('missions-chest.php' => $chestCode, 'missions-claim-modal.php' => $modalCode) as $f => $src) {
+	ok(strpos($src, 'images/chest/') !== false && strpos($src, 'https://') === false,
+	   "$f references the art absolutely; cookies here are host-only, so paths stay relative");
+}
 
 echo "\nthe admin preview shows the real thing and claims nothing\n";
 /*
- * The animation fires once a day for a player with a claimable day, so
- * without a preview nobody can look at it twice. The two things that
- * matter about that preview: it must include the REAL partial, because
- * a second copy of the markup drifts from what players see, and it must
- * not be able to claim.
+ * The reveal fires once a day for a player with a claimable day, so
+ * without a preview nobody can look at it twice. Three things matter
+ * about it: it must include the REAL partials, it must not be able to
+ * claim, and it must not call mission_daily(), which resets a lapsed
+ * streak as a side effect.
  */
-$adm = (string) file_get_contents(__DIR__ . '/admin-chest.php');
-$admCode = $strip($adm);
 ok(strpos($admCode, "include __DIR__ . '/missions-chest.php'") !== false,
-   'the preview does not include the real partial, so it can drift from what ships');
+   'the preview does not include the real strip partial, so it can drift from what ships');
+ok(strpos($admCode, "include __DIR__ . '/missions-claim-modal.php'") !== false,
+   'the preview does not include the real reveal, so it can drift from what ships');
 ok(strpos($admCode, 'claimRewardButton') === false,
-   'the preview carries a claim button, so looking at the animation can spend a reward');
+   'the preview carries a claim button, so looking at the reveal can spend a reward');
 ok(strpos($admCode, 'dailyReward') === false,
    'the preview can reach dailyReward(), so it can claim');
-ok(strpos($admCode, 'admin_require()') !== false,
-   'the preview is not behind admin_require()');
+ok(strpos($admCode, 'mission_daily(') === false,
+   'the preview calls mission_daily(), which resets a lapsed streak as a side effect');
+ok(strpos($admCode, 'mission_daily_items()') !== false,
+   'the preview builds the cycle itself rather than reading the shared one');
+ok(strpos($admCode, 'admin_require()') !== false, 'the preview is not behind admin_require()');
 $req = strpos($admCode, 'admin_require()');
 $hdr = strpos($admCode, "include 'header.php'");
 ok($req !== false && $hdr !== false && $req < $hdr,
    'admin_require() runs after header.php, which is after output has begun');
+ok(strpos($admCode, 'SK_CLAIM_SHOW({') !== false,
+   'the preview never plays the reveal, so the button does nothing');
 ok(strpos($admCode, 'SK_CHEST_OPEN()') !== false,
-   'the preview never calls the hook, so the button does nothing');
-ok(strpos($admCode, "classList.remove('is-open', 'is-bursting', 'is-settled')") !== false,
-   'the preview cannot reset, so it can only be watched once per reload');
+   'the preview cannot switch the strip icon');
+ok(strpos($admCode, "classList.remove('is-open')") !== false,
+   'the preview cannot reset the strip, so it can only be switched once per reload');
+ok(strpos($admCode, "getElementById('adm-chest-day')") !== false,
+   'the preview cannot pick a day, so six of the seven consumables are unreachable');
+/* Day seven is the only one that pays a trait, and the handoff is the
+   one sequencing problem in the feature. A preview that hands a drop
+   over on every day previews a collision that cannot happen. */
+ok(preg_match('~day === 7 \? drop : null~', $admCode) === 1,
+   'the preview hands a trait over on days that do not pay one');
+ok(strpos($admCode, 'dhcf_drop_payload(') !== false,
+   'the preview invents a trait payload rather than building a real one');
+ok(strpos($admCode, 'dhcf_award(') === false,
+   'the preview awards a real trait, so previewing the reveal pays out');
 /* The art arrives by FTP, so a fresh deploy has markup and no pictures. */
 ok(strpos($admCode, "addEventListener('error'") !== false,
    'the preview shows broken frames rather than saying which files are missing');

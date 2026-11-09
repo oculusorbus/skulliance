@@ -79,6 +79,10 @@ Seven days, each paying a fixed item plus points, climbing to a **100% Success**
 
 It sits **directly under the page heading** as a single strip: seven chips showing where you are in the cycle, what today pays, and the claim button. Once claimed it collapses to a line with the countdown to the next one. It used to print all seven days as full-width rows with the claim state underneath them, which put the one thing you came for at the very bottom of the page.
 
+**The reward arrives as something you open.** A chest sits at the head of the claim: shut while there is something to take, open and lit once it has been. Press the claim and it opens full size in front of you, and the day's item and the currency you drew fly out of it and settle into a row with the amount, the streak bar and the countdown underneath. The chest itself is a picture, not a control — the claim button beside it is still the thing that claims, so nothing about this changes for anyone using a keyboard or a screen reader, and the whole performance is dropped to a still reveal if you have reduced motion switched on.
+
+On the seventh day the [[games-dhc-fighters]] trait that completes the streak is revealed **after** you close the chest, rather than on top of it.
+
 **The claim is quick now, and says so while it works.** The button reads *Claiming…* and stops accepting presses until it lands, and comes back with a message if the claim fails rather than sitting there. The Discord announcement used to happen *inside* the claim — so every press waited on a round trip to Discord before your own reward appeared. It is posted straight after now, out of your way.
 
 ## Missions Status

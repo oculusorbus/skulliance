@@ -917,7 +917,7 @@ function admin_tabs() {
 		/* The daily reward animation, openable on demand. It fires once a
 		   day for a player with a claimable day, so without this nobody
 		   could look at it twice. Claims nothing. */
-		'chest' => array('admin-chest.php', 'Reward Chest'),
+		'chest' => array('admin-chest.php', 'Reward Reveal'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }

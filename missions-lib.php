@@ -1111,6 +1111,33 @@ function mission_announce($conn, $q, $mission_id, $nft_count, $success, $boost, 
 }
 
 /*
+ * THE SEVEN-DAY CYCLE'S CONSUMABLES, by day.
+ *
+ * Fixed, and needed in three places: mission_daily() builds the ladder
+ * from it, missions-claim-modal.php names what flew out of the chest, and
+ * admin-chest.php previews the reveal without touching a streak. It was
+ * inline in mission_daily(); a preview that cannot call that function
+ * (it resets a lapsed streak as a side effect) would otherwise have had
+ * to keep its own copy, and a copy that drifts previews the wrong art.
+ *
+ * skulliance.js carries the slugs too, for the reward line it writes
+ * after a claim. That one is not reachable from PHP.
+ */
+function mission_daily_items() {
+	$slug = array(1 => 'random-reward', 2 => '25-success', 3 => 'fast-forward',
+	              4 => '50-success', 5 => '75-success', 6 => 'double-rewards',
+	              7 => '100-success');
+	$name = array(1 => 'Random Reward', 2 => '25% Success', 3 => 'Fast Forward',
+	              4 => '50% Success', 5 => '75% Success', 6 => 'Double Rewards',
+	              7 => '100% Success');
+	$out = array();
+	foreach ($slug as $d => $s) {
+		$out[$d] = array('item' => $name[$d], 'item_icon' => 'icons/' . $s . '.png');
+	}
+	return $out;
+}
+
+/*
  * THE DAILY REWARD, as data.
  *
  * WHAT WAS WRONG WITH IT: renderDailyRewardsSection() printed the whole
@@ -1141,13 +1168,7 @@ function mission_daily($conn) {
 	$taken  = getStreakRewards($conn);
 	$tiers  = getRewardTiers();
 
-	/* Fixed per day, and the same map skulliance.js carries for the reveal. */
-	$items = array(1 => 'random-reward', 2 => '25-success', 3 => 'fast-forward',
-	               4 => '50-success', 5 => '75-success', 6 => 'double-rewards',
-	               7 => '100-success');
-	$names = array(1 => 'Random Reward', 2 => '25% Success', 3 => 'Fast Forward',
-	               4 => '50% Success', 5 => '75% Success', 6 => 'Double Rewards',
-	               7 => '100% Success');
+	$cycle = mission_daily_items();
 
 	$today = min(7, $streak + 1);
 	$days  = array();
@@ -1157,8 +1178,8 @@ function mission_daily($conn) {
 			'day'       => $d,
 			'claimed'   => ($d <= $streak),
 			'current'   => ($d === $today),
-			'item'      => $names[$d],
-			'item_icon' => 'icons/' . $items[$d] . '.png',
+			'item'      => $cycle[$d]['item'],
+			'item_icon' => $cycle[$d]['item_icon'],
 			'amount'    => $got ? (float)$got['amount'] : (float)$tiers[$d],
 			/* A day not yet taken has no currency -- it is drawn at claim time. */
 			'currency'  => $got ? $got['currency'] : '',

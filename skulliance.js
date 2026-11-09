@@ -952,6 +952,14 @@ function dailyReward(){
 		       as DHC_SHOW_DROP below: missions-chest.php defines it, and the
 		       claim works exactly as before on any page that does not. */
 		    if (window.SK_CHEST_OPEN) SK_CHEST_OPEN();
+		    /* AND THE REVEAL, which is where the moment actually happens:
+		       a 240px chest, and the day's consumable and currency icons
+		       flying out of its mouth into their own row. Handed the whole
+		       reply untouched, because everything it shows -- the day, the
+		       amount, the streak bar, the countdown, the trait -- is in
+		       there already. Optional in the same way as the two hooks
+		       either side of it. */
+		    if (window.SK_CLAIM_SHOW) SK_CLAIM_SHOW(obj);
 		    document.getElementById('reward').style.opacity = 1;
 		  	document.getElementById('reward').innerHTML = "<span style='display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;font-size:0.9rem;'><strong>Day "+obj.day+":</strong><img class='icon' style='margin-right:0;' src='icons/"+consumables[obj.day]+".png'/><span>+</span><img class='icon' style='margin-right:0;' src='icons/"+obj.currency.toLowerCase()+".png'/><span>+"+obj.amount+"&nbsp;"+obj.currency.replace(/[0-9]+/g,'')+"</span></span>";
 			document.getElementById('claimed').style.display = "flex";
@@ -962,7 +970,13 @@ function dailyReward(){
 			   awarded by the time this reply arrives -- the claim did it -- so
 			   this only reveals it. Delayed so the reward line and the streak
 			   bar land first; the trait is the bonus, not the headline. */
-			if (obj.dhc_drop && window.DHC_SHOW_DROP) {
+			/* ONE REVEAL AT A TIME. dhc-dropmodal.php is included on every
+			   page, so this used to open its veil 900ms after a claim --
+			   straight on top of the claim modal, which is up by then. When
+			   the claim modal exists it takes the drop in the reply above
+			   and reveals it on close instead. The timer is the fallback for
+			   a page that does not render it. */
+			if (obj.dhc_drop && window.DHC_SHOW_DROP && !window.SK_CLAIM_SHOW) {
 				setTimeout(function () { DHC_SHOW_DROP(obj.dhc_drop); }, 900);
 			}
 			document.getElementById('remaining').style.display = "flex";
