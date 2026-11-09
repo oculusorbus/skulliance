@@ -809,6 +809,9 @@ define('MS_FIELD_CAP', 24);
   .ms-d-art { height: 200px; }
 }
 </style>
+<?php /* TEMPORARY gradient-and-border pass. Deleting this one line is the
+         whole revert; missions.php?polish=0 turns it off without one. */ ?>
+<?php include __DIR__ . '/missions-polish.php'; ?>
 
 <?php if ($ms_user <= 0): ?>
 <?php
