@@ -1021,9 +1021,17 @@
     if ($hp_voices):
     ?>
     <section id="voices" class="hp-layer">
-      <div class="wrap hp-voices-wrap">
+      <?php /* THE HEADING KEEPS THE PAGE'S MEASURE, the cards do not.
+               Every other band starts its kicker and its h2 at the same
+               place, and a reader scrolling sees that line hold whatever
+               the section is. Putting the heading inside the full-width
+               wrap moved it out to the viewport gutter and broke the one
+               thing every layer on this page agrees about. */ ?>
+      <div class="wrap">
         <span class="hp-kick">In their words</span>
         <h2>Why people stay.</h2>
+      </div>
+      <div class="wrap hp-voices-wrap">
         <div class="hp-voices">
           <?php foreach ($hp_voices as $v): ?>
           <figure class="hp-voice">

@@ -820,6 +820,28 @@ ok(!empty($hpN) && (int) $hpN[1] >= 24,
 ok(strpos($hpSrc, 'class="wrap hp-voices-wrap"') !== false,
    'the voices section uses the standard wrap, so it is capped at the text measure');
 /*
+ * THE HEADING KEEPS THE PAGE'S MEASURE, THE CARDS DO NOT.
+ *
+ * Every band on this page starts its kicker and its h2 at the same
+ * place, and that line holding is most of what makes the page read as
+ * one document. The first full-width version put the heading inside
+ * the released wrap, so it moved out to the viewport gutter while
+ * every other heading stayed put.
+ *
+ * So: the heading in a plain .wrap, the grid in the released one.
+ */
+$vSec = substr($hpSrc, strpos($hpSrc, '<section id="voices"'));
+$vSec = substr($vSec, 0, strpos($vSec, '</section>'));
+$kickAt = strpos($vSec, 'hp-kick');
+$freeAt = strpos($vSec, 'class="wrap hp-voices-wrap"');
+$gridAt = strpos($vSec, 'class="hp-voices"');
+ok($kickAt !== false && $freeAt !== false && $kickAt < $freeAt,
+   'the heading sits inside the full-width wrap, so it leaves the measure every other band keeps');
+ok($freeAt !== false && $gridAt !== false && $freeAt < $gridAt,
+   'the cards are not inside the full-width wrap, so the section is not full width after all');
+ok(preg_match('~<div class="wrap">\s*<span class="hp-kick">~', $vSec) === 1,
+   'the heading is not in a plain .wrap, so it does not line up with the other sections');
+/*
  * AND IT HAS TO WIN. The first version of this rule existed and did
  * nothing: `.hp-layer .wrap` is two classes, `.hp-voices-wrap` was
  * one, and the 1120px stood. The assertion passed, because a rule
