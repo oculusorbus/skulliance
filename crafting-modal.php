@@ -189,7 +189,7 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 #cft-veil.go.k-burn #cft-flame { opacity: 1; }
 #cft-veil.done.k-burn #cft-flame { opacity: 0; }
 /* The lump itself: heats, chars, collapses. */
-#cft-veil.go.k-burn #cft-carbon { animation: cftChar 1.9s ease-in forwards; }
+#cft-veil.go.k-burn #cft-carbon { animation: cftChar 1.65s ease-in forwards; }
 /* IT HEATS, IT DOES NOT CHAR. The flame is the brand green, so a lump
    glowing orange underneath it would be the one thing on the stage
    arguing with the rest. It brightens into the same green and collapses. */
@@ -199,7 +199,7 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
   70%  { opacity: .8; filter: brightness(2.1) drop-shadow(0 0 11px rgba(0,200,160,.8)); transform: scale(.9); }
   100% { opacity: 0; filter: brightness(3) drop-shadow(0 0 16px rgba(0,200,160,.9)); transform: scale(.5); }
 }
-#cft-veil.go.k-burn #cft-flash { animation: cftFlash .8s ease-out 1.6s forwards; }
+#cft-veil.go.k-burn #cft-flash { animation: cftFlash .75s ease-out 1.45s forwards; }
 #cft-veil.go.k-burn #cft-diamond { animation: cftForm .9s cubic-bezier(.16,1.2,.3,1) 1.75s forwards; }
 
 /* ---- the settled state, once a sequence has finished ---------------- */
@@ -365,7 +365,25 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 			}
 		})();
 
+		/*
+		 * WHEN THE FIRE GOES OUT, and it has to be before the DIAMOND
+		 * arrives rather than after. It used to burn at full strength until
+		 * the whole sequence settled, so the diamond formed THROUGH a fire
+		 * still going, and then everything cut at once.
+		 *
+		 * BURNOUT_AT stops the spawner; the particles already in the air
+		 * live out their lives and rise away while FADE_FRAMES dims what is
+		 * left. Fire starves, it does not switch off, and the difference is
+		 * the whole reason not to simply call stop().
+		 *
+		 * These two numbers have to land on or before the diamond's own
+		 * delay in the CSS above. The harness checks that they do.
+		 */
+		var BURNOUT_AT = 1250;      /* ms after start: stop feeding it */
+		var FADE_FRAMES = 30;       /* ~500ms at 60fps for the rest to die */
+
 		var W = 0, H = 0, dpr = 1, parts = [], raf = 0, tick = 0, running = false;
+		var fadeAt = 0, startedAt = 0;
 
 		function size() {
 			dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -409,10 +427,20 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 			g.clearRect(0, 0, W, H);
 			g.globalCompositeOperation = 'lighter';
 
-			/* FLICKER. Two sines that do not share a period, so the rate
-			   never settles into a pulse you can count. */
-			var rate = 17 + Math.sin(tick * 0.21) * 4 + Math.sin(tick * 0.077) * 3;
-			spawn(Math.max(2, Math.round(rate)));
+			/* Starving, not stopping: no new fuel past BURNOUT_AT, and what
+			   is still in the air dims as it rises. */
+			var starving = (Date.now() - startedAt) >= BURNOUT_AT;
+			var fade = 1;
+			if (starving) {
+				if (!fadeAt) fadeAt = tick;
+				fade = 1 - (tick - fadeAt) / FADE_FRAMES;
+				if (fade <= 0) { out(); return; }
+			} else {
+				/* FLICKER. Two sines that do not share a period, so the rate
+				   never settles into a pulse you can count. */
+				var rate = 17 + Math.sin(tick * 0.21) * 4 + Math.sin(tick * 0.077) * 3;
+				spawn(Math.max(2, Math.round(rate)));
+			}
 
 			for (var i = parts.length - 1; i >= 0; i--) {
 				var p = parts[i];
@@ -440,12 +468,19 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 				if (d <= 0.5) continue;
 				/* Fade in fast, out slowly: a particle that appears at full
 				   strength pops, and fire has no pops in it. */
-				g.globalAlpha = Math.min(1, t * 9) * Math.pow(1 - t, 1.3) * (p.ember ? 1 : 0.9);
+				g.globalAlpha = Math.min(1, t * 9) * Math.pow(1 - t, 1.3) * (p.ember ? 1 : 0.9) * fade;
 				g.drawImage(s, x - d / 2, p.y - d / 2, d, d);
 			}
 			g.globalAlpha = 1;
 			g.globalCompositeOperation = 'source-over';
 			raf = requestAnimationFrame(frame);
+		}
+
+		function out() {
+			running = false;
+			if (raf) cancelAnimationFrame(raf);
+			raf = 0; parts = []; fadeAt = 0;
+			if (W) g.clearRect(0, 0, W, H);
 		}
 
 		return {
@@ -455,16 +490,14 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 				   the stage in its finished state. */
 				if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 				size();
-				parts = []; tick = 0; running = true;
+				parts = []; tick = 0; fadeAt = 0; running = true;
+				startedAt = Date.now();
 				spawn(40);                      /* catch, rather than ramp up */
 				raf = requestAnimationFrame(frame);
 			},
-			stop: function () {
-				running = false;
-				if (raf) cancelAnimationFrame(raf);
-				raf = 0; parts = [];
-				if (W) g.clearRect(0, 0, W, H);
-			}
+			/* The hard stop stays, for close() and for a refusal: those are
+			   not a fire going out, they are a dialog leaving. */
+			stop: out
 		};
 	})();
 

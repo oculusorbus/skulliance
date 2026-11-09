@@ -356,5 +356,48 @@ ok(strpos($startFn, 'prefers-reduced-motion') !== false,
 ok(strpos($startFn, 'if (running) return;') !== false,
    'a second start stacks a second animation loop on the first');
 
+
+echo "\nthe fire is out before the diamond arrives\n";
+/*
+ * REPORTED: "the burn lingers too long. It should be done when the
+ * Diamond reveals and pushes forward." It burned at full strength until
+ * the whole sequence settled, so the diamond formed THROUGH a live fire
+ * and then everything cut at once.
+ *
+ * TWO NUMBERS IN TWO LANGUAGES have to agree about this, which is
+ * exactly the kind of pair that drifts: when the spawner stops plus how
+ * long the stragglers take to die, in JavaScript, against the diamond's
+ * animation-delay in CSS. Measured rather than asserted -- if either
+ * side moves and this fails, that is the conversation.
+ */
+ok(preg_match('~var BURNOUT_AT = (\d+);~', $js, $bo) === 1,
+   'the spawner has no burnout point, so the fire only ends when the dialog does');
+ok(preg_match('~var FADE_FRAMES = (\d+);~', $js, $ff) === 1,
+   'the stragglers have no fade, so the fire cuts off instead of starving');
+ok(preg_match('~k-burn #cft-diamond \{ animation: cftForm [\d.]+s [^;]*?\s([\d.]+)s forwards~', $css, $dd) === 1,
+   "the diamond's delay cannot be read, so this check is blind");
+if (!empty($bo) && !empty($ff) && !empty($dd)) {
+	$flameOut   = (int) $bo[1] + (int) $ff[1] * (1000 / 60);   /* fade runs at ~60fps */
+	$diamondAt  = (float) $dd[1] * 1000;
+	ok($flameOut <= $diamondAt + 1,
+	   'the fire is still burning when the diamond starts: out at ' . round($flameOut)
+	   . 'ms, diamond at ' . round($diamondAt) . 'ms');
+	/* And it must not go out so early that the burn is over before it
+	   has been watched. */
+	ok($flameOut >= $diamondAt - 700,
+	   'the fire dies ' . round($diamondAt - $flameOut) . 'ms before the diamond, which is a gap, not a handover');
+	/* The lump cannot outlive the thing consuming it. */
+	ok(preg_match('~k-burn #cft-carbon \{ animation: cftChar ([\d.]+)s~', $css, $cc) === 1
+	   && (float) $cc[1] * 1000 <= $flameOut,
+	   'the CARBON lump is still on screen after the fire has gone out');
+}
+/* Starving means NO NEW FUEL and the rest dimming -- not a stop() call,
+   which is what close() and a refusal use and which clears instantly. */
+ok(preg_match('~if \(starving\)~', $js) === 1, 'the fire does not starve, it is switched off');
+ok(preg_match('~\} else \{[^}]*spawn\(Math\.max~s', $js) === 1,
+   'the spawner keeps running past burnout, so the fire never starves');
+ok(preg_match('~globalAlpha = [^;]*\* fade;~', $js) === 1,
+   'the fade is computed but never applied to anything');
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);
