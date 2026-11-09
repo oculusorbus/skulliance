@@ -379,7 +379,13 @@
        the content in, so this one overrides it and keeps only a
        gutter that grows with the viewport. */
     .hp-voices { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+    /* A COLUMN, so the attribution can be pushed to the floor of the
+       card rather than trailing whatever line the quote happens to end
+       on. The cards already stretch to a common height in the grid;
+       without this the names sat at five different heights across a
+       row and the eye tracked up and down the whole way. */
     .hp-voice { margin: 0; padding: 20px 22px; text-align: left;
+      display: flex; flex-direction: column;
       background: #0a1724; border: 1px solid rgba(255,255,255,.07); border-radius: 14px; }
     /* QUOTATION MARKS HERE, AND NOT ON THE X SHARE. This is the site
        quoting a player, so the marks are correct and the eye reads the
@@ -397,7 +403,9 @@
     /* Pushed to the right edge of the card, name first and the face
        last, so the attribution sits opposite the quote's opening mark
        rather than under it. */
-    .hp-voice figcaption { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+    .hp-voice figcaption { display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+      /* The floor of the card, whatever the quote above it did. */
+      margin-top: auto; }
     /* Square, not round: the file Discord serves is square and the
        corners are part of art somebody chose. A small radius keeps it
        from fighting the card. */

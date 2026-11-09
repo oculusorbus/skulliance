@@ -906,6 +906,17 @@ ok(preg_match('~\.hp-voice blockquote \{[^}]*font-style:\s*italic~s', $hpSrc) ==
    well as the CSS, so it does not depend on a flex direction. */
 ok(preg_match('~\.hp-voice figcaption \{[^}]*justify-content:\s*flex-end~s', $hpSrc) === 1,
    'the attribution is not pushed to the right edge of the card');
+/*
+ * BOTTOM RIGHT ON EVERY CARD. Quotes are wildly different lengths, so
+ * an attribution that simply follows the text sits at a different
+ * height in each one and the eye tracks up and down a row. Both
+ * halves are needed: the card has to be a column for margin-top:auto
+ * to have a floor to push against.
+ */
+ok(preg_match('~\.hp-voice \{[^}]*flex-direction:\s*column~s', $hpSrc) === 1,
+   'the card is not a column, so margin-top:auto has nothing to push against');
+ok(preg_match('~\.hp-voice figcaption \{[^}]*margin-top:\s*auto~s', $hpSrc) === 1,
+   'the attribution follows the quote instead of sitting on the floor of the card');
 $capStart = strpos($hpSrc, '<figcaption>');
 $capEnd   = strpos($hpSrc, '</figcaption>');
 $cap      = substr($hpSrc, $capStart, $capEnd - $capStart);
