@@ -67,9 +67,10 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 			</div>
 			<img id="cft-diamond" src="icons/diamond.png" alt="" onerror="this.style.display='none'">
 			<img id="cft-carbon" src="icons/carbon.png" alt="" onerror="this.style.display='none'">
-			<div id="cft-fire">
-				<?php for ($i = 1; $i <= 7; $i++): ?><span class="cft-flame f<?php echo $i; ?>"></span><?php endfor; ?>
-			</div>
+			<?php /* A CANVAS, not divs. Seven spans on a straight path read as
+			         a row of dots; fire is a crowd of soft blobs blended
+			         additively, which is a thing only a canvas can do. */ ?>
+			<canvas id="cft-flame" width="232" height="232" aria-hidden="true"></canvas>
 			<span id="cft-flash"></span>
 		</div>
 
@@ -179,32 +180,24 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 }
 
 /* ---- BURN: carbon catches, then a diamond comes up through it -------- */
-#cft-fire { position: absolute; left: 50%; bottom: 58px; width: 0; height: 0; opacity: 0; }
-#cft-veil.go.k-burn #cft-fire { opacity: 1; }
-.cft-flame { position: absolute; width: 13px; height: 19px; left: 0; bottom: 0;
-  margin-left: -6px; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
-  background: linear-gradient(0deg, #ffd166 0%, #ff8c2b 42%, rgba(255,70,20,0) 100%);
-  opacity: 0; transform-origin: 50% 100%; }
-#cft-veil.go.k-burn .cft-flame { animation: cftFlame 1.5s ease-out infinite; }
-@keyframes cftFlame {
-  0%   { opacity: 0;  transform: translate(var(--fx), 0) scale(.5); }
-  25%  { opacity: .95; }
-  100% { opacity: 0;  transform: translate(var(--fx), -78px) scale(.18); }
-}
-.cft-flame.f1 { --fx: -34px; animation-delay: 0s;    }
-.cft-flame.f2 { --fx: -22px; animation-delay: .19s;  }
-.cft-flame.f3 { --fx: -11px; animation-delay: .07s;  }
-.cft-flame.f4 { --fx:   0px; animation-delay: .26s;  }
-.cft-flame.f5 { --fx:  11px; animation-delay: .12s;  }
-.cft-flame.f6 { --fx:  22px; animation-delay: .32s;  }
-.cft-flame.f7 { --fx:  34px; animation-delay: .22s;  }
+/* Covers the whole stage and sits over the lump, because fire wraps the
+   thing that is burning rather than standing beside it. Nothing here is
+   interactive, and the diamond is drawn after it in the markup so it
+   comes up THROUGH the flame at the end. */
+#cft-flame { position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; pointer-events: none; transition: opacity .35s linear; }
+#cft-veil.go.k-burn #cft-flame { opacity: 1; }
+#cft-veil.done.k-burn #cft-flame { opacity: 0; }
 /* The lump itself: heats, chars, collapses. */
 #cft-veil.go.k-burn #cft-carbon { animation: cftChar 1.9s ease-in forwards; }
+/* IT HEATS, IT DOES NOT CHAR. The flame is the brand green, so a lump
+   glowing orange underneath it would be the one thing on the stage
+   arguing with the rest. It brightens into the same green and collapses. */
 @keyframes cftChar {
   0%   { opacity: 1; filter: none; transform: scale(1); }
-  35%  { opacity: 1; filter: brightness(1.7) saturate(1.6) hue-rotate(-18deg); transform: scale(1.05); }
-  70%  { opacity: .85; filter: brightness(2.4) saturate(2) hue-rotate(-30deg); transform: scale(.92); }
-  100% { opacity: 0; filter: brightness(3); transform: scale(.55); }
+  35%  { opacity: 1; filter: brightness(1.5) drop-shadow(0 0 6px rgba(0,200,160,.6)); transform: scale(1.05); }
+  70%  { opacity: .8; filter: brightness(2.1) drop-shadow(0 0 11px rgba(0,200,160,.8)); transform: scale(.9); }
+  100% { opacity: 0; filter: brightness(3) drop-shadow(0 0 16px rgba(0,200,160,.9)); transform: scale(.5); }
 }
 #cft-veil.go.k-burn #cft-flash { animation: cftFlash .8s ease-out 1.6s forwards; }
 #cft-veil.go.k-burn #cft-diamond { animation: cftForm .9s cubic-bezier(.16,1.2,.3,1) 1.75s forwards; }
@@ -258,7 +251,7 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
  */
 @media (prefers-reduced-motion: reduce) {
   #cft-box { animation: none; }
-  #cft-ring, .cft-orb, #cft-diamond, #cft-carbon, #cft-flash, .cft-flame { animation: none !important; }
+  #cft-ring, .cft-orb, #cft-diamond, #cft-carbon, #cft-flash { animation: none !important; }
   #cft-veil.go.k-convert .cft-orb, #cft-veil.go.k-burn .cft-orb { opacity: 0; }
   #cft-veil.go.k-convert #cft-diamond, #cft-veil.go.k-burn #cft-diamond { opacity: 1; }
   #cft-veil.go.k-shatter #cft-diamond { opacity: 0; }
@@ -290,6 +283,190 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 		burn:    { kicker: 'Burn',    title: 'CARBON to DIAMOND',
 		           lede: function (n) { return 'Burning ' + n + ' CARBON. 100 CARBON forms 1 DIAMOND.'; } }
 	};
+
+	/*
+	 * ===== THE FLAME ========================================================
+	 *
+	 * The first version was seven <span>s with a linear-gradient, rising on a
+	 * straight line. Reported, correctly, as "a row of orange dots". Divs
+	 * cannot be fire: there are too few of them, they do not overlap into a
+	 * mass, and a straight path has no lick in it.
+	 *
+	 * THREE THINGS MAKE IT READ AS FLAME, and all three were missing.
+	 *
+	 * 1. ADDITIVE BLENDING. globalCompositeOperation = 'lighter' is the whole
+	 *    trick: where particles overlap, their light SUMS, so a crowd of
+	 *    faint blobs becomes one bright body with a hot core instead of a
+	 *    handful of discrete dots. Without it no amount of particles helps.
+	 *
+	 * 2. A HOT CORE AND A COOL TIP. Colour is a function of AGE, not a fixed
+	 *    fill: almost white where it is born, through the brand green, to a
+	 *    dark green that fades out at the top. Fire is a temperature
+	 *    gradient; one colour is confetti. The ramp is pre-rendered into 24
+	 *    tinted sprites once, because tinting per particle per frame is the
+	 *    thing that makes this too slow to run.
+	 *
+	 * 3. TURBULENCE. Every reference implementation I checked gives particles
+	 *    an initial velocity and lets them fly straight, which is why they
+	 *    spray rather than lick. Each particle here carries its own sine
+	 *    phase and frequency, and the amplitude GROWS as it rises, so the
+	 *    column is tight at the base and whips at the tip.
+	 *
+	 * It is green because a green flame is read as magic rather than as bad
+	 * fire -- the motion has to be convincing, the colour does not have to be
+	 * plausible.
+	 */
+	var FIRE = (function () {
+		var cv = document.getElementById('cft-flame');
+		if (!cv || !cv.getContext) return { start: function () {}, stop: function () {} };
+		var g = cv.getContext('2d');
+
+		/* THE RAMP, birth to death. Near-white at the base because that is
+		   where a flame is hottest, saturating through the brand green, then
+		   darkening out. The alpha is low on purpose: with additive blending
+		   the brightness comes from the crowd, not from any one blob. */
+		var RAMP = [
+			[235, 255, 250], [170, 255, 238],                     /* the core, and it is BRIEF */
+			[ 96, 242, 212], [ 42, 224, 189], [  0, 200, 160],    /* the brand green, the body */
+			[  0, 186, 150], [  0, 168, 135], [  0, 146, 117],
+			[  0, 120,  97], [  2,  94,  76], [  3,  66,  54], [  2,  40,  33]
+		];
+		var STEPS = 24, sprites = [];
+		function mix(a, b, t) { return [
+			Math.round(a[0] + (b[0] - a[0]) * t),
+			Math.round(a[1] + (b[1] - a[1]) * t),
+			Math.round(a[2] + (b[2] - a[2]) * t)
+		]; }
+		(function build() {
+			for (var i = 0; i < STEPS; i++) {
+				var f = i / (STEPS - 1) * (RAMP.length - 1);
+				var lo = Math.floor(f), hi = Math.min(RAMP.length - 1, lo + 1);
+				var c = mix(RAMP[lo], RAMP[hi], f - lo);
+				var s = document.createElement('canvas');
+				s.width = s.height = 48;
+				var sg = s.getContext('2d');
+				/* A SOFT RADIAL BLOB, not a filled circle. A hard edge reads
+				   as a dot however many of them there are; the falloff is what
+				   lets neighbours melt into one another. */
+				var rg = sg.createRadialGradient(24, 24, 0, 24, 24, 24);
+				var rgb = c[0] + ',' + c[1] + ',' + c[2];
+				/* The near-white steps are drawn fainter than the green ones.
+				   They are also the densest part of the flame, so at equal
+				   alpha they add up to a flat white lozenge instead of a
+				   glowing core. */
+				var k = i < 4 ? 0.62 + i * 0.095 : 1;
+				rg.addColorStop(0,   'rgba(' + rgb + ',' + (0.60 * k).toFixed(3) + ')');
+				rg.addColorStop(0.3, 'rgba(' + rgb + ',' + (0.22 * k).toFixed(3) + ')');
+				rg.addColorStop(0.7, 'rgba(' + rgb + ',' + (0.05 * k).toFixed(3) + ')');
+				rg.addColorStop(1,   'rgba(' + rgb + ',0)');
+				sg.fillStyle = rg;
+				sg.fillRect(0, 0, 48, 48);
+				sprites.push(s);
+			}
+		})();
+
+		var W = 0, H = 0, dpr = 1, parts = [], raf = 0, tick = 0, running = false;
+
+		function size() {
+			dpr = Math.min(2, window.devicePixelRatio || 1);
+			var r = cv.getBoundingClientRect();
+			W = Math.round(r.width); H = Math.round(r.height);
+			cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+			g.setTransform(dpr, 0, 0, dpr, 0, 0);
+		}
+
+		function spawn(n) {
+			for (var i = 0; i < n; i++) {
+				/* Triangular across the mouth, so the body is dense in the
+				   middle and frays at the edges rather than being a slab. */
+				var j = (Math.random() + Math.random() - 1);
+				var ember = Math.random() < 0.04;
+				parts.push({
+					/* A 30px mouth, not a 46px one: the first pass was wider
+					   than it was tall, which is a bonfire seen from above
+					   rather than a flame. */
+					ox:   W / 2 + j * 15,
+					y:    H * 0.66 + Math.random() * 5,
+					vy:   -(0.35 + Math.random() * 0.5) * (ember ? 1.8 : 1),
+					life: 0,
+					/* Long enough to actually climb. At this buoyancy and drag
+					   a particle settles near 2.5px a frame, so ~60 frames is
+					   the ~130px of travel the stage has room for. */
+					max:  (ember ? 85 : 52) + Math.random() * (ember ? 30 : 26),
+					sz:   (ember ? 3.5 : 10 + Math.random() * 9) * (1 - Math.abs(j) * 0.3),
+					ph:   Math.random() * 6.283,
+					fr:   0.07 + Math.random() * 0.1,
+					amp:  (ember ? 15 : 7) + Math.random() * 9,
+					drift: j * 0.18,
+					ember: ember
+				});
+			}
+		}
+
+		function frame() {
+			if (!running) return;
+			tick++;
+			g.clearRect(0, 0, W, H);
+			g.globalCompositeOperation = 'lighter';
+
+			/* FLICKER. Two sines that do not share a period, so the rate
+			   never settles into a pulse you can count. */
+			var rate = 17 + Math.sin(tick * 0.21) * 4 + Math.sin(tick * 0.077) * 3;
+			spawn(Math.max(2, Math.round(rate)));
+
+			for (var i = parts.length - 1; i >= 0; i--) {
+				var p = parts[i];
+				p.life++;
+				var t = p.life / p.max;
+				if (t >= 1) { parts.splice(i, 1); continue; }
+
+				p.vy -= 0.05;           /* buoyancy */
+				p.vy *= 0.981;          /* drag */
+				p.y  += p.vy;
+				/* The curl widens as it climbs: tight at the mouth, whipping
+				   at the tip. This is the part that separates fire from a
+				   fountain. */
+				var cx = W / 2;
+				var x = cx + (p.ox - cx) * (1 - 0.72 * t)   /* taper to a tip */
+				      + p.drift * p.life
+				      + Math.sin(p.ph + p.life * p.fr) * p.amp * t * t;
+
+				var s = sprites[Math.min(STEPS - 1, (t * STEPS) | 0)];
+				/* THE SILHOUETTE: pinched at the mouth, widest about a third
+				   of the way up, tapering to a tip. A blob that only ever
+				   shrinks has no shape to it. */
+				var d = p.ember ? p.sz * (1 - t * 0.5)
+				                : p.sz * (0.35 + 0.65 * Math.sin(Math.PI * Math.min(1, t * 1.15)));
+				if (d <= 0.5) continue;
+				/* Fade in fast, out slowly: a particle that appears at full
+				   strength pops, and fire has no pops in it. */
+				g.globalAlpha = Math.min(1, t * 9) * Math.pow(1 - t, 1.3) * (p.ember ? 1 : 0.9);
+				g.drawImage(s, x - d / 2, p.y - d / 2, d, d);
+			}
+			g.globalAlpha = 1;
+			g.globalCompositeOperation = 'source-over';
+			raf = requestAnimationFrame(frame);
+		}
+
+		return {
+			start: function () {
+				if (running) return;
+				/* Reduced motion gets no loop at all; the CSS already puts
+				   the stage in its finished state. */
+				if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+				size();
+				parts = []; tick = 0; running = true;
+				spawn(40);                      /* catch, rather than ramp up */
+				raf = requestAnimationFrame(frame);
+			},
+			stop: function () {
+				running = false;
+				if (raf) cancelAnimationFrame(raf);
+				raf = 0; parts = [];
+				if (W) g.clearRect(0, 0, W, H);
+			}
+		};
+	})();
 
 	var timers = [];
 	var state  = null;          /* { kind, amount, done } */
@@ -367,6 +544,7 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 		go.textContent = 'Working…';
 		cancel.hidden = true;
 		veil.className = 'on go k-' + state.kind;
+		if (state.kind === 'burn') FIRE.start();
 
 		var settled = false;
 		var reply   = null;
@@ -375,6 +553,7 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 		var finish = function () {
 			if (settled || !ran || reply === null) return;
 			settled = true;
+			FIRE.stop();
 			if (reply.success) {
 				veil.className = 'on done k-' + state.kind;
 				show(reply);
@@ -437,6 +616,9 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 
 	function close() {
 		clear();
+		/* The loop is a requestAnimationFrame chain; without this it keeps
+		   running against a hidden canvas for as long as the tab is open. */
+		FIRE.stop();
 		/* A preview moved nothing, so there is nothing for a reload to pick up. */
 		var moved = state && state.done && !state.preview;
 		veil.className = '';
@@ -475,7 +657,9 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 		go.textContent = 'Working…';
 		cancel.hidden = true;
 		veil.className = 'on go k-' + kind;
+		if (kind === 'burn') FIRE.start();
 		at(RUNTIME[kind], function () {
+			FIRE.stop();
 			veil.className = 'on done k-' + kind;
 			show({ kind: kind, spent: amount,
 			       gained: kind === 'burn' ? Math.floor(amount / 100) : amount });

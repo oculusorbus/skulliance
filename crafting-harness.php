@@ -281,5 +281,80 @@ ok(preg_match('~k-shatter \.cft-orb\s*\{[^}]*opacity:\s*1~s', $rm) === 1,
 ok(preg_match('~k-burn #cft-diamond[^{]*\{[^}]*opacity:\s*1~s', $rm) === 1,
    'reduced motion ends burn on an empty stage instead of the DIAMOND it made');
 
+
+echo "\nthe flame is a flame, not a row of dots\n";
+/*
+ * WHAT IT WAS. Seven <span>s with a linear-gradient, rising on a straight
+ * line. Reported as "a row of orange dots", which is exactly what divs
+ * can be: too few, never overlapping into a mass, no lick in the path.
+ *
+ * THREE THINGS CARRY IT, and each is one line away from being lost.
+ */
+ok(strpos($modal, '<canvas id="cft-flame"') !== false,
+   'the flame is not a canvas; divs cannot be fire');
+ok(strpos($modalCode, 'cft-flame') !== false && strpos($css, '.cft-flame.f1') === false,
+   'the old div flames are back');
+/* 1. ADDITIVE BLENDING. Without it a crowd of faint blobs stays a crowd
+      of faint blobs instead of summing into a body with a hot core. */
+ok(strpos($js, "globalCompositeOperation = 'lighter'") !== false,
+   'the flame does not blend additively, so it is discrete dots again');
+/* 2. A HOT CORE AND A COOL TIP, chosen by AGE. One flat colour is
+      confetti; fire is a temperature gradient. */
+ok(preg_match('~var RAMP = \[~', $js) === 1, 'the flame has no colour ramp');
+preg_match('~var RAMP = \[(.*?)\];~s', $js, $rampM);
+preg_match_all('~\[\s*(\d+),\s*(\d+),\s*(\d+)\s*\]~', isset($rampM[1]) ? $rampM[1] : '', $stops, PREG_SET_ORDER);
+ok(count($stops) >= 6, 'the ramp has only ' . count($stops) . ' stops, which will band');
+if (count($stops) >= 6) {
+	$first = array_map('intval', array_slice($stops[0], 1));
+	$last  = array_map('intval', array_slice($stops[count($stops) - 1], 1));
+	ok(min($first) > 150, 'the flame is not near-white where it is born, so it has no hot core');
+	ok(max($last) < 80, 'the flame does not cool as it rises, so it has no tip');
+	/* And it is the BRAND green through the body, not orange. */
+	$mid = array_map('intval', array_slice($stops[(int) (count($stops) / 2)], 1));
+	ok($mid[1] > $mid[0] && $mid[1] > $mid[2],
+	   'the body of the flame is not green (' . implode(',', $mid) . ')');
+}
+/* The ramp is pre-rendered once. Tinting per particle per frame is the
+   thing that makes a particle system too slow to run. */
+ok(strpos($js, 'sprites.push(') !== false && strpos($js, 'createRadialGradient') !== false,
+   'the blobs are not pre-rendered soft sprites');
+ok(strpos($js, 'arc(') === false,
+   'the flame draws filled circles; a hard edge reads as a dot however many there are');
+/* 3. TURBULENCE. Every reference implementation gives particles a
+      velocity and lets them fly straight, which is why they spray. */
+ok(preg_match('~Math\.sin\(p\.ph \+ p\.life \* p\.fr\)~', $js) === 1,
+   'the particles travel in straight lines, so the flame sprays rather than licks');
+ok(preg_match('~\* p\.amp \* t \* t~', $js) === 1,
+   'the curl does not grow as a particle rises, so the tip does not whip');
+ok(preg_match('~\(p\.ox - cx\) \* \(1 - [\d.]+ \* t\)~', $js) === 1,
+   'the particles keep their birth offset, so the flame is a column with parallel sides');
+
+echo "\nand the flame loop cannot outlive the dialog\n";
+/*
+ * It is a requestAnimationFrame chain. Left running it burns a core
+ * against a hidden canvas for as long as the tab is open.
+ */
+ok(strpos($js, 'cancelAnimationFrame') !== false, 'the flame loop is never cancelled');
+$closeFn = substr($js, strpos($js, 'function close()'));
+$closeFn = substr($closeFn, 0, strpos($closeFn, "\n\t}"));
+ok(strpos($closeFn, 'FIRE.stop()') !== false, 'closing the dialog leaves the flame running');
+ok(substr_count($js, 'FIRE.stop()') >= 3,
+   'the flame is not stopped on every exit (close, settle, and the preview)');
+ok(preg_match('~if \(state\.kind === .burn.\) FIRE\.start\(\)~', $js) === 1,
+   'the flame starts for crafts that are not burns, or not at all');
+/* Reduced motion gets no loop at all -- the CSS already shows the end. */
+/* THE LAST ONE, not the first: FIRE opens with a no-op fallback for a
+   browser with no canvas -- `return { start: function () {}, ... }` --
+   and anchoring on the first match extracted that empty body instead. */
+$startAt = strrpos($js, 'start: function ()');
+$startFn = $startAt === false ? '' : substr($js, $startAt);
+$stopAt  = $startFn === '' ? false : strpos($startFn, 'stop: function');
+$startFn = $stopAt === false ? $startFn : substr($startFn, 0, $stopAt);
+ok(strlen($startFn) > 120, 'the flame start function could not be read, so these checks are blind');
+ok(strpos($startFn, 'prefers-reduced-motion') !== false,
+   'the flame runs under reduced motion, which is the one place it must not');
+ok(strpos($startFn, 'if (running) return;') !== false,
+   'a second start stacks a second animation loop on the first');
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);
