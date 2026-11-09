@@ -808,6 +808,46 @@ ok(preg_match("~(include|require)[^;\n]*['\"/]db\.php~", $hpCode) === 0,
 $hpSrc = file_get_contents(__DIR__ . '/homepage.php');
 ok(strpos($hpSrc, 'id="voices"') !== false, 'the homepage has no testimonials section');
 ok(strpos($hpSrc, 'hp_testimonials(') !== false, 'the section is there but never asks for any');
+/* All of them, not a first few: the number in the call has to be the
+   safety rail, not an editorial choice. */
+preg_match('~hp_testimonials\((\d+)\)~', $hpSrc, $hpN);
+ok(!empty($hpN) && (int) $hpN[1] >= 24,
+   'the homepage asks for only ' . ($hpN[1] ?? '?') . ' testimonials, so the later ones never show');
+/* Full width. .hp-layer is already 100vw; it is .hp-layer .wrap's
+   1120px that holds the content in, so the section needs its own. */
+/* In the MARKUP, not just the stylesheet: the rule can sit there
+   unused while the div went back to the plain wrap. */
+ok(strpos($hpSrc, 'class="wrap hp-voices-wrap"') !== false,
+   'the voices section uses the standard wrap, so it is capped at the text measure');
+ok(preg_match('~\.hp-voices-wrap\s*\{[^}]*max-width:\s*none~s', $hpSrc) === 1,
+   'the voices wrap does not release the max-width, so the section is not full width');
+/*
+ * AND THE BANDS ALTERNATE END TO END.
+ *
+ * Moving this section shifts every stripe after it. Two bands of the
+ * same colour touching is the visible symptom, and the cards are the
+ * alt colour themselves -- so a voices section that landed on an alt
+ * band would lose its cards into the background entirely.
+ */
+preg_match_all('~<section id="([a-z-]+)" class="([^"]+)"~', $hpSrc, $bands, PREG_SET_ORDER);
+ok(count($bands) >= 8, 'the homepage sections could not be read (' . count($bands) . ')');
+$prevAlt = null; $clashes = array();
+foreach ($bands as $b) {
+	$isAlt = strpos($b[2], 'alt') !== false;
+	if ($prevAlt !== null && $prevAlt === $isAlt) $clashes[] = $b[1];
+	$prevAlt = $isAlt;
+}
+ok(!$clashes, 'these sections share a background with the one above: ' . implode(', ', $clashes));
+$voicesAlt = false;
+foreach ($bands as $b) if ($b[1] === 'voices') $voicesAlt = strpos($b[2], 'alt') !== false;
+ok(!$voicesAlt, 'the voices band is the same colour as its cards, so the cards disappear into it');
+/* Where it sits: straight after the games section, which is where a
+   reader has just been told what there is to play. */
+$gamesAt  = strpos($hpSrc, '<section id="games"');
+$voicesAt = strpos($hpSrc, '<section id="voices"');
+$artistsAt = strpos($hpSrc, '<section id="artists"');
+ok($gamesAt < $voicesAt && $voicesAt < $artistsAt,
+   'the voices section is not between the games and the artists');
 /* An empty row under a heading says the opposite of what the section
    is for, so the whole thing has to disappear. */
 ok(preg_match('~if \(\$hp_voices\):~', $hpSrc) === 1,

@@ -391,7 +391,9 @@ function hp_dhc_fighters($limit = 24) {
  * and the same two columns avatar_url() uses.
  */
 function hp_testimonials($limit = 6) {
-	$limit = max(1, min(24, (int)$limit));
+	/* The homepage asks for all of them; this is the rail that stops
+	   a runaway query, not an editorial limit. */
+	$limit = max(1, min(60, (int)$limit));
 	$raw = hp_cached('testimonials_' . $limit, function ($c) use ($limit) {
 		/* The column arrived in an ALTER, so an install without it
 		   still works and simply publishes the player's own words. */
