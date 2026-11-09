@@ -633,6 +633,16 @@ if(isset($_POST['refresh'])){
 	}
 }
 
+/*
+ * THE THREE CRAFTING POSTS ARE GONE FROM THE PANEL.
+ *
+ * convert, shatter and burn are ajax/craft.php now, so the reveal in
+ * crafting-modal.php can animate the real outcome rather than guessing
+ * one before a page reload. These handlers are KEPT, not deleted: the
+ * forms are still in the markup, a browser with no JavaScript still
+ * submits them, and that path has to keep paying out. The validation
+ * here and the validation in the endpoint are the same validation.
+ */
 // Crafting
 if(isset($_POST['balance'])){
 	$minbalance = 0;
@@ -937,7 +947,7 @@ function renderCrafting($conn, $page){
 			  <div style="display:flex; align-items:center; gap:8px;">
 			    <input type="range" name="balance" id="balance" min="1" max="<?php echo min($balances); ?>" step="1" value="<?php echo min($balances); ?>" style="flex:1;"
 			      oninput="document.getElementById('balance-display').textContent=Number(this.value).toLocaleString();document.getElementById('balance-diamond-display').textContent=Number(this.value).toLocaleString();">
-			    <button type="button" class="small-button" style="flex-shrink:0;" onclick="confirmForm(this.form, 'Convert ' + document.getElementById('balance-display').textContent + ' of each core currency to ' + document.getElementById('balance-diamond-display').textContent + ' DIAMOND?')">Convert</button>
+			    <button type="button" class="small-button" style="flex-shrink:0;" onclick="SK_CRAFT_OPEN('convert', document.getElementById('balance').value)">Convert</button>
 			  </div>
 			</form>
 			</li>
@@ -958,7 +968,7 @@ function renderCrafting($conn, $page){
 			  <div style="display:flex; align-items:center; gap:8px;">
 			    <input type="range" name="diamond" id="diamond" min="1" max="<?php echo $diamond; ?>" step="1" value="<?php echo $diamond; ?>" style="flex:1;"
 			      oninput="document.getElementById('diamond-display').textContent=Number(this.value).toLocaleString();document.getElementById('diamond-core-display').textContent=Number(this.value).toLocaleString();">
-			    <button type="button" class="small-button" style="flex-shrink:0;" onclick="confirmForm(this.form, 'Shatter ' + document.getElementById('diamond-display').textContent + ' DIAMOND back to core points?')">Shatter</button>
+			    <button type="button" class="small-button" style="flex-shrink:0;" onclick="SK_CRAFT_OPEN('shatter', document.getElementById('diamond').value)">Shatter</button>
 			  </div>
 			</form>
 			</li>
@@ -980,7 +990,7 @@ function renderCrafting($conn, $page){
 			  <div style="display:flex; align-items:center; gap:8px;">
 			    <input type="range" name="carbon" id="carbon" min="100" max="<?php echo $carbon_max; ?>" step="100" value="<?php echo $carbon_max; ?>" style="flex:1;"
 			      oninput="document.getElementById('carbon-display').textContent=Number(this.value).toLocaleString();document.getElementById('burn-diamond-display').textContent=Number(this.value/100).toLocaleString();">
-			    <button type="button" class="small-button" style="flex-shrink:0;" onclick="confirmForm(this.form, 'Burn ' + document.getElementById('carbon-display').textContent + ' CARBON to form ' + document.getElementById('burn-diamond-display').textContent + ' DIAMOND?')">Burn</button>
+			    <button type="button" class="small-button" style="flex-shrink:0;" onclick="SK_CRAFT_OPEN('burn', document.getElementById('carbon').value)">Burn</button>
 			  </div>
 			</form>
 			</li>
@@ -996,6 +1006,13 @@ function renderCrafting($conn, $page){
 
 	</ul>
 	<?php
+	/*
+	 * THE REVEAL. Included at the end of the panel rather than from
+	 * header.php, because it only exists where there is something to
+	 * craft -- and because the three buttons above are the only things
+	 * that call it.
+	 */
+	include __DIR__ . '/crafting-modal.php';
 }
 
 function renderItemSubmissionForm($creators, $page){

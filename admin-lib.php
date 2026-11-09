@@ -918,6 +918,10 @@ function admin_tabs() {
 		   day for a player with a claimable day, so without this nobody
 		   could look at it twice. Claims nothing. */
 		'chest' => array('admin-chest.php', 'Reward Reveal'),
+		/* The three crafting sequences, playable without a balance. Each one
+		   only runs when somebody can afford it and spends it to run, so this
+		   is the only way to see one twice. Crafts nothing. */
+		'crafting' => array('admin-crafting.php', 'Crafting Reveals'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }

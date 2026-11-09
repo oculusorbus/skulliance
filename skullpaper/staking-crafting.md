@@ -2,6 +2,16 @@
 
 Crafting is how you convert between points in Skulliance. It revolves around **DIAMOND** - forming it, breaking it apart, and minting it from CARBON. The Crafting panel lives in the sidebar of the Dashboard and Store pages.
 
+## Watching it happen
+
+All three are a dialog now, and each one shows the operation rather than describing it.
+
+**Convert** puts the six core project icons on a ring and spins them inward until they are on top of each other, and a DIAMOND is where they met. **Shatter** is the same choreography backwards: the DIAMOND shakes, breaks, and throws the six back out to the ring they came from. They are deliberately each other's mirror, because the two operations are each other's undo at 1:1. **Burn** is the odd one out and should be: CARBON catches, burns down, and a DIAMOND comes up through the flame.
+
+The dialog confirms first, then acts, then reports what actually moved, without leaving the page. The figures it prints come from the server, so a craft that was clamped shows what was really spent and not what the slider asked for. If something is refused you are told why, where the result would have been, and nothing is spent.
+
+Reduced motion is honoured: the outcome still lands, it just lands without the spin, the shake or the flame.
+
 ## Craft (Core Points → DIAMOND)
 
 Members who hold all six core artist projects can **craft DIAMOND** by burning **equal parts of all six core points**. The ratio is **1:1 per point type** - crafting 1 DIAMOND consumes 1 of each core point (CRYPT, CYBER, SINDER, HYPE, DREAD, STAR).
