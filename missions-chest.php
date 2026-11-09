@@ -47,7 +47,7 @@ $mc_base = 'images/chest/';
    burst is allowed to overflow it: the moment reads bigger than the art
    without anything on the page moving. */
 .ms-chest { position: relative; flex: 0 0 auto; width: 96px; height: 99px;
-  overflow: visible; }
+  overflow: visible; --mcrise: -52px; }
 .ms-chest-l { position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: contain; pointer-events: none; }
 .ms-chest-open, .ms-chest-glow { opacity: 0; }
@@ -70,7 +70,8 @@ $mc_base = 'images/chest/';
 .ms-chest.is-settled .ms-chest-glow { animation: mcPulse 3.6s ease-in-out 1.2s infinite; }
 @keyframes mcPulse { 0%,100% { opacity: .82; } 50% { opacity: 1; } }
 
-.ms-chest-flash { position: absolute; left: 50%; top: 58%; width: 10px; height: 10px;
+/* 47%, not 58%: the mouth of the chest, not the middle of the skull. */
+.ms-chest-flash { position: absolute; left: 50%; top: 47%; width: 10px; height: 10px;
   margin: -5px 0 0 -5px; border-radius: 50%; opacity: 0; pointer-events: none;
   background: radial-gradient(circle, #ffffff 0%, rgba(0,200,160,.75) 42%, rgba(0,200,160,0) 72%); }
 .ms-chest.is-bursting .ms-chest-flash { animation: mcFlash .62s ease-out forwards; }
@@ -80,23 +81,41 @@ $mc_base = 'images/chest/';
   100% { opacity: 0;   transform: scale(17); }
 }
 
-.ms-chest-spark { position: absolute; left: 50%; top: 56%; width: 5px; height: 5px;
+/*
+ * THE SPARKS LEAVE ALONG THE MOUTH, WHICH IS NOT HORIZONTAL.
+ *
+ * All six used to start at one point -- 50%, 56% -- and fan out
+ * sideways. Two things were wrong with that. 56% is the middle of the
+ * skull, so they came out of the front panel rather than the opening;
+ * and a single origin with a horizontal spread ignores the fact that
+ * the chest is drawn in three-quarter view, where the front rim rises
+ * to the right.
+ *
+ * Measured off the art: the rim runs from 49.5% down on the left to
+ * 45.0% on the right across the middle of the box. Each spark now
+ * starts at its own point on that line, so the burst leaves the chest
+ * along the angle the chest is drawn at.
+ */
+.ms-chest-spark { position: absolute; width: 5px; height: 5px;
   margin: -2px 0 0 -2px; border-radius: 50%; background: #9affdf; opacity: 0;
   pointer-events: none; box-shadow: 0 0 6px rgba(0,200,160,.9); }
 .ms-chest.is-bursting .ms-chest-spark { animation: mcSpark 1.25s ease-out forwards; }
-.ms-chest-spark.s1 { --mcx: -34px; animation-delay: .02s; }
-.ms-chest-spark.s2 { --mcx: -19px; animation-delay: .11s; }
-.ms-chest-spark.s3 { --mcx:  -6px; animation-delay: .05s; }
-.ms-chest-spark.s4 { --mcx:   8px; animation-delay: .15s; }
-.ms-chest-spark.s5 { --mcx:  21px; animation-delay: .08s; }
-.ms-chest-spark.s6 { --mcx:  36px; animation-delay: .19s; }
+.ms-chest-spark.s1 { left: 30%; top: 49.5%; --mcx: -13px; animation-delay: .02s; }
+.ms-chest-spark.s2 { left: 38%; top: 48.6%; --mcx:  -8px; animation-delay: .11s; }
+.ms-chest-spark.s3 { left: 46%; top: 47.7%; --mcx:  -3px; animation-delay: .05s; }
+.ms-chest-spark.s4 { left: 54%; top: 46.8%; --mcx:   4px; animation-delay: .15s; }
+.ms-chest-spark.s5 { left: 62%; top: 45.9%; --mcx:   9px; animation-delay: .08s; }
+.ms-chest-spark.s6 { left: 70%; top: 45.0%; --mcx:  14px; animation-delay: .19s; }
+/* The rise is in pixels, so it has to follow the rendered size or the
+   sparks travel half a chest on mobile and a third of one on the
+   preview page. One variable, overridden wherever the size is. */
 @keyframes mcSpark {
   0%   { opacity: 0;  transform: translate(0,0) scale(.5); }
   15%  { opacity: 1; }
-  100% { opacity: 0;  transform: translate(var(--mcx), -58px) scale(.9); }
+  100% { opacity: 0;  transform: translate(var(--mcx), var(--mcrise)) scale(.9); }
 }
 
-@media (max-width: 760px) { .ms-chest { width: 76px; height: 79px; } }
+@media (max-width: 760px) { .ms-chest { width: 76px; height: 79px; --mcrise: -41px; } }
 /*
  * REDUCED MOTION TAKES THE MOVEMENT, NOT THE FEEDBACK. No breathing, no
  * burst, no sparks -- but the chest still opens and the light still

@@ -109,6 +109,51 @@ ok(count($bad) === 0,
    'these keyframes animate layout properties instead of transform/opacity: ' . implode(', ', $bad));
 ok($pos > 0, 'no @keyframes were found at all, so the extraction is reading the wrong file');
 
+echo "\nthe burst leaves along the mouth, which is not horizontal\n";
+/*
+ * The chest is drawn in three-quarter view, so its front rim rises to
+ * the right. Six sparks sharing one origin and fanning sideways read as
+ * a horizontal line crossing a tilted object -- and the origin they
+ * shared, 56% down, was the middle of the skull rather than the
+ * opening, so they came out of the front panel.
+ */
+preg_match_all('~\.ms-chest-spark\.s(\d)\s*\{[^}]*left:\s*([\d.]+)%[^}]*top:\s*([\d.]+)%~', $chest, $sp, PREG_SET_ORDER);
+ok(count($sp) >= 6, 'the sparks do not each have their own origin (' . count($sp) . ' found)');
+$lefts = array_map(function ($m) { return (float) $m[2]; }, $sp);
+$tops  = array_map(function ($m) { return (float) $m[3]; }, $sp);
+ok(count(array_unique($tops)) === count($tops),
+   'two sparks start at the same height, so they are not spread along the rim');
+$descending = true;
+for ($i = 1; $i < count($sp); $i++) if ($tops[$i] >= $tops[$i-1]) $descending = false;
+ok($descending,
+   'the spark origins do not rise to the right, so the burst ignores the angle of the chest');
+ok(min($lefts) > 20 && max($lefts) < 80,
+   'the sparks start outside the opening (' . min($lefts) . '% to ' . max($lefts) . '%)');
+/* Spread ALONG the rim, not stacked on one point: distinct, ordered,
+   and covering a real span of it. */
+ok(count(array_unique($lefts)) === count($lefts),
+   'two sparks share a horizontal origin, so they are not spread along the rim');
+$ordered = true;
+for ($i = 1; $i < count($lefts); $i++) if ($lefts[$i] <= $lefts[$i-1]) $ordered = false;
+ok($ordered, 'the spark origins are not ordered across the rim');
+ok(max($lefts) - min($lefts) > 25,
+   'the sparks only cover ' . (max($lefts) - min($lefts)) . '% of the opening, so they read as one point');
+/* 56% was the skull. The mouth sits around 45-50%. */
+ok(max($tops) < 52 && min($tops) > 40,
+   'the sparks start off the opening, at ' . min($tops) . '% to ' . max($tops) . '% down');
+ok(preg_match('~\.ms-chest-flash\s*\{[^}]*top:\s*4[0-9](\.\d+)?%~s', $chest) === 1,
+   'the flash is not centred on the mouth of the chest');
+/* The rise is in px, so it must track the rendered size or it is half a
+   chest on mobile and a third of one on the preview. */
+ok(strpos($chest, 'var(--mcrise)') !== false,
+   'the spark rise is hardcoded, so it does not scale with the chest');
+ok(preg_match('~\.ms-chest\s*\{[^}]*--mcrise~s', $chest) === 1,
+   '--mcrise has no default, so the sparks do not travel at all');
+ok(preg_match('~max-width:\s*760px[^}]*--mcrise~s', $chest) === 1,
+   'the mobile size does not scale the spark rise');
+ok(strpos((string) file_get_contents(__DIR__ . '/admin-chest.php'), '--mcrise') !== false,
+   'the preview renders the chest larger without scaling the spark rise');
+
 echo "\nreduced motion keeps the feedback and drops the movement\n";
 ok(strpos($chest, 'prefers-reduced-motion') !== false,
    'the chest ignores prefers-reduced-motion');

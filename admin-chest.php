@@ -69,7 +69,7 @@ admin_chrome('chest');
   border: 1px solid rgba(0,200,160,.12); }
 /* Bigger than the strip renders it, because the point of this page is
    seeing the thing rather than seeing it in situ. */
-.adm-chest-stage .ms-chest { width: 150px; height: 155px; }
+.adm-chest-stage .ms-chest { width: 150px; height: 155px; --mcrise: -81px; }
 .adm-chest-ctl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   margin-top: 12px; }
 .adm-chest-ctl .adm-note { margin: 0; }
