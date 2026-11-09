@@ -683,7 +683,7 @@ function testimonial_share_url($body) {
  * there is nothing approved, so a page can call it unconditionally and
  * get no empty heading on a quiet week.
  */
-function testimonial_wall($conn, $limit = 6, $heading = 'Why people stay') {
+function testimonial_wall($conn, $limit = 6, $heading = 'Why Skulliance?') {
 	$rows = testimonial_public($conn, $limit);
 	if (!$rows) return;
 	echo '<div class="tst-section">';

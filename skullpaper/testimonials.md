@@ -33,7 +33,7 @@ tell anybody anything.
 ## Where it appears
 
 Approved testimonials are featured on the Skulliance homepage, with your
-username and avatar, under "Why people stay".
+username and avatar, under "Why Skulliance?".
 
 ## Who sees it
 
