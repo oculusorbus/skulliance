@@ -812,7 +812,9 @@ function renderDailyReward($day, $currency, $amount, $reward=false) {
 		."<img class='icon' style='margin-right:0;' src='icons/".$consumables[$day].".png'/>"
 		."<span>+</span>"
 		."<img class='icon' style='margin-right:0;' src='icons/".strtolower($currency).".png'/>"
-		."<span>+".$amount."&nbsp;".preg_replace('/[0-9]+/', '', $currency)."</span>"
+		/* number_format, because the ladder is in the thousands now and
+		   "+3000" beside the missions page's "+3,000" reads as a bug. */
+		."<span>+".number_format((float)$amount)."&nbsp;".preg_replace('/[0-9]+/', '', $currency)."</span>"
 		."</span>";
 	echo "</li>";
 }

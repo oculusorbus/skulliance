@@ -41,6 +41,8 @@
  * no usable date column simply sees the cutoff applied to the column it
  * does have -- there is no source here without one.
  */
+require_once __DIR__ . '/daily-streak-lib.php';   /* dailyStreakAmountSql() */
+
 function activity_sources($since = '') {
 	/*
 	 * THE CUTOFF IS A DATE OR IT IS NOTHING.
@@ -89,9 +91,12 @@ function activity_sources($since = '') {
 	 */
 	return array(
 		/*
-		 * A COMPLETED STREAK, NOT A CLAIM. `amount = 30` is tier 7 of
-		 * getRewardTiers() -- 1, 3, 5, 10, 15, 20, 30 -- so this counts
-		 * the seventh day and nothing before it. Somebody who claims six
+		 * A COMPLETED STREAK, NOT A CLAIM. The amounts are tier 7 of
+		 * getRewardTiers(), which is why they come from
+		 * dailyStreakAmountSql() and not from a literal: the ladder was
+		 * raised 100x and the literal 30 would have gone on reporting
+		 * yesterday's totals forever. This counts the seventh day and
+		 * nothing before it. Somebody who claims six
 		 * days running scores zero here, which is the intent: the daily
 		 * reward is the habit and finishing the streak is the
 		 * achievement.
@@ -99,7 +104,7 @@ function activity_sources($since = '') {
 		 * It was labelled "Daily claims" on the Activity page, which is
 		 * what the query looks like at a glance and not what it does.
 		 */
-		'daily'       => array("SELECT user_id, COUNT(*) AS cnt FROM transactions WHERE bonus = 1 AND amount = 30 $w_t GROUP BY user_id", 1),
+		'daily'       => array("SELECT user_id, COUNT(*) AS cnt FROM transactions WHERE bonus = 1 AND " . dailyStreakAmountSql() . " $w_t GROUP BY user_id", 1),
 		'mission'     => array("SELECT user_id, COUNT(*) AS cnt FROM missions WHERE status IN (1,2) $w_m GROUP BY user_id", 5),
 		'skullswap'   => array("SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 0 $w_ss GROUP BY user_id", 5),
 		'gauntlet'    => array("SELECT g.user_id, COUNT(*) AS cnt FROM gauntlets_encounters ge INNER JOIN gauntlets g ON g.id = ge.run_id WHERE ge.outcome != 'pending' $w_ge GROUP BY g.user_id", 5),

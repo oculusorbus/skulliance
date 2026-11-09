@@ -74,7 +74,7 @@ Produces **mission/raid consumables** every night. The number of items produced 
 Resurrects **dead soldiers**. Soldiers killed in raids can be revived after **`(11 − level) × 24` hours** (same formula as Barracks training). A Level 0 Crypt cannot resurrect. The Fast Forward consumable halves resurrection time. Resurrected soldiers return to your reserve with their gear intact.
 
 ### 7. Mine (Defense)
-Generates **CARBON** every night equal to **`level × 100`** (a Level 10 Mine produces 1,000 CARBON/night). CARBON is the lifeblood of a Realm - burn it for DIAMOND and shatter that into the core project points you need to keep upgrading. See [[staking-crafting]].
+Generates **CARBON** every night equal to **`level × 1,000`** (a Level 10 Mine produces 10,000 CARBON/night). Raised 10x alongside the daily reward ladder - see [[staking-daily-rewards]] for the calibration, which sets a Level 10 Mine's weekly output equal to a perfect week of daily claims. CARBON is the lifeblood of a Realm - burn it for DIAMOND and shatter that into the core project points you need to keep upgrading. See [[staking-crafting]].
 
 ## Offense vs. Defense
 

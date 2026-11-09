@@ -4,13 +4,13 @@
 
 For up to 7 days, the reward increases for every day in a row that you claim your reward.
 
-* Day 1: +1 RANDOM
-* Day 2: +3 RANDOM
-* Day 3: +5 RANDOM
-* Day 4: +10 RANDOM
-* Day 5: +15 RANDOM
-* Day 6: +20 RANDOM
-* Day 7: +30 RANDOM
+* Day 1: +100 RANDOM
+* Day 2: +300 RANDOM
+* Day 3: +500 RANDOM
+* Day 4: +1,000 RANDOM
+* Day 5: +1,500 RANDOM
+* Day 6: +2,000 RANDOM
+* Day 7: +3,000 RANDOM
 
 ## Daily Consumable
 
@@ -28,7 +28,7 @@ So a full 7-day streak hands you the complete consumable set, including the two 
 
 ## Streaks
 
-A maximum of 84 random reward points can be claimed via a completed 7 day streak.
+A maximum of **8,400** random reward points can be claimed via a completed 7 day streak.
 
 Once a streak of 7 days is completed or you miss a day on claiming your reward, your streak will reset and the daily random rewards will start over.
 
@@ -36,11 +36,13 @@ Total streaks completed are tallied on the daily rewards interface.
 
 ## Max Rewards
 
-The maximum amount of rewards is generous as it is the equivalent of well over a month's worth of random reward points from staking 1 or 2 NFTs (depending on reward rate) but claimable in a single week.
+The ladder was raised 100x in November 2026. The old one paid 1 point on day one, which is not a reward, it is a rounding error - and points are no longer scarce enough to need that much caution.
 
-This is to ensure that it is worth your time to participate and that the random reward elements provide some excitement with daily reward claims.
+The shape did not change: day seven still pays thirty times day one, so the streak is still the thing worth keeping.
 
-Although the random rewards are generous, they do not compete with existing rewards for holders of multiple NFTs from each project.
+**What it is calibrated against.** A perfect week pays 8,400 points, which buys 4,200 Realms location levels' worth at the any-points rate. A Level 10 Mine now produces 10,000 CARBON a night, which is 700 DIAMOND a week, which shatters into 4,200 core points. The two are deliberately equal: a flawless week of claiming is worth exactly the best Mine in the game, and that Mine still costs 5,500 points to build. See [[realms-locations]] and [[staking-crafting]].
+
+**Upgrade costs did not move.** A location still costs `next level x 100`, so every point anybody had already banked buys exactly what it bought before. Raising what you earn is generosity; raising what things cost would have quietly devalued every balance on the platform.
 
 ## Crossover Rewards
 

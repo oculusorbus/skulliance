@@ -38,7 +38,10 @@ $carbon_icon = '<img src="icons/carbon.png" onerror="this.src=\'icons/skull.png\
         <?php for ($lv = 1; $lv <= 10; $lv++): ?>
         <tr style="<?php echo ($lv == $info['mine_level']) ? 'color:#00c8a0;font-weight:bold;' : ''; ?>">
             <td><?php echo $lv; ?></td>
-            <td><?php echo number_format($lv * 100); ?></td>
+            <?php /* getMineRate(), not a third copy of the rate: this table and
+                     the nightly credit used to be separate constants that
+                     happened to agree. */ ?>
+            <td><?php echo number_format(getMineRate($lv)); ?></td>
         </tr>
         <?php endfor; ?>
     </table>

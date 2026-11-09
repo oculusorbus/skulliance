@@ -112,4 +112,93 @@ ok(getMaxDateCreated($c) === null, 'MAX() over no rows does not read as null');
 $c->ret = new DRH_Result(array('date_created' => '2026-10-21 19:15:00'));
 ok(getMaxDateCreated($c) === '2026-10-21 19:15:00', 'the stamp is not returned as written');
 
+
+echo "\nthe ladder in the code is the ladder in the docs\n";
+/*
+ * THE LADDER LIVES IN TWO PLACES THAT CANNOT SEE EACH OTHER: the array in
+ * daily-streak-lib.php and the bullet list players read on
+ * skullpaper/staking-daily-rewards.md. One of them is going to be edited
+ * alone, and the one players read is the one that will be wrong.
+ */
+require_once __DIR__ . '/daily-streak-lib.php';
+$dr_tiers = getRewardTiers();
+$dr_doc   = (string) @file_get_contents(__DIR__ . '/skullpaper/staking-daily-rewards.md');
+ok($dr_doc !== '', 'the daily rewards page is gone; this check is now blind');
+preg_match_all('~^\* Day (\d): \+([\d,]+) RANDOM~m', $dr_doc, $dr_m, PREG_SET_ORDER);
+ok(count($dr_m) === 7, 'the docs no longer list seven days (' . count($dr_m) . ' found)');
+$dr_drift = array();
+foreach ($dr_m as $r) {
+	$d = (int) $r[1];
+	$v = (int) str_replace(',', '', $r[2]);
+	if (!isset($dr_tiers[$d]) || (int) $dr_tiers[$d] !== $v) {
+		$dr_drift[] = "day $d: code " . (isset($dr_tiers[$d]) ? $dr_tiers[$d] : 'missing') . ", docs $v";
+	}
+}
+ok(count($dr_drift) === 0, 'the code and the docs disagree -- ' . implode('; ', $dr_drift));
+$dr_week = array_sum($dr_tiers);
+ok(strpos($dr_doc, number_format($dr_week)) !== false,
+   'the docs do not quote the real weekly maximum of ' . number_format($dr_week));
+$dr_rising = true;
+for ($dr_i = 2; $dr_i <= 7; $dr_i++) if ($dr_tiers[$dr_i] <= $dr_tiers[$dr_i-1]) $dr_rising = false;
+ok($dr_rising, 'the ladder does not rise every day, so there is no reason to keep a streak');
+
+echo "\na finished streak is found by a derived amount, never a literal\n";
+/*
+ * FOUR QUERIES INFERRED A COMPLETED STREAK FROM `amount = 30` -- tier 7 of
+ * the old ladder. Raising the ladder to 3000 would have left all four
+ * counting nothing new while still reporting the old totals, which looks
+ * exactly like it still works. They have to read dailyStreakAmountSql().
+ */
+$dr_sql  = dailyStreakAmountSql();
+$dr_vals = array_map('intval', dailyStreakAmounts());
+/* THE LIST, NOT THE STRING. Checking the SQL with strpos() for '30' passes
+   on "amount IN (3000)" -- the original value can be dropped entirely and
+   the substring is still there inside the new one. */
+ok(in_array((int) $dr_tiers[7], $dr_vals, true),
+   'the streak marker does not include the current day-seven payout, so no new streak counts');
+ok(in_array(30, $dr_vals, true),
+   'the streak marker dropped the original 30, so every streak ever completed stopped counting');
+ok(strpos($dr_sql, 'IN (') !== false, 'the marker is not a list, so it can only ever match one ladder');
+foreach (array('db.php', 'activity-sources-lib.php') as $dr_f) {
+	$dr_src = preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(__DIR__ . '/' . $dr_f));
+	ok(preg_match("~bonus\s*=\s*'?1'?\s*(AND|and)\s*amount\s*=~", $dr_src) !== 1,
+	   "$dr_f still matches a completed streak against a literal amount");
+}
+
+echo "\nthe mine rate has one home, and the docs quote it\n";
+$dr_db = preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(__DIR__ . '/db.php'));
+ok(strpos($dr_db, 'function getMineRate(') !== false, 'the mine rate has no single definition');
+ok(preg_match('~mine_level\s*\*\s*\d~', $dr_db) !== 1,
+   'db.php still multiplies the mine level inline instead of calling getMineRate()');
+$dr_mine = preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(__DIR__ . '/ajax/get-mine.php'));
+ok(preg_match('~\$lv\s*\*\s*\d~', $dr_mine) !== 1,
+   'ajax/get-mine.php keeps its own copy of the mine rate');
+ok(strpos($dr_mine, 'getMineRate(') !== false, 'the level table does not read the real rate');
+/*
+ * AND THE CALIBRATION HOLDS. A perfect week buys this many Realms levels
+ * at the any-points rate; a Level 10 Mine shatters into this many core
+ * points a week. They are meant to be equal -- if either side moves and
+ * this fails, that is the conversation, not a number to paper over.
+ */
+$dr_mult      = 2;                          /* $points_multiplier, skulliance.php */
+$dr_week_buys = $dr_week / $dr_mult;
+/* PARSED OUT OF db.php, not called: getMineRate() lives beside a live
+   database connection this harness deliberately does not open. Reading
+   the real source is the stronger check anyway. */
+preg_match('~function getMineRate\([^)]*\)\s*\{[^}]*\*\s*(\d+)~s', $dr_db, $dr_rm);
+ok(!empty($dr_rm), 'getMineRate() no longer multiplies by a literal rate this can read');
+$dr_rate      = empty($dr_rm) ? 0 : (int) $dr_rm[1];
+$dr_mine_wk   = $dr_rate * 10 * 7 / 100 * 6;   /* L10 nightly x7 / 100 per DIAMOND x 6 core points */
+ok(abs($dr_week_buys - $dr_mine_wk) < 1,
+   'a perfect week buys ' . number_format($dr_week_buys) . ' levels but a Level 10 Mine yields '
+   . number_format($dr_mine_wk) . '; the ladder and the mine are out of calibration');
+ok(preg_match('~\$points_multiplier\s*=\s*' . $dr_mult . '\s*;~',
+   (string) file_get_contents(__DIR__ . '/skulliance.php')) === 1,
+   'the any-points multiplier is no longer ' . $dr_mult . ', so the calibration above is stale');
+
 echo $fail ? "\n$fail check(s) FAILED\n" : "\nall good\n";
+/* EXIT CODE, not just a line of text. Without this the harness always
+   returned 0, so every runner that checked the status -- including the
+   mutation driver that is supposed to prove these assertions can fail --
+   read a red run as green. */
+exit($fail ? 1 : 0);

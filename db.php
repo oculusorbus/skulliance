@@ -32,6 +32,7 @@
  */
 date_default_timezone_set('America/Chicago');
 
+require_once __DIR__ . '/daily-streak-lib.php';
 include 'credentials/db_credentials.php';
 include_once 'role.php';
 /* avatar_url(): one spelling of a Discord avatar URL for the whole platform.
@@ -1085,17 +1086,10 @@ function getDailyConsumable($conn, $current_streak){
 }
 
 // Reward tiers
-function getRewardTiers(){
-	$reward_tiers = array();
-	$reward_tiers[1] = 1;
-	$reward_tiers[2] = 3;
-	$reward_tiers[3] = 5;
-	$reward_tiers[4] = 10;
-	$reward_tiers[5] = 15;
-	$reward_tiers[6] = 20;
-	$reward_tiers[7] = 30;
-	return $reward_tiers;
-}
+/* getRewardTiers(), dailyStreakAmounts() and dailyStreakAmountSql() moved to
+   daily-streak-lib.php, required at the top of this file: activity-sources-lib.php
+   needs them too and must not have to pull in a database connection to get them. */
+
 
 // Get streak rewards
 function getStreakRewards($conn) {
@@ -1151,7 +1145,7 @@ function getCompletedRewards($conn) {
 
 // Get number of streaks completed
 function getStreaksTotal($conn) {
-	$sql = "SELECT COUNT(id) AS streaks FROM transactions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND bonus = '1' AND amount = '30'";
+	$sql = "SELECT COUNT(id) AS streaks FROM transactions WHERE user_id ='".$_SESSION['userData']['user_id']."' AND bonus = '1' AND ".dailyStreakAmountSql();
 	
 	$result = $conn->query($sql);
 	
@@ -6621,7 +6615,7 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 	if($rewards){
 		$where = "DATE(transactions.date_created) >= DATE_FORMAT((CURDATE() - INTERVAL 1 MONTH),'%Y-%m-01') AND";
 	}
-	$sql =" SELECT COUNT(transactions.id) AS streak_total, user_id, discord_id, avatar, visibility, username, streak FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE ".$where." bonus = '1' AND amount = '30' GROUP BY user_id ORDER BY streak_total DESC, streak DESC";
+	$sql =" SELECT COUNT(transactions.id) AS streak_total, user_id, discord_id, avatar, visibility, username, streak FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE ".$where." bonus = '1' AND ".dailyStreakAmountSql()." GROUP BY user_id ORDER BY streak_total DESC, streak DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -8331,7 +8325,7 @@ function getLeaderboardTop3($conn, $filterby){
 		$score_suffix = ' missions';
 	} else if($filterby === 'streaks' || $filterby === 'monthly-streaks'){
 		$df = ($filterby === 'monthly-streaks') ? " AND DATE(transactions.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')" : "";
-		$sql = "SELECT COUNT(transactions.id) AS total, transactions.user_id, users.discord_id, users.avatar, users.visibility, users.username FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE bonus='1' AND amount='30'".$df." GROUP BY transactions.user_id ORDER BY total DESC LIMIT 3";
+		$sql = "SELECT COUNT(transactions.id) AS total, transactions.user_id, users.discord_id, users.avatar, users.visibility, users.username FROM transactions INNER JOIN users ON users.id = transactions.user_id WHERE bonus='1' AND ".dailyStreakAmountSql().$df." GROUP BY transactions.user_id ORDER BY total DESC LIMIT 3";
 		$score_suffix = ' streaks';
 	} else if($filterby === 'raids' || $filterby === 'monthly-raids'){
 		$df = ($filterby === 'monthly-raids') ? " AND DATE(raids.created_date) >= DATE_FORMAT(CURDATE(),'%Y-%m-01')" : "";
@@ -12002,11 +11996,36 @@ function equipSoldierArmor($conn, $soldier_id, $realm_id, $armor_id) {
 }
 
 // ── MINE ───────────────────────────────────────────────────
-// Mine rate: mine_level × 100 CARBON per day
+/*
+ * THE MINE RATE, in one place.
+ *
+ * It was `$level * 100` written out three times -- the display in
+ * getMineInfo(), the nightly credit in processMineRewards(), and the
+ * level table in ajax/get-mine.php -- so the number a player was shown
+ * and the number they were paid were two separate constants that
+ * happened to agree.
+ *
+ * IT IS NOW x1000, raised with the daily ladder rather than after it.
+ * getRewardTiers() went up 100x; left alone, a free daily click would
+ * have out-earned a fully upgraded Mine by ten to one, and the Mine is
+ * the thing a Realm is built to own. At this rate a Level 10 Mine makes
+ * 10,000 CARBON a night = 700 DIAMOND a week = 4,200 core points, which
+ * is exactly what a perfect week of dailies buys. See getRewardTiers()
+ * for the whole calculation.
+ *
+ * UPGRADE COSTS WERE NOT TOUCHED. They are still `next level x 100`, so
+ * every point anybody has already banked buys exactly what it bought
+ * yesterday. Raising earn rates is generosity; raising costs would have
+ * quietly devalued every balance on the platform.
+ */
+function getMineRate($level) {
+	return intval($level) * 1000;
+}
+
 function getMineInfo($conn, $realm_id) {
 	$realm_id   = intval($realm_id);
 	$mine_level = intval(getRealmLocationLevel($conn, $realm_id, 7));
-	$nightly    = $mine_level * 100;
+	$nightly    = getMineRate($mine_level);
 	$r = $conn->query("SELECT user_id FROM realms WHERE id = $realm_id LIMIT 1");
 	$carbon = 0;
 	if ($r && $r->num_rows > 0) {
@@ -12230,7 +12249,7 @@ function processMineRewards($conn) {
 		$realm_id   = intval($row['id']);
 		$mine_level = intval(getRealmLocationLevel($conn, $realm_id, 7));
 		if ($mine_level == 0) continue;
-		$amount = $mine_level * 100;
+		$amount = getMineRate($mine_level);
 		$conn->query("INSERT INTO realms_logs (realm_id, type, item_id, quantity, claimed) VALUES ($realm_id, 'carbon', 0, $amount, 0)");
 	}
 }
