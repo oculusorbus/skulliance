@@ -147,6 +147,16 @@
   <link href="dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
   <link href="dist/modal.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
   <link href="dist/circular-progress-bar.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
+  <?php /*
+   * THE GRADIENT-AND-BORDER LAYER, on trial. Deleting this one link is
+   * the whole revert; ?polish=0 on any URL turns it off without one.
+   * It must come after flexbox.css: every rule in it matches the
+   * specificity of the one it shadows, so document order is the only
+   * thing making it win.
+   */ ?>
+  <?php if (!isset($_GET['polish']) || $_GET['polish'] !== '0'): ?>
+  <link href="dist/polish.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
+  <?php endif; ?>
   <?php
   /*
    * THE PATH, NOT THE WHOLE REQUEST URI.

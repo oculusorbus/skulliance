@@ -96,7 +96,12 @@ if ($lp_wallets === 0) {
 	$lp_todo[] = array('wallets.php', 'Connect a wallet', 'Nothing can be staked or rewarded until Skulliance can see your NFTs.');
 }
 if ($lp_streak === 0) {
-	$lp_todo[] = array('points.php', 'Claim your daily reward', 'Free points every day, and the streak is its own leaderboard.');
+	/* MISSIONS, NOT POINTS. points.php still carries the original
+	   seven-row renderer and its own claim button; missions.php is where
+	   the reward is a chest that opens, which is the version worth
+	   sending somebody to on the day they first claim one. The deep link
+	   lands on the daily strip rather than the top of the page. */
+	$lp_todo[] = array('missions.php#ms-sec-daily', 'Claim your daily reward', 'Free points every day, and the streak is its own leaderboard.');
 }
 if ($lp_balance === 0) {
     $lp_todo[] = array('skullracer.php', 'Play a game', 'Skull Racer pays CARBON for finishing a race, win or lose.');

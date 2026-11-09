@@ -1,0 +1,241 @@
+/*
+ * polish.css — the platform's gradient-and-border layer.
+ *
+ * WHAT IT IS. Every panel on the platform is a flat #0a1929 with a
+ * hairline teal border, every button is a flat fill, and the nav is
+ * near-black with white text. This gives each panel a lift at the top
+ * edge and a settle at the bottom, the buttons and bar fills a sheen and
+ * an edge, and the nav the platform's own colours instead of its own.
+ *
+ * HOW TO ROLL IT BACK. Delete the one <link> in header.php. That is the
+ * whole revert, and it is why nothing here was merged into flexbox.css.
+ * ?polish=0 on any URL turns it off without a deploy.
+ *
+ * IT OVERRIDES, IT DOES NOT REPLACE. Every rule keeps the colour
+ * flexbox.css already chose and adds layers ON TOP of it, so a tint that
+ * means something -- teal for ready, amber for new, red for failed --
+ * still means it. Nothing here invents a colour that is not already on
+ * the platform. Loaded after flexbox.css, and each rule matches the
+ * specificity of the one it shadows, so the only thing making it win is
+ * document order.
+ *
+ * THE LIFT IS TWO FIXED-DISTANCE LAYERS, NOT A PERCENTAGE RAMP.
+ * A 0%-to-100% gradient looks right on a 60px figure and like a wash on
+ * a 600px drawer. Pinning the highlight to the top 86px and the shade to
+ * the bottom 52px gives every panel the same edge however tall it is --
+ * and because the panel's own colour stays the LAST layer, the
+ * translucent panels keep their tint instead of being painted over.
+ *
+ * missions.php has its own page-level layer in missions-polish.php. It
+ * has to: that page's stylesheet is inline and therefore later in the
+ * document than this file, so it would outrank these rules. It consumes
+ * the same tokens declared here.
+ */
+
+:root {
+  /* Panels. The last layer stays the panel's own colour, so this
+     composites over an opaque fill and a tint alike. */
+  --msp-lift: linear-gradient(180deg, rgba(255,255,255,.055) 0, rgba(255,255,255,0) 86px),
+              linear-gradient(0deg, rgba(0,0,0,.15) 0, rgba(0,0,0,0) 52px);
+  /*
+   * A SECOND, SOFTER LIFT FOR THE TINTED PANELS. A black bottom layer
+   * over an amber tint is brown, and a panel that is tinted at all is
+   * tinted because the colour means something. A tint carries its own
+   * weight, so it gets the top edge and almost none of the shade. Nested
+   * cards use it too: they sit on a panel that already has a shade, and
+   * two stacked reads as a dirty mark.
+   */
+  --msp-lift-soft: linear-gradient(180deg, rgba(255,255,255,.05) 0, rgba(255,255,255,0) 72px),
+                   linear-gradient(0deg, rgba(0,0,0,.06) 0, rgba(0,0,0,0) 40px);
+  /*
+   * Buttons and bar fills: a lit solid, whatever shape it is in. These
+   * are percentages rather than fixed distances because the things that
+   * use them run from 3px to 38px tall, and a fixed highlight would
+   * swallow the short ones whole.
+   */
+  --msp-fill: linear-gradient(180deg, rgba(255,255,255,.26) 0,
+               rgba(255,255,255,.05) 46%, rgba(0,0,0,.16) 100%);
+  /* Pressed: the same ramp upside down, which is the whole trick. */
+  --msp-fill-in: linear-gradient(0deg, rgba(255,255,255,.2) 0,
+                  rgba(255,255,255,.03) 46%, rgba(0,0,0,.2) 100%);
+  /* Outline controls, which have to stay quieter than the solid ones
+     beside them. A ghost button that shouts is worse than a flat one. */
+  --msp-ghost: linear-gradient(180deg, rgba(255,255,255,.07) 0, rgba(255,255,255,0) 60%);
+}
+
+/* ====================================================================
+   PANELS
+   ==================================================================== */
+/* .content is the platform's panel: #0a1929, a teal hairline and 18px of
+   padding, on nearly every page. The pages that deliberately make it
+   transparent (.missions .content, .content.raids, .diamond-container
+   .content) are more specific and still win. */
+#player-stats,
+#transactions,
+#back-to-top-button,
+.content,
+.missions-filter,
+.nft-data,
+.disabled,
+.diamond-skull-data,
+.diamond-data,
+.wallet-panel,
+.skull-section-header,
+.raid-modal-content   { background: var(--msp-lift), #0a1929; }
+
+/* The lighter card colour: raids, mission cards, leaderboard rows. */
+.rc-card,
+.rs-card,
+.mc-card,
+.lb-row,
+.raid-target-card     { background: var(--msp-lift), #0d2035; }
+
+/*
+ * STATE VARIANTS, WHICH ARE THE EASY ONES TO MISS.
+ *
+ * flexbox.css colours these with selectors MORE specific than the base,
+ * so they outrank the rules above. Left out, a won raid and a highlighted
+ * leaderboard row would be the only flat panels on a page where
+ * everything else is lit -- which reads as those two being broken.
+ */
+.mc-card.success      { background: var(--msp-lift), #1a0730; }
+.mc-card.failure      { background: var(--msp-lift), #2a0518; }
+.lb-row.lb-highlight  { background: var(--msp-lift-soft), rgba(0,200,160,0.06); }
+.wallet-panel:hover   { background: var(--msp-lift-soft), rgba(0,200,160,0.08); }
+.highlight            { background: var(--msp-lift-soft), rgba(0,200,160,0.08); }
+
+/*
+ * THE WELLS AND THE FIELDS STAY FLAT ON PURPOSE.
+ *
+ * #080f18 (.w3-border, #results, .col1of2, .projects-container) and
+ * #0d1e2e (inputs, selects, the filter bars) are holes cut INTO a panel,
+ * not surfaces sitting on one. A top highlight on a recess is the single
+ * thing that makes a gradient pass look cheap, because it lights the
+ * hole the same way it lights the surface and the depth goes flat.
+ */
+
+/* ====================================================================
+   BUTTONS
+   ==================================================================== */
+/*
+ * The sheen is a layer OVER the fill, so hover and active keep the exact
+ * colours flexbox.css already defines and only the ramp changes. The
+ * border is what the gradient needs to sit in: without one the lit top
+ * edge has nothing to end against.
+ */
+.button, .small-button, .raid-button {
+  background: var(--msp-fill), #00c8a0;
+  border: 1px solid #2ee3bf;
+}
+.button:hover, .small-button:hover, .raid-button:hover {
+  background: var(--msp-fill), #00a882;
+  border-color: #1cd5b0;
+}
+.button:active, .small-button:active, .raid-button:active {
+  background: var(--msp-fill-in), #00a882;
+}
+.button:disabled, .small-button:disabled, .raid-button:disabled {
+  border-color: rgba(46,227,191,.35);
+}
+
+/* The destructive pair keeps its own red, and gets a red edge. */
+.small-button-danger            { background: var(--msp-fill), #c0392b; border: 1px solid #d9584a; }
+.small-button-danger:hover      { background: var(--msp-fill), #a93226; border-color: #c0392b; }
+.small-button-danger:active     { background: var(--msp-fill-in), #a93226; }
+.soldier-discharge-btn          { background: var(--msp-fill), #7a2020; border: 1px solid #9e2a2a; }
+.soldier-discharge-btn:hover    { background: var(--msp-fill), #9e2a2a; }
+
+/* Outline controls: the quiet ramp, so they stay secondary. */
+.wallet-refresh-btn        { background: var(--msp-ghost), rgba(0,200,160,0.08); }
+.wallet-refresh-btn:hover  { background: var(--msp-ghost), rgba(0,200,160,0.18); }
+.page-btn                  { background: var(--msp-ghost), #0d1e2e; }
+.page-btn:hover            { background: var(--msp-ghost), rgba(0,200,160,0.12); }
+.page-btn.active           { background: var(--msp-ghost), rgba(0,200,160,0.18); }
+
+/* ====================================================================
+   PROGRESS BARS
+   ==================================================================== */
+/*
+ * THE SHEEN RUNS ACROSS A BAR, NEVER ALONG IT.
+ *
+ * The obvious move is to ramp the colour end to end, and it is wrong
+ * here: a fill that changes along its length reads as though the value
+ * at the far end means something different from the value at the near
+ * end. These bars are time remaining, crew readiness and raid progress.
+ * A 180deg sheen says "filled solid", which is what they actually mean,
+ * and it is the same ramp the buttons use because a filled bar and a
+ * button are the same object: a lit solid on a dark page.
+ *
+ * THE RAILS STAY FLAT, for the same reason the wells do: an empty bar is
+ * a groove, and lighting a groove from above flattens it.
+ */
+/* 24px, and the biggest bar on the platform. */
+.w3-grey-rewards                   { background: var(--msp-fill), #00c8a0; }
+/* 3px: about one lit pixel and one shaded one, which reads as a
+   bevelled hairline rather than a flat slab. */
+.mf-progress-fill                  { background: var(--msp-fill), #ffcc44; }
+.mf-progress.complete .mf-progress-fill { background: var(--msp-fill), #00c8a0; }
+.rc-progress-fill                  { background: var(--msp-fill), #00c8a0; }
+.modal-skull-loader .lbar          { background: var(--msp-fill), #00c8a0; }
+.mc-progress-fill                  { background: var(--msp-fill), rgba(0,200,160,0.45); }
+.mc-card.failure .mc-progress-fill { background: var(--msp-fill), rgba(200,0,80,0.45); }
+.mc-card.success .mc-progress-fill { background: var(--msp-fill), rgba(100,0,180,0.45); }
+
+/* ====================================================================
+   THE NAV
+   ==================================================================== */
+/*
+ * IT WAS THE ONLY PART OF THE PLATFORM NOT BUILT FROM THE PLATFORM'S
+ * COLOURS. #040c16 and white text is a darker, flatter, greyer thing
+ * than anything underneath it, so the chrome read as belonging to a
+ * different product than the page it sat on.
+ *
+ * It is built from colours that were already here: the panel colour at
+ * the top edge falling to the nav's own near-black at the bottom, and
+ * the same teal hairline every panel uses. That ties it to the content
+ * without turning it INTO content -- it is still the darkest band on the
+ * page, which is what makes it read as chrome.
+ */
+.navbar {
+  background: linear-gradient(180deg, #0a1929 0%, #040c16 100%);
+  border-bottom: 1px solid rgba(0,200,160,0.22);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.5);
+}
+
+/*
+ * HOVER GETS AN EDGE, NOT JUST A WASH. The fill alone was a soft teal
+ * rectangle with no boundary; an inset bottom rule is the standard way a
+ * nav says which item the pointer is on, and it survives at the left
+ * alignment the mobile menu uses where a centred fill does not read.
+ */
+.navbar a:hover,
+.nav-dropdown-trigger:hover {
+  background: linear-gradient(180deg, rgba(0,200,160,0.04) 0, rgba(0,200,160,0.18) 100%);
+  box-shadow: inset 0 -2px 0 #00c8a0;
+}
+
+/* The dropdown hangs below the bar, so it is a panel floating over the
+   page and gets the panel treatment. border-top stays off: it joins the
+   navbar's own bottom border rather than doubling it. */
+.nav-dropdown-menu {
+  background: var(--msp-lift), #0a1929;
+  border-color: rgba(0,200,160,0.22);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.55);
+}
+.nav-dropdown-menu a:hover {
+  background: linear-gradient(90deg, rgba(0,200,160,0.18) 0, rgba(0,200,160,0.06) 100%);
+  box-shadow: inset 2px 0 0 #00c8a0;
+}
+
+/* Nav form buttons were a flat #0d1e2e block in a row of plain links. */
+.navbar input {
+  background: var(--msp-ghost), #0d1e2e;
+  border: 1px solid rgba(0,200,160,0.22);
+}
+
+/* The phone's bottom bar is the same chrome, lit from its own top edge. */
+#quick-menu {
+  background: linear-gradient(180deg, #0a1929 0%, #040c16 100%);
+  border-top: 1px solid rgba(0,200,160,0.22);
+  box-shadow: 0 -2px 16px rgba(0,0,0,0.5);
+}

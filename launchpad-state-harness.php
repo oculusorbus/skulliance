@@ -220,6 +220,25 @@ echo "\nthe page marks but never blocks\n";
 	ok(strpos($tile, '<a ') === false,
 	   'there is an anchor inside the tile anchor, which the browser will unnest');
 
+	/*
+	 * START HERE SENDS PEOPLE TO THE BEST VERSION OF THE THING.
+	 *
+	 * "Claim your daily reward" pointed at points.php, which still carries
+	 * the original seven-row renderer and its own claim button. The reward
+	 * is a chest that opens on missions.php, and this tile is shown to
+	 * somebody on the day they claim their FIRST one -- the one day it
+	 * matters which version they meet. The deep link lands on the daily
+	 * strip rather than the top of a long page.
+	 */
+	ok(preg_match('~\$lp_todo\[\] = array\(\x27missions\.php#ms-sec-daily\x27, \x27Claim your daily reward~', $code) === 1,
+	   'the daily reward tile no longer points at the missions daily strip');
+	ok(strpos($code, 'points.php') === false,
+	   'the launchpad still sends somebody to points.php, which has the old claim UI');
+	/* And the anchor has to exist on the page it points at. */
+	$ms = harness_strip_comments((string)file_get_contents(__DIR__ . '/missions.php'));
+	ok(strpos($ms, 'id="ms-sec-daily"') !== false,
+	   'missions.php has no #ms-sec-daily anchor, so the deep link lands at the top of the page');
+
 	ok(strpos($code, 'player_state(') !== false, 'the page no longer reads the account state');
 	ok(substr_count($code, 'player_state(') === 1,
 	   'player_state() is called more than once; it is memoised, but two calls means two '
