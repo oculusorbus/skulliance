@@ -60,12 +60,14 @@ define('MS_POLISH', 1);
    * beside it is worse than the flat outline it replaced.
    */
   --msp-ghost: linear-gradient(180deg, rgba(255,255,255,.07) 0, rgba(255,255,255,0) 60%);
-  /* Buttons are short, so these are percentages: a fixed distance would
-     cover a 38px button entirely. */
-  --msp-btn: linear-gradient(180deg, rgba(255,255,255,.26) 0,
+  /* Buttons and bar fills: a lit solid, whatever shape it is in. These
+     are percentages rather than fixed distances because the things that
+     use them run from 3px to 38px tall, and a fixed highlight would
+     swallow the short ones whole. */
+  --msp-fill: linear-gradient(180deg, rgba(255,255,255,.26) 0,
               rgba(255,255,255,.05) 46%, rgba(0,0,0,.16) 100%);
   /* Pressed: the same ramp upside down, which is the whole trick. */
-  --msp-btn-in: linear-gradient(0deg, rgba(255,255,255,.2) 0,
+  --msp-fill-in: linear-gradient(0deg, rgba(255,255,255,.2) 0,
                  rgba(255,255,255,.03) 46%, rgba(0,0,0,.2) 100%);
 }
 
@@ -113,17 +115,17 @@ define('MS_POLISH', 1);
  */
 .ms-daily .button, .ms-deploy-buttons .button,
 .ms-claimbar .button, .ms-d-launch .button {
-  background: var(--msp-btn), #00c8a0;
+  background: var(--msp-fill), #00c8a0;
   border: 1px solid #2ee3bf;
 }
 .ms-daily .button:hover, .ms-deploy-buttons .button:hover,
 .ms-claimbar .button:hover, .ms-d-launch .button:hover {
-  background: var(--msp-btn), #00a882;
+  background: var(--msp-fill), #00a882;
   border-color: #1cd5b0;
 }
 .ms-daily .button:active, .ms-deploy-buttons .button:active,
 .ms-claimbar .button:active, .ms-d-launch .button:active {
-  background: var(--msp-btn-in), #00a882;
+  background: var(--msp-fill-in), #00a882;
 }
 /* Disabled and working already drop to opacity, which carries the sheen
    down with them -- but the lit border does not read as "off", so it goes. */
@@ -131,11 +133,48 @@ define('MS_POLISH', 1);
   border-color: rgba(46,227,191,.35);
 }
 .ms-collect {
-  background: var(--msp-btn), #00c8a0;
+  background: var(--msp-fill), #00c8a0;
   border: 1px solid #2ee3bf;
 }
-.ms-collect:hover { background: var(--msp-btn), #00a882; }
-.ms-collect:active { background: var(--msp-btn-in), #00a882; }
+.ms-collect:hover { background: var(--msp-fill), #00a882; }
+.ms-collect:active { background: var(--msp-fill-in), #00a882; }
+
+/* ---- The progress bars --------------------------------------------- */
+/*
+ * THE SHEEN RUNS ACROSS A BAR, NEVER ALONG IT.
+ *
+ * The obvious thing to do to a progress bar is ramp the colour from one
+ * end to the other, and it is wrong here: a bar whose fill changes along
+ * its length reads as though the value at the far end means something
+ * different from the value at the near end. These bars are time
+ * remaining and crew readiness. A 180deg sheen says "filled solid",
+ * which is what they actually mean, and it is the same ramp the buttons
+ * use because a filled bar and a button are the same object -- a lit
+ * solid on a dark page.
+ *
+ * THE TRACKS STAY FLAT, for the same reason the art wells do: an empty
+ * bar is a groove, and lighting a groove from above flattens it.
+ */
+/* The daily reward countdown, 24px -- the one bar on the page big enough
+   for this to be the point rather than a detail. Scoped, because
+   .w3-grey-rewards is a platform class used on other pages. */
+.ms-daily-bar .w3-grey-rewards,
+#mcm-streak .w3-grey-rewards { background: var(--msp-fill), #00c8a0; }
+/* The drawer's success meter, 6px. Both states keep their own colour. */
+.ms-d-meter i      { background: var(--msp-fill), #00c8a0; }
+.ms-d-meter.sure i { background: var(--msp-fill), #b47fff; }
+/* The mission card's time bar, 3px: about one lit pixel and one shaded
+   one, which reads as a bevelled hairline rather than a flat slab. */
+.ms-mcard-bar i                 { background: var(--msp-fill), #00c8a0; }
+.ms-mcard.success .ms-mcard-bar i { background: var(--msp-fill), rgba(140,90,255,.75); }
+.ms-mcard.failure .ms-mcard-bar i { background: var(--msp-fill), rgba(255,92,92,.6); }
+/*
+ * .ms-proj-bar IS DELIBERATELY LEFT ALONE. It is 2px, so the ramp would
+ * be one light pixel and one dark one with none of the fill left in
+ * between -- and that fill is #ffcc44 when a project is partly ready and
+ * #00c8a0 when it is full. Washing out the only thing that distinguishes
+ * them to gain a bevel nobody can see is a bad trade.
+ */
 
 /* ---- The ghost buttons --------------------------------------------- */
 /* These already had borders. They were transparent, which on a panel that

@@ -92,9 +92,15 @@ foreach (preg_split('~\}~', $css) as $chunk) {
 	foreach (explode(',', $sel) as $one) {
 		$one = trim($one);
 		if ($one === '' || $one === ':root') continue;
-		/* Every selector must START at a .ms- class. A descendant of one
-		   is fine (.ms-daily .button); a bare .button is not. */
-		if (strpos($one, '.ms-') !== 0) $bad[] = $one;
+		/* Every selector must START in a namespace that only exists on
+		   this page. A descendant of one is fine (.ms-daily .button, and
+		   `.w3-grey-rewards` scoped under either prefix, which is how a
+		   platform class gets styled here without reaching other pages);
+		   a bare .button or .w3-grey-rewards is not.
+		   #mcm- is missions-claim-modal.php, included only from here. */
+		$scoped = false;
+		foreach (array('.ms-', '#mcm-') as $ns) if (strpos($one, $ns) === 0) $scoped = true;
+		if (!$scoped) $bad[] = $one;
 	}
 }
 ok(count($bad) === 0, 'these selectors are not scoped to missions: ' . implode(' | ', $bad));
@@ -191,6 +197,48 @@ foreach ($ghosts as $g) {
 ok(count($opaque) === 0,
    'these were not transparent in missions.php, so the trial repainted a real fill: ' . implode(', ', $opaque));
 
+/*
+ * AND THE SAME RULE FOR EVERY OTHER FILL -- buttons, bars, both meter
+ * states, both mission-card outcomes. The panel check above only covers
+ * the --msp-lift rules; this catches a hex typed straight into this file
+ * for anything else. Checked against flexbox.css too, because the
+ * buttons' colours and the reward bar's live there, not in missions.php.
+ */
+$known = $pageCode . "\n" . (string) file_get_contents(__DIR__ . '/dist/flexbox.css');
+preg_match_all('~background:\s*var\(--msp-(?!ghost)[a-z-]+\),\s*([^;]+);~i', $css, $fills, PREG_SET_ORDER);
+ok(count($fills) >= 14, 'only ' . count($fills) . ' fill rules were found, so this is reading nothing');
+/*
+ * NAMED, not counted. A count passes with a third of the bars dropped,
+ * and the ones easiest to drop are the state variants: the page colours
+ * a successful mission's bar purple and a failed one red with selectors
+ * MORE specific than the base, so missing them leaves exactly those two
+ * flat while every other bar on the page is lit.
+ */
+$bars = array(
+	'.ms-daily-bar .w3-grey-rewards'    => 'the daily reward countdown bar',
+	'#mcm-streak .w3-grey-rewards'      => 'the same bar inside the claim reveal',
+	'.ms-d-meter i'                     => 'the drawer success meter',
+	'.ms-d-meter.sure i'                => 'the meter at 100%, which the page colours differently',
+	'.ms-mcard-bar i'                   => 'the mission card time bar',
+	'.ms-mcard.success .ms-mcard-bar i' => 'a successful mission bar, coloured separately by the page',
+	'.ms-mcard.failure .ms-mcard-bar i' => 'a failed mission bar, coloured separately by the page',
+);
+foreach ($bars as $sel => $what) {
+	/* ANCHORED TO THE START OF ITS OWN RULE. `.ms-mcard-bar i` is a
+	   substring of `.ms-mcard.success .ms-mcard-bar i`, so an unanchored
+	   search found the base bar inside the success rule and passed with
+	   the base rule deleted. */
+	ok(preg_match('~(^|\n)\s*' . preg_quote($sel, '~') . '\s*(,[^{}]*)?\{\s*background:\s*var\(--msp-fill\)~', $css) === 1,
+	   "$what stays flat while every other bar is lit");
+}
+$madeup = array();
+foreach ($fills as $f) {
+	$c = trim($f[1]);
+	if (strpos($known, $c) === false) $madeup[] = $c;
+}
+ok(count($madeup) === 0,
+   'these colours exist nowhere on the platform: ' . implode(', ', array_unique($madeup)));
+
 echo "\nthe wells stay flat\n";
 /*
  * .ms-mcard-art and friends are #07111d holes cut INTO a panel. Lighting
@@ -200,6 +248,23 @@ echo "\nthe wells stay flat\n";
 foreach (array('.ms-mcard-art', '.ms-quest-art', '.ms-d-art', '.ms-d-nft', '.ms-d-item') as $well) {
 	ok(strpos($css, $well) === false, "the trial lights $well, which is a recess, not a surface");
 }
+/*
+ * A PROGRESS TRACK IS A GROOVE. The bar FILLS are lit; the rails they
+ * run in are not. `.ms-mcard-bar i` is the fill, `.ms-mcard-bar` on its
+ * own is the rail, so this looks for the rail without the child.
+ */
+foreach (array('.ms-mcard-bar', '.ms-d-meter', '.ms-proj-bar') as $rail) {
+	ok(preg_match('~' . preg_quote($rail, '~') . '[a-z.]*\s*(,|\{)~', $css) !== 1,
+	   "the trial lights the $rail rail, which is a groove, not a fill");
+}
+/*
+ * And .ms-proj-bar is left alone entirely: at 2px the ramp is one light
+ * pixel and one dark one, with none of the fill left in between -- and
+ * that fill is the only thing separating a part-ready project (#ffcc44)
+ * from a full one (#00c8a0).
+ */
+ok(strpos($css, '.ms-proj-bar') === false,
+   'the 2px project bar was given a ramp, which washes out the colour that is its only state');
 
 echo "\nthe override wins on document order, not on force\n";
 /*
