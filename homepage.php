@@ -1042,8 +1042,8 @@
                  and this one names who was asked and what they were
                  asked, so the wall below reads as answers to a question
                  rather than as copy somebody wrote for the page. */ ?>
-        <p class="hp-say">We asked players why they stake with Skulliance and here is what the
-           community had to say.</p>
+        <p class="hp-say">We asked players why they stake with Skulliance and engage with the
+           platform, and here is what the community had to say.</p>
       </div>
       <div class="wrap hp-voices-wrap">
         <div class="hp-voices">
