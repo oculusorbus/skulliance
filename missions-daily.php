@@ -47,6 +47,10 @@ foreach ($ms_daily['days'] as $d) if (!empty($d['current'])) $md_today = $d;
 	</div>
 
 	<div class="ms-daily-right">
+		<?php /* The chest leads the action column in BOTH states: closed and
+		         waiting when there is something to take, open and lit once it
+		         has been. Outside the branch below so it is not two copies. */ ?>
+		<?php include __DIR__ . '/missions-chest.php'; ?>
 		<?php if ($ms_daily['eligible']): ?>
 			<?php /* #reward is where dailyReward() writes what you actually
 			         drew, so it starts as the promise and becomes the result. */ ?>

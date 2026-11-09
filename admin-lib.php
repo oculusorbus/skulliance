@@ -914,6 +914,10 @@ function admin_tabs() {
 		   modal a player meets, which is otherwise reachable only by
 		   winning a raid at the right moment. Writes nothing. */
 		'testimonial-ask' => array('realms.php?preview=testimonial', 'Testimonial Ask'),
+		/* The daily reward animation, openable on demand. It fires once a
+		   day for a player with a claimable day, so without this nobody
+		   could look at it twice. Claims nothing. */
+		'chest' => array('admin-chest.php', 'Reward Chest'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }

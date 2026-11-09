@@ -947,6 +947,11 @@ function dailyReward(){
 		  if(obj == null){
 		  	document.getElementById('reward').innerHTML = "Daily Reward Already Claimed";
 		  }else{
+		    /* THE CHEST OPENS FIRST, so the art moves on the same beat the
+		       numbers land rather than after them. Same optional-hook shape
+		       as DHC_SHOW_DROP below: missions-chest.php defines it, and the
+		       claim works exactly as before on any page that does not. */
+		    if (window.SK_CHEST_OPEN) SK_CHEST_OPEN();
 		    document.getElementById('reward').style.opacity = 1;
 		  	document.getElementById('reward').innerHTML = "<span style='display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;font-size:0.9rem;'><strong>Day "+obj.day+":</strong><img class='icon' style='margin-right:0;' src='icons/"+consumables[obj.day]+".png'/><span>+</span><img class='icon' style='margin-right:0;' src='icons/"+obj.currency.toLowerCase()+".png'/><span>+"+obj.amount+"&nbsp;"+obj.currency.replace(/[0-9]+/g,'')+"</span></span>";
 			document.getElementById('claimed').style.display = "flex";
