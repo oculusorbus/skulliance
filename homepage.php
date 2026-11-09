@@ -1038,6 +1038,14 @@
       <div class="wrap">
         <span class="hp-kick">In their words</span>
         <h2>Why people stay.</h2>
+        <?php /* Every other band carries a line or two under its title.
+                 This one says where the quotes came from, because an
+                 unattributed wall of praise is the easiest thing on a
+                 page to disbelieve: players are asked after a win, they
+                 write their own answer, and nobody is paid for it. */ ?>
+        <p class="hp-say">Players are asked after a good run, and these are the answers they
+           wrote. Nobody is paid for them, and every one is signed with the name and avatar
+           they play under.</p>
       </div>
       <div class="wrap hp-voices-wrap">
         <div class="hp-voices">

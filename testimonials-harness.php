@@ -841,6 +841,12 @@ ok($freeAt !== false && $gridAt !== false && $freeAt < $gridAt,
    'the cards are not inside the full-width wrap, so the section is not full width after all');
 ok(preg_match('~<div class="wrap">\s*<span class="hp-kick">~', $vSec) === 1,
    'the heading is not in a plain .wrap, so it does not line up with the other sections');
+/* And a line under the title, like every other band on the page. */
+ok(strpos($vSec, 'class="hp-say"') !== false,
+   'the voices section has no lead copy, where every other section has a sentence or two');
+$sayAt = strpos($vSec, 'class="hp-say"');
+ok($sayAt !== false && $freeAt !== false && $sayAt < $freeAt,
+   'the lead copy sits in the full-width wrap instead of on the page measure with the title');
 /*
  * AND IT HAS TO WIN. The first version of this rule existed and did
  * nothing: `.hp-layer .wrap` is two classes, `.hp-voices-wrap` was
