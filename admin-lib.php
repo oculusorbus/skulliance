@@ -918,6 +918,10 @@ function admin_tabs() {
 		   day for a player with a claimable day, so without this nobody
 		   could look at it twice. Claims nothing. */
 		'chest' => array('admin-chest.php', 'Reward Reveal'),
+		/* The match-3 slide intro. Gated on having no score on record for
+		   that game, so the moment anybody has played once it is
+		   unreachable to them -- this is the only way to look at it. */
+		'match3-intro' => array('admin-match3-intro.php', 'Match-3 Intro'),
 		/* The three crafting sequences, playable without a balance. Each one
 		   only runs when somebody can afford it and spends it to run, so this
 		   is the only way to see one twice. Crafts nothing. */

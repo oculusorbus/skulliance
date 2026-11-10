@@ -1107,7 +1107,9 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                  <h2>How to Start Playing in Under 10 Seconds</h2>
                  <ol>
                      <li>Hit Play - the board loads instantly in your browser on phone, tablet, or desktop.</li>
-                     <li>Drag a tile to swap it with a neighbor and line up 3 or more matching icons.</li>
+                     <li>Drag a tile along its row or column - as far as you like, not just one
+                         square. Everything it passes shifts back one place, so a match three
+                         cells away is a single move.</li>
                      <li>Chase 4- and 5-matches to forge bombs, then detonate them - or line two bombs up and match them together for the biggest score in the game.</li>
                  </ol>
                  <p class="ss-center"><button class="ss-cta" type="button" onclick="ssPlay()">Start Playing Now</button></p>
@@ -1127,7 +1129,9 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                  </details>
                  <details>
                      <summary>Does Skull Swap work on mobile?</summary>
-                     <p>Yes. The board is touch-friendly - drag a tile with your finger to swap it. It plays just as well on phones and tablets as on desktop.</p>
+                     <p>Yes. The board is touch-friendly - drag a tile with your finger along its
+                        row or column and let go wherever you want it. It plays just as well on
+                        phones and tablets as on desktop.</p>
                  </details>
                  <details>
                      <summary>How do I get a high score in Skull Swap?</summary>
@@ -2551,5 +2555,12 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
 
  const game = new Match3Game();
      </script>
+
+<?php /* THE SLIDE, EXPLAINED ONCE. Only for an account with no score
+         on record here: the score is the record, so nothing is written
+         when it is dismissed and a player who finishes one run never
+         meets it again. See lib/match3-intro.php. */ ?>
+<?php require_once __DIR__ . '/lib/match3-intro.php';
+      match3_intro(array('game' => 'Skull Swap', 'project' => 0)); ?>
 
 <?php include 'dhc-dropmodal.php'; ?>

@@ -5601,5 +5601,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
   </script>
 </body>
 
+<?php /* THE SLIDE, EXPLAINED ONCE. Only for an account with no score
+         on record here: the score is the record, so nothing is written
+         when it is dismissed and a player who finishes one run never
+         meets it again. See lib/match3-intro.php. */ ?>
+<?php require_once __DIR__ . '/lib/match3-intro.php';
+      match3_intro(array('game' => 'Monstrocity', 'project' => 36)); ?>
+
 <?php include 'dhc-dropmodal.php'; ?>
 </html>

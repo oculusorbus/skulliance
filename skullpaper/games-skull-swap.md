@@ -1,9 +1,10 @@
 # Skull Swap
 
-Skull Swap is a fast, pure **match-3 puzzle** - no RPG layer, just a score chase. Swap tiles to clear matches, trigger cascades, and set off bombs to rack up the highest score you can in a single run.
+Skull Swap is a fast, pure **match-3 puzzle** - no RPG layer, just a score chase. Slide tiles to clear matches, trigger cascades, and set off bombs to rack up the highest score you can in a single run.
 
 ## Playing
 
+* **A tile slides the whole row or column, it does not swap with a neighbour.** This is the one rule new players do not guess, because every other match-3 works the other way. Drag a tile left, right, up or down as far as you like and let go: it lands where you dropped it and everything it passed shifts back one place to make room. A match three cells away is **one move, not three** - and some lines can only be made this way at all. Players who never find this score badly and tend to assume the game is harder than it is, which is why it is now demonstrated on the board itself before a first run.
 * A run is a fixed **25 matches** long.
 * The tiles are the **project icons** from across the Skulliance ecosystem.
 * Score comes from matches, **cascade combos** (chains that clear as tiles fall), and **special bombs** (CARBON and DIAMOND bombs) that clear larger areas.

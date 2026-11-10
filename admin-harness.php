@@ -525,7 +525,12 @@ foreach ($ALL_ADMIN as $apName => $apBody) {
 	 * own -- so the rule is: the key must be a real tab, and when a tab
 	 * points at THIS file, that must be the key it passes.
 	 */
-	if (preg_match("/admin_chrome\('([a-z]+)'\)/", $apBody, $cm)) {
+	/* [a-z0-9-]+, not [a-z]+. Tab keys are array indices and have always
+	   been allowed digits and hyphens -- 'testimonial-ask' is one -- but
+	   until now no key with either belonged to a page that reaches this
+	   check, so the pattern encoded a convention that was never the rule
+	   and reported a correct call as a malformed one. */
+	if (preg_match("/admin_chrome\('([a-z0-9-]+)'\)/", $apBody, $cm)) {
 		ok(isset($tabsNow[$cm[1]]), "$apName passes admin_chrome('{$cm[1]}'), which is not a tab");
 		$ownTab = '';
 		foreach ($tabsNow as $tk => $tv) if ($tv[0] === $apName) $ownTab = $tk;
