@@ -409,6 +409,63 @@ ok(strpos($admCode, 'dhcf_award(') === false,
 /* The art arrives by FTP, so a fresh deploy has markup and no pictures. */
 ok(strpos($admCode, "addEventListener('error'") !== false,
    'the preview shows broken frames rather than saying which files are missing');
+echo "\nthe dialog has depth, and it borrows the platform's\n";
+/*
+ * THE SHORTHAND IS THE TRAP, AND IT IS A BAD ONE.
+ *
+ * polish.css declares --msp-lift and friends, it is ONE <link> in
+ * header.php, and ?polish=0 turns it off without a deploy. This file
+ * always loads. So `background: var(--msp-lift), #0a1929` here is not
+ * the same rule it is in polish.css: with the token missing the whole
+ * declaration is invalid at computed-value time, background falls back
+ * to its initial value, and the initial value is transparent -- the
+ * dialog would lose its surface, its button and its note box the moment
+ * anybody added ?polish=0 to a URL.
+ *
+ * Split across background-color and background-image, a missing token
+ * drops only the gradient and the colour underneath survives. Asserted
+ * as "no shorthand anywhere in this file carries a token", because the
+ * natural thing to do when adding the next panel is to copy the line
+ * out of polish.css.
+ */
+$mcmShort = array();
+if (preg_match_all('~(^|[;{\s])background:\s*[^;]*var\(--msp-[^;]*;~m', $modal, $bgm)) {
+	foreach ($bgm[0] as $hit) $mcmShort[] = trim($hit);
+}
+ok(count($mcmShort) === 0,
+   'a background shorthand carries a polish token (' . implode(' | ', $mcmShort) . '); '
+ . 'with ?polish=0 that panel goes transparent instead of flat');
+/* And the colour has to actually be there to survive to. */
+foreach (array('#mcm-box' => '#0a1929', '#mcm-close' => '#00c8a0') as $sel => $colour) {
+	ok(preg_match('~' . preg_quote($sel, '~') . ' \{[^}]*background-color: ' . preg_quote($colour, '~') . '~s', $modal) === 1,
+	   $sel . ' has no background-color under its gradient, so losing the token loses the panel');
+}
+/*
+ * IT BORROWS, IT DOES NOT INVENT. Every panel and button on the
+ * platform wears these three; a dialog with its own private idea of
+ * depth would be the one lit thing that is lit differently.
+ */
+foreach (array('--msp-lift', '--msp-lift-soft', '--msp-fill', '--msp-fill-in') as $tok) {
+	ok(strpos($modal, 'var(' . $tok . ')') !== false,
+	   'the dialog does not use ' . $tok . ', so it is lit by its own rules rather than the platform\'s');
+}
+/* The soft one is for the TINTED box specifically: a black bottom edge
+   over a teal tint is brown, which is why polish.css has two. */
+ok(preg_match('~#mcm-trait \{[^}]*var\(--msp-lift-soft\)~s', $modal) === 1,
+   'the teal note takes the full lift, whose black bottom edge turns a teal tint brown');
+/*
+ * THE CHEST STANDS ON THE FLOOR, NOT UNDER IT. The contact shadow is a
+ * ::after on the stage, which in tree order paints AFTER the chest --
+ * so without a z-index the shadow lands on top of the thing casting it.
+ */
+ok(preg_match('~\.mcm-chest \{ position: relative; z-index: 1;~', $modal) === 1,
+   'the chest is not lifted above the stage pseudo-elements, so its own shadow paints over it');
+ok(preg_match_all('~#mcm-stage::(before|after) \{[^}]*z-index: 0;~s', $modal) === 2,
+   'a stage layer is not pinned below the chest');
+/* Both cover the stage, and one of them covers all of it. */
+ok(preg_match_all('~#mcm-stage::(before|after) \{[^}]*pointer-events: none;~s', $modal) === 2,
+   'a stage layer can take pointer events, and it lies over the whole stage');
+
 echo "\nthe chest rattles before it opens, on one clock\n";
 /*
  * THE BUILD-UP IS THE POINT. The dialog used to open the chest 240ms in

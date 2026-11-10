@@ -87,13 +87,48 @@ foreach ($ms_daily['days'] as $mcm_d) {
 	</div>
 </div>
 <style>
+/*
+ * DEPTH, BECAUSE THE CHEST HAS IT AND NOTHING ELSE DID.
+ *
+ * The art is a rendered three-quarter object with its own light on it,
+ * and it was sitting in a dialog made of flat rectangles: a flat veil,
+ * a flat panel, a flat teal slab, and 230px of nothing for the chest to
+ * stand on. The object read as pasted onto the UI rather than held by
+ * it.
+ *
+ * THE PANELS USE THE PLATFORM'S OWN TOKENS, not gradients invented
+ * here. --msp-lift, --msp-lift-soft and --msp-fill are declared in
+ * dist/polish.css and every panel and button on the platform already
+ * wears them; a dialog with its own private idea of depth would be the
+ * one lit thing that is lit differently.
+ *
+ * AND THEY GO IN background-image, NOT THE `background` SHORTHAND.
+ * polish.css is one <link> and ?polish=0 turns it off without a deploy
+ * -- but THIS file always loads. `background: var(--msp-lift), #0a1929`
+ * is invalid at computed-value time when the token is missing, and an
+ * invalid background shorthand falls back to the initial value, which
+ * is transparent: the dialog would lose its surface entirely. Split in
+ * two, a missing token drops only the gradient layer and the colour
+ * underneath it survives. That is the whole reason this does not just
+ * copy polish.css's own rules.
+ *
+ * The stage's own gradients ARE local, and deliberately: a pool of
+ * light on a floor is about this chest, not about panels.
+ */
 #mcm-veil { position: fixed; inset: 0; z-index: 99998; display: none;
   align-items: center; justify-content: center; padding: 20px;
-  background: rgba(4,12,22,.9); backdrop-filter: blur(3px); }
+  background-color: rgba(4,12,22,.9);
+  /* Lit where the dialog is, so the box sits in the brightest part of
+     its own backdrop instead of being cut out of a flat sheet. */
+  background-image: radial-gradient(78% 58% at 50% 38%,
+    rgba(13,36,55,.62) 0, rgba(4,12,22,0) 70%);
+  backdrop-filter: blur(3px); }
 #mcm-veil.on { display: flex; }
 #mcm-box { width: min(392px, 100%); max-height: 94vh; overflow: auto;
-  background: #0a1929; border: 1px solid #1b3346; border-radius: 4px;
-  box-shadow: 0 24px 70px rgba(0,0,0,.6); padding: 18px 20px 20px;
+  background-color: #0a1929; background-image: var(--msp-lift);
+  border: 1px solid #1b3346; border-radius: 4px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.07);
+  padding: 18px 20px 20px;
   text-align: center; color: #e8eaed;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   animation: mcmIn .3s cubic-bezier(.2,.9,.3,1.2); }
@@ -139,9 +174,51 @@ foreach ($ms_daily['days'] as $mcm_d) {
  * scrollbar. The flying reward icons are siblings of the stage, not
  * children, so they are not clipped by this.
  */
+/*
+ * THE STAGE IS A NICHE NOW, not 230px of panel.
+ *
+ * Three layers, and each one answers something the flat version left
+ * open. The fill is a step darker than the dialog, so the chest stands
+ * IN something. The top shade is the recess. The faint teal at the
+ * bottom is the floor picking up the chest's own light, which is the
+ * one colour already in the art.
+ */
 #mcm-stage { position: relative; display: flex; align-items: flex-end;
-  justify-content: center; height: 230px; margin: 6px 0 2px; overflow: hidden; }
-.mcm-chest { position: relative; width: 210px; height: 217px; --mcrise: -72px; }
+  justify-content: center; height: 230px; margin: 6px 0 2px; overflow: hidden;
+  border-radius: 3px;
+  background-color: #071320;
+  background-image:
+    radial-gradient(56% 30% at 50% 102%, rgba(0,200,160,.09) 0, rgba(0,200,160,0) 72%),
+    linear-gradient(180deg, rgba(0,0,0,.30) 0, rgba(0,0,0,0) 70px);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.03); }
+/*
+ * THE FLOOR LIGHTS UP WHEN THE LID DOES, and :has is what makes that a
+ * stylesheet's job rather than another class for the script to toggle.
+ * Where it is not supported the pool simply stays at the stage's own
+ * level, which is the picture above -- nothing breaks, it just does not
+ * brighten.
+ */
+#mcm-stage::before { content: ""; position: absolute; inset: 0; z-index: 0;
+  pointer-events: none; opacity: 0;
+  background: radial-gradient(42% 24% at 50% 88%,
+    rgba(0,200,160,.30) 0, rgba(0,200,160,0) 72%);
+  transition: opacity .55s ease-out .08s; }
+#mcm-stage:has(.mcm-chest.is-open)::before { opacity: 1; }
+/*
+ * AND SOMETHING TO STAND ON. The chest was floating: no contact, no
+ * weight. This is on the STAGE rather than the chest on purpose -- a
+ * contact shadow that rattles along with the object is a shadow cast by
+ * nothing, and the rattle is four pixels.
+ */
+#mcm-stage::after { content: ""; position: absolute; z-index: 0;
+  left: 50%; bottom: 10px; width: 188px; height: 24px;
+  transform: translateX(-50%); pointer-events: none;
+  background: radial-gradient(50% 50% at 50% 50%,
+    rgba(0,0,0,.62) 0, rgba(0,0,0,0) 70%); }
+/* Above both of them. The flash and the six sparks are its children, so
+   they come up with it. */
+.mcm-chest { position: relative; z-index: 1;
+  width: 210px; height: 217px; --mcrise: -72px; }
 .mcm-l { position: absolute; inset: 0; width: 100%; height: 100%;
   object-fit: contain; pointer-events: none; }
 .mcm-open, .mcm-glow { opacity: 0; }
@@ -249,7 +326,11 @@ foreach ($ms_daily['days'] as $mcm_d) {
 .mcm-item.in { opacity: 1; transform: none;
   transition: transform .74s cubic-bezier(.2,.85,.25,1), opacity .3s linear; }
 .mcm-item img { width: 44px; height: 44px; object-fit: contain;
-  filter: drop-shadow(0 0 10px rgba(0,200,160,.55)); }
+  filter: drop-shadow(0 0 10px rgba(0,200,160,.55));
+  /* A socket behind the glyph. These fly out of a lit chest and then sat
+     on flat panel; the backing is what they carry out with them. */
+  background-image: radial-gradient(50% 50% at 50% 54%,
+    rgba(0,200,160,.15) 0, rgba(0,200,160,0) 70%); }
 /* TWO LINES OF ROOM WHETHER OR NOT IT NEEDS THEM. "Fast Forward" wraps
    and "+2,250" does not, and a name that wraps pushes its own sub-label a
    line below its neighbour's -- two rewards whose labels sit at different
@@ -263,17 +344,26 @@ foreach ($ms_daily['days'] as $mcm_d) {
 #mcm-streak:empty { display: none; }
 #mcm-remaining { margin: 8px 0 0; font-size: .78rem; color: #8fa7bb; }
 #mcm-remaining:empty { display: none; }
+/* A tinted panel, so the SOFT lift: a black bottom edge over a teal
+   tint is brown, which is the note in polish.css's own token. */
 #mcm-trait { margin: 10px 0 0; padding: 8px 10px; font-size: .78rem; color: #cfe3d9;
-  background: rgba(0,200,160,.08); border: 1px solid rgba(0,200,160,.22); }
+  background-color: rgba(0,200,160,.08); background-image: var(--msp-lift-soft);
+  border: 1px solid rgba(0,200,160,.22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }
 
 #mcm-actions { margin-top: 16px; }
 /* flexbox.css styles bare buttons and anchors globally, so everything the
    dialog needs is re-stated here rather than inherited. */
 #mcm-close { width: 100%; padding: 11px 14px; font: inherit; font-size: .95rem;
   letter-spacing: .08em; text-transform: uppercase; text-align: center;
-  color: #04121c; background: #00c8a0; border: 0; border-radius: 3px;
-  cursor: pointer; }
-#mcm-close:hover { background: #2ae0bd; }
+  color: #04121c; background-color: #00c8a0; background-image: var(--msp-fill);
+  border: 0; border-radius: 3px; cursor: pointer;
+  box-shadow: 0 2px 0 rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.3); }
+#mcm-close:hover { background-color: #2ae0bd; }
+/* Pressed is the ramp upside down and the slab dropping onto its own
+   shadow -- the same two moves the platform's buttons make. */
+#mcm-close:active { background-image: var(--msp-fill-in);
+  transform: translateY(2px); box-shadow: 0 0 0 rgba(0,0,0,.3); }
 #mcm-close:focus-visible { outline: 2px solid #9affdf; outline-offset: 2px; }
 
 /* The rise is in pixels, so it follows the rendered size or the sparks
