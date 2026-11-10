@@ -13,35 +13,46 @@
  * WHY NOT WALLETS. The row used to be points / streak / wallets, and
  * wallets is a setup detail: it is the same number for a member in their
  * first minute and one in their third year, and it is already the first
- * thing Start Here asks for. Missions sent and raids launched are what
- * the account has actually DONE, which is what a line under your own
- * name should be saying.
+ * thing Start Here asks for.
  *
- * A ZERO IS NOT A STAT. "0 raids" tells a player they are failing at
- * something they have not started, which is the opposite of the job.
- * Zeroes drop out -- and if both drop out there is nothing left to do
- * but what the account has, so wallets comes back to fill the space.
+ * AND NO POINTS. The balance led this row and was the least useful
+ * thing on it: it is a running total that only ever goes up, it is
+ * already on points.php and in the nav, and at eight digits it set the
+ * scale for everything beside it -- a 3 next to 19,875,730 does not
+ * read as a number at all. The row is now three short facts about the
+ * state of the account rather than one big one and two small ones.
+ *
+ * AND WHY RUNNING, NOT EVER. The first cut counted every mission and
+ * every raid the account had ever sent, which put 17,062 under the name
+ * -- a lifetime tally, the same shape of number as the points balance
+ * next to it, saying nothing about today. What is OUT right now is a
+ * reason to open the page: those runs finish, and they finish while you
+ * are not looking. So the label says "running", because 3 next to the
+ * word "missions" alone would read as a career total.
+ *
+ * A ZERO IS NOT A STAT. "0 raids running" tells a player they are
+ * failing at something they have not started, which is the opposite of
+ * the job. Zeroes drop out -- and if both drop out there is nothing in
+ * flight to show, so wallets comes back to fill the space.
  */
 
 /**
- * @param int $points   lifetime points balance
  * @param int $streak   current daily streak, in days
- * @param int $missions missions ever sent
- * @param int $raids    raids ever launched
+ * @param int $missions missions out on a run right now
+ * @param int $raids    raids in progress right now
  * @param int $wallets  wallets connected
  * @return array list of array(value, singular, plural) in display order
  */
-function lp_hero_stats($points, $streak, $missions, $raids, $wallets) {
+function lp_hero_stats($streak, $missions, $raids, $wallets) {
 	$out = array(
-		array((int)$points, 'point',      'points'),
 		/* "day streak" either way: "1 day streaks" is wrong and
 		   "1 day streak" is right, so the plural is on the day. */
 		array((int)$streak, 'day streak', 'day streak'),
 	);
 	$done = false;
-	if ((int)$missions > 0) { $out[] = array((int)$missions, 'mission', 'missions'); $done = true; }
-	if ((int)$raids    > 0) { $out[] = array((int)$raids,    'raid',    'raids');    $done = true; }
-	/* Nothing done yet, so the row would be two items wide under a name.
+	if ((int)$missions > 0) { $out[] = array((int)$missions, 'mission running', 'missions running'); $done = true; }
+	if ((int)$raids    > 0) { $out[] = array((int)$raids,    'raid running',    'raids running');    $done = true; }
+	/* Nothing out, so the row would be two items wide under a name.
 	   Wallets is the one number a fresh account can still have, and a
 	   zero there is worth saying because connecting one is step one. */
 	if (!$done) $out[] = array((int)$wallets, 'wallet', 'wallets');

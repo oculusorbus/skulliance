@@ -324,13 +324,13 @@ echo "\nthe line under the name says what the account has done\n";
 	 * you are failing at something you have not started, which is the
 	 * opposite of what a launchpad is for.
 	 */
-	$hsBoth = lp_hero_stats(500, 3, 40, 12, 9);
-	ok($hsLab($hsBoth) === 'points day streak missions raids',
-	   'an account that does both does not get both: ' . $hsLab($hsBoth));
-	$hsNoRaid = lp_hero_stats(500, 3, 40, 0, 9);
+	$hsBoth = lp_hero_stats(3, 40, 12, 9);
+	ok($hsLab($hsBoth) === 'day streak missions running raids running',
+	   'an account with both out does not get both: ' . $hsLab($hsBoth));
+	$hsNoRaid = lp_hero_stats(3, 40, 0, 9);
 	ok(strpos($hsLab($hsNoRaid), 'raid') === false,
 	   'a player who has never raided is told they have 0 raids');
-	$hsNoMis = lp_hero_stats(500, 3, 0, 12, 9);
+	$hsNoMis = lp_hero_stats(3, 0, 12, 9);
 	ok(strpos($hsLab($hsNoMis), 'mission') === false,
 	   'a player who has never sent a mission is told they have 0 missions');
 	/* And the one that is dropped must not take the other with it. */
@@ -344,22 +344,33 @@ echo "\nthe line under the name says what the account has done\n";
 	 */
 	ok(strpos($hsLab($hsBoth), 'wallet') === false,
 	   'wallets is back on the row for an account that has done things');
-	$hsNew = lp_hero_stats(0, 0, 0, 0, 0);
-	ok($hsLab($hsNew) === 'points day streak wallets',
-	   'a brand new account gets a two-item row under its name instead of the wallet count: '
+	$hsNew = lp_hero_stats(0, 0, 0, 0);
+	ok($hsLab($hsNew) === 'day streak wallets',
+	   'a brand new account gets a one-item row under its name instead of the wallet count: '
 	 . $hsLab($hsNew));
 	/* A zero wallet count is worth saying, because connecting one is
 	   step one -- so the fallback must not drop out on zero too. */
-	ok(count(lp_hero_stats(0, 0, 0, 0, 0)) === 3,
+	ok(count(lp_hero_stats(0, 0, 0, 0)) === 2,
 	   'the fallback drops out at zero as well, so a new account gets no third stat at all');
 
+	/*
+	 * NO POINTS BALANCE. It led the row and was the least useful thing
+	 * on it: a running total that only goes up, already on points.php
+	 * and in the nav, and at eight digits it set the scale for
+	 * everything beside it -- a 3 next to 19,875,730 does not read as a
+	 * number at all.
+	 */
+	ok(strpos($hsLab($hsBoth), 'point') === false,
+	   'the points balance is back on the row, setting the scale for the two numbers that matter');
+	ok(strpos((string) file_get_contents(__DIR__ . '/lib/launchpad-stats.php'), '$points') === false,
+	   'the stat row still takes a points balance, so it is one caller away from showing it again');
 	/* "1 day streaks" is wrong and "1 raids" is wrong; the plural is on
 	   the day for one and on the noun for the other. */
 	ok(lp_stat_label(array(1, 'raid', 'raids')) === 'raid'
 	   && lp_stat_label(array(2, 'raid', 'raids')) === 'raids',
 	   'the label does not follow the count');
-	$hsOne = lp_hero_stats(1, 1, 1, 1, 1);
-	ok($hsLab($hsOne) === 'point day streak mission raid',
+	$hsOne = lp_hero_stats(1, 1, 1, 1);
+	ok($hsLab($hsOne) === 'day streak mission running raid running',
 	   'a count of one reads as a plural: ' . $hsLab($hsOne));
 
 	/*
@@ -369,10 +380,21 @@ echo "\nthe line under the name says what the account has done\n";
 	 * join counts every raid on the platform.
 	 */
 	$hsPage = (string) file_get_contents(__DIR__ . '/launchpad.php');
-	ok(preg_match('~FROM missions WHERE user_id = \x27" \. \$lp_user_id~', $hsPage) === 1,
+	ok(preg_match('~FROM missions\s+WHERE user_id = \x27" \. \$lp_user_id~s', $hsPage) === 1,
 	   'the mission count is not scoped to this account');
 	ok(preg_match('~INNER JOIN realms ON realms\.id = raids\.offense_id\s+WHERE realms\.user_id~s', $hsPage) === 1,
 	   'the raid count does not reach the user through their realm, so it is either empty or everybody\'s');
+	/*
+	 * AND IT HAS TO BE WHAT IS OUT, NOT WHAT EVER WAS. An unfiltered
+	 * count puts a five-figure career total under the name -- the same
+	 * shape as the points balance beside it, and silent about today.
+	 * status/outcome '0' is in progress on both tables; 1 is a success
+	 * and 2 is a failure, which is the leaderboards' own definition.
+	 */
+	ok(preg_match('~FROM missions\s+WHERE user_id =.*?AND status = \x270\x27~s', $hsPage) === 1,
+	   'the mission count is every mission ever sent, not the ones out on a run now');
+	ok(preg_match('~FROM raids\s+INNER JOIN realms.*?AND raids\.outcome = \x270\x27~s', $hsPage) === 1,
+	   'the raid count is every raid ever launched, not the ones in progress now');
 }
 
 echo "\nthe hero banner degrades, and never blocks the links on it\n";

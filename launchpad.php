@@ -62,24 +62,30 @@ if ($lp_user_id > 0) {
 	$lp_balance = intval(getCurrentBalance($conn, $lp_user_id, 0));
 
 	/*
-	 * WHAT THE ACCOUNT HAS DONE: two COUNTs on indexed columns, each
+	 * WHAT IS RUNNING RIGHT NOW: two COUNTs on indexed columns, each
 	 * wrapped so a failure is a zero rather than a dead first page.
 	 *
-	 * COUNTED THE WAY THE LEADERBOARDS COUNT, every row regardless of
-	 * outcome -- checkMissionsLeaderboard's total is COUNT(missions.id)
-	 * and checkRaidsLeaderboard's is COUNT(raids.id), neither filtered
-	 * on status. A page that said 40 missions next to a board that said
-	 * 52 would be a bug report, and the honest reading of "missions" is
-	 * ones you sent, not ones that came back.
+	 * OUT, NOT EVER. The first cut of this counted every row and put
+	 * 17,062 missions under the name -- which is a lifetime tally, the
+	 * same shape of number as the points balance beside it, and it says
+	 * nothing about today. Running missions and running raids are a
+	 * reason to open the page: they finish, and they finish while you
+	 * are not looking.
+	 *
+	 * status/outcome '0' is in progress on both tables, which is the
+	 * leaderboards' own definition -- checkMissionsLeaderboard counts
+	 * status='0' as its "progress" column and checkRaidsLeaderboard
+	 * counts outcome='0' as its one. 1 is a success and 2 is a failure.
 	 *
 	 * Raids hang off the realm, not the user: raids.offense_id is a
 	 * realms.id, so the user only reaches them through their own realm.
 	 */
-	$lp_q = @$conn->query("SELECT COUNT(id) AS c FROM missions WHERE user_id = '" . $lp_user_id . "'");
+	$lp_q = @$conn->query("SELECT COUNT(id) AS c FROM missions
+	                       WHERE user_id = '" . $lp_user_id . "' AND status = '0'");
 	if ($lp_q && ($lp_r = $lp_q->fetch_assoc())) $lp_missions = (int)$lp_r['c'];
 	$lp_q = @$conn->query("SELECT COUNT(raids.id) AS c FROM raids
 	                       INNER JOIN realms ON realms.id = raids.offense_id
-	                       WHERE realms.user_id = '" . $lp_user_id . "'");
+	                       WHERE realms.user_id = '" . $lp_user_id . "' AND raids.outcome = '0'");
 	if ($lp_q && ($lp_r = $lp_q->fetch_assoc())) $lp_raids = (int)$lp_r['c'];
 }
 
@@ -271,7 +277,7 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 			<div class="lp-hero-stats">
 				<?php /* Which of these appear is lp_hero_stats()'s call, and the
 				         rule is in lib/launchpad-stats.php: a zero is not a stat. */ ?>
-				<?php foreach (lp_hero_stats($lp_balance, $lp_streak, $lp_missions, $lp_raids, $lp_wallets) as $lp_st): ?>
+				<?php foreach (lp_hero_stats($lp_streak, $lp_missions, $lp_raids, $lp_wallets) as $lp_st): ?>
 				<span><strong><?php echo number_format($lp_st[0]); ?></strong> <?php
 					echo htmlspecialchars(lp_stat_label($lp_st)); ?></span>
 				<?php endforeach; ?>
