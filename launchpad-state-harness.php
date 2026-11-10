@@ -506,5 +506,66 @@ echo "\nthe Play icons are art over emoji, never instead of it\n";
 	   'a broken image leaves the tile square and empty instead of falling back to the old shape');
 }
 
+
+echo "\nthe page is as wide as the menu, and every tile is one size\n";
+{
+	$wd = (string) file_get_contents(__DIR__ . '/launchpad.php');
+
+	/*
+	 * TWO CAPS, NOT ONE. Removing this page's own 1100px max-width was
+	 * not enough: flexbox.css puts a SECOND cap of 900px on .col1of3,
+	 * which is why the navbar measured 2000px and the tiles 900 -- the
+	 * column was centred inside a container twice its width. That rule
+	 * is platform-wide and other pages want it, so it is overridden
+	 * inline here rather than changed there.
+	 */
+	ok(preg_match('~class="col1of3"[^>]*max-width:none~', $wd) === 1,
+	   'the column does not clear flexbox.css\'s 900px cap, so the page is half the width of its own menu');
+	ok(preg_match('~\\.col1of3\\s*\\{[^}]*max-width:\\s*900px~s',
+	   (string) file_get_contents(__DIR__ . '/dist/flexbox.css')) === 1,
+	   'flexbox.css no longer caps .col1of3, so the inline override above is dead weight and should go');
+
+	/*
+	 * auto-FILL, NOT auto-fit. auto-fit collapses the tracks an item does
+	 * not occupy, so a section with fewer items than columns stretches
+	 * the ones it has -- Progress's eight tiles came out 235px wide
+	 * against Play's 207, three sections and three tile sizes. It matters
+	 * more now the tiles are square, because a wider tile is a taller one.
+	 */
+	ok(preg_match('~\\.lp-grid\\s*\\{[^}]*repeat\\(auto-fill,~s', $wd) === 1,
+	   'the grid uses auto-fit, so a section with fewer items than columns gets wider tiles than the rest');
+
+	/*
+	 * AN EMOJI HAS NO AGREED WIDTH. This is the state every tile is in
+	 * until the art is uploaded, and a stadium glyph is wider than a
+	 * skull -- reported as "mobile icons are a mess, all varying sizes
+	 * in width".
+	 */
+	ok(preg_match('~\\.lp-tile-icon\\s*\\{[^}]*width:\\s*\\d+px~s', $wd) === 1,
+	   'the emoji has no box, so each tile sizes its icon to whatever glyph it happens to carry');
+	ok(preg_match('~\\.lp-tile-icon\\s*\\{[^}]*justify-content:\\s*center~s', $wd) === 1,
+	   'the emoji is not centred in its box');
+
+	/*
+	 * THE DAILY REWARD SHOWS THE CHEST. It is the row we most want
+	 * pressed and the only Start Here entry with art of its own at the
+	 * other end of the link.
+	 */
+	ok(preg_match("~'missions\\.php\\#ms-sec-daily'[^;]*images/chest/closed\\.webp~s", $wd) === 1,
+	   'the daily reward row no longer carries the chest');
+	/* [\s\S]{0,200}? and NOT [^>]*: there is a <?php ... ?> between the
+	   class and the attribute, and `?>` carries the > that ends the
+	   window. Fourth time in this session. Bound the search by what must
+	   come after, never by what must not appear in between. */
+	ok(preg_match('~class="lp-todo-pic"[\s\S]{0,200}?onerror~', $wd) === 1,
+	   'the chest has no onerror, so a missing file leaves a broken frame in Start Here');
+	ok(preg_match('~\\.lp-todo-art\\s*\\{[^}]*display:\\s*flex~s', $wd) === 1,
+	   'the row with art is not laid out as a row, so the chest sits above the text');
+	/* Only the row that HAS art becomes a flex row; the others are
+	   untouched, which is what the separate class is for. */
+	ok(preg_match('~isset\\(\\$t\\[3\\]\\) \\? \x27 lp-todo-art\x27~', $wd) === 1,
+	   'every Start Here row is treated as if it had art');
+}
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

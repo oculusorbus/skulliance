@@ -101,7 +101,14 @@ if ($lp_streak === 0) {
 	   the reward is a chest that opens, which is the version worth
 	   sending somebody to on the day they first claim one. The deep link
 	   lands on the daily strip rather than the top of the page. */
-	$lp_todo[] = array('missions.php#ms-sec-daily', 'Claim your daily reward', 'Free points every day, and the streak is its own leaderboard.');
+	/* THE CHEST COMES WITH IT. This row is the one thing on the page we
+	   most want pressed, and it now has art of its own on the other end
+	   of the link -- so it shows the closed chest here, which is the
+	   state the account is actually in while this row exists at all. A
+	   fourth element, optional, read only by the Start Here loop. */
+	$lp_todo[] = array('missions.php#ms-sec-daily', 'Claim your daily reward',
+	                   'Free points every day, and the streak is its own leaderboard.',
+	                   'images/chest/closed.webp');
 }
 if ($lp_balance === 0) {
     $lp_todo[] = array('skullracer.php', 'Play a game', 'Skull Racer pays CARBON for finishing a race, win or lose.');
@@ -190,10 +197,20 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
      flex shrank it to its content, and 26 tiles rendered in a 455px strip
      against 2800px of empty page. -->
 <div class="row" id="row1">
-  <?php /* FULL WIDTH. The 1100px cap was from before the page was art-led;
-           with square tiles and a hero band the extra columns are the
-           point, and the banner crop below is set for it. */ ?>
-  <div class="col1of3" style="margin:0 auto;flex:1 1 100%;">
+  <?php /*
+   * FULL WIDTH, TO THE SAME EDGE AS THE MENU.
+   *
+   * max-width:none is the whole fix and it has to be inline. Removing
+   * this page's own 1100px cap was not enough: flexbox.css:2592 puts a
+   * SECOND cap of 900px on .col1of3, which is why the nav measured
+   * 2000px and the tiles 900 -- the column was being centred inside a
+   * container twice its width. That rule is platform-wide and other
+   * pages want it, so it is overridden here rather than changed there.
+   *
+   * 2000px is the ceiling either way: .container caps at that and the
+   * navbar lives inside it, so matching the menu IS matching 2000.
+   */ ?>
+  <div class="col1of3" style="margin:0 auto;flex:1 1 100%;max-width:none;">
 
 	<?php /*
 	 * THE BANNER. The greeting and the stats sit ON the art; Start Here
@@ -227,9 +244,20 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	<div class="lp-todo">
 		<h3>Start Here</h3>
 		<?php foreach ($lp_todo as $t): ?>
-			<a class="lp-todo-item" href="<?php echo htmlspecialchars($t[0]); ?>">
-				<span class="lp-todo-title"><?php echo htmlspecialchars($t[1]); ?></span>
-				<span class="lp-todo-why"><?php echo htmlspecialchars($t[2]); ?></span>
+			<a class="lp-todo-item<?php echo isset($t[3]) ? ' lp-todo-art' : ''; ?>"
+			   href="<?php echo htmlspecialchars($t[0]); ?>">
+				<?php if (isset($t[3])): ?>
+				<?php /* Decorative: the row already says what it is, so the
+				         image is alt="" and a missing file just removes
+				         itself rather than leaving a broken frame. */ ?>
+				<img class="lp-todo-pic" src="<?php echo htmlspecialchars($t[3]); ?>" alt=""
+					width="56" height="58" decoding="async"
+					onerror="this.remove()">
+				<?php endif; ?>
+				<span class="lp-todo-text">
+					<span class="lp-todo-title"><?php echo htmlspecialchars($t[1]); ?></span>
+					<span class="lp-todo-why"><?php echo htmlspecialchars($t[2]); ?></span>
+				</span>
 			</a>
 		<?php endforeach; ?>
 	</div>
@@ -461,6 +489,11 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 }
 .lp-todo h3 { margin: 0 0 10px; font-size: 0.8rem; letter-spacing: 0.14em; text-transform: uppercase; color: #00c8a0; }
 .lp-todo-item { display: block; padding: 9px 0; text-decoration: none; color: inherit; border-top: 1px solid rgba(255,255,255,0.07); }
+/* A row with art becomes a two-column row; the rest are untouched. */
+.lp-todo-art { display: flex; align-items: center; gap: 13px; text-align: left; }
+.lp-todo-pic { width: 56px; height: 58px; object-fit: contain; flex: 0 0 56px;
+	filter: drop-shadow(0 0 10px rgba(0,200,160,0.3)); }
+.lp-todo-art .lp-todo-text { min-width: 0; }
 .lp-todo-item:first-of-type { border-top: 0; }
 .lp-todo-title { display: block; font-weight: bold; font-size: 0.92rem; }
 .lp-todo-title::after { content: ' \2192'; color: #00c8a0; }
@@ -506,7 +539,18 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 
 /* auto-fit so the grid reflows from five across to one on a phone with no
    breakpoints to maintain -- same approach as the leaderboard hub. */
-.lp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; align-items: stretch; }
+/*
+ * auto-FILL, NOT auto-fit, and the difference is visible on this page.
+ *
+ * auto-fit COLLAPSES the tracks an item does not occupy, so a section
+ * with fewer items than columns stretches the ones it has: at 2000px
+ * that is nine columns, and Progress's eight tiles came out 235px wide
+ * against Play's 207. Three sections, three tile sizes. auto-fill keeps
+ * the empty track, so every tile on the page is the same width -- which
+ * matters more now they are square, because a wider tile is also a
+ * taller one.
+ */
+.lp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; align-items: stretch; }
 .lp-tile {
 	display: flex; flex-direction: column;
 	background: #0d1e30;
@@ -518,8 +562,21 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	transition: background-color 0.15s ease, transform 0.15s ease;
 }
 .lp-tile:hover { background: #10263c; transform: translateY(-2px); }
-/* The emoji's own size, which is what a tile with no art falls back to. */
-.lp-tile-icon { font-size: 1.6rem; line-height: 1; margin-bottom: 8px; }
+/*
+ * THE EMOJI GETS A BOX, because emoji do not agree on width.
+ *
+ * Reported as "mobile icons are a mess, all varying sizes in width",
+ * and they were: this is the fallback state every tile is in until the
+ * art is uploaded, and an emoji is a glyph whose advance width is
+ * whatever the platform font says. A stadium is wider than a skull. A
+ * fixed square with the glyph centred makes the column line up whatever
+ * each one happens to measure.
+ */
+.lp-tile-icon {
+	display: inline-flex; align-items: center; justify-content: center;
+	width: 44px; height: 44px; flex: 0 0 auto;
+	font-size: 1.6rem; line-height: 1; margin-bottom: 8px;
+}
 
 /*
  * A TILE WITH ART IS SQUARE AND FULL BLEED.
