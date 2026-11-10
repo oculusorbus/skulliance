@@ -147,6 +147,38 @@ foreach ($ms_daily['days'] as $mcm_d) {
 .mcm-open, .mcm-glow { opacity: 0; }
 .mcm-glow { transform: scale(.72); transform-origin: 50% 62%; }
 
+/*
+ * THE RATTLE, WHICH IS THE WHOLE POINT OF WAITING.
+ *
+ * The dialog used to open the chest 240ms in and that was the entire
+ * build-up: a lid swap you could miss. Something is trying to get out
+ * first, and it gets louder -- half a degree and one pixel at the
+ * start, two degrees and four by the end -- so the pop lands on a
+ * pattern the eye has already started following.
+ *
+ * IT ENDS ON `none`, deliberately. The class comes off at the same
+ * instant the lid swaps, and a keyframe that finished mid-throw would
+ * snap the chest back four pixels under the burst. Settling to true
+ * centre on the last beat also IS the anticipation: everything goes
+ * still, and then it opens.
+ *
+ * MCM_SHAKE in the script below is this duration. The two have to agree
+ * or the chest either opens mid-rattle or sits still waiting for it.
+ */
+.mcm-chest.is-shaking { animation: mcmShake .66s ease-in both; }
+@keyframes mcmShake {
+  0%   { transform: none; }
+  9%   { transform: translate3d(-1px, 0, 0) rotate(-.5deg); }
+  18%  { transform: translate3d( 1px, 0, 0) rotate( .5deg); }
+  28%  { transform: translate3d(-2px, 0, 0) rotate(-.9deg); }
+  38%  { transform: translate3d( 2px, -1px, 0) rotate( .9deg); }
+  50%  { transform: translate3d(-3px, -1px, 0) rotate(-1.4deg); }
+  62%  { transform: translate3d( 3px, -2px, 0) rotate( 1.4deg); }
+  74%  { transform: translate3d(-4px, -2px, 0) rotate(-2deg); }
+  86%  { transform: translate3d( 4px, -3px, 0) rotate( 2deg); }
+  100% { transform: none; }
+}
+
 /* Opening: the lid swaps fast, the light takes its time arriving. */
 .mcm-chest.is-open .mcm-closed { opacity: 0; transition: opacity .16s linear; }
 .mcm-chest.is-open .mcm-open { opacity: 1; transition: opacity .16s linear; }
@@ -260,6 +292,10 @@ foreach ($ms_daily['days'] as $mcm_d) {
   #mcm-box { animation: none; }
   .mcm-chest.is-settled .mcm-glow { animation: none; }
   .mcm-chest.is-open .mcm-glow { transition: opacity .2s linear; transform: scale(1); }
+  /* The script drops the rattle's delay too, so the chest does not sit
+     still for two thirds of a second waiting for an animation that was
+     never going to run. */
+  .mcm-chest.is-shaking { animation: none; }
   .mcm-flash, .mcm-spark { display: none; }
   .mcm-item { transform: none; }
   .mcm-item.in { transition: opacity .2s linear; }
@@ -277,6 +313,22 @@ foreach ($ms_daily['days'] as $mcm_d) {
 	var timers = [];
 	var pending = null;          /* the day-seven trait, revealed after close */
 	var at = function (ms, fn) { timers.push(setTimeout(fn, ms)); };
+
+	/*
+	 * THE RATTLE'S LENGTH LIVES IN TWO PLACES AND MUST MATCH: this
+	 * number and the .66s on .mcm-chest.is-shaking above. Too short and
+	 * the chest opens mid-throw; too long and it sits still waiting.
+	 *
+	 * REDUCED MOTION TAKES THE DELAY, NOT JUST THE ANIMATION. Setting
+	 * the CSS animation to none on its own would leave the dialog
+	 * staring at a shut chest for two thirds of a second for exactly
+	 * the players who asked for less of this.
+	 */
+	var MCM_CALM     = window.matchMedia
+	                 && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	var MCM_SHAKE    = MCM_CALM ? 0 : 660;
+	var MCM_SHAKE_AT = 200;
+	var MCM_OPEN     = MCM_SHAKE ? MCM_SHAKE_AT + MCM_SHAKE + 40 : 240;
 
 	function esc(s) {
 		return String(s).replace(/[&<>"]/g, function (c) {
@@ -349,11 +401,25 @@ foreach ($ms_daily['days'] as $mcm_d) {
 		veil.setAttribute('aria-hidden', 'false');
 		document.getElementById('mcm-close').focus();
 
-		/* The chest is shut when the dialog arrives and opens a beat later,
-		   so the opening is something you watch rather than something that
-		   already happened behind the fade. */
-		at(240, function () { chest.classList.add('is-open', 'is-bursting'); });
-		at(1540, function () {
+		/*
+		 * ONE CLOCK, HUNG OFF THE OPEN.
+		 *
+		 * The chest is shut when the dialog arrives, rattles, and then
+		 * opens -- so the opening is something you watch rather than
+		 * something that already happened behind the fade. Everything
+		 * after it is written as an offset FROM the open rather than as
+		 * an absolute, because the rattle moves that moment and three
+		 * hardcoded timestamps would have had to move with it.
+		 *
+		 * The 40ms between the rattle finishing and the lid going is not
+		 * slack: it is the beat of stillness that makes the pop land.
+		 */
+		at(MCM_SHAKE_AT, function () { chest.classList.add('is-shaking'); });
+		at(MCM_OPEN, function () {
+			chest.classList.remove('is-shaking');
+			chest.classList.add('is-open', 'is-bursting');
+		});
+		at(MCM_OPEN + 1300, function () {
 			chest.classList.remove('is-bursting');
 			chest.classList.add('is-settled');
 		});
@@ -369,14 +435,14 @@ foreach ($ms_daily['days'] as $mcm_d) {
 			k.style.setProperty('--mcmdx', (mx - (r.left + r.width / 2)).toFixed(1) + 'px');
 			k.style.setProperty('--mcmdy', (my - (r.top + r.height / 2)).toFixed(1) + 'px');
 			k.style.transitionDelay = (i * 0.11) + 's, 0s';
-			at(430, function () { k.classList.add('in'); });
+			at(MCM_OPEN + 190, function () { k.classList.add('in'); });
 		});
 	};
 
 	function reset() {
 		timers.forEach(clearTimeout);
 		timers = [];
-		chest.classList.remove('is-open', 'is-bursting', 'is-settled');
+		chest.classList.remove('is-shaking', 'is-open', 'is-bursting', 'is-settled');
 		items.innerHTML = '';
 	}
 

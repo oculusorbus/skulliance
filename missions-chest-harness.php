@@ -409,6 +409,68 @@ ok(strpos($admCode, 'dhcf_award(') === false,
 /* The art arrives by FTP, so a fresh deploy has markup and no pictures. */
 ok(strpos($admCode, "addEventListener('error'") !== false,
    'the preview shows broken frames rather than saying which files are missing');
+echo "\nthe chest rattles before it opens, on one clock\n";
+/*
+ * THE BUILD-UP IS THE POINT. The dialog used to open the chest 240ms in
+ * and that was the whole of it: a lid swap you could miss. Something
+ * tries to get out first, and the rattle gets louder so the pop lands on
+ * a pattern the eye has already started following.
+ *
+ * TWO NUMBERS THAT MUST AGREE. The length lives in the CSS animation and
+ * in MCM_SHAKE, and nothing in a browser enforces the match: too short
+ * and the chest opens mid-throw, too long and it sits still waiting. So
+ * both are read out of the file and compared.
+ */
+$shakeCss = preg_match('~\.mcm-chest\.is-shaking \{ animation: mcmShake ([0-9.]+)s~', $modal, $sm)
+          ? (float)$sm[1] * 1000 : -1;
+$shakeJs  = preg_match('~MCM_SHAKE\s*=\s*MCM_CALM \? 0 : (\d+);~', $modal, $sj) ? (int)$sj[1] : -1;
+ok($shakeCss > 0, 'the rattle has no CSS animation, so the chest just waits and then opens');
+ok($shakeJs > 0,  'the script has no rattle duration, so nothing drives the delay');
+ok((int)$shakeCss === $shakeJs,
+   'the rattle is ' . $shakeCss . 'ms in the CSS and ' . $shakeJs . 'ms in the script, '
+ . 'so the chest opens mid-throw or sits still waiting for it');
+/* And the lid must not go while the chest is still moving. */
+$shakeAt = preg_match('~MCM_SHAKE_AT\s*=\s*(\d+);~', $modal, $sa) ? (int)$sa[1] : -1;
+$openExp = preg_match('~MCM_OPEN\s*=\s*MCM_SHAKE \? MCM_SHAKE_AT \+ MCM_SHAKE \+ (\d+) : (\d+);~', $modal, $so);
+ok($shakeAt >= 0 && $openExp === 1,
+   'the open is no longer expressed from the rattle, so the two can drift apart');
+/*
+ * IT HAS TO END ON `none`. The class comes off at the same instant the
+ * lid swaps; a keyframe that finished mid-throw would snap the chest
+ * back four pixels under the burst -- the same class of bug as the glow
+ * pulse above, in the other direction.
+ */
+ok(preg_match('~@keyframes mcmShake \{.*?100%\s*\{ transform: none; \}~s', $modal) === 1,
+   'the rattle does not settle to centre, so removing the class jerks the chest as it opens');
+/*
+ * ONE CLOCK. Everything after the open is written as an offset FROM it,
+ * because the rattle moved that moment and three hardcoded timestamps
+ * would each have had to move with it.
+ */
+$bareAt = array();
+if (preg_match_all('~\bat\((\d+)[,\s]~', $modal, $bm)) $bareAt = $bm[1];
+ok(count($bareAt) === 0,
+   'there are hardcoded timings in the sequence (' . implode(', ', $bareAt) . 'ms); '
+ . 'they drift the moment the rattle changes length');
+/*
+ * REDUCED MOTION TAKES THE DELAY, NOT JUST THE ANIMATION. Turning the
+ * CSS animation off on its own would leave the dialog staring at a shut
+ * chest for two thirds of a second, for exactly the players who asked
+ * for less of this.
+ */
+ok(strpos($modal, "matchMedia('(prefers-reduced-motion: reduce)').matches") !== false,
+   'the script does not read the motion preference, so the delay runs for everybody');
+/* The block is taken to its own closing brace at column 0, not with
+   [^}]* -- that window ends at the FIRST inner rule's brace, two rules
+   short of the one being looked for. */
+$calm = preg_match('~@media \(prefers-reduced-motion: reduce\) \{.*?\n\}~s', $modal, $cm) ? $cm[0] : '';
+ok($calm !== '', 'the reduced-motion block is gone');
+ok(strpos($calm, '.mcm-chest.is-shaking { animation: none; }') !== false,
+   'the rattle still animates under reduced motion');
+/* And a second claim must not open on a chest still wearing the class. */
+ok(preg_match('~classList\.remove\(\x27is-shaking\x27, \x27is-open\x27~', $modal) === 1,
+   'reset leaves is-shaking on, so the next claim starts on a chest mid-rattle');
+
 echo "\nthe idle pulse joins the opening without a jump\n";
 /*
  * THE STUTTER. The glow transitions to opacity 1 as the chest opens,
