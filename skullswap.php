@@ -2561,6 +2561,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          when it is dismissed and a player who finishes one run never
          meets it again. See lib/match3-intro.php. */ ?>
 <?php require_once __DIR__ . '/lib/match3-intro.php';
-      match3_intro(array('game' => 'Skull Swap', 'project' => 0)); ?>
+      match3_intro(array('game' => 'Skull Swap',
+                         'played' => match3_intro_marks('skullswap'))); ?>
 
 <?php include 'dhc-dropmodal.php'; ?>

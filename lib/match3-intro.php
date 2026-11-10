@@ -31,47 +31,85 @@
  */
 
 /**
- * Has this account ever logged a score in this game?
+ * Has this account ever played one of these?
+ *
+ * EACH GAME KEEPS ITS OWN RECORD, so the gate cannot assume one table.
+ * Skull Swap and Monstrocity write a row in `scores`; the Arena writes
+ * a battle and DHC Bosses a run, in tables of their own. A caller hands
+ * over the places its own game would have left a mark and ANY of them
+ * counts, because the Arena and the Bosses are the same board in two
+ * modes and learning it in one is learning it in both.
  *
  * ANY ROW COUNTS, not a good one. The question is "have they played",
- * and a run that scored zero still taught them how the board moves.
+ * and a run that scored nothing still taught them how the board moves.
  *
  * @param mysqli $conn
- * @param int    $project_id  scores.project_id: 0 Skull Swap, 36 Monstrocity
+ * @param array  $marks  list of array('from' => table, 'user' => column,
+ *                                     'and' => extra SQL or '')
  */
-function match3_intro_played($conn, $project_id) {
+function match3_intro_played($conn, $marks) {
 	static $seen = array();
-	$pid = (int) $project_id;
 	$uid = (int) ($_SESSION['userData']['user_id'] ?? 0);
 	if ($uid <= 0) return true;          /* logged out: never interrupt */
-	$key = $uid . ':' . $pid;
+	$key = $uid . '|' . json_encode($marks);
 	if (isset($seen[$key])) return $seen[$key];
 
-	/* @-wrapped and defaulting to PLAYED. A failed read must not put a
-	   dialog in front of a returning player's board; the cost of missing
-	   the intro once is nothing, the cost of nagging a veteran is real. */
+	/*
+	 * DEFAULTS TO PLAYED, and each read can only move it toward "yes".
+	 * A failed query must not put a dialog in front of a returning
+	 * player's board: missing the intro once costs nothing, nagging a
+	 * veteran costs more than it ever saves.
+	 */
 	$seen[$key] = true;
-	$r = @$conn->query("SELECT id FROM scores WHERE user_id = '" . $uid
-	                 . "' AND project_id = '" . $pid . "' LIMIT 1");
-	if ($r) $seen[$key] = ($r->num_rows > 0);
+	$any = false; $read = false;
+	foreach ($marks as $m) {
+		$from = preg_replace('~[^a-z0-9_]~i', '', (string) ($m['from'] ?? ''));
+		$user = preg_replace('~[^a-z0-9_]~i', '', (string) ($m['user'] ?? ''));
+		if ($from === '' || $user === '') continue;
+		$r = @$conn->query("SELECT 1 FROM `" . $from . "` WHERE `" . $user . "` = '"
+		                 . $uid . "'" . (string) ($m['and'] ?? '') . " LIMIT 1");
+		if (!$r) continue;               /* unreadable: say nothing either way */
+		$read = true;
+		if ($r->num_rows > 0) { $any = true; break; }
+	}
+	if ($read) $seen[$key] = $any;
 	return $seen[$key];
 }
 
 /**
  * Render the overlay. Call once, near the end of the body.
  *
- * @param array $o  game    display name, used in the copy
- *                  project scores.project_id for the played check
- *                  force   true to render regardless (the admin preview)
+ * @param array $o  game   display name, used in the copy
+ *                  played the marks above; omit with force
+ *                  force  true to render regardless (the admin preview)
  */
 function match3_intro($o) {
-	$game    = isset($o['game']) ? (string) $o['game'] : 'this game';
-	$project = isset($o['project']) ? (int) $o['project'] : -1;
-	$force   = !empty($o['force']);
+	$game  = isset($o['game']) ? (string) $o['game'] : 'this game';
+	$force = !empty($o['force']);
 	if (!$force) {
-		if ($project < 0) return;
+		if (empty($o['played']) || !is_array($o['played'])) return;
 		if (!isset($GLOBALS['conn'])) return;
-		if (match3_intro_played($GLOBALS['conn'], $project)) return;
+		if (match3_intro_played($GLOBALS['conn'], $o['played'])) return;
 	}
 	require __DIR__ . '/match3-intro-view.php';
+}
+
+/**
+ * The marks for each game, in one place so three pages and the harness
+ * cannot disagree about what "has played" means.
+ */
+function match3_intro_marks($which) {
+	$all = array(
+		/* project_id 0 is Skull Swap, 36 is Monstrocity. */
+		'skullswap'   => array(array('from' => 'scores', 'user' => 'user_id',
+		                             'and'  => " AND project_id = '0'")),
+		'monstrocity' => array(array('from' => 'scores', 'user' => 'user_id',
+		                             'and'  => " AND project_id = '36'")),
+		/* ONE SET FOR BOTH ARENA MODES. dhcbosses.php is `require
+		   dhcarena.php` -- the same board, the same slide -- so a player
+		   who has done either has met the mechanic. */
+		'dhcarena'    => array(array('from' => 'dhc_arena_battles', 'user' => 'attacker_id', 'and' => ''),
+		                       array('from' => 'dhc_boss_runs',     'user' => 'user_id',     'and' => '')),
+	);
+	return isset($all[$which]) ? $all[$which] : array();
 }

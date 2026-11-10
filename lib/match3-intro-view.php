@@ -11,29 +11,58 @@
 <div id="m3i" aria-hidden="true">
 	<div id="m3i-box" role="dialog" aria-modal="true" aria-labelledby="m3i-title">
 		<div id="m3i-kick">Before your first run</div>
-		<h4 id="m3i-title">Tiles travel the whole row</h4>
+		<?php /* It names BOTH axes and takes two lines to do it. The one
+		         thing this overlay exists to remove is an assumption, so a
+		         shorter title that leaves one of them to be inferred would
+		         be the bug in the headline. */ ?>
+		<h4 id="m3i-title">Tiles travel the whole row or column</h4>
 
-		<?php /* THE DEMO. Five columns, three rows, and the move happens on
-		         the middle one. Built here rather than in script so it is
-		         in the markup a screen reader and a no-JS browser meet;
-		         the script only moves what is already on the page. */ ?>
+		<?php /* THE DEMO. Five by five, and it performs TWO moves: a row
+		         slide from one edge to the other, then a column slide the
+		         same way. Two, because one move along one axis leaves the
+		         other axis to be guessed at, and the whole problem being
+		         fixed is players not guessing. Edge to edge, because the
+		         distance IS the lesson -- a short hop still looks like a
+		         swap with extra steps.
+
+		         Built here rather than in script so it is in the markup a
+		         screen reader and a no-JS browser meet; the script only
+		         moves what is already on the page. */ ?>
 		<div id="m3i-stage">
 			<div id="m3i-grid" aria-hidden="true">
 				<?php
 				/*
-				 * THE ROW THAT MAKES THE POINT: a circle at the left, two
-				 * strangers, then two more circles. Dragging the circle two
-				 * cells right leaves three circles in a line -- a match a
-				 * neighbour swap cannot reach from here, which is the whole
-				 * lesson in one move.
+				 * THIS BOARD IS SOLVED, NOT SKETCHED. It was searched for
+				 * under three conditions, and all three are load-bearing:
+				 *
+				 *   1. no three-in-a-row anywhere to begin with, or the
+				 *      demo opens on a board the game would already have
+				 *      cleared;
+				 *   2. row 1 dragged x0 -> x4 lands EXACTLY ONE match,
+				 *      horizontal at x2..x4;
+				 *   3. column 1 dragged y0 -> y4 lands EXACTLY ONE match,
+				 *      vertical at y2..y4.
+				 *
+				 * Exactly one each way, because a second accidental match
+				 * would fire somewhere the demo never highlights and read
+				 * as the board doing something unexplained.
+				 *
+				 * Both lines are c q r c c, which is what makes the rotation
+				 * work: the tile that travels the full length meets the pair
+				 * that was already sitting at the far end. A neighbour swap
+				 * cannot reach either match from the corner, which is the
+				 * argument the whole overlay exists to make.
+				 *
+				 * c circle, q square, r triangle. NOT 't' for triangle: the
+				 * base class on every tile is .m3i-t, so a triangle came out
+				 * as class="m3i-t m3i-t" and its own rule never matched.
 				 */
-				/* c circle, q square, r triangle. NOT 't' for triangle: the
-				   base class on every tile is .m3i-t, so a triangle came out
-				   as class="m3i-t m3i-t" and its own rule never matched. */
 				$m3i_rows = array(
-					array('r', 'c', 'q', 'r', 'c'),
-					array('c', 'r', 'q', 'c', 'c'),   /* the live row */
-					array('q', 'c', 'r', 'q', 'r'),
+					array('r', 'c', 'r', 'q', 'q'),
+					array('c', 'q', 'r', 'c', 'c'),   /* the row that slides */
+					array('r', 'r', 'q', 'r', 'c'),
+					array('q', 'c', 'q', 'c', 'q'),
+					array('q', 'c', 'c', 'r', 'c'),
 				);
 				foreach ($m3i_rows as $ry => $m3i_row):
 					foreach ($m3i_row as $rx => $kind): ?>
@@ -46,12 +75,15 @@
 			</div>
 		</div>
 
+		<div id="m3i-leg" aria-hidden="true"><span id="m3i-axis">Sliding a row</span></div>
+
 		<p id="m3i-say">
-			Drag a tile as far as you like along its row or column. Everything it
-			passes shifts back one place to make room.
+			Drag a tile as far as you like along its row <em>or its column</em> -
+			the whole way to the far edge if you want. Everything it passes shifts
+			back one place to make room.
 		</p>
 		<p id="m3i-say2">
-			That is the whole trick: a match three cells away is one move, not three.
+			That is the whole trick: a match four cells away is one move, not four.
 			<?php echo htmlspecialchars($game); ?> is won by the players who use it.
 		</p>
 
@@ -75,7 +107,7 @@
 #m3i-box, #m3i-box * { text-align: center; }
 #m3i-kick { font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
   color: #6f8ba3; }
-#m3i-title { margin: 4px 0 12px; font-size: 1.22rem; letter-spacing: .03em;
+#m3i-title { margin: 4px 0 12px; font-size: 1.1rem; line-height: 1.3; letter-spacing: .03em;
   color: #00c8a0; text-transform: none; }
 
 /* ---- the board ------------------------------------------------------- */
@@ -87,7 +119,7 @@
 #m3i-grid { --m3i-s: 38px; --m3i-g: 5px; --m3i-c: calc(var(--m3i-s) + var(--m3i-g));
   position: relative;
   width: calc(var(--m3i-c) * 5 - var(--m3i-g));
-  height: calc(var(--m3i-c) * 3 - var(--m3i-g)); }
+  height: calc(var(--m3i-c) * 5 - var(--m3i-g)); }
 .m3i-t { position: absolute; width: var(--m3i-s); height: var(--m3i-s);
   left: 0; top: 0; border-radius: 4px;
   transform: translate(calc(var(--m3i-c) * var(--dx, 0)), calc(var(--m3i-c) * var(--dy, 0)));
@@ -121,7 +153,12 @@
   transition: transform .42s cubic-bezier(.3,.8,.3,1), opacity .18s linear; }
 #m3i-hand.on { opacity: 1; }
 
-#m3i-say  { margin: 13px 0 0; font-size: .82rem; line-height: 1.45; color: #cfe3d9; }
+/* The axis, named. The two moves show it, and this leaves nothing to
+   infer from them. */
+#m3i-leg { margin: 10px 0 0; font-size: .68rem; letter-spacing: .14em;
+  text-transform: uppercase; color: #00c8a0; min-height: 1em; }
+#m3i-say em { font-style: normal; color: #00c8a0; }
+#m3i-say  { margin: 9px 0 0; font-size: .82rem; line-height: 1.45; color: #cfe3d9; }
 #m3i-say2 { margin: 7px 0 0; font-size: .76rem; line-height: 1.45; color: #8fa7bb; }
 #m3i-go { width: 100%; margin-top: 16px; padding: 11px 14px; font: inherit;
   font-size: .95rem; letter-spacing: .08em; text-transform: uppercase;
@@ -133,7 +170,7 @@
   transform: translateY(2px); box-shadow: 0 0 0 rgba(0,0,0,.3); }
 #m3i-go:focus-visible { outline: 2px solid #04121c; outline-offset: -4px; }
 
-@media (max-width: 420px) { #m3i-grid { --m3i-s: 32px; --m3i-g: 4px; } }
+@media (max-width: 420px) { #m3i-grid { --m3i-s: 30px; --m3i-g: 4px; } }
 /*
  * REDUCED MOTION KEEPS THE LESSON AND DROPS THE LOOP. The board is
  * still the point, so it is left in its STARTING state with the hand
@@ -168,15 +205,35 @@
 		el.style.setProperty('--dy', y);
 	}
 
-	/* The live row is y=1: c t s c c. Dragging the circle at x=0 to x=2
-	   leaves t s c c c -- three circles from x=2. */
-	var ROW = 1, FROM = 0, TO = 2;
+	/*
+	 * TWO MOVES, BOTH EDGE TO EDGE.
+	 *
+	 * One move along one axis leaves the other axis to be guessed at,
+	 * and players not guessing is the entire problem. And the DISTANCE
+	 * is the lesson: a two-cell hop still reads as a swap with extra
+	 * steps, where a tile crossing the whole board cannot be mistaken
+	 * for one.
+	 *
+	 * The board is solved for exactly these two (see the note on the
+	 * markup): each lands one match and only one.
+	 */
+	var LAST = 4;
+	var MOVES = [
+		{ axis: 'row', line: 1, from: 0, to: LAST, label: 'Sliding a row' },
+		{ axis: 'col', line: 1, from: 0, to: LAST, label: 'Sliding a column' }
+	];
 	var calm = window.matchMedia
 	        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 	var timers = [];
 	function at(ms, fn) { timers.push(setTimeout(fn, ms)); }
 	function clear() { timers.forEach(clearTimeout); timers = []; }
+
+	/* Where cell i on this move's line lives, as [x, y]. One function so
+	   the whole sequence below is written once for both axes. */
+	function cellOf(mv, i) { return mv.axis === 'row' ? [i, mv.line] : [mv.line, i]; }
+	function tileOf(mv, i) { var c = cellOf(mv, i); return tiles[c[0] + ',' + c[1]]; }
+	function put(el, cell) { place(el, cell[0], cell[1]); }
 
 	function reset() {
 		Array.prototype.forEach.call(grid.querySelectorAll('.m3i-t'), function (t) {
@@ -185,47 +242,61 @@
 			place(t, +t.getAttribute('data-x'), +t.getAttribute('data-y'));
 		});
 		hand.classList.remove('on');
-		place(hand, FROM, ROW);
 	}
 
-	function run() {
+	var axisEl = document.getElementById('m3i-axis');
+	var at_ = 0;
+
+	function scene(n) {
+		var mv = MOVES[n % MOVES.length];
 		clear();
 		reset();
-		if (calm) { hand.classList.add('on'); return; }   /* the still frame */
+		put(hand, cellOf(mv, mv.from));
+		axisEl.textContent = mv.label;
+		if (calm) {                       /* the still frame, no loop */
+			hand.classList.add('on');
+			tileOf(mv, mv.from).classList.add('lift');
+			return;
+		}
 
-		var moved = tiles[FROM + ',' + ROW];
+		var moved = tileOf(mv, mv.from);
 		/* Grab. */
-		at(520, function () {
+		at(460, function () {
 			hand.classList.add('on');
 			moved.classList.add('lift');
 		});
-		/* Drag. The grabbed tile goes to TO; everything it passes steps
-		   back one, which is exactly what slideTiles() does to the board. */
-		at(980, function () {
-			place(moved, TO, ROW);
-			place(hand, TO, ROW);
-			for (var x = FROM + 1; x <= TO; x++) place(tiles[x + ',' + ROW], x - 1, ROW);
+		/*
+		 * Drag the whole way. The grabbed tile goes to the far edge and
+		 * every tile it passes steps one place back toward where it
+		 * started -- which is exactly what the board does: the move
+		 * rotates the span, it does not swap two cells.
+		 */
+		at(900, function () {
+			put(moved, cellOf(mv, mv.to));
+			put(hand, cellOf(mv, mv.to));
+			for (var i = mv.from + 1; i <= mv.to; i++) put(tileOf(mv, i), cellOf(mv, i - 1));
 		});
-		/* Let go, and the three that are now in a line go off. */
-		at(1520, function () {
+		/* Let go. */
+		at(1600, function () {
 			moved.classList.remove('lift');
 			hand.classList.remove('on');
 		});
-		at(1760, function () {
-			[TO, TO + 1, TO + 2].forEach(function (x) {
-				var t = tiles[(x === TO ? FROM : x) + ',' + ROW];
-				if (t) t.classList.add('pop');
+		/*
+		 * The three that are now in a line. After the rotation the far
+		 * end holds the travelling tile and the two that were already
+		 * sitting there, so the match is always {from, to-1, to} in
+		 * STARTING coordinates -- which is how they are addressed.
+		 */
+		function trio(fn) {
+			[mv.from, mv.to - 1, mv.to].forEach(function (i) {
+				var t = tileOf(mv, i); if (t) fn(t);
 			});
-		});
-		at(2320, function () {
-			[TO, TO + 1, TO + 2].forEach(function (x) {
-				var t = tiles[(x === TO ? FROM : x) + ',' + ROW];
-				if (t) t.style.opacity = '.15';
-			});
-		});
-		at(3400, run);
+		}
+		at(1860, function () { trio(function (t) { t.classList.add('pop'); }); });
+		at(2420, function () { trio(function (t) { t.style.opacity = '.15'; }); });
+		at(3500, function () { scene(n + 1); });
 	}
-	run();
+	scene(0);
 
 	function close() {
 		clear();

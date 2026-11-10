@@ -18,6 +18,12 @@ games in every way that affects you: a separate daily allowance, a separate ladd
 most importantly **a separate recovery clock**. A Fighter resting from a ranked Arena
 battle can still be sent at the bosses, and the other way round.
 
+## The board
+
+**A tile slides the whole row or column, it does not swap with a neighbour.** This is the one rule new players do not guess, because every other match-3 works the other way. Drag a tile left, right, up or down as far as you like and let go: it lands where you dropped it and everything it passed shifts back one place to make room. A match four cells away is **one move, not four** - and some lines can only be made this way at all. Players who never find this score badly and tend to assume the game is harder than it is, which is why it is now demonstrated on the board itself before a first run.
+
+See [[games-dhc-arena]] for the rest of how a battle is fought.
+
 ## The crew
 
 | | |

@@ -519,6 +519,7 @@ Under the map there are **Download image** and **Copy image**. Both make a
 PNG of the whole map at twice the size it is drawn on screen, so it stays
 sharp when somebody opens it, and neither needs a screenshot.
 
+* **A tile slides the whole row or column, it does not swap with a neighbour.** This is the one rule new players do not guess, because every other match-3 works the other way. Drag a tile left, right, up or down as far as you like and let go: it lands where you dropped it and everything it passed shifts back one place to make room. A match four cells away is **one move, not four** - and some lines can only be made this way at all. Players who never find this score badly and tend to assume the game is harder than it is, which is why it is now demonstrated on the board itself before a first run.
 * **Download image** saves the file. On an iPhone it opens the usual share
   sheet instead, where **Save Image** puts it in your camera roll.
 * **Copy image** puts it straight on your clipboard, ready to paste into

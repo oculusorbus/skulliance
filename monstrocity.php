@@ -5606,7 +5606,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
          when it is dismissed and a player who finishes one run never
          meets it again. See lib/match3-intro.php. */ ?>
 <?php require_once __DIR__ . '/lib/match3-intro.php';
-      match3_intro(array('game' => 'Monstrocity', 'project' => 36)); ?>
+      match3_intro(array('game' => 'Monstrocity',
+                         'played' => match3_intro_marks('monstrocity'))); ?>
 
 <?php include 'dhc-dropmodal.php'; ?>
 </html>

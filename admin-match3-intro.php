@@ -17,9 +17,22 @@ include 'skulliance.php';
 require_once __DIR__ . '/admin-lib.php';
 admin_require();   // before any output, and before header.php
 
-$ami_game = (isset($_GET['game']) && $_GET['game'] === 'monstrocity')
-          ? array('Monstrocity', 36, 'monstrocity.php')
-          : array('Skull Swap',  0,  'skullswap.php');
+/*
+ * FOUR NAMES, THREE PAGES. DHC Bosses is `require dhcarena.php` and
+ * Boss Battles is monstrocity.php#boss, so two of these are modes of a
+ * page already listed. They are named separately anyway because the
+ * copy names the game and a player on the Bosses page has never heard
+ * of the Arena.
+ */
+$ami_all = array(
+	'skullswap'   => array('Skull Swap',  'skullswap.php',   'scores, project_id 0'),
+	'monstrocity' => array('Monstrocity', 'monstrocity.php', 'scores, project_id 36'),
+	'bossbattles' => array('Monstrocity', 'monstrocity.php#boss', 'scores, project_id 36'),
+	'dhcarena'    => array('DHC Arena',   'dhcarena.php',    'dhc_arena_battles or dhc_boss_runs'),
+	'dhcbosses'   => array('DHC Bosses',  'dhcbosses.php',   'dhc_arena_battles or dhc_boss_runs'),
+);
+$ami_key  = (isset($_GET['game']) && isset($ami_all[$_GET['game']])) ? $_GET['game'] : 'skullswap';
+$ami_game = $ami_all[$ami_key];
 
 include 'header.php';
 admin_chrome('match3-intro');
@@ -35,32 +48,33 @@ admin_chrome('match3-intro');
 
 	<h4>Who sees it</h4>
 	<small>
-		Any account with no row in <code>scores</code> for that game. The score is
-		the record, so nothing is written when it is dismissed: a player who closes
-		it without playing meets it again next time, and a player who finishes one
-		run never does. There is no flag to reset and nothing to clean up, which is
-		also why this page exists -- once you have played, you cannot reach it.
+		Any account with no row in the table that game already writes when it is
+		played: <code>scores</code> for Skull Swap and Monstrocity, a battle or a
+		Boss run for the Arena. That row IS the record, so nothing is written when
+		the overlay is dismissed: a player who closes it without playing meets it
+		again next time, and a player who finishes one run never does. There is no
+		flag to reset and nothing to clean up, which is also why this page exists.
+		Once you have played, you cannot reach it.
 	</small>
 
 	<h4>Which game</h4>
 	<div class="adm-pick">
-		<?php foreach (array('skullswap' => 'Skull Swap', 'monstrocity' => 'Monstrocity') as $k => $label): ?>
+		<?php foreach ($ami_all as $k => $row): ?>
 		<a class="small-button" href="admin-match3-intro.php?game=<?php echo $k; ?>"><?php
-			echo htmlspecialchars($label); ?></a>
+			echo htmlspecialchars($k === 'bossbattles' ? 'Boss Battles' : $row[0]); ?></a>
 		<?php endforeach; ?>
 	</div>
 	<small>
-		Showing <strong><?php echo htmlspecialchars($ami_game[0]); ?></strong>
-		(<code>scores.project_id = <?php echo (int) $ami_game[1]; ?></code>, served by
-		<code><?php echo htmlspecialchars($ami_game[2]); ?></code>). The copy names
-		the game, which is the only thing that differs between the two.
+		Showing <strong><?php echo htmlspecialchars($ami_game[0]); ?></strong>, served by
+		<code><?php echo htmlspecialchars($ami_game[1]); ?></code>, gated on
+		<code><?php echo htmlspecialchars($ami_game[2]); ?></code>. The copy names the
+		game, which is the only thing that differs between them.
 	</small>
 
 	<h4>Reopen</h4>
 	<div class="adm-pick">
 		<a class="small-button" href="admin-match3-intro.php?game=<?php
-			echo isset($_GET['game']) ? htmlspecialchars($_GET['game'], ENT_QUOTES) : 'skullswap';
-		?>">Play it again</a>
+			echo htmlspecialchars($ami_key, ENT_QUOTES); ?>">Play it again</a>
 	</div>
 	<small>The demo loops on its own; this is for after you have dismissed it.</small>
 </div></div>

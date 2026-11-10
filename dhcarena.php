@@ -5581,6 +5581,19 @@ function dhca_ladder_html($rows, $user_id, $guest, $empty) {
  * dhc-dropmodal.php is already pulled in by header.php platform-wide, so a win
  * that drops a trait reveals it here without this page doing anything.
  */
+?>
+<?php /* THE SLIDE, EXPLAINED ONCE. Only for an account that has never
+         fought a battle here and never taken a Boss run: the Arena and
+         DHC Bosses are the same board (dhcbosses.php is `require
+         dhcarena.php`), so meeting the mechanic in one is meeting it in
+         both and one set of marks covers the pair.
+
+         The name follows the page, because the copy names the game and
+         a player on the Bosses page has not heard of the Arena. */ ?>
+<?php require_once __DIR__ . '/lib/match3-intro.php';
+      match3_intro(array('game' => $IS_BOSS ? 'DHC Bosses' : 'DHC Arena',
+                         'played' => match3_intro_marks('dhcarena'))); ?>
+<?php
 $conn->close();
 ?>
 </html>
