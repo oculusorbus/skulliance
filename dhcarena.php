@@ -1018,6 +1018,35 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .endcard.win .ec-title{color:var(--teal);text-shadow:0 0 26px rgba(0,200,160,.45)}
 .arena-wrap .endcard.lose .ec-title{color:var(--blood);text-shadow:0 0 26px rgba(224,70,107,.4)}
 .arena-wrap .ec-sub{font-size:12px;color:var(--bone);opacity:.85;max-width:74%}
+/*
+ * THE FIERCEST FIGHTER. A tile of the real art beside the number that
+ * earned it. It borrows .tok's art box rather than inventing a second one,
+ * so a Fighter looks the same here as it does in the column it fought in --
+ * and a boss, which is one flat picture instead of a trait stack, needs no
+ * special case because layerImgs() already handles both.
+ */
+.arena-wrap .ec-fierce[hidden]{display:none}
+.arena-wrap .ec-fierce{display:flex;align-items:center;gap:11px;
+  padding:7px 13px 7px 7px;border:1px solid var(--line);border-radius:4px;
+  background:rgba(0,0,0,.28)}
+.arena-wrap .endcard.win .ec-fierce{border-color:rgba(0,200,160,.4)}
+.arena-wrap .ec-fierce-art{position:relative;width:54px;height:54px;flex:0 0 54px;
+  border-radius:3px;overflow:hidden;background:var(--panel2)}
+.arena-wrap .ec-fierce-art img{position:absolute;inset:0;width:100%;height:100%;
+  object-fit:contain;image-rendering:auto}
+.arena-wrap .ec-fierce-txt{display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  text-align:left;min-width:0}
+.arena-wrap .ec-fierce-kick{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim)}
+.arena-wrap .ec-fierce-txt b{font-size:13px;color:var(--bone);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:40vw}
+.arena-wrap .ec-fierce-stat{font-size:10.5px;color:var(--ochre)}
+@media (max-width:1000px){
+  .arena-wrap .ec-fierce{gap:9px;padding:5px 10px 5px 5px}
+  .arena-wrap .ec-fierce-art{width:42px;height:42px;flex:0 0 42px}
+  .arena-wrap .ec-fierce-txt b{font-size:11.5px}
+  .arena-wrap .ec-fierce-stat{font-size:9.5px}
+}
 .arena-wrap .ec-stats{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;
   font-size:10px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
 .arena-wrap .ec-stats b{display:block;font-size:17px;color:var(--bone);letter-spacing:0;
@@ -2896,6 +2925,19 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <div class="endcard" id="endcard" hidden>
             <div class="ec-title" id="ecTitle"></div>
             <div class="ec-sub" id="ecSub"></div>
+            <?php /* THE ONE FIGHTER WORTH NAMING. dhca_fiercest() already
+                     picks this for the Discord post -- most damage dealt on
+                     the winning side -- and the player it happened to never
+                     saw it. Hidden until showEnd() fills it, because a boss
+                     run resumed from a dead session has no crew to show. */ ?>
+            <div class="ec-fierce" id="ecFierce" hidden>
+              <div class="ec-fierce-art" id="ecFierceArt"></div>
+              <div class="ec-fierce-txt">
+                <span class="ec-fierce-kick" id="ecFierceKick"></span>
+                <b id="ecFierceName"></b>
+                <span class="ec-fierce-stat" id="ecFierceStat"></span>
+              </div>
+            </div>
             <div class="ec-stats" id="ecStats"></div>
             <?php /* The share is back. It was pulled because this page sat behind
                      skulliance.php, so the link in a post was a login prompt for
@@ -4073,6 +4115,68 @@ function roundWorth(res){
   if (!(n > 1)) return '';
   return ' Every round you send a Crew now banks ' + n + ' traits instead of one.';
 }
+/**
+ * THE FIERCEST FIGHTER ON A SIDE: most damage dealt, first one wins a tie.
+ *
+ * THIS RULE IS ALSO WRITTEN IN PHP, in dhca_fiercest() (dhcarena-lib.php),
+ * which is what names the Fighter in the Discord post. The two have to
+ * agree or the same battle gets two different heroes a minute apart, so
+ * this is a deliberate transcription and not a second opinion:
+ *
+ *   - highest `dealt`, which dhca_public() already sends for both sides;
+ *   - strictly greater, so the FIRST of equal scores wins, as PHP's `>` does;
+ *   - and if nobody landed a hit, fall back to the highest `power`.
+ *
+ * The fallback is not decoration. A battle can end on a boss timer or a
+ * forfeit with no damage on the board at all, and "fiercest: nobody" is
+ * worse than naming the hardest hitter that was sent.
+ */
+function fiercestOf(side){
+  var team = S[side] || [];
+  if (!team.length) return null;
+  var at = -1, best = -1;
+  for (var i = 0; i < team.length; i++) {
+    var d = +team[i].dealt || 0;
+    if (d > best) { best = d; at = i; }
+  }
+  if (at < 0) return null;
+  if (best <= 0) {
+    at = 0; var bp = -1;
+    for (i = 0; i < team.length; i++) {
+      var p = +team[i].power || 0;
+      if (p > bp) { bp = p; at = i; }
+    }
+  }
+  return { f: team[at], dealt: Math.max(0, best) };
+}
+
+/**
+ * WHICH SIDE IT COMES FROM, and the two answers are different on purpose.
+ *
+ * A BATTLE shows the WINNING side's, which is what dhca_fiercest() does and
+ * therefore what the Discord post says: on a win it is one of yours, and on
+ * a loss it is the Fighter that did it to you, which is the more interesting
+ * half of a defeat.
+ *
+ * A BOSS RUN always shows YOURS. The crew being wiped is the normal, paying
+ * outcome there -- the day's trait is decided by damage, not by kills -- so
+ * "won" is not a thing to read a side off, and the whole feature is about
+ * what your Crew landed.
+ */
+function showFierce(side){
+  var box = $('ecFierce');
+  if (!box) return;
+  var best = fiercestOf(side);
+  if (!best || !best.f) { box.hidden = true; return; }
+  $('ecFierceArt').innerHTML = layerImgs(best.f, false);
+  $('ecFierceKick').textContent = (side === 'mine' ? 'Your fiercest' : 'Their fiercest');
+  $('ecFierceName').textContent = best.f.name;
+  $('ecFierceStat').textContent = best.dealt > 0
+    ? best.dealt.toLocaleString() + ' damage dealt'
+    : 'Hardest hitter sent';
+  box.hidden = false;
+}
+
 function showEnd(res){
   var won = res.over === 'mine';
   var card = $('endcard');
@@ -4173,6 +4277,7 @@ function showEnd(res){
     }
   }
   $('ecSub').textContent = sub;
+  showFierce(bossRun ? 'mine' : (won ? 'mine' : 'foes'));
   $('ecStats').innerHTML =
       '<span><b>'+S.round+'</b>rounds</span>'
     + '<span><b>'+S.stats.bombs+'</b>bombs armed</span>'

@@ -22,6 +22,13 @@ adds your own Fighters, a Crew you choose, rivals, traits and the ladder. The
 
 ---
 
+## The fiercest Fighter
+
+When a battle ends, the card names the one Fighter that did the most damage and shows its art. On a win that is one of yours; on a loss it is the Fighter that did it to you, which is the more interesting half of a defeat. It is the same Fighter the Discord post names, picked by the same rule, so the two can never disagree about who the hero was.
+
+A **boss run** always shows yours. The crew being wiped is the normal, paying outcome there, so there is no winning side to read it off, and the whole thing is counted in damage rather than kills.
+
+
 ## Getting in
 
 | | |

@@ -1399,3 +1399,76 @@ if ($sh_rc !== 0) {
 } else {
 	echo "the share post says what the battle did: ok\n";
 }
+
+function fi_ok($c, $w) { global $fi_fail; if (!$c) { $fi_fail++; echo "  FAIL  $w\n"; } }
+$fi_fail = 0;
+echo "\nthe fiercest Fighter is the same one the Discord post names\n";
+{
+	/*
+	 * THE RULE IS WRITTEN TWICE, in two languages, and that is the whole
+	 * risk. dhca_fiercest() in dhcarena-lib.php names the Fighter in the
+	 * post; fiercestOf() in dhcarena.php names it on the end card. The
+	 * same battle must not get two different heroes a minute apart.
+	 */
+	$lib  = (string) file_get_contents(__DIR__ . '/dhcarena-lib.php');
+	$page = (string) file_get_contents(__DIR__ . '/dhcarena.php');
+	$php  = substr($lib, strpos($lib, 'function dhca_fiercest('));
+	$php  = substr($php, 0, strpos($php, "\n}"));
+	$jsf  = substr($page, strpos($page, 'function fiercestOf('));
+	$jsf  = substr($jsf, 0, strpos($jsf, "\n}"));
+	fi_ok(strlen($php) > 100 && strlen($jsf) > 100,
+	   'one of the two fiercest implementations could not be read, so this check is blind');
+
+	/* Both rank on `dealt`. */
+	fi_ok(strpos($php, "['dealt']") !== false, 'the PHP rule no longer ranks on damage dealt');
+	fi_ok(strpos($jsf, '.dealt') !== false,    'the client rule no longer ranks on damage dealt');
+	/* Both use a STRICT greater-than, so the first of equal scores wins.
+	   A >= on one side and a > on the other picks a different Fighter on
+	   every tie, which is the hardest kind of disagreement to notice. */
+	fi_ok(preg_match('~\$score > \$best~', $php) === 1,
+	   'the PHP rule no longer breaks ties on the first Fighter');
+	fi_ok(preg_match('~d > best~', $jsf) === 1,
+	   'the client rule no longer breaks ties on the first Fighter');
+	/* Both fall back to power when nothing was dealt. */
+	fi_ok(strpos($php, "['power']") !== false && preg_match('~\$best <= 0~', $php) === 1,
+	   'the PHP rule has no zero-damage fallback');
+	fi_ok(strpos($jsf, '.power') !== false && preg_match('~best <= 0~', $jsf) === 1,
+	   'the client rule has no zero-damage fallback');
+	/* And the payload actually carries it, or the client ranks on nothing. */
+	/* INSIDE dhca_public()'s $slim, not anywhere in the engine: 'dealt' =>
+	   appears in the engine's own bookkeeping too, so a file-wide search
+	   passed with the payload field deleted. */
+	$eng  = (string) file_get_contents(__DIR__ . '/dhcarena-engine.php');
+	$slim = substr($eng, strpos($eng, 'function dhca_public('));
+	$slim = substr($slim, 0, strpos($slim, "\n\t};"));
+	fi_ok(preg_match("~'dealt'\s*=>~", $slim) === 1,
+	   'dhca_public() no longer sends dealt, so the card ranks every Fighter at zero');
+
+	/*
+	 * WHICH SIDE, and the two answers differ on purpose. A battle shows
+	 * the winner's, matching the post. A boss run always shows yours,
+	 * because the crew being wiped is the normal paying outcome there and
+	 * the feature counts damage, not kills.
+	 */
+	fi_ok(strpos($php, "\$side = \$won ? 'mine' : 'foes';") !== false,
+	   'the PHP rule no longer reads the winning side');
+	fi_ok(preg_match("~showFierce\(bossRun \? 'mine' : \(won \? 'mine' : 'foes'\)\)~", $page) === 1,
+	   'the card picks a side some other way than the post does');
+
+	/* It renders through the ONE art builder, so a Fighter looks the same
+	   here as in the column it fought in -- and a boss, which is one flat
+	   picture, needs no special case. */
+	$show = substr($page, strpos($page, 'function showFierce('));
+	$show = substr($show, 0, strpos($show, "\n}"));
+	fi_ok(strpos($show, 'layerImgs(') !== false,
+	   'the card draws the Fighter itself instead of using layerImgs(), so bosses and trait stacks will diverge');
+	fi_ok(strpos($show, 'box.hidden = true') !== false,
+	   'the block is never hidden, so a battle with no crew shows an empty tile');
+	fi_ok(strpos($page, 'id="ecFierce"') !== false && strpos($page, '<div class="ec-fierce" id="ecFierce" hidden>') !== false,
+	   'the block is not hidden by default, so it flashes empty before a battle ends');
+	fi_ok(strpos($page, '.arena-wrap .ec-fierce') !== false,
+	   'the block has no scoped styling');
+}
+
+echo $fi_fail ? "  $fi_fail FAILED\n" : "  ok\n";
+if ($fi_fail) exit(1);
