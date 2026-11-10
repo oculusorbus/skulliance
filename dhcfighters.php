@@ -694,8 +694,36 @@ a.dhcf-stat span{opacity:.85}
       <button type="button" id="dhcfSave" data-edit="<?php echo (int)$dhcf_editing['id']; ?>">Update Fighter</button>
       <a class="dhcf-cancel" href="dhcfighters.php">Cancel</a>
     <?php else: ?>
-      <input type="text" id="dhcfName" maxlength="48"
-             placeholder="Name this Fighter (optional &mdash; defaults to <?php echo htmlspecialchars($dhcf_next); ?>)">
+      <?php /*
+       * THE AUTOFILL ATTRIBUTES ARE A BUG FIX, NOT TIDINESS.
+       *
+       * Reported: on a phone, typing a name drops the page to the very
+       * bottom after EVERY keystroke, so the name has to be typed blind
+       * and the player scrolls back up to save. That is enough friction
+       * to stop anybody naming a Fighter on a phone at all.
+       *
+       * iOS decides a text field wants Contacts autofill from its id,
+       * its name and its placeholder -- and this one is id="dhcfName"
+       * with a placeholder that opens on the word "Name", which is
+       * about as strong a signal as it is possible to send. The
+       * AutoFill strip then appears and disappears above the keyboard
+       * as the suggestion changes, the visual viewport resizes under
+       * it, and Safari re-runs its scroll-the-focused-field-into-view
+       * on a page whose height just moved.
+       *
+       * autocomplete="off" alone is routinely ignored for fields that
+       * LOOK like a person's name, so the heuristic is answered rather
+       * than argued with: the field is declared a one-off value
+       * (autocomplete="off" plus a name that is not a person's), the
+       * correction machinery that drives the strip is turned off, and
+       * the placeholder no longer opens on "Name".
+       *
+       * autocapitalize stays on words -- that one is wanted here.
+       */ ?>
+      <input type="text" id="dhcfName" name="dhcf-callsign" maxlength="48"
+             autocomplete="off" autocorrect="off" spellcheck="false"
+             autocapitalize="words" enterkeyhint="done"
+             placeholder="Call this Fighter something (optional &mdash; defaults to <?php echo htmlspecialchars($dhcf_next); ?>)">
       <button type="button" id="dhcfSave">Save Fighter</button>
     <?php endif; ?>
     <span class="dhcf-say" id="dhcfSay"></span>
@@ -1119,7 +1147,18 @@ function dhcf_board_html($rows) {
    * the player happens to click something.
    */
   document.addEventListener('click',   function () { setTimeout(syncSave, 0); });
-  document.addEventListener('keyup',   function () { setTimeout(syncSave, 0); });
+  /*
+   * NOT FOR THE NAME FIELD. This listener is here to catch a trait
+   * picked with the keyboard, and a keystroke in the name box can
+   * never change what is on the canvas -- so re-running the whole
+   * check, and rewriting the note under the save bar, on every letter
+   * of a name is work that can only ever move the layout under a
+   * focused input on a phone. Costs nothing to skip.
+   */
+  document.addEventListener('keyup',   function (e) {
+    if (e.target && e.target.id === 'dhcfName') return;
+    setTimeout(syncSave, 0);
+  });
   document.addEventListener('change',  function () { setTimeout(syncSave, 0); });
   document.addEventListener('dragend', function () { setTimeout(syncSave, 0); });
   /* And once more after everything has settled, for a canvas the assembler

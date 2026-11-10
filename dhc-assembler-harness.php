@@ -595,5 +595,53 @@ ok(strpos($asm_c, 'NOARMS.indexOf') === false,
 ok(strpos($asm_c, 'function armlessPlate(') !== false,
    'the sandbox has no single helper for reading NOARMS, so its three readers can drift');
 
+/* ------------------------------------------------------------------
+   NAMING A FIGHTER ON A PHONE
+   ------------------------------------------------------------------ */
+/*
+ * REPORTED: on an iPhone, typing a name drops the page to the very
+ * bottom after EVERY keystroke, so the name is typed blind and the
+ * player scrolls back up to save. Not reproducible in a desktop
+ * browser at phone width -- driven here with synthetic input events
+ * the scroll offset never moved -- which is what points at iOS's
+ * Contacts autofill rather than at anything in the layout.
+ *
+ * iOS decides a field wants that autofill from its id, its name and
+ * its placeholder, and this one was id="dhcfName" with a placeholder
+ * opening on the word "Name". The AutoFill strip then appears and
+ * disappears above the keyboard as the suggestion changes, the visual
+ * viewport resizes under it, and Safari re-runs its
+ * scroll-the-focused-field-into-view against a page whose height has
+ * just moved.
+ *
+ * These are asserted because every one of them is a single attribute
+ * that looks like clutter to anybody tidying the markup later, and
+ * losing any of them brings the bug back on a device the harness
+ * cannot run on.
+ */
+$fighters_src = (string) file_get_contents(__DIR__ . '/dhcfighters.php');
+$nameTag = preg_match('~<input type="text" id="dhcfName".*?>~s', $fighters_src, $ntm) ? $ntm[0] : '';
+ok($nameTag !== '', 'the Fighter name field is gone');
+foreach (array('autocomplete="off"', 'autocorrect="off"', 'spellcheck="false"') as $attr) {
+	ok(strpos($nameTag, $attr) !== false,
+	   'the name field lost ' . $attr . ', which is part of what keeps iOS from '
+	 . 'treating it as a contact and scrolling the page on every keystroke');
+}
+/* The placeholder is read by the same heuristic, so it must not open on
+   the one word that says "this is a person's name". */
+ok(preg_match('~placeholder="[Nn]ame~', $nameTag) !== 1,
+   'the placeholder opens on "Name" again, which is the strongest signal iOS reads');
+ok(strpos($nameTag, 'name="dhcf-callsign"') !== false,
+   'the field has no name of its own, or it is back to a contact-shaped one');
+/*
+ * AND THE KEYSTROKE DOES NO WORK. The document-level keyup listener is
+ * there to catch a trait picked with the keyboard; a key in the name
+ * box cannot change what is on the canvas, so re-running the check and
+ * rewriting the note under the save bar on every letter is work that
+ * can only move the layout under a focused input.
+ */
+ok(preg_match('~addEventListener\(\x27keyup\x27,\s*function \(e\) \{\s*if \(e\.target && e\.target\.id === \x27dhcfName\x27\) return;~s', $fighters_src) === 1,
+   'a keystroke in the name field still re-runs the save check, which rewrites the bar under it');
+
 echo "\n".($fail ? "FAILED: $fail check(s)\n" : "all assembler checks passed\n");
 exit($fail ? 1 : 0);
