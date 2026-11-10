@@ -186,4 +186,168 @@ admin_chrome('chest');
 	});
 })();
 </script>
+
+<?php /*
+ * ===== THE GLOW TUNER, AND IT IS TEMPORARY =====================
+ *
+ * Behind ?tune=1 so it never renders for anybody who did not ask for
+ * it, and it is not wired into the admin tabs. The six numbers under
+ * the chest -- where its pool of light sits, how deep it is, how far it
+ * spreads, the angle of the floor it lies in, and the two ends of its
+ * falloff -- are the kind of thing nobody gets right by arithmetic.
+ * This makes them draggable against the real art, writes the finished
+ * rule out, and keeps it in localStorage so it survives the reload the
+ * day buttons do.
+ *
+ * It writes NOTHING to the stylesheet. The values here have to be
+ * copied into missions-claim-modal.php by hand, and the harness checks
+ * the geometry there -- the glow's centre has to land on the chest's
+ * footprint midpoint (89.2% of the chest, measured off open.webp) and
+ * its depth has to be at least 1.8x the footprint. The readout prints
+ * both, so an over-dragged setting says so before it is pasted.
+ *
+ * DELETE THIS BLOCK once the numbers are settled.
+ */ ?>
+<?php if (isset($_GET['tune'])): ?>
+<style>
+#tune { position: fixed; right: 14px; top: 14px; z-index: 100000; width: 300px;
+  max-height: 92vh; overflow: auto; background: #0a1929; color: #e8eaed;
+  border: 1px solid #1b3346; border-radius: 4px; padding: 12px 14px;
+  font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; }
+#tune h4 { margin: 0 0 8px; font-size: .78rem; letter-spacing: .12em;
+  text-transform: uppercase; color: #00c8a0; }
+#tune label { display: block; margin: 9px 0 0; color: #8fa7bb; }
+#tune label b { color: #e8eaed; font-weight: normal; float: right; }
+#tune input[type=range] { width: 100%; margin: 3px 0 0; accent-color: #00c8a0; }
+#tune textarea { width: 100%; height: 150px; margin-top: 10px; resize: vertical;
+  background: #071320; color: #cfe3d9; border: 1px solid #1b3346; border-radius: 3px;
+  font: 11px/1.35 ui-monospace, Menlo, Consolas, monospace; padding: 7px; }
+#tune .tune-row { display: flex; gap: 7px; margin-top: 9px; }
+#tune button { flex: 1; padding: 7px; font: inherit; border: 0; border-radius: 3px;
+  cursor: pointer; color: #04121c; background: #00c8a0; }
+#tune button.ghost { color: #9fb6c4; background: rgba(255,255,255,.08); }
+#tune .tune-check { margin-top: 8px; padding: 6px 8px; border-radius: 3px;
+  background: rgba(0,200,160,.08); color: #cfe3d9; }
+#tune .tune-check.bad { background: rgba(224,122,122,.12); color: #ffd4d4; }
+</style>
+<div id="tune">
+	<h4>Glow tuner</h4>
+	<div id="tune-fields"></div>
+	<div class="tune-check" id="tune-check"></div>
+	<div class="tune-row">
+		<button type="button" id="tune-copy">Copy CSS</button>
+		<button type="button" class="ghost" id="tune-reset">Reset</button>
+	</div>
+	<textarea id="tune-out" readonly></textarea>
+</div>
+<script>
+(function () {
+	var KEY = 'mcmGlowTune';
+	/* The shipped values, which are also what Reset returns to. */
+	var DEF = { bottom: -7, height: 96, width: 334, rot: -4.7, core: 0.48, spread: 1.00 };
+	/* Measured off open.webp: the footprint's midpoint is 89.2% down the
+	   chest and it is 18.3% of the chest deep. Same numbers the harness
+	   uses, so the readout agrees with what will pass. */
+	var MID = 0.892, DEPTH = 0.183;
+
+	var FIELDS = [
+		['bottom', 'bottom (up / down)', -80, 80, 1],
+		['height', 'height (depth of pool)', 20, 220, 1],
+		['width',  'width (spread)',       120, 500, 1],
+		['rot',    'rotate (floor angle)', -20, 8, 0.1],
+		['core',   'core alpha',           0, 1, 0.01],
+		['spread', 'falloff scale',        0.5, 1.8, 0.01]
+	];
+
+	var val = Object.assign({}, DEF);
+	try { var saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+	      if (saved) val = Object.assign(val, saved); } catch (e) {}
+
+	var wrap = document.getElementById('tune-fields');
+	FIELDS.forEach(function (f) {
+		var id = 'tune-' + f[0];
+		var l = document.createElement('label');
+		l.innerHTML = f[1] + ' <b id="' + id + '-v"></b>'
+		            + '<input type="range" id="' + id + '" min="' + f[2] + '" max="' + f[3]
+		            + '" step="' + f[4] + '">';
+		wrap.appendChild(l);
+	});
+
+	var css = document.getElementById('tune-out');
+	var check = document.getElementById('tune-check');
+	var style = document.createElement('style');
+	document.head.appendChild(style);
+
+	function rule() {
+		var s = val.spread;
+		/* The five stops, scaled together so one slider moves the whole
+		   falloff instead of six. The alphas keep their shipped ratios
+		   to the core. */
+		var stops = [[0, 1], [26, .625], [50, .25], [68, .0625], [82, 0]];
+		var body = stops.map(function (p) {
+			var pos = Math.min(100, Math.round(p[0] * s));
+			var a = (val.core * p[1]).toFixed(3).replace(/0+$/, '').replace(/\.$/, '.0');
+			return '    rgba(0,200,160,' + a + ') ' + pos + '%';
+		}).join(',\n');
+		return '#mcm-plinth::before {\n'
+		     + '  left: 50%; bottom: ' + val.bottom + 'px; width: ' + val.width
+		     + 'px; height: ' + val.height + 'px;\n'
+		     + '  transform: translateX(-50%) rotate(' + val.rot + 'deg);\n'
+		     + '  background: radial-gradient(50% 50% at 50% 50%,\n' + body + ');\n}';
+	}
+
+	/* The same arithmetic the harness does, so an over-dragged setting
+	   says so here rather than failing after it is pasted. */
+	function verdict() {
+		var pl = document.getElementById('mcm-plinth');
+		var ch = document.getElementById('mcm-chest');
+		if (!pl || !ch) return 'open a day first, so there is a chest to measure against';
+		var plH = pl.getBoundingClientRect().height;
+		var chH = ch.getBoundingClientRect().height;
+		var pad = parseFloat(getComputedStyle(pl).paddingBottom) || 0;
+		var footMid = (plH - pad - chH) + chH * MID;
+		var glowMid = plH - val.bottom - val.height / 2;
+		var off = Math.round(glowMid - footMid);
+		var minDepth = Math.round(chH * DEPTH * 1.8);
+		var okCentre = Math.abs(off) <= 8, okDepth = val.height >= minDepth;
+		check.className = 'tune-check' + (okCentre && okDepth ? '' : ' bad');
+		return 'centre ' + (off === 0 ? 'on' : (off > 0 ? off + 'px below' : (-off) + 'px above'))
+		     + ' the footprint line' + (okCentre ? ' (ok)' : ' (over 8px)')
+		     + ' \u00b7 depth ' + val.height + ' of ' + minDepth + ' min'
+		     + (okDepth ? ' (ok)' : ' (too shallow)');
+	}
+
+	function paint() {
+		FIELDS.forEach(function (f) {
+			var el = document.getElementById('tune-' + f[0]);
+			el.value = val[f[0]];
+			document.getElementById('tune-' + f[0] + '-v').textContent = val[f[0]];
+		});
+		var r = rule();
+		style.textContent = r;
+		css.value = r;
+		check.textContent = verdict();
+		try { localStorage.setItem(KEY, JSON.stringify(val)); } catch (e) {}
+	}
+
+	FIELDS.forEach(function (f) {
+		document.getElementById('tune-' + f[0]).addEventListener('input', function () {
+			val[f[0]] = parseFloat(this.value);
+			paint();
+		});
+	});
+	document.getElementById('tune-reset').addEventListener('click', function () {
+		val = Object.assign({}, DEF); paint();
+	});
+	document.getElementById('tune-copy').addEventListener('click', function () {
+		css.select(); css.setSelectionRange(0, 99999);
+		try { document.execCommand('copy'); } catch (e) {}
+	});
+
+	paint();
+	/* The reveal re-renders the chest, so re-measure once it has. */
+	setInterval(function () { check.textContent = verdict(); }, 1200);
+})();
+</script>
+<?php endif; ?>
 </html>
