@@ -46,10 +46,56 @@
  * NFTs / Stats / Account) rather than inventing a second taxonomy, so someone
  * who learns this page can still find things in the menu afterwards.
  *
- * Emoji rather than image icons: images deploy by FTP outside this repo, so
- * 26 new icons would mean 26 uploads that have to land before this page stops
- * looking broken -- and this is the first page after login.
+ * EMOJI IS THE FALLBACK, NOT THE PLAN, for the Play section.
+ *
+ * It was the plan, and for a good reason: images deploy by FTP outside
+ * this repo, so new icons would mean uploads that have to land before
+ * this page stops looking broken, and this is the first page after
+ * login. $lp_icons below resolves that rather than ignoring it. Every
+ * entry keeps its emoji, the markup renders the image WITH the emoji
+ * behind it, and an icon that has not been uploaded -- or ever is -- is
+ * the page exactly as it was. Nothing here is a dependency.
+ *
+ * KEYED BY NAME, NOT A SIXTH ARRAY ELEMENT. The shape above is a
+ * documented contract: readers that only want the names use index 0 to
+ * 3, and admin-outreach.php is one of them. A fifth element already
+ * means "requirement", so a sixth would have to be reached past it with
+ * a placeholder on every entry that has no gate. A separate map costs
+ * those readers nothing.
  */
+/*
+ * THE ART, AND THE COLOUR IT IS MADE OF.
+ *
+ * array(file, accent). The accent is not chosen: it is measured out of
+ * the image itself -- the dominant hue of its lit, saturated pixels,
+ * then set to a fixed saturation and lightness so it reads as an accent
+ * on a dark panel rather than inheriting the art's own murk. That is why
+ * most are violet, Bosses and Racer are blue, and the five with
+ * torchlight, sparks or parchment are amber.
+ *
+ * A tile whose art has not been uploaded still gets its accent, so the
+ * section does not go half-coloured while the FTP catches up.
+ */
+$lp_icons = array(
+	'DHC Fighters'     => array('dhc-fighters', '#7842db'),
+	'DHC Arena'        => array('dhc-arena', '#db7842'),
+	'DHC Bosses'       => array('dhc-bosses', '#4284db'),
+	'DHC Drop Ship'    => array('dhc-dropship', '#7542db'),
+	'Missions'         => array('missions', '#db8842'),
+	'Realms'           => array('realms', '#7b42db'),
+	'Realm Guardians'  => array('guardians', '#8042db'),
+	'Crypt Crawl'      => array('cryptcrawl', '#db8342'),
+	'Crypt Conquest'   => array('cryptconquest', '#9c42db'),
+	'Monstrocity'      => array('monstrocity', '#a342db'),
+	'Boss Battles'     => array('bossbattles', '#7f42db'),
+	'Skull Swap'       => array('skullswap', '#8142db'),
+	'Skull Racer'      => array('skullracer', '#4258db'),
+	'Gauntlets'        => array('gauntlets', '#db7e42'),
+	'Obscura'          => array('obscura', '#db9a42'),
+	'Drop Ship'        => array('dropship', '#7a42db'),
+	'Dread City'       => array('dreadcity', '#5742db'),
+);
+
 $lp_sections = array(
 	'Play' => array(
 		'accent' => '#ffcc44',

@@ -324,9 +324,28 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 			foreach (array_merge($lp_ready, $lp_later) as $it):
 				$lp_need = isset($it[4]) ? $it[4] : '';
 				$lp_ok   = player_need_met($lp_need, $lp_state); ?>
-				<a class="lp-tile<?php echo $lp_ok ? '' : ' lp-tile-later'; ?>"
+				<?php /*
+				 * THE ART IS THE PANEL, and its accent came out of the art.
+				 *
+				 * An <img> rather than a CSS background, for one reason:
+				 * onerror. Images deploy by FTP outside this repo, and a
+				 * background-image that 404s is a silently empty tile. This
+				 * way a missing upload puts the emoji back and the tile is
+				 * what it always was, which is the whole reason the
+				 * catalogue chose emoji to begin with. Not lazy: this is the
+				 * top of the first page after login.
+				 */
+				$lp_ico = isset($lp_icons[$it[2]]) ? $lp_icons[$it[2]] : null;
+				$lp_acc = $lp_ico ? $lp_ico[1] : $lp_sec['accent']; ?>
+				<a class="lp-tile<?php echo $lp_ok ? '' : ' lp-tile-later'; ?><?php
+				      echo $lp_ico ? ' lp-tile-art-on' : ''; ?>"
+				   style="--lp-accent:<?php echo htmlspecialchars($lp_acc, ENT_QUOTES, 'UTF-8'); ?>"
 				   href="<?php echo htmlspecialchars($it[0]); ?>">
-					<span class="lp-tile-icon"><?php echo $it[1]; ?></span>
+					<span class="lp-tile-icon" data-emoji="<?php echo htmlspecialchars($it[1], ENT_QUOTES, 'UTF-8'); ?>"><?php
+						if ($lp_ico): ?><img class="lp-tile-art" src="icons/play/<?php echo $lp_ico[0]; ?>.webp"
+							alt="" decoding="async"
+							onerror="this.parentNode.textContent=this.parentNode.dataset.emoji;this.closest('.lp-tile').classList.remove('lp-tile-art-on')"><?php
+						else: echo $it[1]; endif; ?></span>
 					<span class="lp-tile-name"><?php echo htmlspecialchars($it[2]); ?></span>
 					<span class="lp-tile-desc"><?php echo htmlspecialchars($it[3]); ?></span>
 					<?php if (!$lp_ok): ?>
@@ -493,7 +512,54 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	transition: background-color 0.15s ease, transform 0.15s ease;
 }
 .lp-tile:hover { background: #10263c; transform: translateY(-2px); }
+/* The emoji's own size, which is what a tile with no art falls back to. */
 .lp-tile-icon { font-size: 1.6rem; line-height: 1; margin-bottom: 8px; }
+
+/*
+ * A TILE WITH ART IS SQUARE AND FULL BLEED.
+ *
+ * Square because the source is: these were cropped square out of a 5x4
+ * sheet, and a wide short tile would cut the subject in half. The art
+ * fills the panel and the text sits at the bottom over a scrim, the same
+ * arrangement as the hero banner and for the same measured reason -- the
+ * sheet is dark at the bottom of every cell and busiest through the
+ * middle.
+ */
+.lp-tile.lp-tile-art-on {
+	position: relative;
+	aspect-ratio: 1;
+	justify-content: flex-end;
+	overflow: hidden;
+	padding: 0;
+	border-radius: 0;              /* the old 8px, which the sweep does not reach */
+	background: #0d1e30;
+}
+.lp-tile-art-on .lp-tile-icon { position: absolute; inset: 0; margin: 0; }
+.lp-tile-art { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* The scrim. Clear over the subject, solid under the words. */
+.lp-tile-art-on::after {
+	content: ""; position: absolute; inset: 0; pointer-events: none;
+	background: linear-gradient(180deg,
+		rgba(10,16,26,0.00) 38%,
+		rgba(10,16,26,0.55) 62%,
+		rgba(10,16,26,0.92) 100%);
+}
+.lp-tile-art-on .lp-tile-name,
+.lp-tile-art-on .lp-tile-desc,
+.lp-tile-art-on .lp-tile-need { position: relative; z-index: 1; }
+.lp-tile-art-on .lp-tile-name { padding: 0 12px; text-shadow: 0 2px 10px rgba(0,0,0,0.9); }
+.lp-tile-art-on .lp-tile-desc { padding: 0 12px 12px; text-shadow: 0 1px 8px rgba(0,0,0,0.95); }
+.lp-tile-art-on .lp-tile-need { padding: 0 12px 12px; }
+/* The accent is the art's own colour now, so the top rule is worth more
+   than 2px and the hover can use it too. */
+.lp-tile-art-on { border-top-width: 3px; }
+.lp-tile-art-on:hover { transform: translateY(-2px); }
+.lp-tile-art-on:hover .lp-tile-art { transform: scale(1.04); }
+.lp-tile-art { transition: transform 0.25s ease; }
+@media (prefers-reduced-motion: reduce) {
+	.lp-tile-art-on:hover { transform: none; }
+	.lp-tile-art, .lp-tile-art-on:hover .lp-tile-art { transition: none; transform: none; }
+}
 .lp-tile-name { font-weight: bold; font-size: 0.95rem; }
 .lp-tile-desc { font-size: 0.73rem; color: rgba(255,255,255,0.45); margin-top: 4px; }
 

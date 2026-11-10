@@ -215,6 +215,10 @@ echo "\nthe page marks but never blocks\n";
 	 */
 	$lpTileCss = '';
 	foreach (preg_split('~\}~', $code) as $chunk) {
+		/* ::after is the scrim over the art, and it carries
+		   pointer-events:none so clicks reach the tile underneath -- the
+		   opposite of disabling it. */
+		if (preg_match('~::(after|before)~', $chunk)) continue;
 		if (preg_match('~\.lp-tile~', $chunk)) $lpTileCss .= $chunk . '}';
 	}
 	ok(strpos($lpTileCss, 'pointer-events: none') === false,
@@ -359,6 +363,104 @@ echo "\nthe hero banner degrades, and never blocks the links on it\n";
 	   'Start Here sits directly on the photograph, where a row you must find and tap cannot be read');
 	ok(preg_match('~\.lp-banner \.lp-todo\s*\{[^}]*border-radius:\s*0~s', $bn) === 1,
 	   'the Start Here panel keeps the old rounded corner the rest of the platform has dropped');
+}
+
+
+echo "\nthe Play icons are art over emoji, never instead of it\n";
+{
+	/*
+	 * The catalogue chose emoji for a specific reason: images deploy by
+	 * FTP outside this repo, so an icon that has not landed yet would
+	 * break the first page after login. That reason has not gone away --
+	 * it is answered. Every item keeps its emoji, the markup renders the
+	 * image WITH the emoji behind it, and a missing upload is the page
+	 * exactly as it was.
+	 */
+	$ic_page = (string) file_get_contents(__DIR__ . '/launchpad.php');
+
+	/* THE MAP AND THE LIST DRIFT APART, in both directions. */
+	$ic_play = $lp_sections['Play']['items'];
+	$ic_miss = array(); $ic_names = array();
+	foreach ($ic_play as $ic_it) {
+		$ic_names[] = $ic_it[2];
+		if (!isset($lp_icons[$ic_it[2]])) $ic_miss[] = $ic_it[2];
+	}
+	ok(count($ic_miss) === 0, 'these Play items have no icon: ' . implode(', ', $ic_miss));
+	$ic_orphan = array_diff(array_keys($lp_icons), $ic_names);
+	ok(count($ic_orphan) === 0,
+	   'these icons are mapped to nothing in Play: ' . implode(', ', $ic_orphan));
+	$ic_files = array();
+	foreach ($lp_icons as $ic_k => $ic_v) $ic_files[] = is_array($ic_v) ? $ic_v[0] : $ic_v;
+	ok(count(array_unique($ic_files)) === count($ic_files),
+	   'two Play items share one icon file');
+	/*
+	 * THE ACCENT COMES OUT OF THE ART. Every entry carries one, measured
+	 * from the image's dominant lit hue -- so a tile whose art has not
+	 * been uploaded still gets its colour and the section does not go
+	 * half-coloured while the FTP catches up.
+	 */
+	$ic_badacc = array();
+	foreach ($lp_icons as $ic_k => $ic_v) {
+		if (!is_array($ic_v) || count($ic_v) !== 2
+		    || !preg_match('~^#[0-9a-f]{6}$~i', $ic_v[1])) $ic_badacc[] = $ic_k;
+	}
+	ok(count($ic_badacc) === 0,
+	   'these have no measured accent: ' . implode(', ', $ic_badacc));
+	ok(preg_match('~--lp-accent:<\?php echo htmlspecialchars\(\$lp_acc~', $ic_page) === 1,
+	   'the tile does not use its own accent, so every tile wears the section colour');
+
+	/* EVERY ITEM KEEPS ITS EMOJI, because that is the fallback. */
+	$ic_noemoji = array();
+	foreach ($ic_play as $ic_it) if (trim((string) $ic_it[1]) === '') $ic_noemoji[] = $ic_it[2];
+	ok(count($ic_noemoji) === 0,
+	   'these items lost their emoji, so a missing upload leaves them blank: ' . implode(', ', $ic_noemoji));
+
+	/* THE SHAPE OF THE CATALOGUE IS A CONTRACT. Index 4 already means
+	   "requirement", so the icon is a separate map rather than a sixth
+	   element every ungated entry would need a placeholder for. */
+	$ic_cat = (string) file_get_contents(__DIR__ . '/lib/launchpad-catalogue.php');
+	ok(preg_match('~\$lp_icons\s*=\s*array\(~', $ic_cat) === 1,
+	   'the icons are not a map of their own any more');
+	foreach ($ic_play as $ic_it) {
+		ok(count($ic_it) <= 5,
+		   $ic_it[2] . ' has a sixth element; readers that use index 0 to 3 are a documented contract');
+	}
+
+	/* THE FALLBACK IS REAL, not a comment about one. */
+	ok(strpos($ic_page, 'data-emoji="') !== false,
+	   'the markup does not carry the emoji, so there is nothing to fall back to');
+	ok(strpos($ic_page, 'this.parentNode.textContent=this.parentNode.dataset.emoji') !== false,
+	   'a broken icon stays broken instead of showing the emoji it replaced');
+	ok(preg_match('~src="icons/play/~', $ic_page) === 1,
+	   'the icons are not loaded from icons/play/');
+	ok(strpos($ic_page, 'src="https://') === false,
+	   'the icons are referenced absolutely; cookies here are host-only, so paths stay relative');
+
+	/* The emoji was a text node and inherited the centring flexbox.css
+	   puts on a bare `a`, which .lp-tile is. An image does not. */
+	/*
+	 * THE ART IS THE PANEL. Square because the source is -- these were
+	 * cropped square out of a 5x4 sheet, and a wide short tile would cut
+	 * the subject in half.
+	 */
+	ok(preg_match('~\.lp-tile\.lp-tile-art-on \{[^}]*aspect-ratio:\s*1~s', $ic_page) === 1,
+	   'the art tiles are not square, so the subject is cropped out of its own panel');
+	ok(preg_match('~\.lp-tile-art \{[^}]*object-fit:\s*cover~s', $ic_page) === 1,
+	   'the art is not cover-fitted, so it distorts or letterboxes');
+	ok(preg_match('~\.lp-tile\.lp-tile-art-on \{[^}]*overflow:\s*hidden~s', $ic_page) === 1,
+	   'the art is not clipped to the panel');
+	ok(preg_match('~\.lp-tile\.lp-tile-art-on \{[^}]*border-radius:\s*0~s', $ic_page) === 1,
+	   'the art tile keeps the old rounded corner; the sweep cannot reach this one, its colour is not in the list');
+	/* Words on a photograph need their own contrast. */
+	ok(preg_match('~\.lp-tile-art-on::after \{[^}]*linear-gradient~s', $ic_page) === 1,
+	   'there is no scrim, so the name and description sit raw on the art');
+	ok(preg_match('~\.lp-tile-art-on::after \{[^}]*pointer-events:\s*none~s', $ic_page) === 1,
+	   'the scrim does not pass clicks through, so the tile cannot be tapped');
+	ok(strpos($ic_page, 'prefers-reduced-motion') !== false,
+	   'the art hover animates regardless of reduced motion');
+	/* A tile whose art fails must stop pretending to be an art tile. */
+	ok(strpos($ic_page, "classList.remove('lp-tile-art-on')") !== false,
+	   'a broken image leaves the tile square and empty instead of falling back to the old shape');
 }
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
