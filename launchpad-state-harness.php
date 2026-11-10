@@ -467,6 +467,77 @@ echo "\nthe hero banner degrades, and never blocks the links on it\n";
 	ok(strpos($bnArt, 'aspect-ratio: 1728 / 1152') !== false,
 	   'the backdrop is not the shape of the art, so cover crops the picture it exists to show');
 	/*
+	 * THE CROP IS A FRACTION OF THE WIDTH, NOT A NUMBER OF PIXELS.
+	 *
+	 * -180px is the owner's figure, found against the real art on a
+	 * full-width browser. The box is the image's own shape, so its
+	 * height follows its width -- at 1200px the picture is 800px tall
+	 * and that same 180px is more than twice the share of it, walking
+	 * the crop down the citadel as the window narrows. 180/2000 is 9%,
+	 * so the shift is written as 9vw and clamped at 180px, which is
+	 * where the 2000px container stops growing.
+	 *
+	 * Both halves are checked: a bare px shift is the bug, and a vw
+	 * shift with no clamp keeps lifting on a 3000px monitor where the
+	 * art has stopped widening.
+	 */
+	ok(preg_match('~background-position: 50% calc\(min\(9vw, 180px\) \* -1\)~', $bnArt) === 1,
+	   'the crop shift is not a clamped fraction of the width, so it is only right at one window size');
+	/*
+	 * AND NOT ON A PHONE. Down there min-height wins, so cover is
+	 * already scaling the picture up to fill the band rather than
+	 * fitting it -- lifting it as well leaves a transparent strip along
+	 * the bottom of the banner, inside the band.
+	 */
+	$bnPhone = preg_match('~@media \(max-width: 700px\) \{.*?\n\}~s', $bn, $bpm) ? $bpm[0] : '';
+	ok($bnPhone !== '', 'the phone block is gone');
+	/*
+	 * AND IT HAS TO BE THE LAST THING IN THE SHEET.
+	 *
+	 * It used to sit in the middle, and CSS resolves a tie on source
+	 * order: every base rule below it won. The phone never got
+	 * minmax(140px) -- it got the 190px desktop track, which fits
+	 * exactly one column in the ~385px a phone leaves, so every tile
+	 * became a full-width square and the page became a mile of them.
+	 * The smaller description size died the same way. Both rules were
+	 * here, both were asserted, and neither had ever applied, because
+	 * an assertion that a rule EXISTS is not an assertion that it wins.
+	 *
+	 * Checked as a position rather than as a list of selectors: if the
+	 * block ends the stylesheet then nothing can be added after it, and
+	 * nobody has to remember which properties it overrides.
+	 */
+	/* The STYLESHEET, not the file -- there is a </body> and a <script>
+	   after it, and comparing against the rest of the file made this
+	   fail on markup that has nothing to do with the cascade. */
+	$bnEnd  = strpos($bn, $bnPhone);
+	$bnShut = strpos($bn, '</style>', $bnEnd === false ? 0 : $bnEnd);
+	ok($bnEnd !== false && $bnShut !== false
+	   && trim(substr($bn, $bnEnd + strlen($bnPhone), $bnShut - $bnEnd - strlen($bnPhone))) === '',
+	   'the phone block is not the last thing in the stylesheet, so any base rule below it wins the tie');
+	/*
+	 * A GRID ITEM WITH AN ASPECT RATIO NEEDS AN EXPLICIT WIDTH.
+	 *
+	 * Its default self-alignment is `normal`, which stretches to the
+	 * track -- except, per CSS Sizing, for an item with an aspect ratio,
+	 * where `normal` behaves as `start` and it sizes to its own content.
+	 * Chrome stretches anyway; iOS Safari does not, so on a phone every
+	 * tile shrank to the width of its own description and the column
+	 * came out ragged, longest sentence making the widest panel.
+	 *
+	 * The backdrop has the mirror of the same problem: left:0 right:0
+	 * resolved its width, then min-height made its HEIGHT definite and
+	 * the ratio ran backwards to compute a width from it -- 270px times
+	 * 1.5 is 405px against a 393px phone, twelve pixels of horizontal
+	 * scroll on every page.
+	 */
+	ok(preg_match('~\.lp-tile\.lp-tile-art-on \{[^}]*width: 100%~s', $bn) === 1,
+	   'the art tile has an aspect ratio and no width, so Safari sizes each one to its own text');
+	ok(preg_match('~\.lp-stage-art \{[^}]*width: 100%;\s*\n\taspect-ratio~s', $bn) === 1,
+	   'the backdrop lets its aspect ratio run backwards off the min-height and overflow the page');
+	ok(preg_match('~\.lp-stage-art \{[^}]*background-position: 50% 0~s', $bnPhone) === 1,
+	   'the phone block does not cancel the crop shift, so the bottom of the band goes transparent');
+	/*
 	 * AND IT NEVER COMES UP SHORT OF THE BAND. At 360px the natural
 	 * height is 240px against a 270px banner, so aspect-ratio alone
 	 * leaves bare page inside the banner. Both floors, both blocks.
@@ -765,8 +836,18 @@ echo "\nthe fallback's box does not outlive the fallback\n";
 	 * bottom-weighted scrim does nothing for words placed at the top.
 	 * The left third is dark rock and sky, so the weight goes there.
 	 */
-	ok(preg_match('~\\.lp-banner::before \\{[^}]*linear-gradient\\(100deg~s', $fx) === 1,
-	   'the scrim is not weighted toward the text, which now sits over the brightest part of the art');
+	/*
+	 * AND IT COVERS THE TEXT, NOT THE BAND. The scrim used to be two
+	 * full-width layers that put 0.4 to 0.5 of flat navy over the whole
+	 * banner, which read as a haze with a visible step where it met the
+	 * same picture carrying on below. It is a corner now: anchored at
+	 * the top left where the name and stats are, and gone before it
+	 * reaches an edge you can see.
+	 */
+	ok(preg_match('~\\.lp-banner::before \\{[^}]*radial-gradient\\([^)]*at 0% 0%~s', $fx) === 1,
+	   'the scrim is not anchored on the text, so it is darkening the backdrop in one rectangle again');
+	ok(preg_match('~\\.lp-banner::before \\{[^}]*rgba\\(7,17,29,0\\.00\\) 75%\\)~s', $fx) === 1,
+	   'the scrim does not reach zero inside the band, so it ends on an edge');
 	ok(preg_match('~\\.lp-banner \\.lp-todo \\{[^}]*max-width:\\s*\\d+px~s', $fx) === 1,
 	   'Start Here spans the whole band again, which at full width is a mile of empty box');
 
@@ -776,8 +857,14 @@ echo "\nthe fallback's box does not outlive the fallback\n";
 	 * so every tile became a 350px square and 34 of them is a 13,000px
 	 * page. 140px gives two across, and the page drops to a third.
 	 */
-	$fx_m = strpos($fx, '@media (max-width: 700px)');
-	$fx_mb = $fx_m === false ? '' : substr($fx, $fx_m, 1400);
+	/*
+	 * BOUNDED BY WHAT COMES AFTER, NOT BY A CHARACTER COUNT. This was a
+	 * 1400-character window, and adding a paragraph of comment inside
+	 * the block pushed the .lp-grid rule out of it -- a rule that had
+	 * not moved, failing because prose above it grew. The block ends at
+	 * the only unindented closing brace that follows it.
+	 */
+	$fx_mb = preg_match('~@media \(max-width: 700px\) \{.*?\n\}~s', $fx, $fx_mm) ? $fx_mm[0] : '';
 	ok($fx_mb !== '', 'the phone block is gone');
 	ok(preg_match('~\\.lp-grid \\{[^}]*minmax\\(140px~s', $fx_mb) === 1,
 	   'the phone grid still asks for 190px columns, so a phone gets one tile per row');

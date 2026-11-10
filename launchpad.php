@@ -496,11 +496,43 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
  */
 .lp-stage-art {
 	position: absolute; top: 0; left: 0; right: 0;
+	/*
+	 * width:100% IS NOT REDUNDANT NEXT TO left:0 right:0.
+	 *
+	 * With only the left/right pair the width is resolved from them --
+	 * and then the min-height floor below made the HEIGHT definite, so
+	 * the aspect ratio ran backwards and computed a WIDTH from it. At
+	 * 393px a phone got a 270px-tall band times 1.5 = a 405px-wide
+	 * backdrop, twelve pixels of horizontal scroll on every page.
+	 * A definite width settles the direction: the width is the stage,
+	 * the ratio gives the height, and the floor only ever raises it.
+	 */
+	width: 100%;
 	aspect-ratio: 1728 / 1152;
 	min-height: 340px;
 	background-image: url(images/launchpad-hero.jpg);
 	background-size: cover;
-	background-position: 50% 0;
+	/*
+	 * THE SHIFT, AS A FRACTION OF THE WIDTH RATHER THAN A NUMBER.
+	 *
+	 * -180px is the owner's own figure, found against the real art on a
+	 * full-width browser: it lifts the picture far enough that the skull
+	 * is framed inside the band instead of straddling its lower edge.
+	 *
+	 * But -180px is only -180px at 2000px wide. The box is the image's
+	 * own shape, so its height tracks its width -- at 1200px the picture
+	 * is 800px tall and the same 180px is more than twice the proportion
+	 * of it, which walks the crop down the citadel as the window
+	 * narrows. 180/2000 is 9%, so 9vw holds the owner's crop at every
+	 * width and lands on exactly -180px from 2000px up, where the
+	 * container stops growing.
+	 *
+	 * The picture now ends 9% of a width above the bottom of this box,
+	 * which costs nothing: the fade below is already past three quarters
+	 * opaque there and the art's bottom edge is within a luminance point
+	 * of the page it is dissolving into.
+	 */
+	background-position: 50% calc(min(9vw, 180px) * -1);
 	background-repeat: no-repeat;
 	pointer-events: none;
 	z-index: 0;
@@ -552,33 +584,31 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	margin: 0 calc(var(--lp-bleed) * -1) 34px;
 	padding: 0 var(--lp-bleed);
 }
-/* THE SCRIM, graded to the art rather than flat. Measured per eighth,
-   the image runs 66 luminance at the top to 14 at the bottom, so this is
-   nearly clear over the citadel and does its work only where the text
-   is. A flat overlay dark enough for the top would have buried it. */
+/*
+ * THE SCRIM IS NOW A CORNER, not a wash over the band.
+ *
+ * It used to be two full-width layers: a 100deg one from 0.93 down to
+ * 0.08, and a 180deg one that came back up to 0.45 along the bottom
+ * edge. Between them the whole band sat under 0.4 to 0.5 of flat navy
+ * -- which is why the banner read as hazier and lower-contrast than the
+ * same picture carrying on below it, with a visible step where the two
+ * met. The band is no longer a separate picture that needs its own
+ * treatment; darkening it is darkening the backdrop in one rectangle.
+ *
+ * So the scrim does the only thing it was ever needed for: the name and
+ * the stats, which live in the top left corner and nowhere else. A
+ * radial anchored there covers them and is gone by halfway across and
+ * well before the bottom of the band, so nothing it does has an edge
+ * you can see. The art under that corner is cloud at a mean luminance
+ * of 32, so it does not need much, and the heading carries its own
+ * text-shadow on top of this.
+ */
 .lp-banner::before {
 	content: ""; position: absolute; inset: 0; pointer-events: none;
-	/*
-	 * LEFT-WEIGHTED, because the text moved to the top.
-	 *
-	 * The first scrim was bottom-weighted and correct for it: the art is
-	 * darkest along its bottom edge, so that is where words were cheapest
-	 * to read. With the welcome at the top of the band it now sits over
-	 * the brightest part of the picture, and a bottom scrim does nothing
-	 * for it. The left third of this art is dark rock and sky and the
-	 * citadel is centre-right, so the weight goes left: solid behind the
-	 * text, gone by the time it reaches the skull.
-	 */
-	background:
-		linear-gradient(100deg,
-			rgba(7,17,29,0.93) 0%,
-			rgba(7,17,29,0.78) 22%,
-			rgba(7,17,29,0.30) 52%,
-			rgba(7,17,29,0.08) 100%),
-		linear-gradient(180deg,
-			rgba(7,17,29,0.35) 0%,
-			rgba(7,17,29,0.00) 45%,
-			rgba(7,17,29,0.45) 100%);
+	background: radial-gradient(70% 150% at 0% 0%,
+		rgba(7,17,29,0.72) 0%,
+		rgba(7,17,29,0.26) 40%,
+		rgba(7,17,29,0.00) 75%);
 }
 /*
  * MIN-HEIGHT, NOT PADDING. Start Here only renders while something is
@@ -619,45 +649,6 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	   it is a scrim panel, not a surface -- so it would have kept the
 	   old 8px while everything around it lost it. */
 	border-radius: 0;
-}
-@media (max-width: 700px) {
-	/* No background-position of its own any more: it was 26% against a
-	   base that is now 25%, and at 400px the band is 270px tall against
-	   a 3:2 image, so cover barely crops it and the position has almost
-	   no say. A rule that cannot change anything is just a thing to keep
-	   in step. */
-	.lp-banner-in { min-height: 270px; padding: 16px 12px 12px; }
-	/* In step with the band above it, for the reason in .lp-stage-art. */
-	.lp-stage-art { min-height: 270px; }
-	/*
-	 * AND THE BLEED IS NOT 20px DOWN HERE. flexbox.css:2140 sets
-	 * `#row1 .col1of3 { padding: 4px }` under 700px, and at (1,1,0) it
-	 * beats the `.col1of3 { padding: 8px }` further down the same file.
-	 * Bleeding 20px against a 4px column would hang the art 16px off
-	 * each side of the page and give a phone a horizontal scrollbar.
-	 */
-	.lp-stage { --lp-bleed: 4px; }
-
-	/*
-	 * TWO OR THREE ACROSS ON A PHONE, NOT ONE.
-	 *
-	 * minmax(190px) fits exactly one column in the ~350px a 390px phone
-	 * leaves, so every tile became a 350px square and thirty four of
-	 * them is a twelve thousand pixel page. 140px gives two across at
-	 * phone width and three on a big one, and auto-fill still keeps them
-	 * all the same size.
-	 */
-	.lp-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
-	/*
-	 * And the words have to fit the smaller square. aspect-ratio yields
-	 * to content, so a description that wraps to four lines makes its
-	 * own tile taller than the rest -- which is the uniformity problem
-	 * coming back in through the text instead of the grid.
-	 */
-	.lp-tile-art-on .lp-tile-name { font-size: 0.8rem; padding: 0 8px; }
-	.lp-tile-art-on .lp-tile-desc {
-		font-size: 0.62rem; padding: 0 7px 8px; line-height: 1.3;
-	}
 }
 .lp-hero-avatar { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #00c8a0; object-fit: cover; flex-shrink: 0; }
 .lp-hero-text h2 { margin: 0 0 6px; }
@@ -776,6 +767,20 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 .lp-tile.lp-tile-art-on {
 	position: relative;
 	aspect-ratio: 1;
+	/*
+	 * width:100% IS WHAT MAKES THE ASPECT RATIO SAFE IN A GRID.
+	 *
+	 * A grid item's default self-alignment is `normal`, which stretches
+	 * it to its track -- EXCEPT, per CSS Sizing, for an item with an
+	 * aspect ratio, where `normal` behaves as `start` and the item sizes
+	 * to its own content instead. Chrome stretches these anyway; iOS
+	 * Safari does not, so on a phone every tile shrank to the width of
+	 * its own description and the column came out ragged, each panel a
+	 * different size with the longest sentence making the widest tile.
+	 * An explicit width leaves nothing for the two engines to disagree
+	 * about: the width is the track, and the ratio decides the height.
+	 */
+	width: 100%;
 	justify-content: flex-end;
 	overflow: hidden;
 	padding: 0;
@@ -868,6 +873,65 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 }
 .lp-unmet a { color: #f5a623; text-decoration: none; font-weight: 600; text-align: left; }
 .lp-unmet a:hover { text-decoration: underline; }
+/*
+ * THE PHONE BLOCK GOES LAST, and that is not tidiness.
+ *
+ * It used to sit in the middle of this sheet, and CSS resolves a tie on
+ * source order: every base rule declared BELOW it quietly won. The phone
+ * never got minmax(140px) -- it got the 190px desktop track, which fits
+ * exactly one column in the ~385px a phone leaves, so each tile became a
+ * full-width square and the page became a mile of them. The smaller
+ * description size went the same way. Both rules were there, both were
+ * asserted, and neither had ever applied.
+ *
+ * At the end of the sheet a same-specificity override cannot lose, so
+ * anything added to this file later cannot silently kill it.
+ */
+@media (max-width: 700px) {
+	/* No background-position of its own any more: it was 26% against a
+	   base that is now 25%, and at 400px the band is 270px tall against
+	   a 3:2 image, so cover barely crops it and the position has almost
+	   no say. A rule that cannot change anything is just a thing to keep
+	   in step. */
+	.lp-banner-in { min-height: 270px; padding: 16px 12px 12px; }
+	/*
+	 * In step with the band above it, for the reason in .lp-stage-art --
+	 * AND NO SHIFT DOWN HERE. The floor wins at phone widths, so cover
+	 * is already scaling the picture up to fill the band rather than
+	 * fitting it; lifting it as well would leave a transparent strip
+	 * along the bottom of the banner, inside the band.
+	 */
+	.lp-stage-art { min-height: 270px; background-position: 50% 0; }
+	/*
+	 * AND THE BLEED IS NOT 20px DOWN HERE. flexbox.css:2140 sets
+	 * `#row1 .col1of3 { padding: 4px }` under 700px, and at (1,1,0) it
+	 * beats the `.col1of3 { padding: 8px }` further down the same file.
+	 * Bleeding 20px against a 4px column would hang the art 16px off
+	 * each side of the page and give a phone a horizontal scrollbar.
+	 */
+	.lp-stage { --lp-bleed: 4px; }
+
+	/*
+	 * TWO OR THREE ACROSS ON A PHONE, NOT ONE.
+	 *
+	 * minmax(190px) fits exactly one column in the ~350px a 390px phone
+	 * leaves, so every tile became a 350px square and thirty four of
+	 * them is a twelve thousand pixel page. 140px gives two across at
+	 * phone width and three on a big one, and auto-fill still keeps them
+	 * all the same size.
+	 */
+	.lp-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+	/*
+	 * And the words have to fit the smaller square. aspect-ratio yields
+	 * to content, so a description that wraps to four lines makes its
+	 * own tile taller than the rest -- which is the uniformity problem
+	 * coming back in through the text instead of the grid.
+	 */
+	.lp-tile-art-on .lp-tile-name { font-size: 0.8rem; padding: 0 8px; }
+	.lp-tile-art-on .lp-tile-desc {
+		font-size: 0.62rem; padding: 0 7px 8px; line-height: 1.3;
+	}
+}
 </style>
 
 </body>
