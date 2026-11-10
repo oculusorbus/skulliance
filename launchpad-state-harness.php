@@ -567,5 +567,67 @@ echo "\nthe page is as wide as the menu, and every tile is one size\n";
 	   'every Start Here row is treated as if it had art');
 }
 
+
+echo "\nthe fallback's box does not outlive the fallback\n";
+{
+	$fx = (string) file_get_contents(__DIR__ . '/launchpad.php');
+	/*
+	 * THE BUG THIS EXISTS FOR. The 44px square is the EMOJI's box, added
+	 * so a row of glyphs with different advance widths would line up.
+	 * inset:0 does NOT override an explicit width and height, so once the
+	 * art loaded every panel became a 44px picture pinned to the top left
+	 * of its tile. Reported as "you made everything a tiny icon in the
+	 * left corner".
+	 */
+	ok(preg_match('~\\.lp-tile-art-on \\.lp-tile-icon \\{[^}]*width:\\s*auto~s', $fx) === 1,
+	   "the art container keeps the emoji's fixed width, so every tile is a 44px icon in the corner");
+	ok(preg_match('~\\.lp-tile-art-on \\.lp-tile-icon \\{[^}]*height:\\s*auto~s', $fx) === 1,
+	   "the art container keeps the emoji's fixed height");
+	/* Belt and braces on the pair that caused it: if the emoji box ever
+	   loses its size the icons go ragged again, and if the art rule ever
+	   loses its reset they go tiny again. Both or neither. */
+	ok(preg_match('~\\.lp-tile-icon \\{[^}]*width:\\s*44px~s', $fx) === 1,
+	   'the emoji lost its box, so unuploaded tiles go ragged again');
+
+	echo "\nthe banner reads at full width\n";
+	/*
+	 * At 2000px the band is nearly six times as wide as it is tall, and
+	 * the arrangement built for a 900px column stopped working: the
+	 * welcome sat low in a tall band and Start Here ran the entire width
+	 * as one long empty box.
+	 */
+	ok(preg_match('~\\.lp-banner-in \\{[^}]*justify-content:\\s*flex-start~s', $fx) === 1,
+	   'the welcome sits at the bottom of the band again');
+	/*
+	 * AND THE SCRIM HAS TO FOLLOW THE TEXT. The art is brightest along
+	 * its TOP edge (mean luminance 66, against 14 at the bottom), so a
+	 * bottom-weighted scrim does nothing for words placed at the top.
+	 * The left third is dark rock and sky, so the weight goes there.
+	 */
+	ok(preg_match('~\\.lp-banner::before \\{[^}]*linear-gradient\\(100deg~s', $fx) === 1,
+	   'the scrim is not weighted toward the text, which now sits over the brightest part of the art');
+	ok(preg_match('~\\.lp-banner \\.lp-todo \\{[^}]*max-width:\\s*\\d+px~s', $fx) === 1,
+	   'Start Here spans the whole band again, which at full width is a mile of empty box');
+
+	echo "\nthe phone gets more than one tile per row\n";
+	/*
+	 * minmax(190px) fits exactly one column in the ~350px a phone leaves,
+	 * so every tile became a 350px square and 34 of them is a 13,000px
+	 * page. 140px gives two across, and the page drops to a third.
+	 */
+	$fx_m = strpos($fx, '@media (max-width: 700px)');
+	$fx_mb = $fx_m === false ? '' : substr($fx, $fx_m, 1400);
+	ok($fx_mb !== '', 'the phone block is gone');
+	ok(preg_match('~\\.lp-grid \\{[^}]*minmax\\(140px~s', $fx_mb) === 1,
+	   'the phone grid still asks for 190px columns, so a phone gets one tile per row');
+	/*
+	 * aspect-ratio yields to content, so a description wrapping to four
+	 * lines in a 160px square makes its own tile taller than the rest --
+	 * the uniformity problem coming back through the text.
+	 */
+	ok(preg_match('~-webkit-line-clamp:\\s*2~', $fx_mb) === 1,
+	   'the description is not clamped on a phone, so a long one makes its tile taller than its neighbours');
+}
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

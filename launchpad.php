@@ -425,11 +425,27 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
    is. A flat overlay dark enough for the top would have buried it. */
 .lp-banner::before {
 	content: ""; position: absolute; inset: 0; pointer-events: none;
-	background: linear-gradient(180deg,
-		rgba(7,17,29,0.05) 0%,
-		rgba(7,17,29,0.20) 45%,
-		rgba(7,17,29,0.60) 74%,
-		rgba(7,17,29,0.86) 100%);
+	/*
+	 * LEFT-WEIGHTED, because the text moved to the top.
+	 *
+	 * The first scrim was bottom-weighted and correct for it: the art is
+	 * darkest along its bottom edge, so that is where words were cheapest
+	 * to read. With the welcome at the top of the band it now sits over
+	 * the brightest part of the picture, and a bottom scrim does nothing
+	 * for it. The left third of this art is dark rock and sky and the
+	 * citadel is centre-right, so the weight goes left: solid behind the
+	 * text, gone by the time it reaches the skull.
+	 */
+	background:
+		linear-gradient(100deg,
+			rgba(7,17,29,0.93) 0%,
+			rgba(7,17,29,0.78) 22%,
+			rgba(7,17,29,0.30) 52%,
+			rgba(7,17,29,0.08) 100%),
+		linear-gradient(180deg,
+			rgba(7,17,29,0.35) 0%,
+			rgba(7,17,29,0.00) 45%,
+			rgba(7,17,29,0.45) 100%);
 }
 /*
  * MIN-HEIGHT, NOT PADDING. Start Here only renders while something is
@@ -441,7 +457,7 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
  */
 .lp-banner-in {
 	position: relative;              /* over the scrim */
-	display: flex; flex-direction: column; justify-content: flex-end;
+	display: flex; flex-direction: column; justify-content: flex-start;
 	min-height: 340px;
 	padding: 20px 18px 18px;
 }
@@ -460,6 +476,11 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	background: rgba(7,17,29,0.74);
 	border-color: rgba(0,200,160,0.45);
 	margin-bottom: 0;
+	/* IT IS A LIST, NOT A BANNER. Full width it was most of a 2000px
+	   band of empty box to the right of two lines of text. It sizes to
+	   its content now and the art fills the rest. */
+	max-width: 560px;
+	margin-right: auto;
 	/* SQUARE, STATED HERE. The sweep squares panels it recognises by
 	   colour, and this one is deliberately a colour it does not know --
 	   it is a scrim panel, not a surface -- so it would have kept the
@@ -473,6 +494,29 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	   no say. A rule that cannot change anything is just a thing to keep
 	   in step. */
 	.lp-banner-in { min-height: 270px; padding: 16px 12px 12px; }
+
+	/*
+	 * TWO OR THREE ACROSS ON A PHONE, NOT ONE.
+	 *
+	 * minmax(190px) fits exactly one column in the ~350px a 390px phone
+	 * leaves, so every tile became a 350px square and thirty four of
+	 * them is a twelve thousand pixel page. 140px gives two across at
+	 * phone width and three on a big one, and auto-fill still keeps them
+	 * all the same size.
+	 */
+	.lp-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+	/*
+	 * And the words have to fit the smaller square. aspect-ratio yields
+	 * to content, so a description that wraps to four lines makes its
+	 * own tile taller than the rest -- which is the uniformity problem
+	 * coming back in through the text instead of the grid.
+	 */
+	.lp-tile-art-on .lp-tile-name { font-size: 0.8rem; padding: 0 8px; }
+	.lp-tile-art-on .lp-tile-desc {
+		font-size: 0.64rem; padding: 0 8px 8px; line-height: 1.25;
+		display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+		overflow: hidden;
+	}
 }
 .lp-hero-avatar { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #00c8a0; object-fit: cover; flex-shrink: 0; }
 .lp-hero-text h2 { margin: 0 0 6px; }
@@ -597,7 +641,19 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	border-radius: 0;              /* the old 8px, which the sweep does not reach */
 	background: #0d1e30;
 }
-.lp-tile-art-on .lp-tile-icon { position: absolute; inset: 0; margin: 0; }
+/*
+ * AND THE BOX COMES OFF AGAIN WHEN THERE IS ART.
+ *
+ * The 44px square above is the EMOJI's box. inset:0 does not override
+ * an explicit width and height, so with both set the art container was
+ * pinned 44x44 at the top left of the tile and every panel became a
+ * tiny icon in the corner. Reset them, or the fallback's size wins over
+ * the real thing.
+ */
+.lp-tile-art-on .lp-tile-icon {
+	position: absolute; inset: 0; margin: 0;
+	width: auto; height: auto; display: block;
+}
 .lp-tile-art { display: block; width: 100%; height: 100%; object-fit: cover; }
 /* The scrim. Clear over the subject, solid under the words. */
 .lp-tile-art-on::after {
