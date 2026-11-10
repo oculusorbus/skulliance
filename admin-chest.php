@@ -275,8 +275,24 @@ admin_chrome('chest');
 
 	var css = document.getElementById('tune-out');
 	var check = document.getElementById('tune-check');
+	/*
+	 * INTO THE BODY, AND MORE SPECIFIC THAN THE RULE IT IS SHADOWING.
+	 *
+	 * The first version appended this to <head> and the sliders did
+	 * nothing. missions-claim-modal.php carries its own <style> INSIDE
+	 * the body, which is later in document order than anything in the
+	 * head -- and both rules are #mcm-plinth::before, so the tie went
+	 * to the shipped one every time. Exactly the trap that hid the
+	 * launchpad's phone block behind a base rule below it.
+	 *
+	 * Appending to the body fixes the order, and #mcm-stage in front of
+	 * the selector fixes it again on specificity, so nothing added to
+	 * that partial later can quietly take the sliders back out. The
+	 * TEXTAREA still prints the plain selector, because that is what
+	 * gets pasted.
+	 */
 	var style = document.createElement('style');
-	document.head.appendChild(style);
+	document.body.appendChild(style);
 
 	function rule() {
 		var s = val.spread;
@@ -289,12 +305,15 @@ admin_chrome('chest');
 			var a = (val.core * p[1]).toFixed(3).replace(/0+$/, '').replace(/\.$/, '.0');
 			return '    rgba(0,200,160,' + a + ') ' + pos + '%';
 		}).join(',\n');
-		return '#mcm-plinth::before {\n'
-		     + '  left: 50%; bottom: ' + val.bottom + 'px; width: ' + val.width
+		return '  left: 50%; bottom: ' + val.bottom + 'px; width: ' + val.width
 		     + 'px; height: ' + val.height + 'px;\n'
 		     + '  transform: translateX(-50%) rotate(' + val.rot + 'deg);\n'
-		     + '  background: radial-gradient(50% 50% at 50% 50%,\n' + body + ');\n}';
+		     + '  background: radial-gradient(50% 50% at 50% 50%,\n' + body + ');';
 	}
+	/* What gets pasted, and what gets applied. Same declarations; the
+	   applied one is scoped so it cannot lose a tie. */
+	function pasteCss() { return '#mcm-plinth::before {\n' + rule() + '\n}'; }
+	function liveCss()  { return '#mcm-stage #mcm-plinth::before {\n' + rule() + '\n}'; }
 
 	/* The same arithmetic the harness does, so an over-dragged setting
 	   says so here rather than failing after it is pasted. */
@@ -323,9 +342,8 @@ admin_chrome('chest');
 			el.value = val[f[0]];
 			document.getElementById('tune-' + f[0] + '-v').textContent = val[f[0]];
 		});
-		var r = rule();
-		style.textContent = r;
-		css.value = r;
+		style.textContent = liveCss();
+		css.value = pasteCss();
 		check.textContent = verdict();
 		try { localStorage.setItem(KEY, JSON.stringify(val)); } catch (e) {}
 	}
