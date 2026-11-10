@@ -311,21 +311,182 @@ echo "\nthe menu marks the same things, and can never be the reason a page dies\
 }
 
 
+echo "\nthe line under the name says what the account has done\n";
+{
+	require_once __DIR__ . '/lib/launchpad-stats.php';
+	$hsLab = function ($row) {
+		$o = array();
+		foreach ($row as $st) $o[] = lp_stat_label($st);
+		return implode(' ', $o);
+	};
+	/*
+	 * A ZERO IS NOT A STAT. "0 raids" under your own name tells you that
+	 * you are failing at something you have not started, which is the
+	 * opposite of what a launchpad is for.
+	 */
+	$hsBoth = lp_hero_stats(500, 3, 40, 12, 9);
+	ok($hsLab($hsBoth) === 'points day streak missions raids',
+	   'an account that does both does not get both: ' . $hsLab($hsBoth));
+	$hsNoRaid = lp_hero_stats(500, 3, 40, 0, 9);
+	ok(strpos($hsLab($hsNoRaid), 'raid') === false,
+	   'a player who has never raided is told they have 0 raids');
+	$hsNoMis = lp_hero_stats(500, 3, 0, 12, 9);
+	ok(strpos($hsLab($hsNoMis), 'mission') === false,
+	   'a player who has never sent a mission is told they have 0 missions');
+	/* And the one that is dropped must not take the other with it. */
+	ok(strpos($hsLab($hsNoMis), 'raids') !== false,
+	   'dropping the missions stat drops raids as well, leaving a bare two-item row');
+	/*
+	 * WALLETS IS THE FALLBACK, NOT A STAT. It is the same number for a
+	 * member in their first minute and one in their third year, and
+	 * Start Here already asks for it -- so it shows only when there is
+	 * nothing done to show instead.
+	 */
+	ok(strpos($hsLab($hsBoth), 'wallet') === false,
+	   'wallets is back on the row for an account that has done things');
+	$hsNew = lp_hero_stats(0, 0, 0, 0, 0);
+	ok($hsLab($hsNew) === 'points day streak wallets',
+	   'a brand new account gets a two-item row under its name instead of the wallet count: '
+	 . $hsLab($hsNew));
+	/* A zero wallet count is worth saying, because connecting one is
+	   step one -- so the fallback must not drop out on zero too. */
+	ok(count(lp_hero_stats(0, 0, 0, 0, 0)) === 3,
+	   'the fallback drops out at zero as well, so a new account gets no third stat at all');
+
+	/* "1 day streaks" is wrong and "1 raids" is wrong; the plural is on
+	   the day for one and on the noun for the other. */
+	ok(lp_stat_label(array(1, 'raid', 'raids')) === 'raid'
+	   && lp_stat_label(array(2, 'raid', 'raids')) === 'raids',
+	   'the label does not follow the count');
+	$hsOne = lp_hero_stats(1, 1, 1, 1, 1);
+	ok($hsLab($hsOne) === 'point day streak mission raid',
+	   'a count of one reads as a plural: ' . $hsLab($hsOne));
+
+	/*
+	 * AND THE PAGE HAS TO ASK THE RIGHT QUESTIONS. Raids hang off the
+	 * realm -- raids.offense_id is a realms.id -- so a count that filters
+	 * raids on user_id finds nothing, and one that forgets the realm
+	 * join counts every raid on the platform.
+	 */
+	$hsPage = (string) file_get_contents(__DIR__ . '/launchpad.php');
+	ok(preg_match('~FROM missions WHERE user_id = \x27" \. \$lp_user_id~', $hsPage) === 1,
+	   'the mission count is not scoped to this account');
+	ok(preg_match('~INNER JOIN realms ON realms\.id = raids\.offense_id\s+WHERE realms\.user_id~s', $hsPage) === 1,
+	   'the raid count does not reach the user through their realm, so it is either empty or everybody\'s');
+}
+
 echo "\nthe hero banner degrades, and never blocks the links on it\n";
 {
 	$bn = (string) file_get_contents(__DIR__ . '/launchpad.php');
+	/*
+	 * THE HEADING IS THE NAME. It used to pick between "Welcome back,
+	 * <name>" and "Welcome to Skulliance, <name>" off three signals, so
+	 * that a first-time member was not greeted as a returning one. All
+	 * of that went: the greeting said nothing the player did not know
+	 * and made the only real information on the line a suffix.
+	 *
+	 * Asserted as an absence AND a presence, because the easy way to
+	 * bring it back is a new wording rather than the old one.
+	 */
+	/* STRINGS AND MARKUP, NOT THE WHOLE FILE. The paragraph above quotes
+	   both old greetings to explain why they went, so a plain search over
+	   the source matches my own comment and passes whatever the page
+	   actually renders. token_get_all is the oracle: only what can reach
+	   the browser -- string literals and inline HTML -- is looked at. */
+	$bnSaid = '';
+	foreach (token_get_all($bn) as $bnT) {
+		if (is_array($bnT) && ($bnT[0] === T_CONSTANT_ENCAPSED_STRING
+		    || $bnT[0] === T_INLINE_HTML || $bnT[0] === T_ENCAPSED_AND_WHITESPACE)) {
+			/* A <style> block is inline HTML, so its CSS comments come
+			   through here and are just as much prose as the PHP ones. */
+			$bnSaid .= preg_replace('~/\*.*?\*/~s', '', $bnT[1]) . "\n";
+		}
+	}
+	ok(stripos($bnSaid, 'welcome') === false,
+	   'the launchpad greets again instead of simply naming the account');
+	ok(preg_match('~\$lp_greeting = \$lp_user !== \x27\x27 \? \$lp_user :~', $bn) === 1,
+	   'the heading is not the username, so the one thing it is there to say is wrapped in something else');
+	/* A login-gated page with a blank <h2> is a worse failure than a
+	   generic one, so the empty-name branch has to survive. */
+	ok(preg_match('~\$lp_greeting = .*: \x27[^\x27]+\x27;~', $bn) === 1,
+	   'a half-read session renders an empty heading rather than anything at all');
 	/*
 	 * IMAGES DEPLOY BY FTP, NOT WITH THE CODE. Until launchpad-hero.jpg
 	 * is on the server this has to be exactly the page that was there
 	 * before: dark ground, no broken frame, nothing moved. The art is an
 	 * improvement layered on, never a dependency.
 	 */
-	ok(preg_match('~\.lp-banner\s*\{[^}]*background-color:\s*#07111d~s', $bn) === 1,
-	   'the banner has no colour under the art, so a missing upload is a blank or broken band');
-	$bnPos = strpos($bn, 'background-color: #07111d');
-	$bnImg = strpos($bn, 'background-image: url(images/launchpad-hero.jpg)');
-	ok($bnImg !== false && $bnPos !== false && $bnPos < $bnImg,
-	   'the fallback colour is declared after the image, so it can override it');
+	/*
+	 * THE FALLBACK IS NOW AN ABSENCE, which is a stronger one than the
+	 * colour it replaced. The art moved off .lp-banner onto .lp-stage-art
+	 * so it could run behind the whole page, and the banner became a hole
+	 * the art shows through. Neither may paint a background: the banner
+	 * would hide the art it sits on, and the art element would put a
+	 * thirteen-hundred-pixel block over the page when the upload is
+	 * missing. With neither, a 404 leaves the band falling through to the
+	 * page's own ground -- byte for byte the banner that was there before
+	 * the art existed.
+	 */
+	$bnBanner = '';
+	if (preg_match('~\n\.lp-banner \{.*?\n\}~s', $bn, $bnm)) $bnBanner = $bnm[0];
+	ok($bnBanner !== '', 'the .lp-banner rule is gone');
+	ok(strpos($bnBanner, 'background') === false,
+	   'the banner paints a background again, which hides the art it is supposed to be a hole in');
+	$bnArt = '';
+	if (preg_match('~\.lp-stage-art \{.*?\n\}~s', $bn, $bam)) $bnArt = $bam[0];
+	ok($bnArt !== '', 'the .lp-stage-art rule is gone, so there is no backdrop');
+	ok(strpos($bnArt, 'background-color') === false,
+	   'the art declares a fallback colour, so a missing upload paints a slab over the page');
+	/*
+	 * AND IT ENDS BY BECOMING THE PAGE. The art has a hard bottom edge
+	 * and on a wide screen you reach it, so the overlay's last stop has
+	 * to be the page's own background rather than a colour that merely
+	 * looks like it. Read from flexbox.css, so the two can never drift.
+	 */
+	$bnCss = (string) file_get_contents(__DIR__ . '/dist/flexbox.css');
+	$bnGround = preg_match('~\nbody \{[^}]*background-color:\s*(#[0-9a-f]{6})~si', $bnCss, $bgm)
+	          ? strtolower($bgm[1]) : '';
+	ok($bnGround !== '', 'the page ground cannot be read from flexbox.css, so this check proves nothing');
+	$bnFade = '';
+	if (preg_match('~\.lp-stage-art::after \{.*?\n\}~s', $bn, $bfm)) $bnFade = $bfm[0];
+	ok($bnFade !== '', 'the bottom of the art is not dissolved, so the picture ends in a hard edge');
+	ok(preg_match('~linear-gradient\(0deg,\s*' . preg_quote($bnGround, '~') . '~i', $bnFade) === 1,
+	   'the dissolve does not finish on the page ground (' . $bnGround . '), so the art ends in a seam');
+	/*
+	 * THE BACKDROP COVERS THE FIRST SECTION, so it lies over real links.
+	 * z-index puts them above it, but a transparent box over a grid of
+	 * tiles is one stacking mistake away from swallowing every tap on it.
+	 */
+	ok(strpos($bnArt, 'pointer-events: none') !== false,
+	   'the backdrop can take clicks, and it lies over the first grid of tiles');
+	/*
+	 * ITS OWN SHAPE, FROM THE REAL FILE. 1728x1152 -- an aspect-ratio
+	 * that does not match the upload crops or letterboxes it, and the
+	 * fade distances below were measured against this one.
+	 */
+	ok(strpos($bnArt, 'aspect-ratio: 1728 / 1152') !== false,
+	   'the backdrop is not the shape of the art, so cover crops the picture it exists to show');
+	/*
+	 * AND IT NEVER COMES UP SHORT OF THE BAND. At 360px the natural
+	 * height is 240px against a 270px banner, so aspect-ratio alone
+	 * leaves bare page inside the banner. Both floors, both blocks.
+	 */
+	ok(preg_match('~\.lp-stage-art \{[^}]*min-height:\s*340px~s', $bn) === 1,
+	   'the backdrop has no floor, so on a narrow window it stops above the bottom of the band');
+	/*
+	 * THE BLEED IS A VARIABLE BECAUSE THE COLUMN IS NOT ONE WIDTH.
+	 * flexbox.css gives #row1 .col1of3 20px, and 4px under 700px -- so a
+	 * hardcoded 20px hangs the art 16px off each side of a phone and
+	 * gives the page a horizontal scrollbar.
+	 */
+	ok(preg_match('~\.lp-stage \{[^}]*--lp-bleed:\s*20px~s', $bn) === 1,
+	   'the stage does not declare its bleed, so the art no longer reaches the menu edge');
+	/* Three sides -- top, left and right -- and the top one is what makes
+	   the art touch the menu instead of stopping a column-padding short
+	   of it. Counted, because a margin that bleeds only sideways is the
+	   state this started in and looks almost right. */
+	ok(preg_match('~\.lp-stage \{.*?\n\tmargin: (calc\(var\(--lp-bleed\) \* -1\) ){2}0;~s', $bn) === 1,
+	   'the stage does not bleed up as well as out, so there is a strip of page between the menu and the art');
 	ok(strpos($bn, 'url(images/launchpad-hero.jpg)') !== false
 	   && strpos($bn, 'url(https://') === false,
 	   'the art is referenced absolutely; cookies here are host-only, so paths stay relative');

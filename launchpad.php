@@ -47,15 +47,40 @@ $lp_avatar_url = ($lp_discord && $lp_avatar)
 require_once __DIR__ . '/lib/player-state.php';
 $lp_state = player_state($conn);
 
-$lp_wallets = 0;
-$lp_streak  = 0;
-$lp_balance = 0;
+require_once __DIR__ . '/lib/launchpad-stats.php';
+
+$lp_wallets  = 0;
+$lp_streak   = 0;
+$lp_balance  = 0;
+$lp_missions = 0;
+$lp_raids    = 0;
 if ($lp_user_id > 0) {
 	$w = getWallets($conn);
 	$lp_wallets = is_array($w) ? count($w) : 0;
 	$s = getCurrentDailyRewardStreak($conn);
 	$lp_streak  = intval(is_array($s) ? ($s['streak'] ?? 0) : $s);
 	$lp_balance = intval(getCurrentBalance($conn, $lp_user_id, 0));
+
+	/*
+	 * WHAT THE ACCOUNT HAS DONE: two COUNTs on indexed columns, each
+	 * wrapped so a failure is a zero rather than a dead first page.
+	 *
+	 * COUNTED THE WAY THE LEADERBOARDS COUNT, every row regardless of
+	 * outcome -- checkMissionsLeaderboard's total is COUNT(missions.id)
+	 * and checkRaidsLeaderboard's is COUNT(raids.id), neither filtered
+	 * on status. A page that said 40 missions next to a board that said
+	 * 52 would be a bug report, and the honest reading of "missions" is
+	 * ones you sent, not ones that came back.
+	 *
+	 * Raids hang off the realm, not the user: raids.offense_id is a
+	 * realms.id, so the user only reaches them through their own realm.
+	 */
+	$lp_q = @$conn->query("SELECT COUNT(id) AS c FROM missions WHERE user_id = '" . $lp_user_id . "'");
+	if ($lp_q && ($lp_r = $lp_q->fetch_assoc())) $lp_missions = (int)$lp_r['c'];
+	$lp_q = @$conn->query("SELECT COUNT(raids.id) AS c FROM raids
+	                       INNER JOIN realms ON realms.id = raids.offense_id
+	                       WHERE realms.user_id = '" . $lp_user_id . "'");
+	if ($lp_q && ($lp_r = $lp_q->fetch_assoc())) $lp_raids = (int)$lp_r['c'];
 }
 
 /* THE CATALOGUE LIVES IN lib/launchpad-catalogue.php, because
@@ -70,26 +95,22 @@ require_once __DIR__ . '/lib/launchpad-catalogue.php';
  * veteran can never clear is nagging, not onboarding.
  */
 /*
- * Greeting. "Welcome back" on someone's FIRST ever login is exactly the wrong
- * note to open on, and it would have hit every new member, since a
- * Discord-authenticated user always has a name.
+ * THE NAME, AND NOTHING WRAPPED AROUND IT.
  *
- * There is no join date on the users table (INSERT INTO users only writes
- * discord_id, avatar, username), so "first login" cannot be read directly.
- * These three signals answer the useful question instead: an account with no
- * wallet, no points and no streak has not started yet, whether that is their
- * first minute or their third visit. It also means the greeting and the Start
- * Here list below always agree -- the condition that shows all three tasks is
- * the same condition that drops the "back".
+ * This used to pick between "Welcome back, <name>" and "Welcome to
+ * Skulliance, <name>" off three signals, to avoid greeting a brand new
+ * member as a returning one. The greeting itself turned out to be the
+ * part worth cutting: it is the first thing on the page every single
+ * visit, it says nothing the player does not know, and it pushed the
+ * one piece of information up there -- whose account this is -- into
+ * being a suffix. The name alone also stops the line running the width
+ * of a 2000px band.
+ *
+ * The empty case stays. The page is login-gated, so a missing name is a
+ * session that half-read, and a bare heading with nothing in it is a
+ * worse failure than a generic one.
  */
-$lp_started = ($lp_wallets > 0 || $lp_balance > 0 || $lp_streak > 0);
-if ($lp_user === '') {
-	$lp_greeting = 'Welcome to Skulliance';
-} else if ($lp_started) {
-	$lp_greeting = 'Welcome back, ' . $lp_user;
-} else {
-	$lp_greeting = 'Welcome to Skulliance, ' . $lp_user;
-}
+$lp_greeting = $lp_user !== '' ? $lp_user : 'Skulliance';
 
 $lp_todo = array();
 if ($lp_wallets === 0) {
@@ -224,6 +245,21 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	 * citadel up top. The composition agrees -- the skull is in the upper
 	 * middle and the foreground rock is nearly black.
 	 */ ?>
+	<?php /*
+	 * THE STAGE. The banner is no longer a band with a picture in it: the
+	 * picture is a backdrop the whole page sits on, and the band is just
+	 * the part of it nothing covers.
+	 *
+	 * The art is a separate element rather than a background on the stage
+	 * because it has to keep the image's own 3:2 shape as the window
+	 * resizes, and aspect-ratio can only do that for a box. A second
+	 * background layer could not: background-size percentages resolve
+	 * against the positioning area, which here is thousands of pixels of
+	 * page, so the fade would never line up with the art it is fading.
+	 */ ?>
+	<div class="lp-stage">
+	<div class="lp-stage-art" aria-hidden="true"></div>
+
 	<div class="lp-banner">
 	<div class="lp-banner-in">
 
@@ -233,9 +269,12 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 		<div class="lp-hero-text">
 			<h2><?php echo htmlspecialchars($lp_greeting); ?></h2>
 			<div class="lp-hero-stats">
-				<span><strong><?php echo number_format($lp_balance); ?></strong> points</span>
-				<span><strong><?php echo number_format($lp_streak); ?></strong> day streak</span>
-				<span><strong><?php echo number_format($lp_wallets); ?></strong> wallet<?php echo $lp_wallets === 1 ? '' : 's'; ?></span>
+				<?php /* Which of these appear is lp_hero_stats()'s call, and the
+				         rule is in lib/launchpad-stats.php: a zero is not a stat. */ ?>
+				<?php foreach (lp_hero_stats($lp_balance, $lp_streak, $lp_missions, $lp_raids, $lp_wallets) as $lp_st): ?>
+				<span><strong><?php echo number_format($lp_st[0]); ?></strong> <?php
+					echo htmlspecialchars(lp_stat_label($lp_st)); ?></span>
+				<?php endforeach; ?>
 			</div>
 		</div>
 	</div>
@@ -390,34 +429,128 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	</div>
 	<?php endforeach; ?>
 
+	</div><!-- .lp-stage -->
+
   </div>
 </div>
 
 <style>
 /*
- * THE BANNER.
+ * THE BANNER IS A REGION OF A BACKDROP, not a band with a picture in it.
  *
- * background-color FIRST and always: images deploy by FTP, not with the
- * code, so until launchpad-hero.jpg is on the server this is exactly the
- * page that was here before -- dark ground, no broken frame, nothing
- * moved. The art is an improvement layered on, never a dependency.
+ * The art used to be a cover background on .lp-banner, cropped to a
+ * 340px strip at 50% 27%. It is a 3:2 image and that strip is nearer
+ * 6:1, so five sixths of it was never seen. It now hangs off .lp-stage
+ * at its own shape and runs down behind the section headings and
+ * through the gutters between tiles, quieting as it goes and dissolving
+ * into the page where it ends -- and the banner is simply the part of
+ * it that nothing covers.
  *
- * 50% 22% keeps the skull citadel in frame when the band crops it, which
- * it does at every width: the art is 3:2 and this is nearer 3:1.
+ * Images deploy by FTP, not with the code, so the no-upload case still
+ * rules everything: neither the banner nor the backdrop paints a colour,
+ * and a 404 leaves the band falling through to the page's own #07111d.
+ * That is exactly the banner that was here before the art existed.
+ */
+/*
+ * OUT TO THE MENU'S EDGE. .col1of3 carries padding: 20px and the navbar
+ * sits straight inside .container with none, so the column's content is
+ * inset exactly 20px from the menu at every width, 2000px ceiling
+ * included. The stage spends that 20px back on both sides and takes it
+ * out again as padding, so the art runs to the menu's edge while
+ * everything on top of it stays where it was.
+ */
+.lp-stage {
+	--lp-bleed: 20px;
+	position: relative;
+	/*
+	 * UP TO THE MENU AS WELL AS OUT TO IT. The column's padding is the
+	 * same 20px on all four sides, so the art stopped 20px short of the
+	 * navbar and left a dark strip between them. The top bleed is the
+	 * same number for the same reason, and it is NOT taken back as
+	 * padding: everything in the stage moves up with the art, and
+	 * .lp-banner-in's own 20px is what keeps the welcome off the menu.
+	 */
+	margin: calc(var(--lp-bleed) * -1) calc(var(--lp-bleed) * -1) 0;
+	padding: 0 var(--lp-bleed);
+}
+/*
+ * THE ART, AT ITS OWN SHAPE.
+ *
+ * 1728x1152, so aspect-ratio keeps the whole picture on screen instead
+ * of cropping it to a band: at full width that is about 1330px of
+ * image, of which the banner is the top quarter and the rest runs down
+ * behind the section headings and through the gutters between tiles.
+ * The citadel's spires finish inside the band and the skull carries on
+ * below it, which is the point -- it is one picture the page sits on
+ * rather than a strip at the top.
+ *
+ * MIN-HEIGHT IS THE PHONE. At 360px the natural height is 240px against
+ * a 270px band, so aspect-ratio alone would leave a strip of bare page
+ * under the art INSIDE the banner. The floor matches the band, cover
+ * crops the sides to fill it, and a phone gets what it has always had.
+ *
+ * NO background-color. A missing upload leaves this element invisible
+ * and the band falls through to the page's own #07111d -- which is
+ * exactly the banner that was here before the art existed. The art
+ * stays an improvement layered on, never a dependency.
+ */
+.lp-stage-art {
+	position: absolute; top: 0; left: 0; right: 0;
+	aspect-ratio: 1728 / 1152;
+	min-height: 340px;
+	background-image: url(images/launchpad-hero.jpg);
+	background-size: cover;
+	background-position: 50% 0;
+	background-repeat: no-repeat;
+	pointer-events: none;
+	z-index: 0;
+}
+/*
+ * TWO JOBS, ONE OVERLAY.
+ *
+ * Quieting: below the band the art is backdrop, not subject. Tiles are
+ * opaque, so what shows down there is 12px gutters and the strip behind
+ * each section heading, and at full strength that reads as clutter
+ * rather than depth. The ramp starts where the band ends.
+ *
+ * Dissolving: the art has a hard bottom edge, and on a wide screen you
+ * can see it. The last stretch goes to solid #07111d, which is the
+ * page's own background, so the picture ends by becoming the page.
+ *
+ * Both are measured in px from an edge of the ART, which is why they
+ * live on this element and not on the stage -- the stage is as tall as
+ * the content and has nothing to do with where the picture stops.
+ */
+.lp-stage-art::after {
+	content: ""; position: absolute; inset: 0;
+	background:
+		linear-gradient(180deg,
+			rgba(7,17,29,0) 330px,
+			rgba(7,17,29,0.66) 520px,
+			rgba(7,17,29,0.66) 100%),
+		linear-gradient(0deg,
+			#07111d 0,
+			rgba(7,17,29,0) 260px);
+}
+/* Everything the page actually says sits on top of the picture. */
+.lp-banner, .lp-nudge, .lp-section { position: relative; z-index: 1; }
+/*
+ * THE BANNER IS NOW A HOLE IN THE PAGE, not a panel: no background of
+ * its own, so the stage's art shows through it. Its scrim stays, since
+ * that is about the words rather than the band.
+ */
+/*
+ * THE BANNER BLEEDS TOO, and it is the scrim that makes it have to.
+ * .lp-banner::before is inset:0 on this element, so a banner that
+ * stopped at the column's edge would end its 0.93 wash 20px short of
+ * the art and leave a bright seam down the left of the band. Bleeding
+ * the box and taking the same distance back as padding puts the scrim
+ * over the whole picture and leaves .lp-banner-in exactly where it was.
  */
 .lp-banner {
 	position: relative;
-	margin: 0 0 34px;
-	background-color: #07111d;
-	background-image: url(images/launchpad-hero.jpg);
-	background-size: cover;
-	/* 27%, chosen on a full-width browser against the real art rather
-	   than computed from the crop maths. It moved from 25% when the page
-	   lost its 1100px cap: a wider band crops less off the sides and more
-	   off the top, so the citadel needs nudging back down. */
-	background-position: 50% 27%;
-	background-repeat: no-repeat;
-	overflow: hidden;
+	margin: 0 calc(var(--lp-bleed) * -1) 34px;
+	padding: 0 var(--lp-bleed);
 }
 /* THE SCRIM, graded to the art rather than flat. Measured per eighth,
    the image runs 66 luminance at the top to 14 at the bottom, so this is
@@ -494,6 +627,16 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	   no say. A rule that cannot change anything is just a thing to keep
 	   in step. */
 	.lp-banner-in { min-height: 270px; padding: 16px 12px 12px; }
+	/* In step with the band above it, for the reason in .lp-stage-art. */
+	.lp-stage-art { min-height: 270px; }
+	/*
+	 * AND THE BLEED IS NOT 20px DOWN HERE. flexbox.css:2140 sets
+	 * `#row1 .col1of3 { padding: 4px }` under 700px, and at (1,1,0) it
+	 * beats the `.col1of3 { padding: 8px }` further down the same file.
+	 * Bleeding 20px against a 4px column would hang the art 16px off
+	 * each side of the page and give a phone a horizontal scrollbar.
+	 */
+	.lp-stage { --lp-bleed: 4px; }
 
 	/*
 	 * TWO OR THREE ACROSS ON A PHONE, NOT ONE.
