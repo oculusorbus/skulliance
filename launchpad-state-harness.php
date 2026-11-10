@@ -378,19 +378,35 @@ echo "\nthe Play icons are art over emoji, never instead of it\n";
 	 */
 	$ic_page = (string) file_get_contents(__DIR__ . '/launchpad.php');
 
-	/* THE MAP AND THE LIST DRIFT APART, in both directions. */
-	$ic_play = $lp_sections['Play']['items'];
-	$ic_miss = array(); $ic_names = array();
-	foreach ($ic_play as $ic_it) {
-		$ic_names[] = $ic_it[2];
-		if (!isset($lp_icons[$ic_it[2]])) $ic_miss[] = $ic_it[2];
+	/*
+	 * THE MAP AND THE LIST DRIFT APART, in both directions, and across
+	 * all three sections now -- Play, Collect and Progress each came off
+	 * their own sheet.
+	 */
+	$ic_play = array(); $ic_names = array(); $ic_miss = array();
+	foreach ($lp_sections as $ic_sec => $ic_d) {
+		foreach ($ic_d['items'] as $ic_it) {
+			$ic_play[] = $ic_it;
+			$ic_names[] = $ic_it[2];
+			if (!isset($lp_icons[$ic_it[2]])) $ic_miss[] = $ic_sec . '/' . $ic_it[2];
+		}
 	}
-	ok(count($ic_miss) === 0, 'these Play items have no icon: ' . implode(', ', $ic_miss));
+	ok(count($ic_miss) === 0, 'these items have no icon: ' . implode(', ', $ic_miss));
 	$ic_orphan = array_diff(array_keys($lp_icons), $ic_names);
 	ok(count($ic_orphan) === 0,
-	   'these icons are mapped to nothing in Play: ' . implode(', ', $ic_orphan));
+	   'these icons are mapped to nothing: ' . implode(', ', $ic_orphan));
+	/* The path carries its own sheet's folder, so two sections cannot
+	   collide on a shared slug. */
+	$ic_unpref = array();
+	foreach ($lp_icons as $ic_k => $ic_v) {
+		if (!is_string($ic_v) || !preg_match('~^(play|collect|progress)/[a-z0-9-]+$~', $ic_v)) {
+			$ic_unpref[] = $ic_k;
+		}
+	}
+	ok(count($ic_unpref) === 0,
+	   'these icon paths are not section-prefixed: ' . implode(', ', $ic_unpref));
 	$ic_files = array();
-	foreach ($lp_icons as $ic_k => $ic_v) $ic_files[] = is_array($ic_v) ? $ic_v[0] : $ic_v;
+	foreach ($lp_icons as $ic_k => $ic_v) $ic_files[] = $ic_v;
 	ok(count(array_unique($ic_files)) === count($ic_files),
 	   'two Play items share one icon file');
 	/*
@@ -399,15 +415,42 @@ echo "\nthe Play icons are art over emoji, never instead of it\n";
 	 * been uploaded still gets its colour and the section does not go
 	 * half-coloured while the FTP catches up.
 	 */
-	$ic_badacc = array();
-	foreach ($lp_icons as $ic_k => $ic_v) {
-		if (!is_array($ic_v) || count($ic_v) !== 2
-		    || !preg_match('~^#[0-9a-f]{6}$~i', $ic_v[1])) $ic_badacc[] = $ic_k;
+	/*
+	 * A TILE WEARS ITS SECTION'S ACCENT. Per-tile colours made the grid a
+	 * swatch book; the three section accents carry the identity instead.
+	 */
+	ok(preg_match('~--lp-accent[^;]*\$lp_acc~', $ic_page) !== 1,
+	   'a tile sets an accent of its own again, so the section loses its colour');
+	/*
+	 * AND THE THREE ARE SEPARATED, because they have to read as three
+	 * sections rather than three shades of the same one. 60 degrees is
+	 * what this art allows: Collect and Progress are both violet-dominant,
+	 * so Collect takes the magenta that is genuinely in its Store and
+	 * Raffle art rather than a fourth violet.
+	 */
+	$ic_hue = function ($hex) {
+		$r = hexdec(substr($hex,1,2))/255; $g = hexdec(substr($hex,3,2))/255; $b = hexdec(substr($hex,5,2))/255;
+		$mx = max($r,$g,$b); $mn = min($r,$g,$b); $d = $mx-$mn;
+		if ($d == 0) return 0;
+		if ($mx == $r) $h = fmod((($g-$b)/$d), 6);
+		elseif ($mx == $g) $h = (($b-$r)/$d) + 2;
+		else $h = (($r-$g)/$d) + 4;
+		return fmod($h*60 + 360, 360);
+	};
+	$ic_accs = array();
+	foreach ($lp_sections as $ic_n => $ic_d) {
+		ok(preg_match('~^#[0-9a-f]{6}$~i', $ic_d['accent']) === 1, "$ic_n has no hex accent");
+		$ic_accs[$ic_n] = $ic_hue($ic_d['accent']);
 	}
-	ok(count($ic_badacc) === 0,
-	   'these have no measured accent: ' . implode(', ', $ic_badacc));
-	ok(preg_match('~--lp-accent:<\?php echo htmlspecialchars\(\$lp_acc~', $ic_page) === 1,
-	   'the tile does not use its own accent, so every tile wears the section colour');
+	$ic_keys = array_keys($ic_accs); $ic_minsep = 360;
+	for ($a = 0; $a < count($ic_keys); $a++) {
+		for ($b2 = $a+1; $b2 < count($ic_keys); $b2++) {
+			$dd = abs($ic_accs[$ic_keys[$a]] - $ic_accs[$ic_keys[$b2]]);
+			$ic_minsep = min($ic_minsep, min($dd, 360-$dd));
+		}
+	}
+	ok($ic_minsep >= 50,
+	   'the section accents are only ' . round($ic_minsep) . ' degrees apart; they will read as one colour');
 
 	/* EVERY ITEM KEEPS ITS EMOJI, because that is the fallback. */
 	$ic_noemoji = array();
@@ -431,8 +474,8 @@ echo "\nthe Play icons are art over emoji, never instead of it\n";
 	   'the markup does not carry the emoji, so there is nothing to fall back to');
 	ok(strpos($ic_page, 'this.parentNode.textContent=this.parentNode.dataset.emoji') !== false,
 	   'a broken icon stays broken instead of showing the emoji it replaced');
-	ok(preg_match('~src="icons/play/~', $ic_page) === 1,
-	   'the icons are not loaded from icons/play/');
+	ok(preg_match('~src="icons/<\?php echo \$lp_ico;~', $ic_page) === 1,
+	   'the markup hardcodes a section folder instead of using the mapped path');
 	ok(strpos($ic_page, 'src="https://') === false,
 	   'the icons are referenced absolutely; cookies here are host-only, so paths stay relative');
 

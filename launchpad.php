@@ -190,7 +190,10 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
      flex shrank it to its content, and 26 tiles rendered in a 455px strip
      against 2800px of empty page. -->
 <div class="row" id="row1">
-  <div class="col1of3" style="max-width:1100px;margin:0 auto;flex:1 1 100%;">
+  <?php /* FULL WIDTH. The 1100px cap was from before the page was art-led;
+           with square tiles and a hero band the extra columns are the
+           point, and the banner crop below is set for it. */ ?>
+  <div class="col1of3" style="margin:0 auto;flex:1 1 100%;">
 
 	<?php /*
 	 * THE BANNER. The greeting and the stats sit ON the art; Start Here
@@ -335,14 +338,15 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 				 * catalogue chose emoji to begin with. Not lazy: this is the
 				 * top of the first page after login.
 				 */
-				$lp_ico = isset($lp_icons[$it[2]]) ? $lp_icons[$it[2]] : null;
-				$lp_acc = $lp_ico ? $lp_ico[1] : $lp_sec['accent']; ?>
+				$lp_ico = isset($lp_icons[$it[2]]) ? $lp_icons[$it[2]] : null; ?>
+				<?php /* No accent of its own: a tile wears its section's, which
+				         .lp-section already sets as --lp-accent. A colour per
+				         tile made the grid a swatch book. */ ?>
 				<a class="lp-tile<?php echo $lp_ok ? '' : ' lp-tile-later'; ?><?php
 				      echo $lp_ico ? ' lp-tile-art-on' : ''; ?>"
-				   style="--lp-accent:<?php echo htmlspecialchars($lp_acc, ENT_QUOTES, 'UTF-8'); ?>"
 				   href="<?php echo htmlspecialchars($it[0]); ?>">
 					<span class="lp-tile-icon" data-emoji="<?php echo htmlspecialchars($it[1], ENT_QUOTES, 'UTF-8'); ?>"><?php
-						if ($lp_ico): ?><img class="lp-tile-art" src="icons/play/<?php echo $lp_ico[0]; ?>.webp"
+						if ($lp_ico): ?><img class="lp-tile-art" src="icons/<?php echo $lp_ico; ?>.webp"
 							alt="" decoding="async"
 							onerror="this.parentNode.textContent=this.parentNode.dataset.emoji;this.closest('.lp-tile').classList.remove('lp-tile-art-on')"><?php
 						else: echo $it[1]; endif; ?></span>
@@ -379,9 +383,11 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	background-color: #07111d;
 	background-image: url(images/launchpad-hero.jpg);
 	background-size: cover;
-	/* 25%, chosen on a full-width browser against the real art rather
-	   than computed from the crop maths. */
-	background-position: 50% 25%;
+	/* 27%, chosen on a full-width browser against the real art rather
+	   than computed from the crop maths. It moved from 25% when the page
+	   lost its 1100px cap: a wider band crops less off the sides and more
+	   off the top, so the citadel needs nudging back down. */
+	background-position: 50% 27%;
 	background-repeat: no-repeat;
 	overflow: hidden;
 }

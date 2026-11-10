@@ -64,41 +64,66 @@
  * those readers nothing.
  */
 /*
- * THE ART, AND THE COLOUR IT IS MADE OF.
+ * THE ART. Every tile on the Launchpad, in three sheets: play/,
+ * collect/ and progress/.
  *
- * array(file, accent). The accent is not chosen: it is measured out of
- * the image itself -- the dominant hue of its lit, saturated pixels,
- * then set to a fixed saturation and lightness so it reads as an accent
- * on a dark panel rather than inheriting the art's own murk. That is why
- * most are violet, Bosses and Racer are blue, and the five with
- * torchlight, sparks or parchment are amber.
- *
- * A tile whose art has not been uploaded still gets its accent, so the
- * section does not go half-coloured while the FTP catches up.
+ * The COLOUR is not here: a tile wears its section's accent, and those
+ * are set on the sections themselves. See the note there -- they are
+ * measured out of these same images.
  */
 $lp_icons = array(
-	'DHC Fighters'     => array('dhc-fighters', '#7842db'),
-	'DHC Arena'        => array('dhc-arena', '#db7842'),
-	'DHC Bosses'       => array('dhc-bosses', '#4284db'),
-	'DHC Drop Ship'    => array('dhc-dropship', '#7542db'),
-	'Missions'         => array('missions', '#db8842'),
-	'Realms'           => array('realms', '#7b42db'),
-	'Realm Guardians'  => array('guardians', '#8042db'),
-	'Crypt Crawl'      => array('cryptcrawl', '#db8342'),
-	'Crypt Conquest'   => array('cryptconquest', '#9c42db'),
-	'Monstrocity'      => array('monstrocity', '#a342db'),
-	'Boss Battles'     => array('bossbattles', '#7f42db'),
-	'Skull Swap'       => array('skullswap', '#8142db'),
-	'Skull Racer'      => array('skullracer', '#4258db'),
-	'Gauntlets'        => array('gauntlets', '#db7e42'),
-	'Obscura'          => array('obscura', '#db9a42'),
-	'Drop Ship'        => array('dropship', '#7a42db'),
-	'Dread City'       => array('dreadcity', '#5742db'),
+	'DHC Fighters'     => 'play/dhc-fighters',
+	'DHC Arena'        => 'play/dhc-arena',
+	'DHC Bosses'       => 'play/dhc-bosses',
+	'DHC Drop Ship'    => 'play/dhc-dropship',
+	'Missions'         => 'play/missions',
+	'Realms'           => 'play/realms',
+	'Realm Guardians'  => 'play/guardians',
+	'Crypt Crawl'      => 'play/cryptcrawl',
+	'Crypt Conquest'   => 'play/cryptconquest',
+	'Monstrocity'      => 'play/monstrocity',
+	'Boss Battles'     => 'play/bossbattles',
+	'Skull Swap'       => 'play/skullswap',
+	'Skull Racer'      => 'play/skullracer',
+	'Gauntlets'        => 'play/gauntlets',
+	'Obscura'          => 'play/obscura',
+	'Drop Ship'        => 'play/dropship',
+	'Dread City'       => 'play/dreadcity',
+
+	/* ---- Collect ---- */
+	'My NFTs'          => 'collect/my-nfts',
+	'Store'            => 'collect/store',
+	'Auctions'         => 'collect/auctions',
+	'Raffles'          => 'collect/raffles',
+	'Gallery'          => 'collect/gallery',
+	'Collections'      => 'collect/collections',
+	'Music Videos'     => 'collect/music-videos',
+	'Diamond Skulls'   => 'collect/diamond-skulls',
+	'Skulliverse'      => 'collect/skulliverse',
+	/* ---- Progress ---- */
+	'Leaderboards'     => 'progress/leaderboards',
+	'Profile'          => 'progress/profile',
+	'Points'           => 'progress/points',
+	'Crafting'         => 'progress/crafting',
+	'Transactions'     => 'progress/transactions',
+	'Wallets'          => 'progress/wallets',
+	'Analytics'        => 'progress/analytics',
+	'Skull Paper'      => 'progress/skullpaper',
 );
 
 $lp_sections = array(
 	'Play' => array(
-		'accent' => '#ffcc44',
+		/*
+		 * MEASURED, AND DELIBERATELY SEPARATED. Each section's accent is
+		 * a hue that genuinely appears in that section's own artwork --
+		 * amber is the torchlight and sparks through Play, magenta is the
+		 * Store's neon and the Raffle ticket, violet is what Progress is
+		 * almost entirely made of. Of every triple where each hue is
+		 * really present in its own sheet, this is the one furthest
+		 * apart: 60 degrees between each, which is as much separation as
+		 * art this consistently violet allows.
+		 */
+		'accent' => '#e6a449',
 		'blurb'  => 'Every game on the platform. Most pay CARBON just for finishing a run.',
 		'items'  => array(
 			/*
@@ -154,7 +179,7 @@ $lp_sections = array(
 		),
 	),
 	'Collect' => array(
-		'accent' => '#4fa3ff',
+		'accent' => '#e6498a',
 		'blurb'  => 'Your NFTs, and the places to get more of them.',
 		'items'  => array(
 			array('my-nfts.php',         '🎒', 'My NFTs',         'Everything you have staked'),
@@ -169,7 +194,7 @@ $lp_sections = array(
 		),
 	),
 	'Progress' => array(
-		'accent' => '#00c8a0',
+		'accent' => '#8a49e6',
 		'blurb'  => 'Where you stand, and what your points are worth.',
 		'items'  => array(
 			array('leaderboards.php',    '🏆', 'Leaderboards',    'Every board, with who leads it'),
