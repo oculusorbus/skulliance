@@ -1669,11 +1669,33 @@ input:checked + .slider:before {
 }
 /* End Ken Burns Effect */
 
+/*
+ * REPORTED: on mobile it stalls halfway up the screen and only drops back
+ * to the corner once you scroll the other way.
+ *
+ * THE CAUSE WAS `filter: drop-shadow()` ON A position:fixed ELEMENT, and
+ * it was the only one on the platform. A filtered element cannot be kept
+ * as a plain composited layer that the compositor pins to the viewport --
+ * the filtered region has to be re-rasterised -- and mobile browsers do
+ * not do that on every frame of a momentum scroll. So the button lags
+ * behind the viewport and snaps into place when the scroll settles, which
+ * is exactly what "stalls halfway, then drops" looks like.
+ *
+ * box-shadow is visually the same thing on a solid rounded rectangle and
+ * costs the compositor nothing. translateZ(0) then gives it its own layer
+ * so it is composited rather than repainted as the page moves.
+ *
+ * IT ALSO STOPPED TOGGLING `display`, which forced a layout on every
+ * scroll event. Visibility and opacity are compositor work; the class is
+ * driven by a passive, frame-throttled listener in skulliance.js.
+ * skullracer, guardians and obscura hide it with `display:none !important`
+ * and realms pushes it behind the map with z-index -- all three still win.
+ */
 #back-to-top-button {
-  display: none;
   position: fixed;
-  bottom: 10px;
-  right: 10px;
+  /* Clear of the home indicator, and of the quick-menu bar when that is up. */
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  right: calc(10px + env(safe-area-inset-right, 0px));
   z-index: 99;
   font-size: 18px;
   border: none;
@@ -1686,8 +1708,23 @@ input:checked + .slider:before {
   padding-right: 10px;
   padding-left: 10px;
   border-radius: 4px;
-  -webkit-filter: drop-shadow(5px 5px 5px #202225);
-  filter: drop-shadow(5px 5px 5px #202225);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateZ(0);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+  transition: opacity .18s linear, visibility 0s linear .18s;
+}
+#back-to-top-button.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity .18s linear;
+}
+/* In the installed PWA the quick-menu owns the bottom of the screen, and
+   the arrow was sitting on top of it. */
+@media (display-mode: standalone) {
+  #back-to-top-button { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* Reveal on Scroll */

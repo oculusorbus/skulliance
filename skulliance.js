@@ -1655,24 +1655,46 @@ function reactivateRealm(realmID){
 	};
 }
 
-// Get the button
-let mybutton = document.getElementById("back-to-top-button");
-
-// When the user scrolls down 20px from the top of the document, show the button
-window.onscroll = function() {scrollFunction()};
-
-function scrollFunction() {
-  if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-    mybutton.style.display = "block";
-  } else {
-    mybutton.style.display = "none";
+/*
+ * THE BACK-TO-TOP ARROW.
+ *
+ * It used to be `window.onscroll = ...` toggling style.display, which is
+ * two problems on a phone. A non-passive scroll handler runs before the
+ * browser can start scrolling, and display:none <-> block forces a layout
+ * on every single scroll event -- on a long page that is hundreds of
+ * layouts during one flick.
+ *
+ * Passive and frame-throttled now: the listener does nothing but ask for
+ * the next frame, and the work is one class toggle, which the compositor
+ * handles. See flexbox.css for the other half of this -- the drop-shadow
+ * FILTER was what actually made it lag behind the viewport.
+ *
+ * window.onscroll was also the only handler of its kind on the platform,
+ * so assigning it meant any other script that wanted one would have
+ * silently replaced this.
+ */
+(function () {
+  var btn = document.getElementById("back-to-top-button");
+  if (!btn) return;
+  var queued = false;
+  function apply() {
+    queued = false;
+    var y = window.pageYOffset
+         || document.documentElement.scrollTop
+         || document.body.scrollTop || 0;
+    btn.classList.toggle("show", y > 20);
   }
-}
+  window.addEventListener("scroll", function () {
+    if (!queued) { queued = true; requestAnimationFrame(apply); }
+  }, { passive: true });
+  /* Run once: a page restored mid-scroll by the back button starts with no
+     scroll event coming, and the arrow would be missing until you moved. */
+  apply();
+})();
 
-// When the user clicks on the button, scroll to the top of the document
+// Called from the button's inline onclick in header.php, so it stays global.
 function topFunction() {
-  document.body.scrollTop = 0;
-  document.documentElement.scrollTop = 0;
+  window.scrollTo(0, 0);
 }
 
 document.getElementById("year").innerHTML = new Date().getFullYear();
