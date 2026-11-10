@@ -207,7 +207,19 @@ echo "\nthe page marks but never blocks\n";
 	ok(preg_match('/<a class="lp-tile<\?php echo \$lp_ok \? \'\' : \' lp-tile-later\'/', $code) === 1,
 	   'the tile is no longer an <a> carrying the state as a class -- check it has not become '
 	 . 'a disabled element');
-	ok(strpos($code, 'disabled') === false && strpos($code, 'pointer-events: none') === false,
+	/*
+	 * THE TILE RULES, not the whole file. The hero banner's scrim carries
+	 * `pointer-events: none` so that clicks pass THROUGH it to the links
+	 * underneath -- the opposite of disabling something -- and a file-wide
+	 * search read that as a tile being switched off.
+	 */
+	$lpTileCss = '';
+	foreach (preg_split('~\}~', $code) as $chunk) {
+		if (preg_match('~\.lp-tile~', $chunk)) $lpTileCss .= $chunk . '}';
+	}
+	ok(strpos($lpTileCss, 'pointer-events: none') === false,
+	   'a tile is being disabled rather than dimmed');
+	ok(strpos($code, 'disabled') === false,
 	   'a tile is being disabled rather than dimmed');
 
 	/*
@@ -292,6 +304,61 @@ echo "\nthe menu marks the same things, and can never be the reason a page dies\
 	   'the mark carries no sentence, so it reads as "something is wrong with this link"');
 	ok(player_nav_attrs('obscura.php', st(array('fighters' => 0, 'nfts' => 0))) === '',
 	   'a game with no requirement is being marked');
+}
+
+
+echo "\nthe hero banner degrades, and never blocks the links on it\n";
+{
+	$bn = (string) file_get_contents(__DIR__ . '/launchpad.php');
+	/*
+	 * IMAGES DEPLOY BY FTP, NOT WITH THE CODE. Until launchpad-hero.jpg
+	 * is on the server this has to be exactly the page that was there
+	 * before: dark ground, no broken frame, nothing moved. The art is an
+	 * improvement layered on, never a dependency.
+	 */
+	ok(preg_match('~\.lp-banner\s*\{[^}]*background-color:\s*#07111d~s', $bn) === 1,
+	   'the banner has no colour under the art, so a missing upload is a blank or broken band');
+	$bnPos = strpos($bn, 'background-color: #07111d');
+	$bnImg = strpos($bn, 'background-image: url(images/launchpad-hero.jpg)');
+	ok($bnImg !== false && $bnPos !== false && $bnPos < $bnImg,
+	   'the fallback colour is declared after the image, so it can override it');
+	ok(strpos($bn, 'url(images/launchpad-hero.jpg)') !== false
+	   && strpos($bn, 'url(https://') === false,
+	   'the art is referenced absolutely; cookies here are host-only, so paths stay relative');
+
+	/*
+	 * THE SCRIM MUST NOT EAT THE CLICKS. Start Here is a list of links
+	 * sitting on the art, and an absolutely positioned overlay across
+	 * the whole band is exactly the thing that swallows taps.
+	 */
+	ok(preg_match('~\.lp-banner::before\s*\{[^}]*pointer-events:\s*none~s', $bn) === 1,
+	   'the scrim does not pass clicks through, so Start Here cannot be tapped');
+	ok(preg_match('~\.lp-banner-in\s*\{[^}]*position:\s*relative~s', $bn) === 1,
+	   'the content is not lifted above the scrim, so the scrim paints over the text');
+
+	/*
+	 * MIN-HEIGHT, NOT PADDING. Start Here only renders while something is
+	 * incomplete, so a band sized by its content would be tall mid-setup
+	 * and short once finished -- the art changing size as a side effect
+	 * of a checklist emptying.
+	 */
+	/* THE BASE RULE, not the phone one: the media query sets its own
+	   min-height, so an unanchored match passed with the desktop floor
+	   deleted. justify-content only appears in the base rule. */
+	ok(preg_match('~\.lp-banner-in\s*\{[^}]*justify-content[^}]*min-height:\s*\d+px~s', $bn) === 1,
+	   'the band is sized by its content, so it changes height when Start Here disappears');
+
+	/* The documented trap in this very file: .main centres everything. */
+	ok(preg_match('~\.lp-hero\s*\{[^}]*text-align:\s*left~s', $bn) === 1,
+	   'the hero does not restate text-align, so the greeting centres itself over the art');
+	/* Text on a photograph needs its own contrast, not the image's. */
+	ok(strpos($bn, 'text-shadow') !== false,
+	   'the text over the art has no shadow, so it depends on the image staying dark');
+	/* A list of links keeps a surface; only prose sits straight on a photo. */
+	ok(preg_match('~\.lp-banner \.lp-todo\s*\{[^}]*background:\s*rgba~s', $bn) === 1,
+	   'Start Here sits directly on the photograph, where a row you must find and tap cannot be read');
+	ok(preg_match('~\.lp-banner \.lp-todo\s*\{[^}]*border-radius:\s*0~s', $bn) === 1,
+	   'the Start Here panel keeps the old rounded corner the rest of the platform has dropped');
 }
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");

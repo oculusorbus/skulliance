@@ -192,6 +192,21 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 <div class="row" id="row1">
   <div class="col1of3" style="max-width:1100px;margin:0 auto;flex:1 1 100%;">
 
+	<?php /*
+	 * THE BANNER. The greeting and the stats sit ON the art; Start Here
+	 * sits on it too but keeps a panel of its own, because it is a list
+	 * of links you act on rather than text you read.
+	 *
+	 * TEXT AT THE BOTTOM, ART AT THE TOP, and that is measured rather
+	 * than chosen: the image runs from a mean luminance of 66 across its
+	 * top eighth to 14 across its bottom eighth. White text needs almost
+	 * no help down there and would need a scrim heavy enough to hide the
+	 * citadel up top. The composition agrees -- the skull is in the upper
+	 * middle and the foreground rock is nearly black.
+	 */ ?>
+	<div class="lp-banner">
+	<div class="lp-banner-in">
+
 	<div class="lp-hero">
 		<img class="lp-hero-avatar" src="<?php echo htmlspecialchars($lp_avatar_url); ?>" alt=""
 		     onerror="this.src='icons/skull.png';">
@@ -216,6 +231,9 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 		<?php endforeach; ?>
 	</div>
 	<?php endif; ?>
+
+	</div>
+	</div>
 
 	<?php if ($lp_nudge): ?>
 	<?php /* ITS OWN LOOK, not Start Here's teal. Start Here is a checklist
@@ -325,9 +343,78 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 </div>
 
 <style>
+/*
+ * THE BANNER.
+ *
+ * background-color FIRST and always: images deploy by FTP, not with the
+ * code, so until launchpad-hero.jpg is on the server this is exactly the
+ * page that was here before -- dark ground, no broken frame, nothing
+ * moved. The art is an improvement layered on, never a dependency.
+ *
+ * 50% 22% keeps the skull citadel in frame when the band crops it, which
+ * it does at every width: the art is 3:2 and this is nearer 3:1.
+ */
+.lp-banner {
+	position: relative;
+	margin: 0 0 34px;
+	background-color: #07111d;
+	background-image: url(images/launchpad-hero.jpg);
+	background-size: cover;
+	background-position: 50% 42%;
+	background-repeat: no-repeat;
+	overflow: hidden;
+}
+/* THE SCRIM, graded to the art rather than flat. Measured per eighth,
+   the image runs 66 luminance at the top to 14 at the bottom, so this is
+   nearly clear over the citadel and does its work only where the text
+   is. A flat overlay dark enough for the top would have buried it. */
+.lp-banner::before {
+	content: ""; position: absolute; inset: 0; pointer-events: none;
+	background: linear-gradient(180deg,
+		rgba(7,17,29,0.05) 0%,
+		rgba(7,17,29,0.20) 45%,
+		rgba(7,17,29,0.60) 74%,
+		rgba(7,17,29,0.86) 100%);
+}
+/*
+ * MIN-HEIGHT, NOT PADDING. Start Here only renders while something is
+ * incomplete, so sizing the band off its content would give an account
+ * mid-setup a tall banner and a finished one a short one -- the art
+ * would change size as a side effect of the checklist emptying. A floor
+ * keeps the band the same shape either way, and the first pass was also
+ * simply too short to fit the citadel in.
+ */
+.lp-banner-in {
+	position: relative;              /* over the scrim */
+	display: flex; flex-direction: column; justify-content: flex-end;
+	min-height: 340px;
+	padding: 20px 18px 18px;
+}
 .lp-hero {
 	display: flex; align-items: center; gap: 16px;
-	padding: 18px 4px 22px;
+	padding: 0 0 14px;
+	/* RESTATED, not inherited: .main sets text-align:center, and the note
+	   further down this file is about exactly this trap. */
+	text-align: left;
+}
+.lp-hero-text h2 { text-shadow: 0 2px 14px rgba(0,0,0,0.8); }
+.lp-hero-stats { text-shadow: 0 1px 10px rgba(0,0,0,0.85); }
+/* Start Here is a list of LINKS, so it keeps a surface of its own. Text
+   can sit on a photograph; a row you are meant to find and tap cannot. */
+.lp-banner .lp-todo {
+	background: rgba(7,17,29,0.74);
+	border-color: rgba(0,200,160,0.45);
+	margin-bottom: 0;
+	/* SQUARE, STATED HERE. The sweep squares panels it recognises by
+	   colour, and this one is deliberately a colour it does not know --
+	   it is a scrim panel, not a surface -- so it would have kept the
+	   old 8px while everything around it lost it. */
+	border-radius: 0;
+}
+@media (max-width: 700px) {
+	.lp-banner-in { min-height: 270px; padding: 16px 12px 12px; }
+	/* Tighter crop on a phone, so the citadel still reads at 400px. */
+	.lp-banner { background-position: 50% 26%; }
 }
 .lp-hero-avatar { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #00c8a0; object-fit: cover; flex-shrink: 0; }
 .lp-hero-text h2 { margin: 0 0 6px; }
