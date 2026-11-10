@@ -135,9 +135,9 @@ $lp_sections = array(
 			 * they read as a block rather than four entries scattered through
 			 * an alphabet.
 			 */
-			array('dhcfighters.php',     '🧬', 'DHC Fighters',    'Earn traits, assemble Fighters, top the board'),
-			array('dhcarena.php',        '🏟️', 'DHC Arena',       'Send a Crew of three against a rival', 'fighter'),   // dhcarena.php's own empty state is "No Fighters yet"
-			array('dhcbosses.php',       '☠️', 'DHC Bosses',      'Three shared bosses, one health bar each', 'fighter'),   // its header: a Crew of three, same as Arena
+			array('dhcfighters.php',     '🧬', 'DHC Fighters',    'Earn traits, build Fighters, rank up'),
+			array('dhcarena.php',        '🏟️', 'DHC Arena',       'Send a Crew of 3 against a rival', 'fighter'),   // dhcarena.php's own empty state is "No Fighters yet"
+			array('dhcbosses.php',       '☠️', 'DHC Bosses',      '3 shared bosses, 1 health bar each', 'fighter'),   // its header: a Crew of three, same as Arena
 			/* ?project_id=5 for the same reason every Drop Ship entry below
 			   carries one: they are a single codebase switched by a session
 			   value, so without it each tile opens whichever game the session

@@ -513,9 +513,7 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	 */
 	.lp-tile-art-on .lp-tile-name { font-size: 0.8rem; padding: 0 8px; }
 	.lp-tile-art-on .lp-tile-desc {
-		font-size: 0.64rem; padding: 0 8px 8px; line-height: 1.25;
-		display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-		overflow: hidden;
+		font-size: 0.62rem; padding: 0 7px 8px; line-height: 1.3;
 	}
 }
 .lp-hero-avatar { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #00c8a0; object-fit: cover; flex-shrink: 0; }
@@ -667,7 +665,23 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 .lp-tile-art-on .lp-tile-desc,
 .lp-tile-art-on .lp-tile-need { position: relative; z-index: 1; }
 .lp-tile-art-on .lp-tile-name { padding: 0 12px; text-shadow: 0 2px 10px rgba(0,0,0,0.9); }
-.lp-tile-art-on .lp-tile-desc { padding: 0 12px 12px; text-shadow: 0 1px 8px rgba(0,0,0,0.95); }
+/*
+ * ONE LINE, AND NOTHING TO CUT.
+ *
+ * An art tile is bottom-anchored, so a description that wraps lifts its
+ * own title above its neighbours' and the row of titles comes out
+ * staggered. nowrap levels them. There is deliberately NO ellipsis: a
+ * cut word is the same failure wearing a nicer hat, so the copy was
+ * shortened instead (see lib/launchpad-catalogue.php) and the harness
+ * holds every description to a width that fits. The phone never had
+ * the problem because its font is smaller, which is why the desktop
+ * size comes down to meet it.
+ */
+.lp-tile-art-on .lp-tile-desc {
+	font-size: 0.68rem; padding: 0 10px 11px; line-height: 1.3;
+	white-space: nowrap; overflow: hidden;
+	text-shadow: 0 1px 8px rgba(0,0,0,0.95);
+}
 .lp-tile-art-on .lp-tile-need { padding: 0 12px 12px; }
 /* The accent is the art's own colour now, so the top rule is worth more
    than 2px and the hover can use it too. */

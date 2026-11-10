@@ -621,12 +621,48 @@ echo "\nthe fallback's box does not outlive the fallback\n";
 	ok(preg_match('~\\.lp-grid \\{[^}]*minmax\\(140px~s', $fx_mb) === 1,
 	   'the phone grid still asks for 190px columns, so a phone gets one tile per row');
 	/*
-	 * aspect-ratio yields to content, so a description wrapping to four
-	 * lines in a 160px square makes its own tile taller than the rest --
-	 * the uniformity problem coming back through the text.
+	 * A DESCRIPTION MUST NEVER WRAP, at any width.
+	 *
+	 * An art tile is bottom-anchored, so a second line lifts that tile's
+	 * title above its neighbours' and the row comes out staggered. A
+	 * clamp at two lines does NOT fix that: it caps the damage, it does
+	 * not level the titles, because a one-line description still sits
+	 * its title lower than a two-line one.
+	 *
+	 * Shrinking the font is not a fix either. Measured over all 34, two
+	 * wrap at 194px and still wrap three sizes down, because the cause
+	 * is a long word run rather than the size.
 	 */
-	ok(preg_match('~-webkit-line-clamp:\\s*2~', $fx_mb) === 1,
-	   'the description is not clamped on a phone, so a long one makes its tile taller than its neighbours');
+	ok(preg_match('~\.lp-tile-art-on \.lp-tile-desc \{[^}]*white-space:\s*nowrap~s', $fx) === 1,
+	   'a description can wrap, which lifts its own title above its neighbours and staggers the row');
+	/*
+	 * AND NOTHING IS ALLOWED TO NEED CUTTING.
+	 *
+	 * nowrap keeps the titles level, but on its own it would silently
+	 * clip a long description instead. The rule is that the copy fits:
+	 * measured in a browser at both real tile widths (207px desktop,
+	 * 171px phone) with the shipped sizes, 36 characters is the longest
+	 * that fits with room to spare and 38 is where it starts to bite.
+	 * Two descriptions were over and were rewritten, not truncated.
+	 *
+	 * A character count is a proxy for a pixel width, and a crude one --
+	 * but it is checkable without a browser, and it fails in the right
+	 * direction: somebody adding a long description is told to shorten
+	 * it rather than discovering a clipped word in production.
+	 */
+	$fx_long = array();
+	foreach ($lp_sections as $fx_s => $fx_d) {
+		foreach ($fx_d['items'] as $fx_it) {
+			if (strlen($fx_it[3]) > 38) $fx_long[] = $fx_it[2] . ' (' . strlen($fx_it[3]) . ')';
+		}
+	}
+	ok(count($fx_long) === 0,
+	   'these descriptions are too long to fit one line and will be clipped: ' . implode(', ', $fx_long));
+	ok(strpos($fx, 'text-overflow: ellipsis') === false,
+	   'an ellipsis is back; the copy is meant to fit, not be cut');
+	/* -webkit-box would hand the second line straight back. */
+	ok(strpos($fx_mb, '-webkit-line-clamp') === false,
+	   'the phone block clamps to two lines again, which overrides nowrap and re-staggers the titles');
 }
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
