@@ -64,6 +64,47 @@
 }
 
 /* ====================================================================
+   THE GROUND
+   ==================================================================== */
+/*
+ * THE PAGE IS LIT FROM THE MIDDLE, not a flat sheet of #07111d.
+ *
+ * This is the claim dialog's veil, scaled up. That dialog puts a soft
+ * radial behind itself so the box sits in the brightest part of its own
+ * backdrop rather than being cut out of a flat one, and the same thing
+ * is true of a page: panels read as objects on a ground when the ground
+ * has somewhere brighter and somewhere darker.
+ *
+ * A FIXED PSEUDO-ELEMENT, NOT background-attachment: fixed.
+ * The effect wanted is a gradient sized to the WINDOW that stays put
+ * while the page scrolls -- a radial sized to the body would smear over
+ * a 4,000px page and change shape as the content grew.
+ * background-attachment:fixed does that too, but iOS Safari handles it
+ * by painting the whole document-sized background on every scroll
+ * frame, which is the same class of mistake as a drop-shadow filter on
+ * a fixed element. A position:fixed layer is composited and costs
+ * nothing to scroll.
+ *
+ * z-index -1 PUTS IT BEHIND EVERY PANEL. html carries no background of
+ * its own, so body's colour propagates to the canvas and this paints
+ * between the canvas and the content -- above the ground, below
+ * everything on it, and ahead of nothing it could cover.
+ *
+ * It rolls back with the rest of this file: one <link>, or ?polish=0.
+ */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    /* The lit middle, weighted high because that is where a page starts
+       reading and where the masthead sits. */
+    radial-gradient(90% 58% at 50% 26%, rgba(16,44,67,.55) 0, rgba(7,17,29,0) 68%),
+    /* And the platform's own colour, barely, rising off the bottom
+       edge. Any more than this and it is a teal page rather than a dark
+       one with teal on it. */
+    radial-gradient(76% 46% at 50% 104%, rgba(0,200,160,.06) 0, rgba(7,17,29,0) 70%);
+}
+
+/* ====================================================================
    PANELS
    ==================================================================== */
 /* .content is the platform's panel: #0a1929, a teal hairline and 18px of

@@ -545,5 +545,56 @@ if (!empty($rt)) {
 ok(strpos($sw, '[data-msp-sq]{border-radius:0}') !== false,
    'nothing squares the marked corners');
 
+echo "\nthe ground is lit, and it costs nothing to scroll\n";
+/*
+ * THE PAGE GROUND. A flat #07111d gives every panel the same edge
+ * against the same nothing; a soft radial behind everything is what
+ * makes a panel read as an object ON a ground. It is the claim
+ * dialog's veil scaled up to the window.
+ */
+$grd = preg_match('~body::before \{.*?\n\}~s', $plat, $gm) ? $gm[0] : '';
+ok($grd !== '', 'there is no page ground, so every panel sits on a flat sheet');
+/*
+ * A FIXED LAYER, NOT background-attachment: fixed.
+ *
+ * Both give a gradient sized to the window that stays put while the
+ * page scrolls. The difference is that iOS Safari implements the
+ * attachment by repainting a document-sized background on every scroll
+ * frame -- the same class of mistake as a drop-shadow filter on a fixed
+ * element, which cost this platform its back-to-top button. A
+ * position:fixed layer is composited.
+ */
+ok(strpos($grd, 'position: fixed') !== false,
+   'the ground is not a fixed layer, so it scrolls with the page or smears over its whole height');
+/* THE DECLARATIONS, NOT THE FILE. The paragraph above this rule names
+   the property in order to explain why it is not used -- so a plain
+   search over the source matches the comment and reports the thing it
+   is warning about. Comments out first. */
+$platCode = preg_replace('~/\*.*?\*/~s', '', $plat);
+ok(strpos($platCode, 'background-attachment: fixed') === false,
+   'background-attachment:fixed is back; iOS repaints a document-sized background every scroll frame');
+/*
+ * BEHIND EVERYTHING, AND IT TAKES NOTHING. html carries no background,
+ * so body's colour propagates to the canvas and this paints between the
+ * canvas and the content. Without the negative z-index it covers the
+ * page; without pointer-events it swallows every click on it.
+ */
+ok(preg_match('~z-index: -1~', $grd) === 1,
+   'the ground is not behind the content, so it paints over the whole page');
+ok(strpos($grd, 'pointer-events: none') !== false,
+   'the ground takes pointer events, and it covers the entire window');
+/* And the colour it fades to has to BE the ground, or the gradient ends
+   on a seam. Read from flexbox.css, so the two cannot drift. */
+$grdBody = preg_match('~\nbody \{[^}]*background-color:\s*(#[0-9a-f]{6})~si', $flex, $gb)
+         ? strtolower($gb[1]) : '';
+ok($grdBody !== '', 'the page ground colour cannot be read from flexbox.css');
+$grdRgb = sprintf('rgba(%d,%d,%d,0)', hexdec(substr($grdBody,1,2)), hexdec(substr($grdBody,3,2)), hexdec(substr($grdBody,5,2)));
+ok(substr_count($grd, $grdRgb) === 2,
+   'a ground layer does not fade out to the page colour (' . $grdRgb . '), so it ends on a seam');
+/* One <link> and ?polish=0 is the whole revert, and that only holds
+   while this lives in polish.css rather than flexbox.css. */
+ok(strpos($flex, 'body::before') === false,
+   'the ground has been merged into flexbox.css, so deleting the polish link no longer reverts it');
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);
