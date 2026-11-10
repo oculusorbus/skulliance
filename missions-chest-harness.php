@@ -229,20 +229,24 @@ echo "\nthe burst cannot grow the dialog a scrollbar\n";
  */
 ok(preg_match('~#mcm-stage\s*\{[^}]*overflow:\s*hidden~s', $modalCode) === 1,
    'the stage does not clip, so the burst adds scrollable overflow to the dialog');
+/* THE PLINTH IS THE BOX THE CHEST LIVES IN now that the pane also holds
+   the reward row and is sized by its content. The clip is still the
+   pane's, but the geometry that has to fit inside it is the plinth's. */
 $sizes = array();
-preg_match('~#mcm-stage\s*\{[^}]*height:\s*(\d+)px~s', $modalCode, $m) && $sizes['stage'] = (int) $m[1];
+preg_match('~#mcm-plinth\s*\{[^}]*height:\s*(\d+)px~s', $modalCode, $m) && $sizes['stage'] = (int) $m[1];
+preg_match('~#mcm-plinth\s*\{[^}]*padding-bottom:\s*(\d+)px~s', $modalCode, $m) && $sizes['floor'] = (int) $m[1];
 preg_match('~\.mcm-chest\s*\{[^}]*height:\s*(\d+)px~s', $modalCode, $m) && $sizes['chest'] = (int) $m[1];
 preg_match('~\.mcm-chest\s*\{[^}]*--mcrise:\s*(-?\d+)px~s', $modalCode, $m) && $sizes['rise'] = (int) $m[1];
-ok(count($sizes) === 3, 'the stage, chest and rise are not all declared in px, so nothing can be checked');
-if (count($sizes) === 3) {
-	/* Bottom-aligned chest: the mouth is 47% down the chest, measured
-	   from the stage floor upward. */
-	$mouth = $sizes['stage'] - $sizes['chest'] + $sizes['chest'] * 0.47;
+ok(count($sizes) === 4, 'the plinth, floor, chest and rise are not all declared in px, so nothing can be checked');
+if (count($sizes) === 4) {
+	/* Bottom-aligned chest standing on the floor: the mouth is 47% down
+	   the chest, measured from the top of the plinth. */
+	$mouth = $sizes['stage'] - $sizes['floor'] - $sizes['chest'] + $sizes['chest'] * 0.47;
 	ok($mouth + $sizes['rise'] > 0,
 	   'the sparks are clipped: they rise ' . abs($sizes['rise']) . 'px off a mouth '
-	   . round($mouth) . 'px down a ' . $sizes['stage'] . 'px stage');
-	ok($sizes['chest'] <= $sizes['stage'],
-	   'the chest is taller than its stage, so the clip cuts the art itself');
+	   . round($mouth) . 'px down a ' . $sizes['stage'] . 'px plinth');
+	ok($sizes['chest'] + $sizes['floor'] <= $sizes['stage'],
+	   'the chest plus its floor is taller than the plinth, so the clip cuts the art itself');
 	/* And it must still be worth the modal: the strip renders it at 99px. */
 	ok($sizes['chest'] >= 180,
 	   'the reveal chest is only ' . $sizes['chest'] . 'px, which is the size the strip already was');
@@ -460,10 +464,10 @@ ok(preg_match('~#mcm-trait \{[^}]*var\(--msp-lift-soft\)~s', $modal) === 1,
  */
 ok(preg_match('~\.mcm-chest \{ position: relative; z-index: 1;~', $modal) === 1,
    'the chest is not lifted above the stage pseudo-elements, so its own shadow paints over it');
-ok(preg_match_all('~#mcm-stage::(before|after) \{[^}]*z-index: 0;~s', $modal) === 2,
+ok(preg_match_all('~#mcm-plinth::(before|after) \{[^}]*z-index: 0;~s', $modal) === 2,
    'a stage layer is not pinned below the chest');
 /* Both cover the stage, and one of them covers all of it. */
-ok(preg_match_all('~#mcm-stage::(before|after) \{[^}]*pointer-events: none;~s', $modal) === 2,
+ok(preg_match_all('~#mcm-plinth::(before|after) \{[^}]*pointer-events: none;~s', $modal) === 2,
    'a stage layer can take pointer events, and it lies over the whole stage');
 /*
  * AND IT HAS A FLOOR TO CAST ONTO.
@@ -479,12 +483,40 @@ ok(preg_match_all('~#mcm-stage::(before|after) \{[^}]*pointer-events: none;~s', 
  * the padding there puts the crop straight back on the screen where the
  * dialog is biggest relative to the page.
  */
-$stageRule = preg_match('~#mcm-stage \{[^}]*\}~s', $modal, $sgm) ? $sgm[0] : '';
-ok(preg_match('~padding-bottom: (\d+)px~', $stageRule, $sp) === 1 && (int)$sp[1] >= 20,
-   'the stage has no floor under the chest, so its contact shadow is cropped to a hard line');
+$stageRule = preg_match('~#mcm-plinth \{[^}]*\}~s', $modal, $sgm) ? $sgm[0] : '';
+ok(preg_match('~padding-bottom: (\d+)px~', $stageRule, $sp) === 1 && (int)$sp[1] >= 14,
+   'the plinth has no floor under the chest, so its contact shadow is cropped to a hard line');
+/*
+ * AND THE SHADOW HAS TO BE WIDER THAN THE CHEST. The first one was
+ * 196px under a 210px chest, and the chest is z-index 1 -- so the whole
+ * shadow sat behind the art and not one pixel of it was ever visible.
+ * All that showed was the gap between the base and the pool below it,
+ * which read as the chest hovering over its own glow.
+ */
+/*
+ * THE BUTTON WEARS ITS LIGHT, NOT A SECOND BORDER. The sheen inside
+ * --msp-fill is the top edge; an inset white line on top of it, and a
+ * focus ring offset OUTWARD in pale mint, both read as extra borders
+ * drawn around the slab. The ring cannot simply go -- it is the only
+ * thing telling a keyboard user where they are, and the dialog moves
+ * focus here as it opens -- so it is inset and in the button's own ink.
+ */
+$closeRule = preg_match('~#mcm-close \{[^}]*\}~s', $modal, $cr) ? $cr[0] : '';
+ok($closeRule !== '', 'the #mcm-close rule is gone');
+ok(strpos($closeRule, 'inset 0 1px 0 rgba(255,255,255') === false,
+   'the button has a white inset line over its own sheen, which reads as a second border');
+ok(preg_match('~#mcm-close:focus-visible \{ outline: [^;]*; outline-offset: (-\d+)px~', $modal, $fo) === 1,
+   'the focus ring is outside the button, where it reads as a highlight border around it');
+ok(preg_match('~#mcm-close:focus-visible~', $modal) === 1,
+   'the focus ring is gone, so a keyboard user cannot see where they are');
+
+$shadeW = preg_match('~#mcm-plinth::after \{[^}]*width: (\d+)px~s', $modal, $sw) ? (int)$sw[1] : 0;
+$chestW = preg_match('~\.mcm-chest \{[^}]*width: (\d+)px~s', $modal, $cw) ? (int)$cw[1] : 0;
+ok($shadeW > 0 && $chestW > 0 && $shadeW > $chestW,
+   'the contact shadow is ' . $shadeW . 'px under a ' . $chestW . 'px chest, so all of it hides behind the art');
 $small = preg_match('~@media \(max-width: 480px\) \{.*?\n\}~s', $modal, $smm) ? $smm[0] : '';
 ok($small !== '', 'the small-screen block is gone');
-ok(preg_match('~#mcm-stage \{[^}]*padding-bottom: (\d+)px~s', $small, $sp2) === 1 && (int)$sp2[1] >= 16,
+ok(preg_match('~#mcm-plinth \{[^}]*padding-bottom: (\d+)px~s', $small, $sp2) === 1 && (int)$sp2[1] >= 14,
    'the phone stage drops the floor, so the crop comes back at the size the dialog fills the screen');
 
 echo "\nthe chest rattles before it opens, on one clock\n";

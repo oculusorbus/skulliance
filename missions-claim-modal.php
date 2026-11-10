@@ -50,7 +50,22 @@ foreach ($ms_daily['days'] as $mcm_d) {
 	<div id="mcm-box" role="dialog" aria-modal="true" aria-labelledby="mcm-title">
 		<div id="mcm-kicker"></div>
 
+		<?php /* THE TITLE IS A HEADING, so it sits with the kicker at the
+		         top rather than between the chest and the row of things
+		         that came out of it. In the middle it broke the one
+		         sentence the reveal is telling -- the chest opens, THESE
+		         came out of it -- with a word about neither. */ ?>
+		<h4 id="mcm-title">Claimed</h4>
+
+		<?php /* THE PANE HOLDS THE WHOLE REVEAL, chest and rewards both.
+		         The icons fly out of the chest, so landing them outside
+		         the panel the chest stands in read as them leaving the
+		         scene. #mcm-plinth is the chest's own floor inside it:
+		         the contact shadow and the pool of light hang off that
+		         rather than off the pane, so they stay under the chest
+		         however tall the pane grows. */ ?>
 		<div id="mcm-stage">
+			<div id="mcm-plinth">
 			<div id="mcm-chest" class="mcm-chest">
 				<img class="mcm-l mcm-closed" src="images/chest/closed.webp" alt=""
 				     width="480" height="497" decoding="async">
@@ -66,13 +81,13 @@ foreach ($ms_daily['days'] as $mcm_d) {
 				         needs no script to place it. */ ?>
 				<?php for ($i = 1; $i <= 6; $i++): ?><span class="mcm-spark s<?php echo $i; ?>"></span><?php endfor; ?>
 			</div>
+			</div>
+
+			<?php /* Filled by SK_CLAIM_SHOW from the claim's own reply, so what
+			         is shown is what was actually paid rather than what was
+			         promised. */ ?>
+			<div id="mcm-items"></div>
 		</div>
-
-		<h4 id="mcm-title">Claimed</h4>
-
-		<?php /* Filled by SK_CLAIM_SHOW from the claim's own reply, so what is
-		         shown is what was actually paid rather than what was promised. */ ?>
-		<div id="mcm-items"></div>
 
 		<div id="mcm-streak"></div>
 		<div id="mcm-remaining"></div>
@@ -160,7 +175,7 @@ foreach ($ms_daily['days'] as $mcm_d) {
    -- so the preview rendered CLAIMED while the real page rendered
    Claimed. A preview that disagrees with the page is worse than no
    preview, and the component owns its own case either way. */
-#mcm-title { margin: 10px 0 0; font-size: 1.5rem; letter-spacing: .04em; color: #00c8a0;
+#mcm-title { margin: 4px 0 10px; font-size: 1.5rem; letter-spacing: .04em; color: #00c8a0;
   text-transform: none; }
 
 /*
@@ -184,30 +199,43 @@ foreach ($ms_daily['days'] as $mcm_d) {
  * one colour already in the art.
  */
 /*
- * THE FLOOR IS PADDING, and it is not decoration.
+ * THE PANE IS THE WHOLE SCENE, chest and rewards together.
  *
- * The art fills its own frame -- the alpha box of open.webp is 4px in
- * from every edge of 480x497 -- so at 210x217 the chest's base is less
- * than two pixels off the bottom of its box. With the chest flush to
- * the bottom of the stage there was nowhere for a contact shadow to
- * fall: it spread into the chest on one side and into overflow:hidden
- * on the other, which cropped it to a hard line exactly where it was
- * supposed to be softest. 28px lifts the chest off the edge and gives
- * the shadow somewhere to land.
+ * The icons fly out of the chest's mouth, and they used to land on the
+ * dialog OUTSIDE the panel the chest stands in -- which reads as them
+ * leaving the picture rather than arriving in it. The pane holds both
+ * now, so the flight starts and ends in the same room.
  *
- * height is the BORDER box (* { box-sizing: border-box } is global), so
- * the number below is 230 of stage plus the 28 underneath it -- the
- * chest's own room is unchanged.
+ * Height is content-driven for the same reason: the row is one line for
+ * most days and two when a name wraps, and a fixed pane would either
+ * clip it or leave a gap under it.
  */
-#mcm-stage { position: relative; display: flex; align-items: flex-end;
-  justify-content: center; height: 258px; padding-bottom: 28px;
+#mcm-stage { position: relative; display: flex; flex-direction: column;
+  align-items: center; padding: 0 10px 14px;
   margin: 6px 0 2px; overflow: hidden;
   border-radius: 3px;
   background-color: #071320;
   background-image:
-    radial-gradient(58% 26% at 50% 94%, rgba(0,200,160,.10) 0, rgba(0,200,160,0) 72%),
+    radial-gradient(60% 20% at 50% 48%, rgba(0,200,160,.10) 0, rgba(0,200,160,0) 72%),
     linear-gradient(180deg, rgba(0,0,0,.30) 0, rgba(0,0,0,0) 70px);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.03); }
+/*
+ * THE PLINTH IS THE CHEST'S FLOOR, and it exists so the shadow and the
+ * pool stay under the chest rather than at the bottom of a pane whose
+ * height now depends on how long a reward is called.
+ *
+ * THE 28px IS NOT PADDING FOR LOOKS. The art fills its own frame -- the
+ * alpha box of open.webp is 4px in from every edge of 480x497 -- so at
+ * 210x217 the chest's base is under two pixels off the bottom of its
+ * box. Flush to the floor there was nowhere for a contact shadow to
+ * fall: it spread into the chest on one side and into overflow:hidden
+ * on the other, cropped to a hard line exactly where it should have
+ * been softest. height is the BORDER box (* { box-sizing: border-box }
+ * is global), so 258 is 230 of chest room plus the 28 beneath it.
+ */
+#mcm-plinth { position: relative; width: 100%;
+  display: flex; align-items: flex-end; justify-content: center;
+  height: 248px; padding-bottom: 18px; }
 /*
  * THE FLOOR LIGHTS UP WHEN THE LID DOES, and :has is what makes that a
  * stylesheet's job rather than another class for the script to toggle.
@@ -215,23 +243,33 @@ foreach ($ms_daily['days'] as $mcm_d) {
  * level, which is the picture above -- nothing breaks, it just does not
  * brighten.
  */
-#mcm-stage::before { content: ""; position: absolute; inset: 0; z-index: 0;
+#mcm-plinth::before { content: ""; position: absolute; inset: 0; z-index: 0;
   pointer-events: none; opacity: 0;
-  background: radial-gradient(44% 22% at 50% 90%,
-    rgba(0,200,160,.30) 0, rgba(0,200,160,0) 72%);
+  background: radial-gradient(46% 17% at 50% 93%,
+    rgba(0,200,160,.32) 0, rgba(0,200,160,0) 72%);
   transition: opacity .55s ease-out .08s; }
-#mcm-stage:has(.mcm-chest.is-open)::before { opacity: 1; }
+#mcm-plinth:has(.mcm-chest.is-open)::before { opacity: 1; }
 /*
- * AND SOMETHING TO STAND ON. The chest was floating: no contact, no
- * weight. This is on the STAGE rather than the chest on purpose -- a
- * contact shadow that rattles along with the object is a shadow cast by
- * nothing, and the rattle is four pixels.
+ * AND SOMETHING TO STAND ON.
+ *
+ * WIDER THAN THE CHEST, which the first version was not: at 196px under
+ * a 210px chest the whole shadow sat BEHIND the art (the chest is
+ * z-index 1) and nothing of it was ever visible. All that was left was
+ * a gap between the base and the pool of light below it, which read as
+ * the chest hovering over its own glow.
+ *
+ * Two stops rather than one, for the same reason. A single soft falloff
+ * spread over 250px has no dark core, and the core is the part that
+ * says contact: hard under the base, gone by the edges.
+ *
+ * On the PLINTH rather than the chest, deliberately -- a contact shadow
+ * that rattles along with the object is a shadow cast by nothing.
  */
-#mcm-stage::after { content: ""; position: absolute; z-index: 0;
-  left: 50%; bottom: 17px; width: 196px; height: 30px;
+#mcm-plinth::after { content: ""; position: absolute; z-index: 0;
+  left: 50%; bottom: 1px; width: 250px; height: 34px;
   transform: translateX(-50%); pointer-events: none;
   background: radial-gradient(50% 50% at 50% 50%,
-    rgba(0,0,0,.62) 0, rgba(0,0,0,0) 70%); }
+    rgba(0,0,0,.72) 0, rgba(0,0,0,.34) 44%, rgba(0,0,0,0) 72%); }
 /* Above both of them. The flash and the six sparks are its children, so
    they come up with it. */
 .mcm-chest { position: relative; z-index: 1;
@@ -336,7 +374,8 @@ foreach ($ms_daily['days'] as $mcm_d) {
  * not move the centre, and the centre is the only thing read.
  */
 #mcm-items { display: flex; flex-wrap: wrap; align-items: flex-start;
-  justify-content: center; gap: 10px 18px; margin: 12px 0 4px; }
+  justify-content: center; gap: 10px 18px; margin: 0;
+  position: relative; z-index: 1; }
 .mcm-item { display: flex; flex-direction: column; align-items: center; gap: 4px;
   width: 124px; opacity: 0;
   transform: translate(var(--mcmdx, 0px), var(--mcmdy, 0px)) scale(.35); }
@@ -375,21 +414,34 @@ foreach ($ms_daily['days'] as $mcm_d) {
   letter-spacing: .08em; text-transform: uppercase; text-align: center;
   color: #04121c; background-color: #00c8a0; background-image: var(--msp-fill);
   border: 0; border-radius: 3px; cursor: pointer;
-  box-shadow: 0 2px 0 rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.3); }
+  /* The sheen in --msp-fill IS the top edge. An inset white line on top
+     of it reads as a second border drawn around the button rather than
+     as the light on it. */
+  box-shadow: 0 2px 0 rgba(0,0,0,.3); }
 #mcm-close:hover { background-color: #2ae0bd; }
 /* Pressed is the ramp upside down and the slab dropping onto its own
    shadow -- the same two moves the platform's buttons make. */
 #mcm-close:active { background-image: var(--msp-fill-in);
   transform: translateY(2px); box-shadow: 0 0 0 rgba(0,0,0,.3); }
-#mcm-close:focus-visible { outline: 2px solid #9affdf; outline-offset: 2px; }
+/*
+ * THE FOCUS RING SITS INSIDE THE BUTTON, not around it.
+ *
+ * The dialog moves focus here as it opens, so this ring is on screen
+ * for most of the reveal -- and offset outward in pale mint it read as
+ * a second border drawn around the slab rather than as part of it. It
+ * cannot just go: it is the only thing telling a keyboard user where
+ * they are. Inset and in the button's own ink it is still unmistakable
+ * against the teal and it belongs to the button.
+ */
+#mcm-close:focus-visible { outline: 2px solid #04121c; outline-offset: -4px; }
 
 /* The rise is in pixels, so it follows the rendered size or the sparks
    travel a third of a chest here. One variable, set wherever the size is. */
 @media (max-width: 480px) {
-  /* Same floor, scaled: 186 of stage plus 22 underneath. Without the
-     padding here the phone gets back exactly the crop this fixed. */
-  #mcm-stage { height: 208px; padding-bottom: 22px; }
-  #mcm-stage::after { bottom: 13px; width: 160px; height: 24px; }
+  /* Same floor, scaled: 186 of chest room plus 22 underneath. Without
+     the padding here the phone gets back exactly the crop this fixed. */
+  #mcm-plinth { height: 192px; padding-bottom: 16px; }
+  #mcm-plinth::after { bottom: 1px; width: 206px; height: 28px; }
   .mcm-chest { width: 170px; height: 176px; --mcrise: -58px; }
 }
 /*
