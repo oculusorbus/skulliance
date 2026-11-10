@@ -409,6 +409,41 @@ ok(strpos($admCode, 'dhcf_award(') === false,
 /* The art arrives by FTP, so a fresh deploy has markup and no pictures. */
 ok(strpos($admCode, "addEventListener('error'") !== false,
    'the preview shows broken frames rather than saying which files are missing');
+echo "\nthe idle pulse joins the opening without a jump\n";
+/*
+ * THE STUTTER. The glow transitions to opacity 1 as the chest opens,
+ * and .is-settled then starts mcmPulse with a 1.2s delay. There is no
+ * fill-mode, so the light holds at 1 through that delay and the
+ * animation's FIRST keyframe is what it snaps to. With 0% at .82 that
+ * was a one-frame drop from the brightest thing on screen, a second and
+ * a half after the chest opened.
+ *
+ * The invariant is not "0% is 1" -- it is "0% is whatever the state it
+ * takes over from left behind". Both are read here, so moving one
+ * without the other fails rather than reintroducing the jump quietly.
+ */
+$glowOpen = preg_match('~\.mcm-chest\.is-open \.mcm-glow \{[^}]*opacity:\s*([0-9.]+)~s', $modal, $gm)
+          ? $gm[1] : '';
+ok($glowOpen !== '', 'the opening no longer sets the glow opacity, so there is nothing to join to');
+/* Bound by what FOLLOWS -- the line break after the block -- rather than
+   by "no closing brace in between", which stops at the first inner one
+   and cuts the 50% stop's own brace off the capture. */
+$pulse = preg_match('~@keyframes mcmPulse \{(.*?)\}\n~s', $modal, $pm) ? $pm[1] : '';
+ok($pulse !== '', 'the mcmPulse keyframes are gone');
+ok(preg_match('~0%,\s*100% \{ opacity: ' . preg_quote($glowOpen, '~') . '; \}~', $pulse) === 1,
+   'the pulse does not start on the opening\'s own opacity (' . $glowOpen . '), '
+ . 'so it snaps the glow the moment the loop begins');
+/* And it has to actually go somewhere: both ends equal with no dip is a
+   loop that animates nothing. */
+ok(preg_match('~50% \{ opacity: ([0-9.]+);~', $pulse, $hm) === 1 && (float)$hm[1] < (float)$glowOpen,
+   'the middle of the pulse is not dimmer than its ends, so the light either does not breathe '
+ . 'or breathes up from full and clips');
+/* The delay is what makes the join visible at all; if it ever goes, the
+   animation starts while the transition is still running and the above
+   stops being the thing that matters. */
+ok(preg_match('~animation: mcmPulse [0-9.]+s ease-in-out [0-9.]+s infinite~', $modal) === 1,
+   'the pulse no longer waits out the opening, so it fights the transition that is still running');
+
 echo "\nthe dialog looks the same wherever it is mounted\n";
 /*
  * THE HOST PAGE RESTYLED THE DIALOG, TWICE.

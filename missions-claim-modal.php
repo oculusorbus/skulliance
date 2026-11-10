@@ -153,7 +153,22 @@ foreach ($ms_daily['days'] as $mcm_d) {
 .mcm-chest.is-open .mcm-glow { opacity: 1; transform: scale(1);
   transition: opacity .42s ease-out .06s, transform .52s cubic-bezier(.16,1.1,.3,1) .06s; }
 .mcm-chest.is-settled .mcm-glow { animation: mcmPulse 3.6s ease-in-out 1.2s infinite; }
-@keyframes mcmPulse { 0%,100% { opacity: .82; } 50% { opacity: 1; } }
+/*
+ * THE LOOP STARTS WHERE THE OPENING LEFT OFF, and that is the whole
+ * reason these numbers are this way round.
+ *
+ * The glow arrives at opacity 1 and the pulse then waits 1.2s before it
+ * runs. There is no fill-mode, so through that delay the light stays at
+ * 1 -- and the moment the animation started, 0% snapped it to .82. A
+ * visible stutter, a second and a half after the chest opens, from the
+ * brightest thing on screen to a dimmer one in a single frame.
+ *
+ * So the loop brightest-first: 1 at both ends, .82 in the middle. Its
+ * first frame is now identical to the state it takes over from, the
+ * join is invisible, and the light breathes down and back instead of
+ * dropping and climbing.
+ */
+@keyframes mcmPulse { 0%,100% { opacity: 1; } 50% { opacity: .82; } }
 
 .mcm-flash { position: absolute; left: 50%; top: 47%; width: 10px; height: 10px;
   margin: -5px 0 0 -5px; border-radius: 50%; opacity: 0; pointer-events: none;
