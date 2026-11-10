@@ -244,50 +244,55 @@ foreach ($ms_daily['days'] as $mcm_d) {
  * brighten.
  */
 /*
- * THE POOL IS ITS OWN BOX, NOT inset:0 ON THE PLINTH.
+ * THE GLOW IS THE CONTACT. THERE IS NO DARK SHADOW, and that is the
+ * whole answer to three rounds of "the chest is still floating".
  *
- * As a full-bleed gradient it was centred at 93% of the plinth with a
- * vertical radius of 17%, which runs to 110% -- and a background is
- * clipped to its own element, so the bottom of the glow was cut off at
- * the plinth's edge in a hard line. That is the crop. A sized box
- * hanging 10px BELOW the plinth has nothing to clip it: the only thing
- * clipping anything here is the pane, and it is far outside.
+ * A contact shadow is how an object that BLOCKS light sits on a floor.
+ * This chest is a light source -- it is open, lit from inside, throwing
+ * green onto everything near it -- so black underneath it is not a
+ * shadow, it is a hole. Measured down the centre column of the render:
+ * with the shadow at .5 alpha there were nineteen rows of exactly zero
+ * green straddling the chest's base, the chest's own glow above them
+ * and the pool below them, and that dead band IS the gap. The sides
+ * never showed it, because the shadow is darkest at its middle.
  *
- * WIDER THAN THE SHADOW ON PURPOSE. 356 against the contact shadow's
- * 240, both centred on the chest's base, so the green rings the dark
- * instead of the dark covering the green -- which is what happened when
- * the shadow grew wide enough to be visible and landed straight on top
- * of it.
+ * So the floor lights up instead, brightest right where the chest
+ * stands on it. A glowing object seats itself by lighting what it
+ * stands on.
+ *
+ * AND IT LIES IN THE CHEST'S GROUND PLANE, which is neither level nor
+ * where the chest's BOX ends. Both numbers are measured off the alpha
+ * channel of open.webp rather than chosen: for each column, the lowest
+ * opaque row is where the chest meets the floor, and a least-squares
+ * line through that footprint comes out at
+ *
+ *     slope -0.0826  =  -4.7 degrees,  rising to the right
+ *     crossing the art's centre at 88.5% of its height
+ *
+ * The chest is drawn in three-quarter view, so a level ellipse under it
+ * is a floor at a different angle from the one it is standing on -- it
+ * reads as the chest hovering over a puddle rather than standing in it.
+ * And 88.5% of a 217px chest is 192px, so the ground line sits 25px
+ * ABOVE the bottom of the chest's box: every version of this centred on
+ * the box bottom put the glow a clear 25px below the chest's feet.
+ * That is the gap, and it is why pushing the chest down onto the glow
+ * fixed it by hand.
+ *
+ * ITS OWN BOX, NOT inset:0 ON THE PLINTH. A background is clipped to
+ * its own element, so as a full-bleed layer centred near the bottom the
+ * glow was cut off at the plinth's edge in a hard line. A sized box has
+ * nothing to clip it: the only clip here is the pane's, far outside.
  */
 #mcm-plinth::before { content: ""; position: absolute; z-index: 0;
-  left: 50%; bottom: -10px; width: 356px; height: 68px;
-  transform: translateX(-50%);
+  left: 50%; bottom: 13px; width: 340px; height: 60px;
+  transform: translateX(-50%) rotate(-4.7deg);
   pointer-events: none; opacity: 0;
   background: radial-gradient(50% 50% at 50% 50%,
-    rgba(0,200,160,.34) 0, rgba(0,200,160,.12) 44%, rgba(0,200,160,0) 70%);
+    rgba(0,200,160,.46) 0, rgba(0,200,160,.17) 42%, rgba(0,200,160,0) 70%);
   transition: opacity .55s ease-out .08s; }
 #mcm-plinth:has(.mcm-chest.is-open)::before { opacity: 1; }
-/*
- * AND SOMETHING TO STAND ON.
- *
- * WIDER THAN THE CHEST, which the first version was not: at 196px under
- * a 210px chest the whole shadow sat BEHIND the art (the chest is
- * z-index 1) and nothing of it was ever visible. All that was left was
- * a gap between the base and the pool of light below it, which read as
- * the chest hovering over its own glow.
- *
- * Two stops rather than one, for the same reason. A single soft falloff
- * spread over 250px has no dark core, and the core is the part that
- * says contact: hard under the base, gone by the edges.
- *
- * On the PLINTH rather than the chest, deliberately -- a contact shadow
- * that rattles along with the object is a shadow cast by nothing.
- */
-#mcm-plinth::after { content: ""; position: absolute; z-index: 0;
-  left: 50%; bottom: 4px; width: 240px; height: 28px;
-  transform: translateX(-50%); pointer-events: none;
-  background: radial-gradient(50% 50% at 50% 50%,
-    rgba(0,0,0,.80) 0, rgba(0,0,0,.30) 40%, rgba(0,0,0,0) 66%); }
+/* No ::after here on purpose. See the note on the pool above: a dark
+   contact under a light source is a hole, not a shadow. */
 /* Above both of them. The flash and the six sparks are its children, so
    they come up with it. */
 .mcm-chest { position: relative; z-index: 1;
@@ -459,8 +464,10 @@ foreach ($ms_daily['days'] as $mcm_d) {
   /* Same floor, scaled: 186 of chest room plus 22 underneath. Without
      the padding here the phone gets back exactly the crop this fixed. */
   #mcm-plinth { height: 192px; padding-bottom: 16px; }
-  #mcm-plinth::before { bottom: -8px; width: 290px; height: 56px; }
-  #mcm-plinth::after { bottom: 3px; width: 196px; height: 24px; }
+  /* 88.5% of a 176px chest is 156px, and the chest's box bottom is at
+     the plinth's 176 -- so the ground line is 20px up, same measurement
+     scaled. The angle is the art's and does not change with size. */
+  #mcm-plinth::before { bottom: 11px; width: 280px; height: 50px; }
   .mcm-chest { width: 170px; height: 176px; --mcrise: -58px; }
 }
 /*

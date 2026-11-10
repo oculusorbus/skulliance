@@ -464,11 +464,25 @@ ok(preg_match('~#mcm-trait \{[^}]*var\(--msp-lift-soft\)~s', $modal) === 1,
  */
 ok(preg_match('~\.mcm-chest \{ position: relative; z-index: 1;~', $modal) === 1,
    'the chest is not lifted above the stage pseudo-elements, so its own shadow paints over it');
-ok(preg_match_all('~#mcm-plinth::(before|after) \{[^}]*z-index: 0;~s', $modal) === 2,
-   'a stage layer is not pinned below the chest');
-/* Both cover the stage, and one of them covers all of it. */
-ok(preg_match_all('~#mcm-plinth::(before|after) \{[^}]*pointer-events: none;~s', $modal) === 2,
-   'a stage layer can take pointer events, and it lies over the whole stage');
+ok(preg_match('~#mcm-plinth::before \{[^}]*z-index: 0;~s', $modal) === 1,
+   'the glow is not pinned below the chest');
+ok(preg_match('~#mcm-plinth::before \{[^}]*pointer-events: none;~s', $modal) === 1,
+   'the glow can take pointer events, and it lies across the chest');
+/*
+ * AND THERE IS NO DARK CONTACT SHADOW, which took three rounds of
+ * "the chest is still floating" to arrive at.
+ *
+ * A contact shadow is how an object that BLOCKS light sits on a floor.
+ * This chest is a light source -- open, lit from inside, throwing green
+ * on everything near it -- so black underneath is not a shadow, it is a
+ * hole. Measured down the centre column of the render: at .5 alpha
+ * there were nineteen rows of exactly zero green straddling the base,
+ * the chest's own glow above them and the pool below, and that dead
+ * band WAS the gap. The sides never showed it, because a radial shadow
+ * is darkest at its middle.
+ */
+ok(strpos($modal, '#mcm-plinth::after') === false,
+   'the dark contact shadow is back, and under a light source it reads as a hole rather than contact');
 /*
  * AND IT HAS A FLOOR TO CAST ONTO.
  *
@@ -510,21 +524,37 @@ ok(preg_match('~#mcm-close:focus-visible \{ outline: [^;]*; outline-offset: (-\d
 ok(preg_match('~#mcm-close:focus-visible~', $modal) === 1,
    'the focus ring is gone, so a keyboard user cannot see where they are');
 
-$shadeW = preg_match('~#mcm-plinth::after \{[^}]*width: (\d+)px~s', $modal, $sw) ? (int)$sw[1] : 0;
-$chestW = preg_match('~\.mcm-chest \{[^}]*width: (\d+)px~s', $modal, $cw) ? (int)$cw[1] : 0;
-ok($shadeW > 0 && $chestW > 0 && $shadeW > $chestW,
-   'the contact shadow is ' . $shadeW . 'px under a ' . $chestW . 'px chest, so all of it hides behind the art');
 /*
- * AND THE POOL HAS TO BE WIDER THAN THE SHADOW, or the fix above eats
- * it. While the shadow was narrower than the chest it was invisible and
- * the green showed; the moment it grew wide enough to read, it landed
- * at .8 alpha straight on top of the glow -- same centre, same base --
- * and painted it out. ::after is over ::before, so the only thing that
- * keeps the green is the dark being smaller.
+ * THE GLOW LIES IN THE CHEST'S GROUND PLANE, and both halves of that
+ * are measured off open.webp rather than chosen. For each column, the
+ * lowest opaque row is where the chest meets the floor; a least-squares
+ * line through that footprint gives slope -0.0826 (-4.7 degrees, rising
+ * to the right) crossing the art's centre at 88.5% of its height.
+ *
+ * THE ANGLE. The chest is drawn in three-quarter view, so a level
+ * ellipse under it is a floor at a different angle from the one it is
+ * standing on -- which reads as hovering over a puddle rather than
+ * standing in it. Reported in exactly those words.
+ *
+ * THE HEIGHT. 88.5% of a 217px chest is 192px, so the ground line sits
+ * 25px ABOVE the bottom of the chest's own box. Every version centred
+ * on the box bottom put the glow a clear 25px below the feet, which is
+ * the gap -- and is why pushing the chest down onto the glow fixed it
+ * by hand. A positive `bottom` is the glow sitting up inside the
+ * plinth where the feet are; a negative one is the old mistake.
  */
-$poolW = preg_match('~#mcm-plinth::before \{[^}]*width: (\d+)px~s', $modal, $pw) ? (int)$pw[1] : 0;
-ok($poolW > 0 && $poolW > $shadeW,
-   'the pool of light is ' . $poolW . 'px under a ' . $shadeW . 'px shadow, so the dark covers the green');
+$chestW = preg_match('~\.mcm-chest \{[^}]*width: (\d+)px~s', $modal, $cw) ? (int)$cw[1] : 0;
+$poolW  = preg_match('~#mcm-plinth::before \{[^}]*width: (\d+)px~s', $modal, $pw) ? (int)$pw[1] : 0;
+ok($poolW > 0 && $chestW > 0 && $poolW > $chestW,
+   'the glow is ' . $poolW . 'px under a ' . $chestW . 'px chest, so it never reaches past the art');
+ok(preg_match('~#mcm-plinth::before \{[^}]*transform: translateX\(-50%\) rotate\(-4\.7deg\)~s', $modal) === 1,
+   'the glow is level under a chest drawn in three-quarter view, so it is a floor at a different angle');
+foreach (array('base' => $modal, 'phone' => (preg_match('~@media \(max-width: 480px\) \{.*?\n\}~s', $modal, $smm) ? $smm[0] : ''))
+         as $poolWhich => $poolSrc) {
+	ok(preg_match('~#mcm-plinth::before \{[^}]*bottom: (-?\d+)px~s', $poolSrc, $pb) === 1 && (int)$pb[1] > 0,
+	   'the ' . $poolWhich . ' glow hangs below the chest\'s box instead of sitting on its ground line, '
+	 . 'which is 25px up from the bottom of that box');
+}
 /*
  * AND IT MUST NOT BE inset:0 ON THE PLINTH.
  *
@@ -537,8 +567,7 @@ ok($poolW > 0 && $poolW > $shadeW,
  */
 ok(preg_match('~#mcm-plinth::before \{[^}]*inset: 0~s', $modal) !== 1,
    'the pool is a full-bleed layer again, so its own element crops the bottom of the glow');
-ok(preg_match('~#mcm-plinth::before \{[^}]*bottom: -\d+px~s', $modal) === 1,
-   'the pool does not hang below the plinth, so the glow stops where the chest\'s floor does');
+
 $small = preg_match('~@media \(max-width: 480px\) \{.*?\n\}~s', $modal, $smm) ? $smm[0] : '';
 ok($small !== '', 'the small-screen block is gone');
 ok(preg_match('~#mcm-plinth \{[^}]*padding-bottom: (\d+)px~s', $small, $sp2) === 1 && (int)$sp2[1] >= 14,
