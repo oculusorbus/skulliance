@@ -413,5 +413,137 @@ ok(count($dnofall) === 0,
    'these DHC tokens have no `none` fallback, so dropping the platform layer blanks the panel: '
    . implode(', ', array_unique($dnofall)));
 
+
+echo "\nthe sweep reaches what a stylesheet cannot\n";
+/*
+ * FIFTY THREE PAGES carry panels in their own inline <style>, which is
+ * later in the document than any <link> and therefore outranks
+ * dist/polish.css. Each has its own class names -- .lp-tile, .ac-card,
+ * .rl-slot, .st-fig -- so naming them in the stylesheet means naming all
+ * of them and missing the next one somebody writes.
+ *
+ * They are not fifty three palettes though: #0a1929 appears sixty four
+ * times across them. So the sweep matches on COLOUR, which is something
+ * the browser will tell us about any element and a stylesheet cannot ask.
+ */
+/* COMMENT-STRIPPED, like every other source this harness reads: the file's
+   own header explains that it is injected last so that it does NOT need
+   !important, and the check for that phrase was matching the explanation. */
+$swRaw = (string) @file_get_contents(__DIR__ . '/dist/polish-sweep.js');
+$sw    = $strip($swRaw);
+ok($swRaw !== '', 'the sweep is gone');
+ok(substr_count($headCode, 'dist/polish-sweep.js') === 1,
+   'header.php loads the sweep more than once, or not at all');
+$atCss = strpos($headCode, 'dist/polish.css');
+$atJs  = strpos($headCode, 'dist/polish-sweep.js');
+ok($atCss !== false && $atJs !== false && $atCss < $atJs,
+   'the sweep is loaded before the stylesheet whose tokens it uses');
+$ifAt  = strpos($headCode, "\$_GET['polish']");
+$endAt = $ifAt !== false ? strpos($headCode, 'endif;', $ifAt) : false;
+ok($ifAt !== false && $endAt !== false && $atJs > $ifAt && $atJs < $endAt,
+   'the off switch does not gate the sweep, so ?polish=0 only half reverts');
+/* [\s\S]{0,160}? and not [^>]*: the cache-buster is a PHP tag, and `?>`
+   contains a > that stopped the window before it reached the attribute. */
+ok(strpos($headCode, 'polish-sweep.js?var=') !== false
+   && preg_match('~polish-sweep\.js[\s\S]{0,160}?defer~', $headCode) === 1,
+   'the sweep is not deferred; it reads layout and must not do that during load');
+
+echo "\nit adds a layer, it can never change a colour\n";
+/*
+ * THE WHOLE SAFETY ARGUMENT. It sets background-IMAGE over whatever fill
+ * is already there, so a tint that means something keeps meaning it, and
+ * an element whose colour it does not recognise is simply left alone.
+ */
+ok(strpos($sw, 'background-image:var(--msp-lift)') !== false,
+   'the sweep no longer applies the lift');
+ok(preg_match('~background-color\s*:~', $sw) !== 1 && preg_match("~style\.background\s*=~", $sw) !== 1,
+   'the sweep sets a background COLOUR, so it can repaint a tint that means something');
+ok(strpos($sw, '!important') === false,
+   'the sweep needs !important; it is injected last precisely so it does not');
+ok(preg_match('~document\.body\.appendChild\(s\)~', $sw) === 1,
+   'the sweep does not inject its rules at the end of the body, so a page stylesheet outranks them');
+
+echo "\nthe grounds, the wells and the fields are not in its list\n";
+/*
+ * This is the list that keeps it safe, and it is safe by OMISSION rather
+ * than by exclusion: #07111d is the page itself, #080f18 and #0d1e2e are
+ * recesses cut into a panel, #040c16 is the nav which the stylesheet
+ * already does properly. None of them appear, so nothing has to filter
+ * them out.
+ */
+preg_match('~var PANEL = \{(.*?)\};~s', $sw, $pm);
+preg_match_all("~'rgb\((\d+), (\d+), (\d+)\)'~", isset($pm[1]) ? $pm[1] : '', $pc, PREG_SET_ORDER);
+ok(count($pc) >= 3, 'the sweep recognises almost no surfaces (' . count($pc) . ')');
+$banned = array('7,17,29' => '#07111d the page ground', '8,15,24' => '#080f18 a well',
+                '13,30,46' => '#0d1e2e a form field', '4,12,22' => '#040c16 the nav');
+$in = array();
+foreach ($pc as $m) $in[$m[1] . ',' . $m[2] . ',' . $m[3]] = 1;
+foreach ($banned as $rgb => $what) {
+	ok(!isset($in[$rgb]), "the sweep would light $what, which is not a surface");
+}
+/* And every colour it DOES list has to be one the platform actually
+   paints, or it is guessing. */
+$paints = $flexCss;
+foreach (glob(__DIR__ . '/*.php') as $pf) {
+	if (strpos($pf, 'harness') !== false) continue;
+	$paints .= "\n" . (string) @file_get_contents($pf);
+}
+$unused = array();
+foreach ($pc as $m) {
+	$hex = sprintf('#%02x%02x%02x', (int) $m[1], (int) $m[2], (int) $m[3]);
+	if (stripos($paints, $hex) === false) $unused[] = $hex;
+}
+ok(count($unused) === 0,
+   'these colours are not painted anywhere on the platform: ' . implode(', ', $unused));
+
+echo "\nit never lifts the same surface twice, and never a chip\n";
+ok(preg_match("~cs\.backgroundImage !== 'none'\) continue~", $sw) === 1,
+   'the sweep lifts surfaces the stylesheet already lifted, which is visibly darker');
+/* THE NUMBERS, not just the shape of the test: a floor of 0 matches the
+   same pattern and lets every chip through. */
+ok(preg_match('~r\.width < (\d+) \|\| r\.height < (\d+)~', $sw, $fl) === 1,
+   'there is no size floor, so pills, chips and badges get a panel gradient');
+if (!empty($fl)) {
+	ok((int) $fl[1] >= 24 && (int) $fl[2] >= 16,
+	   'the size floor is ' . $fl[1] . 'x' . $fl[2] . ', which is small enough to let chips through');
+}
+/* COLOUR FIRST, THEN SIZE. getBoundingClientRect forces layout, so it
+   must only run for the few elements that already matched. */
+$mk = substr($sw, strpos($sw, 'function mark('));
+$mk = substr($mk, 0, strpos($mk, "\n\t}"));
+ok(strpos($mk, 'if (!kind) continue;') !== false
+   && strpos($mk, 'if (!kind) continue;') < strpos($mk, 'tooSmall(el)'),
+   'the sweep measures every element before checking its colour, which forces a layout per element');
+ok(strpos($sw, "closest('[data-msp-skip]')") !== false,
+   'there is no way for a page to opt a subtree out');
+
+echo "\nit runs after the paint, and catches what arrives later\n";
+ok(preg_match('~requestIdleCallback\(start~', $sw) === 1,
+   'the sweep does not wait for an idle moment');
+ok(preg_match("~addEventListener\('load', boot\)~", $sw) === 1,
+   'the sweep runs before the first paint');
+/* Most of this platform arrives after the first paint -- the missions
+   field, the feed, the store grid, every modal. */
+ok(preg_match('~\.observe\(document\.body, \{ childList: true, subtree: true \}\)~', $sw) === 1,
+   'content added after load stays flat beside content that is lifted');
+ok(preg_match('~setTimeout\(function \(\) \{[\s\S]{0,400}?\}, 250\)~', $sw) === 1,
+   'the observer is not debounced, so a busy page re-sweeps on every insertion');
+
+echo "\nold corners are squared, deliberate ones are kept\n";
+/*
+ * The platform's older pages give panels an 8-10px radius and everything
+ * built since is square or near it. The DHC pages use a deliberate 3px,
+ * so this is a threshold rather than a blanket rule -- and a percentage
+ * is an avatar and is never touched.
+ */
+ok(preg_match("~rad\.indexOf\('%'\) === -1 && parseFloat\(rad\) >= (\d+)~", $sw, $rt) === 1,
+   'the radius rule is gone, or no longer skips percentages');
+if (!empty($rt)) {
+	ok((int) $rt[1] >= 4 && (int) $rt[1] <= 8,
+	   'the squaring threshold is ' . $rt[1] . 'px, which will either flatten deliberate corners or miss the old ones');
+}
+ok(strpos($sw, '[data-msp-sq]{border-radius:0}') !== false,
+   'nothing squares the marked corners');
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

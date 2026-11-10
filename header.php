@@ -156,6 +156,12 @@
    */ ?>
   <?php if (!isset($_GET['polish']) || $_GET['polish'] !== '0'): ?>
   <link href="dist/polish.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
+  <?php /* AND THE SWEEP, which does by colour what the stylesheet cannot do
+           by name: fifty three pages carry panels in their own inline
+           <style>, which outranks any <link>, each with its own class
+           names -- but all one palette. defer, because it reads layout
+           for every element and must not do that during load. */ ?>
+  <script src="dist/polish-sweep.js?var=<?php echo rand(0,999); ?>" defer></script>
   <?php endif; ?>
   <?php
   /*
