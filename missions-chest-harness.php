@@ -465,6 +465,27 @@ ok(preg_match_all('~#mcm-stage::(before|after) \{[^}]*z-index: 0;~s', $modal) ==
 /* Both cover the stage, and one of them covers all of it. */
 ok(preg_match_all('~#mcm-stage::(before|after) \{[^}]*pointer-events: none;~s', $modal) === 2,
    'a stage layer can take pointer events, and it lies over the whole stage');
+/*
+ * AND IT HAS A FLOOR TO CAST ONTO.
+ *
+ * open.webp's alpha box is 4px in from every edge of 480x497, so at
+ * 210x217 the chest's base is under two pixels off the bottom of its
+ * own box. Flush to the bottom of the stage there was nowhere for the
+ * contact shadow to fall: it spread into the chest on one side and into
+ * overflow:hidden on the other, cropped to a hard line exactly where it
+ * was meant to be softest.
+ *
+ * BOTH SIZES, because the phone has its own stage height and dropping
+ * the padding there puts the crop straight back on the screen where the
+ * dialog is biggest relative to the page.
+ */
+$stageRule = preg_match('~#mcm-stage \{[^}]*\}~s', $modal, $sgm) ? $sgm[0] : '';
+ok(preg_match('~padding-bottom: (\d+)px~', $stageRule, $sp) === 1 && (int)$sp[1] >= 20,
+   'the stage has no floor under the chest, so its contact shadow is cropped to a hard line');
+$small = preg_match('~@media \(max-width: 480px\) \{.*?\n\}~s', $modal, $smm) ? $smm[0] : '';
+ok($small !== '', 'the small-screen block is gone');
+ok(preg_match('~#mcm-stage \{[^}]*padding-bottom: (\d+)px~s', $small, $sp2) === 1 && (int)$sp2[1] >= 16,
+   'the phone stage drops the floor, so the crop comes back at the size the dialog fills the screen');
 
 echo "\nthe chest rattles before it opens, on one clock\n";
 /*

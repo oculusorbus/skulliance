@@ -183,12 +183,29 @@ foreach ($ms_daily['days'] as $mcm_d) {
  * bottom is the floor picking up the chest's own light, which is the
  * one colour already in the art.
  */
+/*
+ * THE FLOOR IS PADDING, and it is not decoration.
+ *
+ * The art fills its own frame -- the alpha box of open.webp is 4px in
+ * from every edge of 480x497 -- so at 210x217 the chest's base is less
+ * than two pixels off the bottom of its box. With the chest flush to
+ * the bottom of the stage there was nowhere for a contact shadow to
+ * fall: it spread into the chest on one side and into overflow:hidden
+ * on the other, which cropped it to a hard line exactly where it was
+ * supposed to be softest. 28px lifts the chest off the edge and gives
+ * the shadow somewhere to land.
+ *
+ * height is the BORDER box (* { box-sizing: border-box } is global), so
+ * the number below is 230 of stage plus the 28 underneath it -- the
+ * chest's own room is unchanged.
+ */
 #mcm-stage { position: relative; display: flex; align-items: flex-end;
-  justify-content: center; height: 230px; margin: 6px 0 2px; overflow: hidden;
+  justify-content: center; height: 258px; padding-bottom: 28px;
+  margin: 6px 0 2px; overflow: hidden;
   border-radius: 3px;
   background-color: #071320;
   background-image:
-    radial-gradient(56% 30% at 50% 102%, rgba(0,200,160,.09) 0, rgba(0,200,160,0) 72%),
+    radial-gradient(58% 26% at 50% 94%, rgba(0,200,160,.10) 0, rgba(0,200,160,0) 72%),
     linear-gradient(180deg, rgba(0,0,0,.30) 0, rgba(0,0,0,0) 70px);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.03); }
 /*
@@ -200,7 +217,7 @@ foreach ($ms_daily['days'] as $mcm_d) {
  */
 #mcm-stage::before { content: ""; position: absolute; inset: 0; z-index: 0;
   pointer-events: none; opacity: 0;
-  background: radial-gradient(42% 24% at 50% 88%,
+  background: radial-gradient(44% 22% at 50% 90%,
     rgba(0,200,160,.30) 0, rgba(0,200,160,0) 72%);
   transition: opacity .55s ease-out .08s; }
 #mcm-stage:has(.mcm-chest.is-open)::before { opacity: 1; }
@@ -211,7 +228,7 @@ foreach ($ms_daily['days'] as $mcm_d) {
  * nothing, and the rattle is four pixels.
  */
 #mcm-stage::after { content: ""; position: absolute; z-index: 0;
-  left: 50%; bottom: 10px; width: 188px; height: 24px;
+  left: 50%; bottom: 17px; width: 196px; height: 30px;
   transform: translateX(-50%); pointer-events: none;
   background: radial-gradient(50% 50% at 50% 50%,
     rgba(0,0,0,.62) 0, rgba(0,0,0,0) 70%); }
@@ -369,7 +386,10 @@ foreach ($ms_daily['days'] as $mcm_d) {
 /* The rise is in pixels, so it follows the rendered size or the sparks
    travel a third of a chest here. One variable, set wherever the size is. */
 @media (max-width: 480px) {
-  #mcm-stage { height: 186px; }
+  /* Same floor, scaled: 186 of stage plus 22 underneath. Without the
+     padding here the phone gets back exactly the crop this fixed. */
+  #mcm-stage { height: 208px; padding-bottom: 22px; }
+  #mcm-stage::after { bottom: 13px; width: 160px; height: 24px; }
   .mcm-chest { width: 170px; height: 176px; --mcrise: -58px; }
 }
 /*
