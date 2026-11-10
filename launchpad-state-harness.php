@@ -505,12 +505,6 @@ echo "\nthe hero banner degrades, and never blocks the links on it\n";
 	 */
 	ok(preg_match('~background-position: 50% calc\(min\(9vw, 180px\) \* -1\)~', $bnArt) === 1,
 	   'the crop shift is not a clamped fraction of the width, so it is only right at one window size');
-	/*
-	 * AND NOT ON A PHONE. Down there min-height wins, so cover is
-	 * already scaling the picture up to fill the band rather than
-	 * fitting it -- lifting it as well leaves a transparent strip along
-	 * the bottom of the banner, inside the band.
-	 */
 	$bnPhone = preg_match('~@media \(max-width: 700px\) \{.*?\n\}~s', $bn, $bpm) ? $bpm[0] : '';
 	ok($bnPhone !== '', 'the phone block is gone');
 	/*
@@ -557,8 +551,29 @@ echo "\nthe hero banner degrades, and never blocks the links on it\n";
 	   'the art tile has an aspect ratio and no width, so Safari sizes each one to its own text');
 	ok(preg_match('~\.lp-stage-art \{[^}]*width: 100%;\s*\n\taspect-ratio~s', $bn) === 1,
 	   'the backdrop lets its aspect ratio run backwards off the min-height and overflow the page');
-	ok(preg_match('~\.lp-stage-art \{[^}]*background-position: 50% 0~s', $bnPhone) === 1,
-	   'the phone block does not cancel the crop shift, so the bottom of the band goes transparent');
+	/*
+	 * AND THERE IS NO BANNER AT ALL ON A PHONE.
+	 *
+	 * The art is a backdrop a desktop page sits ON -- 1330px of picture
+	 * behind the headings and between the tiles, of which the band is
+	 * only the part nothing covers. A phone gets none of that: the
+	 * aspect ratio puts the whole picture inside the band, so there is
+	 * nothing behind the grid for it to be a backdrop of. It is a 270px
+	 * photograph you scroll past to reach what you opened the page for.
+	 *
+	 * All four parts are checked, because leaving any one behind leaves
+	 * the gap the art used to fill: the art, the scrim that existed
+	 * only to make words legible over it, the band's 270px floor and
+	 * its padding, and the 34px margin under the band.
+	 */
+	ok(strpos($bnPhone, '.lp-stage-art { display: none; }') !== false,
+	   'the phone still carries the backdrop, which on a phone is a photograph you scroll past');
+	ok(strpos($bnPhone, '.lp-banner::before { display: none; }') !== false,
+	   'the scrim outlives the art it was darkening, so the hero sits on a wash over nothing');
+	ok(preg_match('~\.lp-banner-in \{ min-height: 0; padding: \d+px 0 0; \}~', $bnPhone) === 1,
+	   'the band keeps its 270px floor with nothing in it, so hiding the art saved no scrolling');
+	ok(preg_match('~\.lp-banner \{ margin-bottom: \d+px; \}~', $bnPhone) === 1,
+	   'the band keeps the 34px that separated the art from the first section');
 	/*
 	 * AND IT NEVER COMES UP SHORT OF THE BAND. At 360px the natural
 	 * height is 240px against a 270px banner, so aspect-ratio alone

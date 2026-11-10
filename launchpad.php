@@ -894,20 +894,31 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
  * anything added to this file later cannot silently kill it.
  */
 @media (max-width: 700px) {
-	/* No background-position of its own any more: it was 26% against a
-	   base that is now 25%, and at 400px the band is 270px tall against
-	   a 3:2 image, so cover barely crops it and the position has almost
-	   no say. A rule that cannot change anything is just a thing to keep
-	   in step. */
-	.lp-banner-in { min-height: 270px; padding: 16px 12px 12px; }
 	/*
-	 * In step with the band above it, for the reason in .lp-stage-art --
-	 * AND NO SHIFT DOWN HERE. The floor wins at phone widths, so cover
-	 * is already scaling the picture up to fill the band rather than
-	 * fitting it; lifting it as well would leave a transparent strip
-	 * along the bottom of the banner, inside the band.
+	 * NO BANNER ON A PHONE.
+	 *
+	 * The art is a backdrop a desktop page sits ON: at 2000px it is
+	 * 1330px of picture behind the headings and between the tiles, and
+	 * the band is just the part nothing covers. A phone has none of
+	 * that. The aspect ratio puts the whole picture inside the band, so
+	 * there is nothing behind the grid to be a backdrop OF -- it is a
+	 * 270px photograph you scroll past to reach the thing you opened
+	 * the page for, which on a 390px screen is most of the first
+	 * screenful.
+	 *
+	 * So it goes, and the band collapses to its content: avatar, name,
+	 * the stats, and Start Here if it is there. Play starts right under
+	 * them. The scrim goes with the art, since it exists to make words
+	 * legible over a picture that is no longer behind them.
 	 */
-	.lp-stage-art { min-height: 270px; background-position: 50% 0; }
+	.lp-stage-art { display: none; }
+	.lp-banner::before { display: none; }
+	.lp-banner { margin-bottom: 14px; }
+	/* 10px of top padding and nothing else: the stage bleeds UP by the
+	   column's 4px to meet the menu, so a band with no padding at all
+	   puts the avatar flush against whatever is above it. */
+	.lp-banner-in { min-height: 0; padding: 10px 0 0; }
+	.lp-hero { padding: 0 0 10px; }
 	/*
 	 * AND THE BLEED IS NOT 20px DOWN HERE. flexbox.css:2140 sets
 	 * `#row1 .col1of3 { padding: 4px }` under 700px, and at (1,1,0) it
