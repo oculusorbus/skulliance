@@ -233,9 +233,41 @@ function mission_projects($conn) {
 			'deployed'    => isset($deployed[$pid]) ? $deployed[$pid] : 0,
 			'balance'     => isset($balances[$pid]) ? $balances[$pid] : 0,
 			'eligible'    => (isset($idle[$pid]) && $idle[$pid]['n'] > 0),
+			/*
+			 * OWNED IS NOT THE SAME AS ELIGIBLE, and the difference is the
+			 * whole reason this is a separate key. `eligible` means there
+			 * is somebody IDLE to send right now; a project whose entire
+			 * holding is already out on missions is not eligible and is
+			 * very much still yours -- arguably the one you most want at
+			 * the top, because that is where your returns are coming from.
+			 *
+			 * idle counts every NFT not on an active mission and deployed
+			 * counts the active missions, so between them they cover the
+			 * whole holding: either is enough to say you hold something.
+			 */
+			'owned'       => (isset($idle[$pid]) && $idle[$pid]['n'] > 0)
+			              || (isset($deployed[$pid]) && $deployed[$pid] > 0),
 		);
 	}
-	return $out;
+
+	/*
+	 * YOURS FIRST, THEN THE REST, ALPHABETICAL WITHIN EACH.
+	 *
+	 * Forty-odd projects in one alphabetical run means a player with
+	 * three of them scrolls past everybody else's to reach their own,
+	 * every visit. The two groups answer the two different things this
+	 * list is for: launching a mission, and looking at what a project
+	 * you do not hold has to offer.
+	 *
+	 * BUCKETED, NOT SORTED. The query already returns ORDER BY p.name
+	 * ASC and appending in order preserves it, so alphabetical inside
+	 * each group costs nothing and cannot disagree with the database
+	 * about how two names compare -- which a PHP sort on a different
+	 * collation quietly would.
+	 */
+	$mine = array(); $rest = array();
+	foreach ($out as $row) { if ($row['owned']) $mine[] = $row; else $rest[] = $row; }
+	return array_merge($mine, $rest);
 }
 
 /*

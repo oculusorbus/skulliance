@@ -992,5 +992,76 @@ echo "\nthe ladder shows what each day pays, not just what it hands you\n";
 	   'the swap is not guarded, so a page without this ladder throws mid-claim');
 }
 
+/* ------------------------------------------------------------------
+   THE PROJECT RAIL IS PARTITIONED
+   ------------------------------------------------------------------ */
+/*
+ * Forty-odd projects in one alphabetical run means a staker holding
+ * three of them scrolls past everybody else's to reach their own, every
+ * visit. The rail answers "which are mine" first and leaves the rest
+ * browsable underneath.
+ */
+$mlb = (string) file_get_contents(__DIR__ . '/missions-lib.php');
+$mpg = (string) file_get_contents(__DIR__ . '/missions.php');
+
+/*
+ * OWNED IS NOT ELIGIBLE, and conflating them is the bug waiting to be
+ * written here. `eligible` means somebody is IDLE to send right now; a
+ * project whose entire holding is already out on missions is not
+ * eligible and is still yours -- arguably the one you most want at the
+ * top, since that is where your returns are coming from.
+ */
+ok(preg_match("~'owned'\s*=> \(isset\(\\\$idle\[\\\$pid\]\).*?\|\|\s*\(isset\(\\\$deployed\[\\\$pid\]\)~s", $mlb) === 1,
+   'owned is not read from both idle holdings and deployed missions, so a project with every '
+ . 'NFT out on a run drops to the bottom of the list');
+/* The partition itself, and that it comes out of the builder rather
+   than the page -- one source, so a second caller cannot get the old
+   order. */
+ok(preg_match('~foreach \(\$out as \$row\) \{ if \(\$row\[\x27owned\x27\]\) \$mine\[\] = \$row; else \$rest\[\] = \$row; \}~', $mlb) === 1,
+   'mission_projects() does not partition, so the rail is ordered by whatever the page feels like');
+ok(preg_match('~return array_merge\(\$mine, \$rest\);~', $mlb) === 1,
+   'the two groups are not returned yours-first');
+/*
+ * BUCKETED, NOT RE-SORTED. The query is already ORDER BY p.name ASC and
+ * appending in order keeps it, so alphabetical within each group costs
+ * nothing -- and cannot disagree with the database about how two names
+ * compare, which a PHP sort on a different collation quietly would.
+ */
+ok(preg_match('~ORDER BY p\.name ASC~', $mlb) === 1,
+   'the query no longer orders by name, so neither group is alphabetical any more');
+ok(preg_match('~function mission_projects.*?\n\}~s', $mlb, $mpm) === 1
+   && !preg_match('~\busort\s*\(|\bsort\s*\(|\buasort\s*\(~', $mpm[0]),
+   'mission_projects() sorts in PHP, which can order names differently from the query that '
+ . 'produced them');
+/*
+ * AND THE HEADINGS ONLY APPEAR WHEN THERE ARE TWO GROUPS. A staker
+ * holding none of these, or all of them, gets one list under one label,
+ * which is a label telling them nothing they could not already see.
+ */
+ok(preg_match('~\$ms_split = \(\$ms_mine > 0 && \$ms_mine < count\(\$ms_projects\)\);~', $mpg) === 1,
+   'the group headings are not conditional, so a staker who holds none of these gets a '
+ . '"Yours" heading over an empty group or a lone label over the lot');
+ok(preg_match('~if \(\$ms_split && \$p\[\x27owned\x27\] !== \$ms_was\)~', $mpg) === 1,
+   'the heading is not emitted at the boundary, so the partition is invisible and the order reads as random');
+ok(strpos($mpg, '.ms-proj-group') !== false,
+   'the group heading has no styling, so it renders as a stray line of body text in the rail');
+/*
+ * AND IT HAS TO SPAN THE PHONE GRID. The rail is a flex column on a
+ * desktop and a wrapping GRID under 760px -- so left alone the heading
+ * becomes a grid item and takes one 88px cell, putting "Everything
+ * else" in a box beside a project icon.
+ */
+/* Found by the rule that CAUSES the problem rather than by a breakpoint
+   number: whichever media block turns .ms-projects into a grid is the one
+   the heading has to span, and that block can move. */
+$mpgPhone = '';
+if (preg_match_all('~@media [^{]*\{.*?\n\}~s', $mpg, $mall)) {
+	foreach ($mall[0] as $blk) {
+		if (preg_match('~\.ms-projects \{[^}]*display: grid~s', $blk)) { $mpgPhone = $blk; break; }
+	}
+}
+ok($mpgPhone !== '' && preg_match('~\.ms-proj-group \{[^}]*grid-column: 1 / -1~s', $mpgPhone) === 1,
+   'the group heading does not span the phone grid, so it sits in one cell beside a project');
+
 if ($fail) { echo "$fail check(s) FAILED\n"; exit(1); }
 echo "all missions checks passed\n";

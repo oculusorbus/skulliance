@@ -563,6 +563,11 @@ define('MS_FIELD_CAP', 24);
   gap: 0 10px; align-items: center; text-align: left; width: 100%; cursor: pointer;
   background: #0a1929; border: 1px solid rgba(0,200,160,.1); border-radius: 0;
   padding: 8px 10px; transition: border-color .12s, background .12s; }
+/* The partition, said out loud. Without it the order reads as arbitrary
+   rather than as the list answering "which are mine" first. */
+.ms-proj-group { display: block; margin: 10px 0 2px; font-size: .62rem;
+  letter-spacing: .16em; text-transform: uppercase; color: #5a7888; }
+.ms-proj-group:first-child { margin-top: 0; }
 .ms-proj:hover { border-color: rgba(0,200,160,.4); }
 .ms-proj.sel { border-color: #00c8a0; background: rgba(0,200,160,.07); }
 .ms-proj img { grid-row: 1 / 3; width: 26px; height: 26px; object-fit: contain; }
@@ -803,6 +808,10 @@ define('MS_FIELD_CAP', 24);
    */
   .ms-projects { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
     gap: 6px; overflow: visible; max-height: none; padding-right: 0; }
+  /* THE RAIL IS A GRID DOWN HERE, so the group heading has to be told to
+     span it. Left alone it becomes a grid ITEM and takes one 88px cell,
+     which puts "Everything else" in a box beside a project icon. */
+  .ms-proj-group { grid-column: 1 / -1; margin: 8px 0 0; }
   .ms-proj { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center;
     padding: 9px 6px; gap: 0; }
   .ms-proj img { grid-row: auto; width: 34px; height: 34px; margin-bottom: 5px; }
@@ -1070,8 +1079,26 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 				</div>
 				<div class="ms-launch">
 					<div class="ms-projects" id="ms-projects">
+						<?php
+						/*
+						 * THE HEADINGS ONLY APPEAR WHEN THERE ARE TWO GROUPS.
+						 * A staker holding none of these, or all of them, gets
+						 * one list under one label -- which is a label telling
+						 * them nothing they could not see. mission_projects()
+						 * has already put the owned ones first.
+						 */
+						$ms_mine = 0;
+						foreach ($ms_projects as $p) if ($p['owned']) $ms_mine++;
+						$ms_split = ($ms_mine > 0 && $ms_mine < count($ms_projects));
+						$ms_was = null;
+						?>
 						<?php foreach ($ms_projects as $p):
-							$sel = ($p['project_id'] === $ms_project); ?>
+							$sel = ($p['project_id'] === $ms_project);
+							if ($ms_split && $p['owned'] !== $ms_was):
+								$ms_was = $p['owned']; ?>
+						<span class="ms-proj-group"><?php
+							echo $p['owned'] ? 'Yours' : 'Everything else'; ?></span>
+						<?php endif; ?>
 						<button type="button" class="ms-proj<?php
 								echo $sel ? ' sel' : ''; echo $p['eligible'] ? ' can' : ''; ?>"
 							data-project="<?php echo (int)$p['project_id']; ?>"
