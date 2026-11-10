@@ -317,7 +317,24 @@ foreach ($ms_daily['days'] as $mcm_d) {
 #mcm-plinth::before { content: ""; position: absolute; z-index: 0;
   left: 50%; bottom: 4px; width: 320px; height: 118px;
   transform: translateX(-50%) rotate(-1.8deg);
-  pointer-events: none; opacity: 0;
+  /*
+   * HALF LIT BEFORE IT OPENS, FULL AFTER.
+   *
+   * The chest arrives shut and rattles for two thirds of a second
+   * before the lid goes, and starting the floor at black meant the
+   * light only existed after the payoff. At half it is already
+   * glowing through a closed box -- something in there, before you
+   * are shown what -- and the open doubles it.
+   *
+   * SAFE IN BOTH STATES because it is the same floor: closed.webp and
+   * open.webp have identical footprints, 80.1% to 98.4% of the art,
+   * midpoint 89.2%. The glow does not have to move when the lid does.
+   *
+   * The ramp is the transition below, not an animation, so it also
+   * runs on a browser without :has -- that one just never reaches
+   * full, which is a dimmer reveal rather than a broken one.
+   */
+  pointer-events: none; opacity: .5;
   /* Five stops, not three. Three gave a bright line with nothing
      either side of it; the middle pair are what put light across the
      whole footprint and then let it fall away instead of ending. */
@@ -329,6 +346,8 @@ foreach ($ms_daily['days'] as $mcm_d) {
     rgba(0,200,160,0.0) 84%);
   transition: opacity .55s ease-out .08s; }
 #mcm-plinth:has(.mcm-chest.is-open)::before { opacity: 1; }
+/* Reset puts the chest back to shut, so the floor goes back to half
+   with it -- a second claim starts where the first one did. */
 /* No ::after here on purpose. See the note on the pool above: a dark
    contact under a light source is a hole, not a shadow. */
 /* Above both of them. The flash and the six sparks are its children, so

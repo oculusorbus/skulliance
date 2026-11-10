@@ -496,6 +496,34 @@ ok($stageBg !== '', 'the #mcm-stage rule is gone');
 ok(strpos($stageBg, 'rgba(0,200,160') === false,
    'the stage carries a teal layer of its own again, so the pool is read on top of a second glow');
 /*
+ * AND THE POOL TOOK OVER WHAT THE STAGE'S RADIAL WAS FOR.
+ *
+ * That layer was the ambient: something lit under the chest before
+ * anything happened. Deleting it without replacing it would have left
+ * the floor black until the lid went, so the payoff would be the only
+ * moment the light existed. The pool rests at HALF and the open
+ * doubles it -- the same ambient job, at the position and angle the
+ * owner set, on one light instead of two.
+ *
+ * Both numbers are read and compared: half is the point, not 0.5 as
+ * such, and an open state that is not brighter than the rest state is
+ * a reveal with nothing to reveal.
+ */
+$glowRest = preg_match('~#mcm-plinth::before \{[^}]*opacity: ([0-9.]+);~s', $modal, $gq) ? (float)$gq[1] : -1;
+$glowOpen = preg_match('~#mcm-plinth:has\(\.mcm-chest\.is-open\)::before \{ opacity: ([0-9.]+); \}~', $modal, $gw)
+          ? (float)$gw[1] : -1;
+ok($glowRest > 0,
+   'the floor is black until the chest opens, so the light only exists after the payoff');
+ok($glowOpen > $glowRest,
+   'the open state (' . $glowOpen . ') is no brighter than the rest state (' . $glowRest . '), '
+ . 'so there is nothing for the lid to reveal');
+ok($glowRest > 0 && abs($glowRest - $glowOpen / 2) < 0.001,
+   'the resting glow is ' . $glowRest . ' against an open ' . $glowOpen . ', which is not half');
+/* A transition, not an animation: it has to ramp on a browser without
+   :has too, where the state simply never arrives. */
+ok(preg_match('~#mcm-plinth::before \{[^}]*transition: opacity [0-9.]+s~s', $modal) === 1,
+   'the glow snaps between its two levels instead of ramping');
+/*
  * AND IT HAS A FLOOR TO CAST ONTO.
  *
  * open.webp's alpha box is 4px in from every edge of 480x497, so at
