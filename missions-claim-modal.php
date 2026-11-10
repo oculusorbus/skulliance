@@ -215,8 +215,15 @@ foreach ($ms_daily['days'] as $mcm_d) {
   margin: 6px 0 2px; overflow: hidden;
   border-radius: 3px;
   background-color: #071320;
+  /*
+   * ONE LIGHT, NOT TWO. This used to carry a teal radial of its own --
+   * always on, independent of the chest opening -- so the pool below
+   * was always being read on top of a second glow with a different
+   * centre. It made the pool impossible to judge and it was doing a
+   * job the pool does better. The shade stays: that is the recess,
+   * not a light.
+   */
   background-image:
-    radial-gradient(60% 20% at 50% 48%, rgba(0,200,160,.10) 0, rgba(0,200,160,0) 72%),
     linear-gradient(180deg, rgba(0,0,0,.30) 0, rgba(0,0,0,0) 70px);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.03); }
 /*
@@ -272,6 +279,20 @@ foreach ($ms_daily['days'] as $mcm_d) {
  *     CENTRE   its midpoint is 89.2% down, so 23px ABOVE the
  *              bottom of the chest's own box
  *
+ * THE SHIPPED NUMBERS ARE THE OWNER'S, NOT THESE, and the gap between
+ * them is worth keeping. Dragged against the real art in the admin
+ * tuner, what looks right is a glow centred 79.3% down the chest --
+ * 22px HIGHER than the footprint's midpoint, 45px above the bottom of
+ * the box -- 118px deep, and raked at only -1.8 degrees.
+ *
+ * Flatter and higher than the contour, and both make sense: the pool
+ * is light on a floor seen from slightly above, so it foreshortens
+ * toward level, and light under a lit object pushes back UNDER it
+ * rather than pooling at the front edge. The measurement was the right
+ * way to find the bug -- it is what proved the box bottom was 23px
+ * below where the chest touches -- but it was never going to be the
+ * last word on how it looks.
+ *
  * THE ANGLE, because the chest is drawn in three-quarter view and a
  * level ellipse under it is a floor at a different angle from the one
  * it is standing on -- which reads as hovering over a puddle.
@@ -294,18 +315,18 @@ foreach ($ms_daily['days'] as $mcm_d) {
  * nothing to clip it: the only clip here is the pane's, far outside.
  */
 #mcm-plinth::before { content: ""; position: absolute; z-index: 0;
-  left: 50%; bottom: -7px; width: 334px; height: 96px;
-  transform: translateX(-50%) rotate(-4.7deg);
+  left: 50%; bottom: 4px; width: 320px; height: 118px;
+  transform: translateX(-50%) rotate(-1.8deg);
   pointer-events: none; opacity: 0;
   /* Five stops, not three. Three gave a bright line with nothing
      either side of it; the middle pair are what put light across the
      whole footprint and then let it fall away instead of ending. */
   background: radial-gradient(50% 50% at 50% 50%,
-    rgba(0,200,160,.48) 0,
-    rgba(0,200,160,.30) 26%,
-    rgba(0,200,160,.12) 50%,
-    rgba(0,200,160,.03) 68%,
-    rgba(0,200,160,0) 82%);
+    rgba(0,200,160,0.46) 0%,
+    rgba(0,200,160,0.288) 27%,
+    rgba(0,200,160,0.115) 51%,
+    rgba(0,200,160,0.029) 69%,
+    rgba(0,200,160,0.0) 84%);
   transition: opacity .55s ease-out .08s; }
 #mcm-plinth:has(.mcm-chest.is-open)::before { opacity: 1; }
 /* No ::after here on purpose. See the note on the pool above: a dark
@@ -481,10 +502,11 @@ foreach ($ms_daily['days'] as $mcm_d) {
   /* Same floor, scaled: 186 of chest room plus 22 underneath. Without
      the padding here the phone gets back exactly the crop this fixed. */
   #mcm-plinth { height: 192px; padding-bottom: 16px; }
-  /* The same three measurements scaled: on a 176px chest the footprint
-     is 32px deep and its midpoint is 19px above the box bottom. The
-     angle is the art's and does not change with size. */
-  #mcm-plinth::before { bottom: -4px; width: 272px; height: 78px; }
+  /* The owner's setting scaled by the chest: his glow sits 79.3% down
+     a 217px chest, so on a 176px one that is 139.5px from the chest's
+     top -- which with a 96px ellipse lands on the same bottom: 4px.
+     The angle is a camera angle, not a size, so it does not change. */
+  #mcm-plinth::before { bottom: 4px; width: 260px; height: 96px; }
   .mcm-chest { width: 170px; height: 176px; --mcrise: -58px; }
 }
 /*

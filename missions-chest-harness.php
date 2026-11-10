@@ -484,6 +484,18 @@ ok(preg_match('~#mcm-plinth::before \{[^}]*pointer-events: none;~s', $modal) ===
 ok(strpos($modal, '#mcm-plinth::after') === false,
    'the dark contact shadow is back, and under a light source it reads as a hole rather than contact');
 /*
+ * AND ONE LIGHT, NOT TWO. #mcm-stage used to carry a teal radial of
+ * its own -- always on, independent of the chest opening -- so the
+ * pool was always being read on top of a second glow with a different
+ * centre. Reported as "there's a base glow and then this appears on
+ * top of it", and it made the pool impossible to judge. The shade
+ * stays; that is the recess, not a light.
+ */
+$stageBg = preg_match('~#mcm-stage \{.*?\n  box-shadow~s', $modal, $sb) ? $sb[0] : '';
+ok($stageBg !== '', 'the #mcm-stage rule is gone');
+ok(strpos($stageBg, 'rgba(0,200,160') === false,
+   'the stage carries a teal layer of its own again, so the pool is read on top of a second glow');
+/*
  * AND IT HAS A FLOOR TO CAST ONTO.
  *
  * open.webp's alpha box is 4px in from every edge of 480x497, so at
@@ -547,8 +559,18 @@ $chestW = preg_match('~\.mcm-chest \{[^}]*width: (\d+)px~s', $modal, $cw) ? (int
 $poolW  = preg_match('~#mcm-plinth::before \{[^}]*width: (\d+)px~s', $modal, $pw) ? (int)$pw[1] : 0;
 ok($poolW > 0 && $chestW > 0 && $poolW > $chestW,
    'the glow is ' . $poolW . 'px under a ' . $chestW . 'px chest, so it never reaches past the art');
-ok(preg_match('~#mcm-plinth::before \{[^}]*transform: translateX\(-50%\) rotate\(-4\.7deg\)~s', $modal) === 1,
-   'the glow is level under a chest drawn in three-quarter view, so it is a floor at a different angle');
+/*
+ * A RAKE, NOT A PARTICULAR ONE. -4.7 degrees is the chest's base
+ * contour; the shipped -1.8 is what looks right dragged against the
+ * art, and flatter is correct for a reason the contour cannot know --
+ * the pool is light on a floor seen from slightly above, so it
+ * foreshortens toward level. What must not come back is a LEVEL
+ * ellipse under a chest drawn in three-quarter view, so the check is
+ * the sign and a sane range rather than one number.
+ */
+ok(preg_match('~#mcm-plinth::before \{[^}]*rotate\((-[0-9.]+)deg\)~s', $modal, $gr) === 1
+   && (float)$gr[1] <= -0.5 && (float)$gr[1] >= -10,
+   'the glow is level, or raked past anything the art supports, under a three-quarter chest');
 /*
  * THE CENTRE AND THE DEPTH, COMPUTED RATHER THAN EYEBALLED.
  *
@@ -587,9 +609,27 @@ foreach ($poolSizes as $poolWhich => $poolSrc) {
 	$chestTop  = $g['plinth'] - $g['pad'] - $g['chest'];
 	$footMid   = $chestTop + $g['chest'] * $MID;
 	$glowMid   = $g['plinth'] - $g['bottom'] - $g['h'] / 2;
-	ok(abs($glowMid - $footMid) <= 8,
-	   'the ' . $poolWhich . ' glow is centred ' . round($glowMid) . 'px down a ' . $g['plinth']
-	 . 'px plinth while the chest touches the floor at ' . round($footMid) . 'px');
+	/*
+	 * A BAND, NOT A POINT, and the band is what the bug was.
+	 *
+	 * This used to require the glow's centre within 8px of the
+	 * footprint's midpoint, because that is where the measurement said
+	 * it belonged. Dragged against the real art it wants to be 22px
+	 * HIGHER -- light under a lit object pushes back under it rather
+	 * than pooling at the front edge -- and an assertion that fails on
+	 * the look the owner chose is an assertion arguing with the owner.
+	 *
+	 * So it guards the two failures instead. Below ~92% is the original
+	 * bug coming back: the glow sliding down to the bottom of the
+	 * chest's BOX, which is 23px below where the chest touches at all.
+	 * Above ~70% it has climbed off the floor into the chest's body.
+	 * The shipped setting sits at 79%, in the middle of neither edge.
+	 */
+	$glowPct = ($glowMid - $chestTop) / $g['chest'];
+	ok($glowPct >= 0.70 && $glowPct <= 0.92,
+	   'the ' . $poolWhich . ' glow is centred ' . round($glowPct * 100) . '% down the chest; '
+	 . 'below 70% it is up inside the body, above 92% it has slid back to the bottom of the box, '
+	 . 'which is 23% below where the chest touches');
 	ok($g['h'] >= $g['chest'] * $DEPTH * 1.8,
 	   'the ' . $poolWhich . ' glow is ' . $g['h'] . 'px deep against a '
 	 . round($g['chest'] * $DEPTH) . 'px footprint, so it lights a stripe across it and leaves the ends dark');
