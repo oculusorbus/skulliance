@@ -922,6 +922,10 @@ function admin_tabs() {
 		   only runs when somebody can afford it and spends it to run, so this
 		   is the only way to see one twice. Crafts nothing. */
 		'crafting' => array('admin-crafting.php', 'Crafting Reveals'),
+		/* The two viewports a phone has, live. The back-to-top arrow is exact
+		   at 390px in a desktop browser and wrong on a phone, so the only
+		   place left to measure it is the phone. */
+		'viewport' => array('admin-viewport.php', 'Viewport'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }

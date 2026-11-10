@@ -1690,6 +1690,49 @@ function reactivateRealm(realmID){
   /* Run once: a page restored mid-scroll by the back button starts with no
      scroll event coming, and the arrow would be missing until you moved. */
   apply();
+
+  /*
+   * AND PIN IT TO THE VISUAL VIEWPORT, which on a phone is not the one
+   * position:fixed uses.
+   *
+   * REPORTED, STILL, after the drop-shadow fix: it stalls halfway up the
+   * screen on mobile and drops back to the corner when you scroll up.
+   * The filter was real and is gone -- at 390px wide, 48 frames of
+   * continuous scroll now hold the gap at exactly 10px -- but that is a
+   * desktop browser, where there is only one viewport.
+   *
+   * A phone has two. position:fixed resolves against the LAYOUT viewport,
+   * which mobile browsers size to the window with the URL bar HIDDEN.
+   * While the bar is showing -- or mid-way through sliding -- the visible
+   * area is shorter than that, so `bottom: 10px` is measured from an edge
+   * that is somewhere under the bar, and the button appears to hover
+   * above the corner. Scrolling down hides the bar and it settles;
+   * scrolling up brings the bar back and it lifts again. Which is
+   * precisely "stalls halfway, drops to the bottom when scrolling back
+   * up".
+   *
+   * visualViewport is the only thing that reports the viewport actually
+   * being looked at, so the difference between the two becomes a
+   * custom property and the CSS adds it to the offset. Browsers without
+   * it (none that matter now) simply get 0 and the old behaviour.
+   */
+  var vv = window.visualViewport;
+  if (!vv) return;
+  var pinQueued = false;
+  function pin() {
+    pinQueued = false;
+    var lift = Math.round(document.documentElement.clientHeight - (vv.height + vv.offsetTop));
+    if (!(lift > 0)) lift = 0;
+    document.documentElement.style.setProperty("--btt-lift", lift + "px");
+  }
+  function pinSoon() {
+    if (!pinQueued) { pinQueued = true; requestAnimationFrame(pin); }
+  }
+  /* resize is the bar appearing or going; scroll is the pinch-zoom case,
+     where the visual viewport moves inside the layout one. */
+  vv.addEventListener("resize", pinSoon);
+  vv.addEventListener("scroll", pinSoon);
+  pin();
 })();
 
 // Called from the button's inline onclick in header.php, so it stays global.

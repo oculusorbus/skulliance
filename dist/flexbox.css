@@ -1693,8 +1693,12 @@ input:checked + .slider:before {
  */
 #back-to-top-button {
   position: fixed;
-  /* Clear of the home indicator, and of the quick-menu bar when that is up. */
-  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  /* Clear of the home indicator, of the quick-menu bar when that is up,
+     and of the gap between the two viewports a phone has. --btt-lift is
+     set by skulliance.js from visualViewport and is 0 everywhere else;
+     see the note there for why position:fixed alone is not enough on a
+     phone. */
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px) + var(--btt-lift, 0px));
   right: calc(10px + env(safe-area-inset-right, 0px));
   z-index: 99;
   font-size: 18px;
@@ -1724,7 +1728,7 @@ input:checked + .slider:before {
 /* In the installed PWA the quick-menu owns the bottom of the screen, and
    the arrow was sitting on top of it. */
 @media (display-mode: standalone) {
-  #back-to-top-button { bottom: calc(62px + env(safe-area-inset-bottom, 0px)); }
+  #back-to-top-button { bottom: calc(62px + env(safe-area-inset-bottom, 0px) + var(--btt-lift, 0px)); }
 }
 
 /* Reveal on Scroll */

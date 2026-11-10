@@ -15,6 +15,7 @@ $fail = 0;
 function ok($c, $w) { global $fail; if (!$c) { $fail++; echo "  FAIL  $w\n"; } }
 
 $css = preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(__DIR__ . '/dist/flexbox.css'));
+$tabs = (string) file_get_contents(__DIR__ . '/admin-lib.php');
 $js  = preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(__DIR__ . '/skulliance.js'));
 
 /* Rules, by brace counting: a regex bounded with [^}]* walks straight out
@@ -110,6 +111,74 @@ foreach (array('skullracer.php', 'guardians.php', 'obscura.php') as $f) {
 	ok(strpos((string) file_get_contents(__DIR__ . '/' . $f), '#back-to-top-button') !== false,
 	   "$f no longer hides the arrow");
 }
+
+
+echo "\nthe arrow is pinned to the viewport you can actually see\n";
+/*
+ * REPORTED TWICE. The drop-shadow was real and is gone -- at 390px wide,
+ * 48 frames of continuous scroll hold the gap at exactly 10px -- but a
+ * desktop browser has one viewport and a phone has two.
+ *
+ * position:fixed resolves against the LAYOUT viewport, which mobile
+ * browsers size to the window with the URL bar HIDDEN. While the bar is
+ * showing, or sliding, what you can see is shorter than that, so
+ * `bottom: 10px` is measured from an edge somewhere under the bar and
+ * the button hovers above the corner. Scrolling down hides the bar and
+ * it settles; scrolling up brings it back and it lifts. visualViewport
+ * is the only thing that reports the viewport being looked at.
+ */
+ok(strpos($js, 'window.visualViewport') !== false,
+   'nothing reads visualViewport, so the arrow is still pinned to an edge the phone cannot show');
+ok(preg_match('~--btt-lift~', $js) === 1, 'the gap between the two viewports is never published');
+ok(preg_match('~--btt-lift~', $css) === 1, 'the stylesheet never consumes the gap');
+/* [\s\S]*? and not [^)]*: the offset already contains env(...), whose
+   closing paren ended the window before it could reach the var. This is
+   the third time a negated-character window has cost me an assertion in
+   this file; the lesson is to bound by what comes after, not by what
+   must not appear in between. */
+ok(preg_match('~bottom:\s*calc\([\s\S]*?var\(--btt-lift, 0px\)~', $btt) === 1,
+   "the arrow's offset does not include the viewport gap");
+/* Both events: resize is the bar appearing or going, scroll is pinch-zoom
+   moving the visual viewport inside the layout one. */
+foreach (array('resize', 'scroll') as $ev) {
+	ok(preg_match('~vv\.addEventListener\("' . $ev . '", pinSoon\)~', $js) === 1,
+	   "the arrow does not re-pin on visualViewport $ev");
+}
+ok(preg_match('~requestAnimationFrame\(pin\)~', $js) === 1,
+   'the pin is not frame-throttled, and visualViewport scroll fires continuously');
+/* The fallback has to be zero, not a guess: a browser without the API
+   must behave exactly as it did before. */
+ok(preg_match('~var\(--btt-lift, 0px\)~', $css) === 1,
+   'the fallback for a browser with no visualViewport is not zero');
+ok(preg_match('~if \(!vv\) return;~', $js) === 1,
+   'a browser without visualViewport throws instead of keeping the old behaviour');
+/* It must never push the arrow DOWN, off the screen. */
+ok(preg_match('~if \(!\(lift > 0\)\) lift = 0;~', $js) === 1,
+   'a negative gap is not clamped, so the arrow can be pushed below the screen');
+/* The installed-app offset has to carry it too, or the arrow is right
+   everywhere except in the PWA. */
+ok(preg_match('~display-mode:\s*standalone[^@]*--btt-lift~s', $css) === 1,
+   'the quick-menu offset ignores the viewport gap, so the arrow is wrong in the installed app');
+
+echo "\nand there is a way to see it from the phone\n";
+/*
+ * The owner is usually on a phone and cannot run anything, and this is a
+ * bug that only exists there -- so the measurement has to be a page.
+ */
+$vp = (string) @file_get_contents(__DIR__ . '/admin-viewport.php');
+ok($vp !== '', 'the viewport diagnostic is gone');
+ok(strpos($vp, 'admin_require()') !== false, 'the diagnostic is not behind admin_require()');
+/* THE MECHANISM, not the word. Both of these appear in the page's own
+   prose and markup, so a search for either passed with the code that
+   does the work renamed. */
+ok(preg_match('~visualViewport\.addEventListener\(~', $vp) === 1,
+   'the diagnostic never re-reads when the viewport changes, which is the only moment it is about');
+ok(preg_match('~Math\.abs\(ag - 10\) > Math\.abs\(worst - 10\)~', $vp) === 1,
+   'the diagnostic shows only the current frame, so a stall you scrolled past leaves no trace');
+ok(preg_match('~back-to-top-button~', $vp) === 1,
+   'the diagnostic measures the viewport but not the arrow it is about');
+ok(strpos($tabs, "'viewport' => array('admin-viewport.php'") !== false,
+   'there is no admin tab, so the diagnostic cannot be reached from a phone');
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);
