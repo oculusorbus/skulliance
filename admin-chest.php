@@ -226,12 +226,21 @@ admin_chrome('chest');
 #tune button { flex: 1; padding: 7px; font: inherit; border: 0; border-radius: 3px;
   cursor: pointer; color: #04121c; background: #00c8a0; }
 #tune button.ghost { color: #9fb6c4; background: rgba(255,255,255,.08); }
+#tune .tune-base { display: flex; align-items: center; gap: 7px; margin: 0 0 4px;
+  padding: 6px 8px; border-radius: 3px; background: rgba(255,255,255,.05); color: #cfe3d9; }
+#tune .tune-base input { accent-color: #00c8a0; }
 #tune .tune-check { margin-top: 8px; padding: 6px 8px; border-radius: 3px;
   background: rgba(0,200,160,.08); color: #cfe3d9; }
 #tune .tune-check.bad { background: rgba(224,122,122,.12); color: #ffd4d4; }
 </style>
 <div id="tune">
 	<h4>Glow tuner</h4>
+	<?php /* THE OTHER GLOW. #mcm-stage carries a teal radial of its own
+	         under the pool -- always on, independent of the chest
+	         opening -- so tuning the pool means tuning it against a
+	         second light nobody asked about. Off by default here, which
+	         is how you see what the pool is actually doing. */ ?>
+	<label class="tune-base"><input type="checkbox" id="tune-base"> stage base glow</label>
 	<div id="tune-fields"></div>
 	<div class="tune-check" id="tune-check"></div>
 	<div class="tune-row">
@@ -244,7 +253,8 @@ admin_chrome('chest');
 (function () {
 	var KEY = 'mcmGlowTune';
 	/* The shipped values, which are also what Reset returns to. */
-	var DEF = { bottom: -7, height: 96, width: 334, rot: -4.7, core: 0.48, spread: 1.00 };
+	var DEF = { bottom: -7, height: 96, width: 334, rot: -4.7, core: 0.48, spread: 1.00,
+	            base: false };
 	/* Measured off open.webp: the footprint's midpoint is 89.2% down the
 	   chest and it is 18.3% of the chest deep. Same numbers the harness
 	   uses, so the readout agrees with what will pass. */
@@ -312,8 +322,17 @@ admin_chrome('chest');
 	}
 	/* What gets pasted, and what gets applied. Same declarations; the
 	   applied one is scoped so it cannot lose a tie. */
-	function pasteCss() { return '#mcm-plinth::before {\n' + rule() + '\n}'; }
-	function liveCss()  { return '#mcm-stage #mcm-plinth::before {\n' + rule() + '\n}'; }
+	function pasteCss() {
+		return '#mcm-plinth::before {\n' + rule() + '\n}'
+		     + (val.base ? '' : '\n\n/* and drop the stage\'s own teal layer: */\n'
+		       + '#mcm-stage {\n  background-image:\n'
+		       + '    linear-gradient(180deg, rgba(0,0,0,.30) 0, rgba(0,0,0,0) 70px);\n}');
+	}
+	function liveCss() {
+		return '#mcm-stage #mcm-plinth::before {\n' + rule() + '\n}'
+		     + (val.base ? '' : '\n#mcm-box #mcm-stage { background-image:'
+		       + ' linear-gradient(180deg, rgba(0,0,0,.30) 0, rgba(0,0,0,0) 70px); }');
+	}
 
 	/* The same arithmetic the harness does, so an over-dragged setting
 	   says so here rather than failing after it is pasted. */
@@ -337,6 +356,7 @@ admin_chrome('chest');
 	}
 
 	function paint() {
+		document.getElementById('tune-base').checked = !!val.base;
 		FIELDS.forEach(function (f) {
 			var el = document.getElementById('tune-' + f[0]);
 			el.value = val[f[0]];
@@ -353,6 +373,9 @@ admin_chrome('chest');
 			val[f[0]] = parseFloat(this.value);
 			paint();
 		});
+	});
+	document.getElementById('tune-base').addEventListener('change', function () {
+		val.base = this.checked; paint();
 	});
 	document.getElementById('tune-reset').addEventListener('click', function () {
 		val = Object.assign({}, DEF); paint();
