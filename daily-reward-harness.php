@@ -196,6 +196,87 @@ ok(preg_match('~\$points_multiplier\s*=\s*' . $dr_mult . '\s*;~',
    (string) file_get_contents(__DIR__ . '/skulliance.php')) === 1,
    'the any-points multiplier is no longer ' . $dr_mult . ', so the calibration above is stale');
 
+
+echo "\nevery day pays a trait, and the day picks the table\n";
+/*
+ * It used to be day seven only, off placement_3, so six days of showing
+ * up bought nothing. A streak is a habit and a habit wants paying as it
+ * forms -- but the ladder that does that now lives in three places that
+ * cannot see each other: the bands in dhcfighters-config.php, the call
+ * in db.php, and the list players read on staking-daily-rewards.md.
+ */
+require_once __DIR__ . '/dhcfighters-config.php';
+$dr_db2 = preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(__DIR__ . '/db.php'));
+
+/* THE FLOOR. At 7 the award is unreachable on every other day whatever
+   the bands say. */
+ok(dhcf_floor('dailystreak') <= 1,
+   'the dailystreak floor is ' . dhcf_floor('dailystreak') . ', so only that day can ever pay');
+/* THE CALL. A flat table here would ignore the ladder entirely. */
+ok(preg_match("~dhcf_table_for\('dailystreak',\s*\(int\)\\\$current_streak\)~", $dr_db2) === 1,
+   'the claim passes a fixed table instead of the day, so every day pays the same odds');
+ok(preg_match("~if \(\\\$current_streak >= 1 &&~", $dr_db2) === 1,
+   'the claim still gates the award on one particular day');
+
+/* THE LADDER ITSELF: it must rise, and it must top out at the best table
+   there is on day seven. */
+$dr_prev = -1; $dr_names = array();
+for ($dr_d = 1; $dr_d <= 7; $dr_d++) {
+	$dr_t = dhcf_table_for('dailystreak', $dr_d);
+	$dr_n = array_search($dr_t, DHCF_TIERS, true);
+	$dr_names[$dr_d] = $dr_n;
+	$dr_r = dhcf_table_rank($dr_n);
+	ok($dr_r >= $dr_prev, "day $dr_d drops to a worse table than day " . ($dr_d - 1));
+	$dr_prev = $dr_r;
+}
+ok($dr_names[7] === 'placement_1',
+   'day seven pays ' . $dr_names[7] . ', not the best table on the platform');
+ok(dhcf_table_rank($dr_names[7]) > dhcf_table_rank($dr_names[1]),
+   'day seven is worth no more than day one, so the streak buys nothing');
+/* placement_1 is the ceiling: nothing may rank above it, or the "best
+   possible" claim on day seven stops being true. */
+$dr_top = 0;
+foreach (array_keys(DHCF_TIERS) as $dr_k) $dr_top = max($dr_top, dhcf_table_rank($dr_k));
+ok(dhcf_table_rank('placement_1') === $dr_top,
+   'placement_1 is no longer the best table, so day seven is not the best possible');
+
+/* ONE PER DAY, and it has to be the cap rather than the call site: the
+   cap is what a second route to the same award would still hit. */
+ok((int) dhcf_cap('dailystreak') === 1,
+   'the dailystreak cap is ' . dhcf_cap('dailystreak') . ', so a claim could pay more than one trait a day');
+/* INSIDE dhcf_award()'s cap check: dhcf_drops_today() further down the
+   file runs the same CURDATE() clause, so a file-wide search passed with
+   the cap's own window removed. */
+$dr_lib  = preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(__DIR__ . '/dhcfighters-lib.php'));
+$dr_awd  = substr($dr_lib, strpos($dr_lib, 'function dhcf_award('));
+$dr_awd  = substr($dr_awd, 0, strpos($dr_awd, '$drawn = dhcf_draw('));
+ok(strpos($dr_awd, 'awarded_at >= CURDATE()') !== false,
+   'the cap no longer counts per day, so "one per day" is not enforced anywhere');
+
+/* THE DOCS. The bullet list is what players read, and it is the copy
+   that will be left behind. */
+$dr_md = (string) @file_get_contents(__DIR__ . '/skullpaper/staking-daily-rewards.md');
+ok(strpos($dr_md, 'A trait every day') !== false, 'the docs do not mention the daily trait at all');
+$dr_want = array('run' => 'ordinary drop table', 'placement_10' => 'top-ten table',
+                 'placement_3' => 'top-three table', 'placement_1' => 'first-place table');
+foreach (array_unique($dr_names) as $dr_n) {
+	ok(strpos($dr_md, $dr_want[$dr_n]) !== false,
+	   "the ladder uses $dr_n but the docs never name the " . $dr_want[$dr_n]);
+}
+/* And nothing the ladder does NOT use may be advertised. */
+foreach ($dr_want as $dr_n => $dr_label) {
+	if (in_array($dr_n, $dr_names, true)) continue;
+	ok(strpos($dr_md, $dr_label) === false,
+	   "the docs promise the $dr_label but no day actually draws from it");
+}
+
+/* The modal cannot say "full streak" on day two. */
+$dr_modal = preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(__DIR__ . '/missions-claim-modal.php'));
+ok(preg_match('~day >= 7~', $dr_modal) === 1,
+   'the claim modal announces the trait the same way on every day');
+ok(preg_match("~>Full streak\.~", $dr_modal) !== 1,
+   'the modal hardcodes "Full streak" in its markup, so it says it on day one');
+
 echo $fail ? "\n$fail check(s) FAILED\n" : "\nall good\n";
 /* EXIT CODE, not just a line of text. Without this the harness always
    returned 0, so every runner that checked the status -- including the

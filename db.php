@@ -999,24 +999,38 @@ function getRandomReward($conn){
 		);
 
 		/*
-		 * SEVENTH DAY PAYS A TRAIT.
+		 * EVERY DAY PAYS A TRAIT, AND THE DAY SETS THE TABLE.
 		 *
-		 * Completing the full streak is the one thing on this platform a
-		 * player can achieve without ever opening a game, so it is the way in
-		 * for the members who only claim dailies and run missions. A wildcard,
-		 * because it should be able to be anything.
+		 * It used to be day seven only. Completing the full streak is the one
+		 * thing on this platform a player can achieve without ever opening a
+		 * game, so it is the way in for the members who only claim dailies and
+		 * run missions -- but six days of showing up bought nothing, which is
+		 * the wrong shape for a habit. It wants paying as it forms.
+		 *
+		 * The DAY, not a flat table: dhcf_table_for() reads the bands in
+		 * dhcfighters-config.php, so day one is an ordinary drop and day seven
+		 * is placement_1, the best table there is. The ladder lives in the
+		 * config beside every other game's, not in a number here.
+		 *
+		 * A wildcard, because it should be able to be anything.
+		 *
+		 * ONE PER DAY, and not because of this line: dhcf_award() counts this
+		 * source's drops since CURDATE() against cap 1. The claim is already
+		 * once a day, so the cap is the guarantee underneath rather than the
+		 * rule -- a second route to the same award could not double it.
 		 *
 		 * Awarded here, inside the claim that earns it, so it cannot be
 		 * replayed by re-requesting anything. Buffered and guarded like every
 		 * other drop: this function's JSON reply must survive a Discord
 		 * outage, a missing webhook or a notice from the notifier.
 		 */
-		if ((int)$current_streak === 7 && is_file(__DIR__ . '/dhcfighters-lib.php')) {
+		if ($current_streak >= 1 && is_file(__DIR__ . '/dhcfighters-lib.php')) {
 			ob_start();
 			require_once __DIR__ . '/dhcfighters-lib.php';
 			$dhc_streak_drop = dhcf_award(
 				$conn, $_SESSION['userData']['user_id'], 'wildcard', 'dailystreak',
-				'7-day streak', dhcf_table_for('dailystreak', 7)
+				'day ' . (int)$current_streak . ' of 7',
+				dhcf_table_for('dailystreak', (int)$current_streak)
 			);
 			ob_end_clean();
 			// Handed back in the claim's own response so the reveal can fire the

@@ -26,6 +26,19 @@ In addition to RANDOM points, each daily claim also awards one **mission consuma
 
 So a full 7-day streak hands you the complete consumable set, including the two Legendary items (Double Rewards on day 6 and 100% Success on day 7). See [[missions-consumable-items]] for what each item does.
 
+## A trait every day
+
+Every claim draws a **DHC Fighters trait**, and the day of your streak decides which rarity table it comes from. Showing up is what pays; finishing the week is what pays best.
+
+* Days 1-2: the ordinary drop table
+* Days 3-4: the top-ten table
+* Days 5-6: the top-three table
+* Day 7: **the first-place table** - the best on the platform, and nothing else awards it for anything but winning outright
+
+It used to be day seven only, off the top-three table, so six days of showing up bought nothing. A streak is a habit, and a habit wants paying as it forms rather than only when it is finished.
+
+One per day. See [[games-dhc-fighters]] for what a trait is and what it is for.
+
 ## Streaks
 
 A maximum of **8,400** random reward points can be claimed via a completed 7 day streak.

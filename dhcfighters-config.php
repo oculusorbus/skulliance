@@ -1290,9 +1290,34 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// 'limit_note' replaces the "N of N left today" line where a daily count
 	// does not describe the real limit. The streak pays once per seven days by
 	// definition, so quoting a daily cap implies three are available today.
-	'dailystreak'    => array('label' => 'Daily Reward Streak', 'earned_from' => 'a 7-day reward streak', 'url' => 'launchpad.php', 'category' => 'wildcard',
-	                          'trigger' => 'complete a 7-day streak', 'base' => 'placement_3',
-	                          'cap' => 1, 'limit_note' => 'once per 7-day streak',
+	/*
+	 * EVERY DAY PAYS, AND THE DAY SETS THE TABLE.
+	 *
+	 * It used to pay once, on day seven, off placement_3. Six days of
+	 * showing up bought nothing at all, which is the wrong shape for the
+	 * one thing on this platform a player can earn without opening a
+	 * game -- the streak is a habit, and a habit wants paying as it is
+	 * formed rather than only when it is finished.
+	 *
+	 * So the base drops to 'run' and the day climbs it. Days one and two
+	 * are an ordinary drop, three and four a top-ten table, five and six
+	 * a top-three, and day seven the first-place table -- the best there
+	 * is, which is what finishing a week should be worth. Nothing else
+	 * on the platform pays placement_1 for anything but winning outright.
+	 *
+	 * The bands are read by dhcf_table_for('dailystreak', $day), which
+	 * takes the BEST of base and bands, so the ladder cannot go
+	 * backwards however it is edited.
+	 *
+	 * cap 1 is unchanged and now means what it says: dhcf_award() counts
+	 * drops from this source since CURDATE(), so it is one per day, and
+	 * the claim it hangs off is already once per day.
+	 */
+	'dailystreak'    => array('label' => 'Daily Reward', 'earned_from' => 'a daily reward claim',
+	                          'url' => 'missions.php#ms-sec-daily', 'category' => 'wildcard',
+	                          'trigger' => 'claim your daily reward', 'base' => 'run',
+	                          'bands' => array(3 => 'placement_10', 5 => 'placement_3', 7 => 'placement_1'),
+	                          'cap' => 1, 'limit_note' => 'one per day; day seven pays the best table',
 	                          'unlisted' => true),
 
 	// Bringing somebody back. Not a game either, and unlisted for the same
@@ -1366,7 +1391,7 @@ $GLOBALS['DHCF_FLOORS'] = array(
 	'guardians'     => 10,     // waves held; board shows 12-81
 	'monstrocity'   => 28,     // campaign completion
 	'bosses'        => 0,      // the defeat itself qualifies; nothing to grade
-	'dailystreak'   => 7,      // day 7 of 7, nothing earlier
+	'dailystreak'   => 1,      // every day of the streak pays; the day picks the table, not the floor
 	'maxingo'       => 1,      // any completed Maxingo mission; level sets the odds
 	'raids'         => 0,      // the decided raid itself qualifies, won or repelled
 	'arena'         => 0,      // the win itself qualifies; the bands grade the gap

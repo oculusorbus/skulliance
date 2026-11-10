@@ -76,7 +76,10 @@ foreach ($ms_daily['days'] as $mcm_d) {
 
 		<div id="mcm-streak"></div>
 		<div id="mcm-remaining"></div>
-		<div id="mcm-trait" hidden>Full streak. A DHC Fighters trait is yours.</div>
+		<?php /* Every claim pays a trait now, not just the seventh, and the
+		         day sets the rarity table -- so this cannot say "full
+		         streak" any more. Filled by the script below. */ ?>
+		<div id="mcm-trait" hidden></div>
 
 		<div id="mcm-actions">
 			<button type="button" id="mcm-close">Collect</button>
@@ -290,7 +293,18 @@ foreach ($ms_daily['days'] as $mcm_d) {
 		document.getElementById('mcm-remaining').innerHTML = obj.remaining || '';
 
 		pending = (obj.dhc_drop && window.DHC_SHOW_DROP) ? obj.dhc_drop : null;
-		document.getElementById('mcm-trait').hidden = !pending;
+		var tr = document.getElementById('mcm-trait');
+		tr.hidden = !pending;
+		if (pending) {
+			/*
+			 * NAME THE LADDER, because the whole point of paying every day
+			 * is that the player can see it climbing. Day seven says so
+			 * outright; the others say what is coming.
+			 */
+			tr.textContent = day >= 7
+				? 'Full streak. Your trait is drawn from the best table on the platform.'
+				: 'A DHC Fighters trait is yours. Day ' + (day + 1) + ' draws from a better table.';
+		}
 
 		veil.classList.add('on');
 		veil.setAttribute('aria-hidden', 'false');
