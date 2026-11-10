@@ -325,7 +325,7 @@ echo "\nthe line under the name says what the account has done\n";
 	 * opposite of what a launchpad is for.
 	 */
 	$hsBoth = lp_hero_stats(3, 40, 12, 9);
-	ok($hsLab($hsBoth) === 'day streak missions running raids running',
+	ok($hsLab($hsBoth) === 'day streak missions raids',
 	   'an account with both out does not get both: ' . $hsLab($hsBoth));
 	$hsNoRaid = lp_hero_stats(3, 40, 0, 9);
 	ok(strpos($hsLab($hsNoRaid), 'raid') === false,
@@ -370,7 +370,7 @@ echo "\nthe line under the name says what the account has done\n";
 	   && lp_stat_label(array(2, 'raid', 'raids')) === 'raids',
 	   'the label does not follow the count');
 	$hsOne = lp_hero_stats(1, 1, 1, 1);
-	ok($hsLab($hsOne) === 'day streak mission running raid running',
+	ok($hsLab($hsOne) === 'day streak mission raid',
 	   'a count of one reads as a plural: ' . $hsLab($hsOne));
 
 	/*

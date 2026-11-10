@@ -27,8 +27,13 @@
  * -- a lifetime tally, the same shape of number as the points balance
  * next to it, saying nothing about today. What is OUT right now is a
  * reason to open the page: those runs finish, and they finish while you
- * are not looking. So the label says "running", because 3 next to the
- * word "missions" alone would read as a career total.
+ * are not looking.
+ *
+ * The label is just the noun. It read "3 missions running" for a
+ * version, on the argument that a bare count would be taken for a
+ * career total -- but the number is single digits next to a day streak,
+ * and nothing on this row is a lifetime figure any more now that the
+ * points balance has gone.
  *
  * A ZERO IS NOT A STAT. "0 raids running" tells a player they are
  * failing at something they have not started, which is the opposite of
@@ -50,8 +55,8 @@ function lp_hero_stats($streak, $missions, $raids, $wallets) {
 		array((int)$streak, 'day streak', 'day streak'),
 	);
 	$done = false;
-	if ((int)$missions > 0) { $out[] = array((int)$missions, 'mission running', 'missions running'); $done = true; }
-	if ((int)$raids    > 0) { $out[] = array((int)$raids,    'raid running',    'raids running');    $done = true; }
+	if ((int)$missions > 0) { $out[] = array((int)$missions, 'mission', 'missions'); $done = true; }
+	if ((int)$raids    > 0) { $out[] = array((int)$raids,    'raid',    'raids');    $done = true; }
 	/* Nothing out, so the row would be two items wide under a name.
 	   Wallets is the one number a fresh account can still have, and a
 	   zero there is worth saying because connecting one is step one. */
