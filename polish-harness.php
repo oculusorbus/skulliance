@@ -375,8 +375,36 @@ foreach (array('.dhcg-art', '.boardwrap') as $dhcWell) {
  * --panel2 -- because the Arena's battle board retunes all three and a
  * pinned hex would ignore that.
  */
-ok(preg_match('~background:\s*var\(--msp-[a-z-]+(?:,\s*none)?\),\s*#(07111d|0a1929|0d1e2e)~i', $dhcCss) !== 1,
-   'the DHC layer hardcodes a surface hex, so a page that retunes that token is ignored');
+/*
+ * ANY bare hex as the final layer, not just the three surface colours.
+ *
+ * THE BUG THIS MISSED. The first version only objected to #07111d,
+ * #0a1929 and #0d1e2e, so `.arena-wrap .btn { ..., #00c8a0 }` sailed
+ * through -- and `.btn` is the Arena's QUIET button (var(--panel2)),
+ * not its primary, so the X share link came out brand green. The same
+ * blind spot pinned #00a882 on `.btn:active`, which made "Back to the
+ * Arena" flip from red to green on press, because that button is
+ * `.btn.go` and its colour is var(--blood), which #arenaBattle retunes
+ * to #e0466b.
+ *
+ * A hex INSIDE a var() fallback is fine and is the point -- it is the
+ * default when the token is absent. Only the layer after the var() is
+ * checked, because that is the one that ignores the page.
+ */
+ok(preg_match('~background:\s*var\(--msp-[a-z-]+(?:,\s*none)?\),\s*#[0-9a-f]{3,8}\b~i', $dhcCss) !== 1,
+   'the DHC layer pins a hex where the page has a token, so a page that retunes it is ignored');
+/*
+ * AND THE TWO ARENA BUTTONS BY NAME, because which is which is the
+ * thing that was actually misread. `.btn` is quiet, `.btn.go` is the
+ * primary; getting them the wrong way round is not a colour mistake,
+ * it is a hierarchy one.
+ */
+ok(preg_match('~\.arena-wrap \.btn \{[^}]*var\(--msp-ghost~', $dhcCss) === 1,
+   "the Arena's quiet button is not using the quiet ramp; it is .btn.go that is the primary");
+ok(preg_match('~\.arena-wrap \.btn\.go \{[^}]*var\(--blood~', $dhcCss) === 1,
+   "the Arena's primary does not keep var(--blood), which #arenaBattle retunes to red");
+ok(preg_match('~\.arena-wrap \.btn:(hover|active)\s*\{~', $dhcCss) !== 1,
+   'the quiet button has a hover or active fill of its own, which overrides the page and flips its colour on press');
 /* Same fallbacks as the missions layer, for the same reason. */
 preg_match_all('~var\((--msp-[a-z-]+)(,[^)]*)?\)~', $dhcCss, $dv, PREG_SET_ORDER);
 $dnofall = array();

@@ -62,9 +62,25 @@ define('DHC_POLISH', 1);
 .arena-wrap .tok { background: var(--msp-ghost, none), var(--panel, #0a1929); }
 .dhcf-pager button:hover,
 .arena-wrap .a-pager button:hover { background: var(--msp-ghost, none), rgba(0,200,160,0.12); }
-/* The Arena's own primary. It is the platform's teal, so it gets the
-   platform's sheen and edge. */
-.arena-wrap .btn { background: var(--msp-fill, none), #00c8a0; border: 1px solid #2ee3bf; }
-.arena-wrap .btn:hover { background: var(--msp-fill, none), #00a882; }
-.arena-wrap .btn:active { background: var(--msp-fill-in, none), #00a882; }
+/*
+ * THE ARENA'S TWO BUTTONS, AND I HAD THEM BACKWARDS.
+ *
+ * `.btn` is the QUIET one -- var(--panel2), the field colour, with a
+ * hairline border. The X share link is one of these. I read it as the
+ * primary and painted it brand green, so a share button that is black
+ * everywhere else on the platform was green only here.
+ *
+ * `.btn.go` is the primary, and its colour is var(--blood) -- which the
+ * Arena retunes per surface: teal in the lobby, #e0466b inside
+ * #arenaBattle. "Back to the Arena" is one of these, so it is red. My
+ * :active rule pinned #00a882, which made it flip from red to green on
+ * press. Both are fixed by the rule I set myself and then broke here:
+ * keep the colour the page chose and add layers ON TOP of it.
+ */
+.arena-wrap .btn { background: var(--msp-ghost, none), var(--panel2, #0d1e2e); }
+/* Hover is the page's own: it moves the border and the text to --ochre
+   and deliberately leaves the fill alone, so nothing is overridden. */
+.arena-wrap .btn.go { background: var(--msp-fill, none), var(--blood, #00c8a0); }
+.arena-wrap .btn.go:hover { background: var(--msp-fill, none), var(--blood, #00c8a0); }
+.arena-wrap .btn.go:active { background: var(--msp-fill-in, none), var(--blood, #00c8a0); }
 </style>
