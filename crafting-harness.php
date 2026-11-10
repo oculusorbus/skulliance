@@ -208,22 +208,51 @@ echo "\nconvert and shatter are the same ring, in opposite directions\n";
    A separate check for hand-written positions could not fail on its own:
    anything that replaces the expressions also trips the circle test
    below, which reads them. */
-ok(preg_match('~cos\(\$ang\)\s*\*\s*(\d+)~', $modal, $rx) === 1
-   && preg_match('~sin\(\$ang\)\s*\*\s*(\d+)~', $modal, $ry) === 1
+/* THE MARKUP CARRIES A DIRECTION, THE STYLESHEET A RADIUS. PHP cannot
+   know which breakpoint a phone lands on, so the six points are unit
+   vectors and --cft-r scales them. The circle test is now on the unit
+   vectors, which is the same test: both axes off one trig pair. */
+ok(preg_match('~cos\(\$ang\), (\d+)\)~', $modal, $rx) === 1
+   && preg_match('~sin\(\$ang\), (\d+)\)~', $modal, $ry) === 1
    && $rx[1] === $ry[1],
-   'the ring is not a circle: the two axes use different radii');
+   'the ring is not a circle: the two axes are rounded differently');
 ok(preg_match('~\$i\s*\*\s*60~', $modal) === 1,
    'the six points are not 60 degrees apart, so they are not evenly spaced');
-$radius = isset($rx[1]) ? (int) $rx[1] : 0;
-preg_match('~#cft-stage\s*\{[^}]*width:\s*(\d+)px~s', $css, $sw);
-preg_match('~\.cft-orb\s*\{[^}]*width:\s*(\d+)px~s', $css, $ow);
-ok(!empty($sw) && !empty($ow), 'the stage or the orb has no pixel size this can check');
-if (!empty($sw) && !empty($ow)) {
-	/* The stage clips, so the ring plus half an orb has to fit inside it
-	   or the six are cut off at their widest. */
-	ok($radius + (int) $ow[1] / 2 <= (int) $sw[1] / 2,
-	   'the ring is clipped: radius ' . $radius . ' plus half a ' . $ow[1]
-	   . 'px orb does not fit a ' . $sw[1] . 'px stage');
+ok(preg_match('~--cx: calc\(var\(--ux\) \* var\(--cft-r\)\)~', $css) === 1
+   && preg_match('~--cy: calc\(var\(--uy\) \* var\(--cft-r\)\)~', $css) === 1,
+   'the orbs do not take their radius from the stage, so it cannot change with the breakpoint');
+/*
+ * THE RING PLUS HALF AN ORB HAS TO FIT, AT BOTH SIZES.
+ *
+ * The stage clips. The radius used to be baked into the markup at 92px
+ * while the phone shrank the stage to 196 -- which clips at 98 against
+ * orbs reaching 106, so the six were cut off at their widest on every
+ * phone and nothing here could see it, because this only ever read the
+ * base size.
+ *
+ * MARGIN, NOT JUST FIT. Exactly fitting means the orbs graze the frame,
+ * and an animation with its subject against the edge is the "cramped"
+ * this was reported as.
+ */
+$cftSizes = array();
+preg_match('~#cft-stage\s*\{[^}]*width:\s*(\d+)px~s', $css, $sw)       && $cftSizes['base'] = array((int)$sw[1], 0, 0);
+preg_match('~#cft-stage\s*\{[^}]*--cft-r:\s*(\d+)px~s', $css, $sr)     && $cftSizes['base'][1] = (int)$sr[1];
+preg_match('~\.cft-orb\s*\{[^}]*width:\s*(\d+)px~s', $css, $ow)       && $cftSizes['base'][2] = (int)$ow[1];
+$cftSmall = preg_match('~@media \(max-width: 480px\) \{.*?\n\}~s', $css, $csm) ? $csm[0] : '';
+if ($cftSmall !== '') {
+	$cftSizes['phone'] = array(0, 0, 0);
+	preg_match('~#cft-stage \{[^}]*width: (\d+)px~s', $cftSmall, $m1) && $cftSizes['phone'][0] = (int)$m1[1];
+	preg_match('~#cft-stage \{[^}]*--cft-r: (\d+)px~s', $cftSmall, $m2) && $cftSizes['phone'][1] = (int)$m2[1];
+	preg_match('~\.cft-orb \{[^}]*width: (\d+)px~s', $cftSmall, $m3) && $cftSizes['phone'][2] = (int)$m3[1];
+}
+ok(count($cftSizes) === 2, 'one of the two stage sizes has no width, radius and orb to check');
+foreach ($cftSizes as $cftWhich => $cftS) {
+	list($cftW, $cftR, $cftO) = $cftS;
+	ok($cftW > 0 && $cftR > 0 && $cftO > 0,
+	   'the ' . $cftWhich . ' stage is missing one of width, --cft-r and orb width');
+	ok($cftW > 0 && $cftR + $cftO / 2 + 12 <= $cftW / 2,
+	   'the ' . $cftWhich . ' ring is cramped or clipped: radius ' . $cftR . ' plus half a '
+	   . $cftO . 'px orb leaves ' . ($cftW / 2 - $cftR - $cftO / 2) . 'px inside a ' . $cftW . 'px stage');
 }
 ok(preg_match('~#cft-stage\s*\{[^}]*overflow:\s*hidden~s', $css) === 1,
    'the stage does not clip, so the flash adds scrollable overflow to the dialog');
@@ -458,9 +487,15 @@ foreach (array('--msp-lift', '--msp-lift-soft', '--msp-fill', '--msp-fill-in', '
    other way round is a cancel that shouts louder than the action. */
 ok(preg_match('~#cft-cancel \{[^}]*var\(--msp-ghost\)~s', $modal) === 1,
    'cancel does not take the ghost, so the quiet control is lit like the loud one');
-/* Round well for a round animation: six orbs converging on a centre. */
-ok(preg_match('~#cft-stage \{[^}]*border-radius: 50%~s', $modal) === 1,
-   'the stage is a rectangle cutting across the one shape the animation is made of');
+/*
+ * SQUARE, NOT ROUND. It was round for a while on the argument that what
+ * happens in it is round -- and that is exactly why it was wrong: the
+ * orbs sit ON the ring, so at six points a circular edge passes
+ * straight through them. Square makes the corners clearance rather than
+ * the tightest part of the frame.
+ */
+ok(preg_match('~#cft-stage \{[^}]*border-radius: 50%~s', $modal) !== 1,
+   'the stage is round again, so its edge cuts through the six orbs sitting on the ring');
 /* Inset ring, same reasoning as the claim dialog's. */
 ok(preg_match('~#cft-actions button:focus-visible \{ outline: [^;]*; outline-offset: -\d+px~', $modal) === 1,
    'the focus ring is outside the button, where it reads as a highlight border around it');

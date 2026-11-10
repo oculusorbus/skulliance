@@ -514,6 +514,31 @@ $shadeW = preg_match('~#mcm-plinth::after \{[^}]*width: (\d+)px~s', $modal, $sw)
 $chestW = preg_match('~\.mcm-chest \{[^}]*width: (\d+)px~s', $modal, $cw) ? (int)$cw[1] : 0;
 ok($shadeW > 0 && $chestW > 0 && $shadeW > $chestW,
    'the contact shadow is ' . $shadeW . 'px under a ' . $chestW . 'px chest, so all of it hides behind the art');
+/*
+ * AND THE POOL HAS TO BE WIDER THAN THE SHADOW, or the fix above eats
+ * it. While the shadow was narrower than the chest it was invisible and
+ * the green showed; the moment it grew wide enough to read, it landed
+ * at .8 alpha straight on top of the glow -- same centre, same base --
+ * and painted it out. ::after is over ::before, so the only thing that
+ * keeps the green is the dark being smaller.
+ */
+$poolW = preg_match('~#mcm-plinth::before \{[^}]*width: (\d+)px~s', $modal, $pw) ? (int)$pw[1] : 0;
+ok($poolW > 0 && $poolW > $shadeW,
+   'the pool of light is ' . $poolW . 'px under a ' . $shadeW . 'px shadow, so the dark covers the green');
+/*
+ * AND IT MUST NOT BE inset:0 ON THE PLINTH.
+ *
+ * A background is clipped to its own element. As a full-bleed layer the
+ * pool was a radial centred at 93% of the plinth with a vertical radius
+ * of 17%, which runs to 110% -- so the bottom of the glow was cut at
+ * the plinth's edge in a hard line. A sized box hanging below the
+ * plinth has nothing to clip it; the only clip here is the pane's, and
+ * it is far outside.
+ */
+ok(preg_match('~#mcm-plinth::before \{[^}]*inset: 0~s', $modal) !== 1,
+   'the pool is a full-bleed layer again, so its own element crops the bottom of the glow');
+ok(preg_match('~#mcm-plinth::before \{[^}]*bottom: -\d+px~s', $modal) === 1,
+   'the pool does not hang below the plinth, so the glow stops where the chest\'s floor does');
 $small = preg_match('~@media \(max-width: 480px\) \{.*?\n\}~s', $modal, $smm) ? $smm[0] : '';
 ok($small !== '', 'the small-screen block is gone');
 ok(preg_match('~#mcm-plinth \{[^}]*padding-bottom: (\d+)px~s', $small, $sp2) === 1 && (int)$sp2[1] >= 14,

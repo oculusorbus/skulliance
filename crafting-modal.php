@@ -66,8 +66,16 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 					   Computed here so the markup carries the geometry and
 					   nothing has to position anything at runtime. */
 					$ang = deg2rad(-90 + $i * 60); ?>
-				<span class="cft-orb" style="--cx: <?php echo round(cos($ang) * 92, 2); ?>px;
-				      --cy: <?php echo round(sin($ang) * 92, 2); ?>px;
+				<?php /* A UNIT VECTOR, NOT A POSITION. The direction belongs to
+				         the markup -- six points, 60 degrees apart, generated so
+				         convert and shatter cannot drift apart -- but the RADIUS
+				         has to change with the breakpoint, and PHP cannot know
+				         which breakpoint a phone will land on. The stage carries
+				         --cft-r and .cft-orb multiplies, so one number per size
+				         moves the whole ring and every keyframe that reads
+				         --cx/--cy follows it unchanged. */ ?>
+				<span class="cft-orb" style="--ux: <?php echo round(cos($ang), 4); ?>;
+				      --uy: <?php echo round(sin($ang), 4); ?>;
 				      --cd: <?php echo round($i * 0.055, 3); ?>s;">
 					<img src="icons/<?php echo $slug; ?>.png" alt=""
 					     onerror="this.style.display='none'">
@@ -137,15 +145,26 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
  * THE STAGE CLIPS, AND IS SIZED SO IT DOES NOT HAVE TO. A transform that
  * escapes a scrollable ancestor adds scrollable overflow to it, and the
  * one thing that must not happen mid-craft is the dialog growing a
- * scrollbar. 232px square holds a 92px ring plus a 34px orb.
+ * scrollbar. 276px square holds a 104px ring plus a 34px orb.
  */
 /*
- * A ROUND WELL, because what happens in it is round: six orbs on a
- * 92px ring converging on a centre. A rectangular niche would have cut
- * across the one shape the animation is made of.
+ * SQUARE, AND BIGGER THAN THE RING.
+ *
+ * It was round for a while, on the argument that what happens in it is
+ * round. That was wrong in a way that is obvious the moment you look:
+ * the orbs sit ON the ring, so at six points the circle's edge passes
+ * straight through them -- a 232px circle clips at radius 116 and an
+ * orb on a 92px ring reaches 109 plus its own corners. The six were
+ * cut off at exactly their widest, and the animation had no room left
+ * around it.
+ *
+ * 276 against a ring that reaches 121 leaves 17px of clearance all
+ * round, and square means the corners are clearance too rather than
+ * the tightest part of the frame.
  */
-#cft-stage { position: relative; width: 232px; height: 232px; margin: 10px auto 2px;
-  overflow: hidden; border-radius: 50%;
+#cft-stage { position: relative; width: 276px; height: 276px; margin: 10px auto 2px;
+  overflow: hidden; border-radius: 6px;
+  --cft-r: 104px;
   background-color: #071320;
   background-image:
     radial-gradient(60% 60% at 50% 50%, rgba(0,200,160,.07) 0, rgba(0,200,160,0) 72%),
@@ -153,8 +172,12 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.035),
               inset 0 10px 22px -12px rgba(0,0,0,.6); }
 #cft-ring { position: absolute; inset: 0; }
+/* The radius lands here. Every keyframe below reads --cx/--cy and none
+   of them had to change. */
 .cft-orb { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px;
   margin: -17px 0 0 -17px; opacity: 0;
+  --cx: calc(var(--ux) * var(--cft-r));
+  --cy: calc(var(--uy) * var(--cft-r));
   transform: translate(var(--cx), var(--cy)); }
 .cft-orb img { width: 100%; height: 100%; object-fit: contain;
   filter: drop-shadow(0 0 7px rgba(0,200,160,.5)); }
@@ -301,7 +324,10 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 #cft-cancel:focus-visible { outline-color: #9affdf; }
 
 @media (max-width: 480px) {
-  #cft-stage { width: 196px; height: 196px; }
+  /* THE RING SHRINKS WITH THE STAGE NOW, which it never did: the
+     radius was baked into the markup at 92px, so a 196px stage clipped
+     at 98 while the orbs still reached 106. One number moves it. */
+  #cft-stage { width: 212px; height: 212px; --cft-r: 78px; }
   .cft-orb { width: 28px; height: 28px; margin: -14px 0 0 -14px; }
   #cft-diamond, #cft-carbon { width: 64px; height: 64px; margin: -32px 0 0 -32px; }
 }

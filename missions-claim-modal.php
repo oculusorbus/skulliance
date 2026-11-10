@@ -243,10 +243,28 @@ foreach ($ms_daily['days'] as $mcm_d) {
  * level, which is the picture above -- nothing breaks, it just does not
  * brighten.
  */
-#mcm-plinth::before { content: ""; position: absolute; inset: 0; z-index: 0;
+/*
+ * THE POOL IS ITS OWN BOX, NOT inset:0 ON THE PLINTH.
+ *
+ * As a full-bleed gradient it was centred at 93% of the plinth with a
+ * vertical radius of 17%, which runs to 110% -- and a background is
+ * clipped to its own element, so the bottom of the glow was cut off at
+ * the plinth's edge in a hard line. That is the crop. A sized box
+ * hanging 10px BELOW the plinth has nothing to clip it: the only thing
+ * clipping anything here is the pane, and it is far outside.
+ *
+ * WIDER THAN THE SHADOW ON PURPOSE. 356 against the contact shadow's
+ * 240, both centred on the chest's base, so the green rings the dark
+ * instead of the dark covering the green -- which is what happened when
+ * the shadow grew wide enough to be visible and landed straight on top
+ * of it.
+ */
+#mcm-plinth::before { content: ""; position: absolute; z-index: 0;
+  left: 50%; bottom: -10px; width: 356px; height: 68px;
+  transform: translateX(-50%);
   pointer-events: none; opacity: 0;
-  background: radial-gradient(46% 17% at 50% 93%,
-    rgba(0,200,160,.32) 0, rgba(0,200,160,0) 72%);
+  background: radial-gradient(50% 50% at 50% 50%,
+    rgba(0,200,160,.34) 0, rgba(0,200,160,.12) 44%, rgba(0,200,160,0) 70%);
   transition: opacity .55s ease-out .08s; }
 #mcm-plinth:has(.mcm-chest.is-open)::before { opacity: 1; }
 /*
@@ -266,10 +284,10 @@ foreach ($ms_daily['days'] as $mcm_d) {
  * that rattles along with the object is a shadow cast by nothing.
  */
 #mcm-plinth::after { content: ""; position: absolute; z-index: 0;
-  left: 50%; bottom: 1px; width: 250px; height: 34px;
+  left: 50%; bottom: 4px; width: 240px; height: 28px;
   transform: translateX(-50%); pointer-events: none;
   background: radial-gradient(50% 50% at 50% 50%,
-    rgba(0,0,0,.72) 0, rgba(0,0,0,.34) 44%, rgba(0,0,0,0) 72%); }
+    rgba(0,0,0,.80) 0, rgba(0,0,0,.30) 40%, rgba(0,0,0,0) 66%); }
 /* Above both of them. The flash and the six sparks are its children, so
    they come up with it. */
 .mcm-chest { position: relative; z-index: 1;
@@ -441,7 +459,8 @@ foreach ($ms_daily['days'] as $mcm_d) {
   /* Same floor, scaled: 186 of chest room plus 22 underneath. Without
      the padding here the phone gets back exactly the crop this fixed. */
   #mcm-plinth { height: 192px; padding-bottom: 16px; }
-  #mcm-plinth::after { bottom: 1px; width: 206px; height: 28px; }
+  #mcm-plinth::before { bottom: -8px; width: 290px; height: 56px; }
+  #mcm-plinth::after { bottom: 3px; width: 196px; height: 24px; }
   .mcm-chest { width: 170px; height: 176px; --mcrise: -58px; }
 }
 /*
