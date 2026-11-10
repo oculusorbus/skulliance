@@ -399,5 +399,71 @@ ok(preg_match('~\} else \{[^}]*spawn\(Math\.max~s', $js) === 1,
 ok(preg_match('~globalAlpha = [^;]*\* fade;~', $js) === 1,
    'the fade is computed but never applied to anything');
 
+echo "\nthe heading is the action, and the dialog has depth\n";
+/*
+ * THE VERB IS THE LOUD LINE. It read the other way round: a small grey
+ * "CONVERT" over a large teal "CORE POINTS TO DIAMOND", which gave the
+ * dialog's loudest line to the two currencies and whispered the thing
+ * actually being confirmed.
+ *
+ * ALL THREE, from the KIND map, because this is one dialog wearing
+ * three sets of words and fixing one of them by hand would leave the
+ * other two backwards.
+ */
+ok(preg_match('~<h4 id="cft-title">.*?</h4>\s*<div id="cft-sub">~s', $modal) === 1,
+   'the detail line is not under the heading, so the small line is still on top');
+$cftBig   = preg_match('~#cft-title \{[^}]*font-size: ([0-9.]+)rem~s', $modal, $tb) ? (float)$tb[1] : 0;
+$cftSmall = preg_match('~#cft-sub \{[^}]*font-size: ([0-9.]+)rem~s', $modal, $ts) ? (float)$ts[1] : 0;
+ok($cftBig > 0 && $cftSmall > 0 && $cftBig > $cftSmall,
+   'the heading (' . $cftBig . 'rem) is not larger than the detail under it (' . $cftSmall . 'rem)');
+ok(preg_match('~#cft-title \{[^}]*color: #00c8a0~s', $modal) === 1,
+   'the heading is not the teal one, so the emphasis is still on the detail');
+foreach (array('convert', 'shatter', 'burn') as $cftK) {
+	/* ONE WORD. 'CARBON to DIAMOND' would satisfy "there is an action
+	   here" while being exactly the string this moved out of the
+	   heading, so the check is that the heading is a verb: no spaces. */
+	ok(preg_match('~' . $cftK . ':\s*\{ action: \x27([A-Za-z]+)\x27~', $modal, $cftA) === 1,
+	   $cftK . ' has no single-word action, so its heading is the currency pair rather than the verb');
+}
+ok(strpos($modal, '.kicker') === false && strpos($modal, 'cft-kicker') === false,
+   'the old kicker is still wired up, so one of the two lines is written twice');
+/* Both lines are the dialog's name, or a screen reader loses half of it
+   to a restyle that was only ever about size. */
+ok(strpos($modal, 'aria-labelledby="cft-title cft-sub"') !== false,
+   'the dialog is named by one line only, so the restyle shortened what a screen reader announces');
+
+/*
+ * AND THE SAME DEPTH THE CLAIM DIALOG HAS, from the same tokens. The
+ * shorthand is the trap: polish.css is one <link> that ?polish=0 turns
+ * off, this partial always loads, and `background: var(--msp-lift),
+ * #0a1929` with the token gone is invalid at computed-value time and
+ * falls back to transparent.
+ */
+$cftShort = array();
+if (preg_match_all('~(^|[;{\s])background:\s*[^;]*var\(--msp-[^;]*;~m', $modal, $cbm)) {
+	foreach ($cbm[0] as $hit) $cftShort[] = trim($hit);
+}
+ok(count($cftShort) === 0,
+   'a background shorthand carries a polish token (' . implode(' | ', $cftShort) . '); '
+ . 'with ?polish=0 that panel goes transparent instead of flat');
+foreach (array('#cft-box' => '#0a1929', '#cft-go' => '#00c8a0') as $cftSel => $cftCol) {
+	ok(preg_match('~' . preg_quote($cftSel, '~') . ' \{[^}]*background-color: ' . preg_quote($cftCol, '~') . '~s', $modal) === 1,
+	   $cftSel . ' has no background-color under its gradient, so losing the token loses the panel');
+}
+foreach (array('--msp-lift', '--msp-lift-soft', '--msp-fill', '--msp-fill-in', '--msp-ghost') as $cftTok) {
+	ok(strpos($modal, 'var(' . $cftTok . ')') !== false,
+	   'the dialog does not use ' . $cftTok . ', so it is lit by its own rules rather than the platform\'s');
+}
+/* The ghost goes on the quiet button and the fill on the loud one; the
+   other way round is a cancel that shouts louder than the action. */
+ok(preg_match('~#cft-cancel \{[^}]*var\(--msp-ghost\)~s', $modal) === 1,
+   'cancel does not take the ghost, so the quiet control is lit like the loud one');
+/* Round well for a round animation: six orbs converging on a centre. */
+ok(preg_match('~#cft-stage \{[^}]*border-radius: 50%~s', $modal) === 1,
+   'the stage is a rectangle cutting across the one shape the animation is made of');
+/* Inset ring, same reasoning as the claim dialog's. */
+ok(preg_match('~#cft-actions button:focus-visible \{ outline: [^;]*; outline-offset: -\d+px~', $modal) === 1,
+   'the focus ring is outside the button, where it reads as a highlight border around it');
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

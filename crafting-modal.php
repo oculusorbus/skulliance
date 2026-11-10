@@ -41,9 +41,18 @@ define('CFT_MODAL', 1);
 $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 ?>
 <div id="cft-veil" aria-hidden="true">
-	<div id="cft-box" role="dialog" aria-modal="true" aria-labelledby="cft-title">
-		<div id="cft-kicker"></div>
+	<?php /* THE ACTION IS THE HEADING, the pair is the detail. It read the
+	         other way round -- a small grey "CONVERT" over a large teal
+	         "CORE POINTS TO DIAMOND" -- which gave the loudest line on the
+	         dialog to the two currencies and whispered the verb. The verb
+	         is the thing being confirmed.
+
+	         BOTH ARE THE NAME. aria-labelledby takes the two ids, so a
+	         screen reader still announces "Convert, core points to
+	         DIAMOND" rather than losing half of it to the restyle. */ ?>
+	<div id="cft-box" role="dialog" aria-modal="true" aria-labelledby="cft-title cft-sub">
 		<h4 id="cft-title">Crafting</h4>
+		<div id="cft-sub"></div>
 
 		<div id="cft-stage">
 			<?php /* THE RING SPINS; THE ORBS TRAVEL. Two transforms rather than
@@ -85,21 +94,44 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 	</div>
 </div>
 <style>
+/*
+ * DEPTH, THE SAME WAY THE CLAIM DIALOG GETS IT.
+ *
+ * The orbs, the diamond and the flame are all lit objects, and they
+ * were sitting in a dialog made of flat rectangles. This borrows the
+ * platform's own tokens -- --msp-lift, --msp-lift-soft, --msp-fill,
+ * --msp-fill-in, --msp-ghost, declared in dist/polish.css -- rather
+ * than inventing gradients for one dialog.
+ *
+ * AND THEY GO IN background-image, NOT THE `background` SHORTHAND.
+ * polish.css is one <link> and ?polish=0 turns it off without a deploy
+ * while this partial always loads; a shorthand whose custom property is
+ * missing is invalid at computed-value time and falls back to the
+ * initial value, which is TRANSPARENT. Split in two, a missing token
+ * drops only the gradient and the colour underneath survives. Same note
+ * as missions-claim-modal.php, same reason.
+ */
 #cft-veil { position: fixed; inset: 0; z-index: 99997; display: none;
   align-items: center; justify-content: center; padding: 20px;
-  background: rgba(4,12,22,.9); backdrop-filter: blur(3px); }
+  background-color: rgba(4,12,22,.9);
+  background-image: radial-gradient(78% 58% at 50% 38%,
+    rgba(13,36,55,.62) 0, rgba(4,12,22,0) 70%);
+  backdrop-filter: blur(3px); }
 #cft-veil.on { display: flex; }
 #cft-box { width: min(392px, 100%); max-height: 94vh; overflow: auto;
-  background: #0a1929; border: 1px solid #1b3346; border-radius: 4px;
-  box-shadow: 0 24px 70px rgba(0,0,0,.6); padding: 18px 20px 20px;
+  background-color: #0a1929; background-image: var(--msp-lift);
+  border: 1px solid #1b3346; border-radius: 4px;
+  box-shadow: 0 24px 70px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.07);
+  padding: 18px 20px 20px;
   text-align: center; color: #e8eaed;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   animation: cftIn .3s cubic-bezier(.2,.9,.3,1.2); }
 @keyframes cftIn { from { transform: scale(.9) translateY(14px); opacity: 0; }
   to { transform: none; opacity: 1; } }
 
-#cft-kicker { font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: #6f8ba3; }
-#cft-title { margin: 4px 0 0; font-size: 1.35rem; letter-spacing: .04em; color: #00c8a0; }
+#cft-title { margin: 0; font-size: 1.35rem; letter-spacing: .04em; color: #00c8a0; }
+#cft-sub { margin: 3px 0 0; font-size: .72rem; letter-spacing: .14em;
+  text-transform: uppercase; color: #6f8ba3; }
 
 /*
  * THE STAGE CLIPS, AND IS SIZED SO IT DOES NOT HAVE TO. A transform that
@@ -107,8 +139,19 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
  * one thing that must not happen mid-craft is the dialog growing a
  * scrollbar. 232px square holds a 92px ring plus a 34px orb.
  */
+/*
+ * A ROUND WELL, because what happens in it is round: six orbs on a
+ * 92px ring converging on a centre. A rectangular niche would have cut
+ * across the one shape the animation is made of.
+ */
 #cft-stage { position: relative; width: 232px; height: 232px; margin: 10px auto 2px;
-  overflow: hidden; }
+  overflow: hidden; border-radius: 50%;
+  background-color: #071320;
+  background-image:
+    radial-gradient(60% 60% at 50% 50%, rgba(0,200,160,.07) 0, rgba(0,200,160,0) 72%),
+    linear-gradient(180deg, rgba(0,0,0,.26) 0, rgba(0,0,0,0) 64px);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.035),
+              inset 0 10px 22px -12px rgba(0,0,0,.6); }
 #cft-ring { position: absolute; inset: 0; }
 .cft-orb { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px;
   margin: -17px 0 0 -17px; opacity: 0;
@@ -222,8 +265,12 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 .cft-row.out b { color: #e07a7a; }
 .cft-row.in  b { color: #00c8a0; }
 .cft-row span { font-size: .72rem; color: #8fa7bb; }
+/* A tinted panel, so the SOFT lift: the full one's black bottom edge
+   over a red tint is brown, which is polish.css's own note. */
 #cft-error { margin: 12px 0 0; padding: 9px 11px; font-size: .8rem; color: #ffd4d4;
-  background: rgba(224,122,122,.1); border: 1px solid rgba(224,122,122,.35); }
+  background-color: rgba(224,122,122,.1); background-image: var(--msp-lift-soft);
+  border: 1px solid rgba(224,122,122,.35);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }
 
 #cft-actions { display: flex; gap: 10px; margin-top: 16px; }
 /* flexbox.css styles bare buttons globally, so everything the dialog
@@ -231,13 +278,27 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 #cft-actions button { flex: 1; padding: 11px 14px; font: inherit; font-size: .9rem;
   letter-spacing: .08em; text-transform: uppercase; text-align: center;
   border: 0; border-radius: 3px; cursor: pointer; }
-#cft-go { color: #04121c; background: #00c8a0; }
-#cft-go:hover { background: #2ae0bd; }
-#cft-go:disabled { opacity: .45; cursor: default; }
-#cft-cancel { color: #9fb6c4; background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.12); }
-#cft-cancel:hover { color: #e8eaed; background: rgba(255,255,255,.12); }
-#cft-actions button:focus-visible { outline: 2px solid #9affdf; outline-offset: 2px; }
+/* The sheen inside --msp-fill IS the top edge; an inset white line on
+   top of it reads as a second border drawn around the button. */
+#cft-go { color: #04121c; background-color: #00c8a0; background-image: var(--msp-fill);
+  box-shadow: 0 2px 0 rgba(0,0,0,.3); }
+#cft-go:hover { background-color: #2ae0bd; }
+/* Pressed is the ramp upside down and the slab dropping onto its own
+   shadow -- the two moves the platform's buttons make. */
+#cft-go:active:not(:disabled) { background-image: var(--msp-fill-in);
+  transform: translateY(2px); box-shadow: 0 0 0 rgba(0,0,0,.3); }
+#cft-go:disabled { opacity: .45; cursor: default; box-shadow: none; }
+/* The outline control stays quieter than the solid beside it: a ghost
+   button that shouts is worse than a flat one. */
+#cft-cancel { color: #9fb6c4; background-color: rgba(255,255,255,.06);
+  background-image: var(--msp-ghost); border: 1px solid rgba(255,255,255,.12); }
+#cft-cancel:hover { color: #e8eaed; background-color: rgba(255,255,255,.12); }
+/* Inset, in the button's own ink. Offset outward in pale mint it reads
+   as a second border around the slab rather than as part of it -- and it
+   cannot simply go, it is the only thing telling a keyboard user where
+   they are. */
+#cft-actions button:focus-visible { outline: 2px solid #04121c; outline-offset: -4px; }
+#cft-cancel:focus-visible { outline-color: #9affdf; }
 
 @media (max-width: 480px) {
   #cft-stage { width: 196px; height: 196px; }
@@ -275,12 +336,14 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 	   drifts: the delays below are the last keyframe plus its delay. */
 	var RUNTIME = { convert: 2300, shatter: 2400, burn: 2650 };
 
+	/* action is the heading, detail is the line under it. Named for what
+	   they ARE rather than where they sit, because they swapped places. */
 	var KIND = {
-		convert: { kicker: 'Convert', title: 'Core points to DIAMOND',
+		convert: { action: 'Convert', detail: 'Core points to DIAMOND',
 		           lede: function (n) { return 'Spending ' + n + ' of each of the six core points.'; } },
-		shatter: { kicker: 'Shatter', title: 'DIAMOND to core points',
+		shatter: { action: 'Shatter', detail: 'DIAMOND to core points',
 		           lede: function (n) { return 'Breaking ' + n + ' DIAMOND back into core points.'; } },
-		burn:    { kicker: 'Burn',    title: 'CARBON to DIAMOND',
+		burn:    { action: 'Burn',    detail: 'CARBON to DIAMOND',
 		           lede: function (n) { return 'Burning ' + n + ' CARBON. 100 CARBON forms 1 DIAMOND.'; } }
 	};
 
@@ -542,8 +605,8 @@ $cft_core = array('star', 'dread', 'hype', 'sinder', 'cyber', 'crypt');
 
 		veil.className = 'on idle k-' + kind;
 		veil.setAttribute('aria-hidden', 'false');
-		document.getElementById('cft-kicker').textContent = KIND[kind].kicker;
-		document.getElementById('cft-title').textContent  = KIND[kind].title;
+		document.getElementById('cft-title').textContent = KIND[kind].action;
+		document.getElementById('cft-sub').textContent   = KIND[kind].detail;
 		lede.textContent = KIND[kind].lede(n(kind === 'burn' ? amount : amount));
 		rows.innerHTML = '';
 		err.hidden = true;
