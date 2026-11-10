@@ -21,6 +21,23 @@
 if (!isset($ms_daily)) $ms_daily = mission_daily($conn);
 if (!function_exists('ms_n')) { function ms_n($v) { return number_format((float)$v); } }
 if (!function_exists('ms_e')) { function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); } }
+/*
+ * 1K, NOT 1,000. The ladder pays up to 3,000 now, and seven of those
+ * under seven 34px chips is a row of numbers wider than the chips they
+ * label -- which is what pushes the track onto a second line on a phone.
+ * Trailing zeros go, so 1500 is 1.5K and 2000 is 2K rather than 2.0K.
+ */
+if (!function_exists('ms_k')) {
+	function ms_k($v) {
+		$v = (float) $v;
+		foreach (array(1000000 => 'M', 1000 => 'K') as $step => $suffix) {
+			if ($v >= $step) {
+				return rtrim(rtrim(number_format($v / $step, 1, '.', ''), '0'), '.') . $suffix;
+			}
+		}
+		return number_format($v);
+	}
+}
 if (!$ms_daily) return;
 $md_today = null;
 foreach ($ms_daily['days'] as $d) if (!empty($d['current'])) $md_today = $d;
@@ -30,18 +47,43 @@ foreach ($ms_daily['days'] as $d) if (!empty($d['current'])) $md_today = $d;
 		<span class="ms-daily-kick">Daily reward<?php
 			echo $ms_daily['streak'] > 0 ? ' &middot; day ' . (int)$ms_daily['today'] . ' of 7' : ''; ?></span>
 
-		<?php /* THE LADDER AS SEVEN CHIPS. Same information the seven rows
+		<?php /* THE LADDER AS SEVEN COLUMNS. Same information the seven rows
 		         carried -- which days are done, what each pays -- in one line
-		         you can read without scrolling. Hover gives the detail. */ ?>
+		         you can read without scrolling. Hover gives the detail.
+		
+		         COLUMNS, NOT TWO ROWS. The reward and the amount sit under
+		         their own chip, so when the track wraps on a phone a day
+		         takes its own reward with it. Two independent rows would
+		         wrap at different points and line day 5 up under day 2. */ ?>
 		<div class="ms-daily-track">
 		<?php foreach ($ms_daily['days'] as $d):
 			$cls = $d['claimed'] ? 'done' : ($d['current'] ? 'now' : '');
+			/*
+			 * THE BOX, UNTIL IT IS OPENED. The original claim screen showed
+			 * icons/random<day>.png for a day not yet taken and the real
+			 * currency once it was, which is the one thing the chip row
+			 * never carried over: what you are actually playing for.
+			 * mission_daily() fills 'icon' only for days already claimed,
+			 * so an empty one IS the unopened state.
+			 */
+			$rw  = $d['icon'] !== '' ? $d['icon'] : 'icons/random' . (int)$d['day'] . '.png';
+			$cur = $d['currency'] !== '' ? $d['currency'] : 'a random currency';
 			$tip = 'Day ' . $d['day'] . ': ' . $d['item'] . ' + ' . ms_n($d['amount'])
-			     . ($d['currency'] !== '' ? ' ' . $d['currency'] : ' points'); ?>
-			<span class="ms-day <?php echo $cls; ?>" title="<?php echo ms_e($tip); ?>">
-				<img src="<?php echo ms_e($d['item_icon']); ?>" alt=""
-					onerror="this.style.display='none'">
-				<i><?php echo (int)$d['day']; ?></i>
+			     . ' ' . $cur; ?>
+			<span class="ms-dcol" title="<?php echo ms_e($tip); ?>">
+				<span class="ms-day <?php echo $cls; ?>">
+					<img src="<?php echo ms_e($d['item_icon']); ?>" alt=""
+						onerror="this.style.display='none'">
+					<i><?php echo (int)$d['day']; ?></i>
+				</span>
+				<?php /* data-msrw is how skulliance.js swaps today's box for the
+				         currency the claim actually drew, without a reload. */ ?>
+				<span class="ms-drw <?php echo $cls; ?>">
+					<img data-msrw="<?php echo (int)$d['day']; ?>"
+						src="<?php echo ms_e($rw); ?>" alt=""
+						onerror="this.style.display='none'">
+				</span>
+				<span class="ms-damt <?php echo $cls; ?>"><?php echo ms_k($d['amount']); ?></span>
 			</span>
 		<?php endforeach; ?>
 		</div>

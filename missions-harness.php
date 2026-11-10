@@ -906,5 +906,91 @@ ok(substr_count($body, 'mission_art_url(') >= 7,
  . 'seven art paths and one has stopped going through it');
 
 echo "\n";
+
+echo "\nthe ladder shows what each day pays, not just what it hands you\n";
+{
+	/*
+	 * The chip row carried the consumable and nothing else, so the row
+	 * never said what you were actually playing for. It has a companion
+	 * row now: the original claim screen's box art for a day not yet
+	 * taken, the real currency once it is, and the amount under both.
+	 */
+	$ld_daily = (string) file_get_contents(__DIR__ . '/missions-daily.php');
+	$ld_css   = (string) file_get_contents(__DIR__ . '/missions.php');
+	$ld_js    = preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(__DIR__ . '/skulliance.js'));
+	$ld_code  = preg_replace('~/\*.*?\*/~s', '', $ld_daily);
+
+	/*
+	 * COLUMNS, NOT TWO ROWS, and this is the one that matters. The track
+	 * wraps on a phone. Two independent rows wrap at different points and
+	 * line day five's reward up under day two's chip -- silently, and
+	 * only on the screens nobody checks.
+	 */
+	ok(strpos($ld_code, 'ms-dcol') !== false,
+	   'the day is not a column, so a wrapped track lines rewards up under the wrong chips');
+	$ld_col = substr($ld_code, strpos($ld_code, 'class="ms-dcol"'));
+	$ld_col = substr($ld_col, 0, strpos($ld_col, '</span>', strpos($ld_col, 'ms-damt')));
+	foreach (array('ms-day', 'ms-drw', 'ms-damt') as $ld_part) {
+		ok(strpos($ld_col, $ld_part) !== false, "the column does not contain $ld_part");
+	}
+	ok(preg_match('~\.ms-dcol\s*\{[^}]*flex-direction:\s*column~s', $ld_css) === 1,
+	   'the column is not stacked, so the three parts sit side by side');
+
+	/* THE BOX UNTIL IT IS OPENED, which is the original claim screen's art. */
+	ok(preg_match("~icons/random' \. \(int\)\\\$d\['day'\]~", $ld_code) === 1,
+	   'an unclaimed day does not show the box icon the original claim screen used');
+	ok(preg_match("~\\\$d\['icon'\] !== '' \? \\\$d\['icon'\]~", $ld_code) === 1,
+	   'a claimed day does not show the currency it actually drew');
+
+	/* THE AMOUNT, SHORTENED. 3,000 under a 34px chip is wider than the
+	   chip, which is what pushes the track onto a second line. */
+	ok(strpos($ld_code, 'ms_k($d[\'amount\'])') !== false,
+	   'the amount is not abbreviated, so the labels are wider than the chips they sit under');
+	require_once __DIR__ . '/daily-streak-lib.php';
+	if (!function_exists('ms_k')) {
+		/* The partial defines it behind function_exists; lift it out to test. */
+		preg_match('~function ms_k\(\$v\) \{.*?\n\t\}~s', $ld_daily, $ld_fn);
+		if (!empty($ld_fn)) eval($ld_fn[0]);
+	}
+	ok(function_exists('ms_k'), 'ms_k() could not be read, so these checks are blind');
+	if (function_exists('ms_k')) {
+		/* THE EXACT LABELS ASKED FOR, against the REAL ladder rather than
+		   against numbers typed in here -- so raising the tiers again
+		   fails this rather than silently relabelling. */
+		$ld_want = array(100 => '100', 300 => '300', 500 => '500',
+		                 1000 => '1K', 1500 => '1.5K', 2000 => '2K', 3000 => '3K');
+		foreach (getRewardTiers() as $ld_day => $ld_amt) {
+			ok(isset($ld_want[(int) $ld_amt]),
+			   "day $ld_day pays " . number_format($ld_amt) . ', which has no agreed short label');
+			if (isset($ld_want[(int) $ld_amt])) {
+				ok(ms_k($ld_amt) === $ld_want[(int) $ld_amt],
+				   "day $ld_day renders as '" . ms_k($ld_amt) . "', not '" . $ld_want[(int) $ld_amt] . "'");
+			}
+		}
+		/* No trailing zero: 2.0K is not a label anybody asked for. */
+		ok(strpos(ms_k(2000), '.') === false, 'a round thousand renders with a decimal point');
+	}
+
+	/*
+	 * AND TODAY'S BOX OPENS WITHOUT A RELOAD. The claim does not navigate,
+	 * so without this the day just taken keeps showing an unopened box --
+	 * the one chip on the row that is now lying.
+	 */
+	ok(strpos($ld_code, 'data-msrw=') !== false, 'there is no hook for the claim to find today by');
+	ok(strpos($ld_js, "querySelector('[data-msrw=\"' + obj.day + '\"]')") !== false,
+	   'the claim never swaps the box for the currency it drew');
+	$ld_swap = substr($ld_js, strpos($ld_js, 'data-msrw'));
+	$ld_swap = substr($ld_swap, 0, 700);
+	ok(strpos($ld_swap, "'icons/' + String(obj.currency).toLowerCase()") !== false,
+	   'the swap does not use the currency from the claim reply');
+	ok(preg_match("~classList\.add\('done'\)~", $ld_swap) === 1,
+	   'the claimed day is not marked done, so it stays dimmed after being taken');
+	/* points.php runs the same dailyReward() and has no ladder of this
+	   shape; an unguarded querySelector chain there is a thrown error in
+	   the middle of a successful claim. */
+	ok(preg_match('~try \{[\s\S]{0,900}?data-msrw~', $ld_js) === 1,
+	   'the swap is not guarded, so a page without this ladder throws mid-claim');
+}
+
 if ($fail) { echo "$fail check(s) FAILED\n"; exit(1); }
 echo "all missions checks passed\n";

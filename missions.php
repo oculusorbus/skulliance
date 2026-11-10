@@ -285,6 +285,9 @@ define('MS_FIELD_CAP', 24);
   text-transform: uppercase; color: #7a9eb0; margin-bottom: 7px; }
 .ms-daily.go .ms-daily-kick { color: #00c8a0; }
 .ms-daily-track { display: flex; gap: 5px; flex-wrap: wrap; min-width: 0; }
+/* A day is a column: the item, what it pays, and how much. They wrap as
+   one, so a phone never lines day 5 up under day 2. */
+.ms-dcol { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .ms-day { position: relative; display: flex; align-items: center; justify-content: center;
   width: 34px; height: 34px; background: #07111d; border: 1px solid rgba(255,255,255,.08); }
 .ms-day img { width: 19px; height: 19px; object-fit: contain; opacity: .3; }
@@ -297,6 +300,24 @@ define('MS_FIELD_CAP', 24);
 .ms-day.now { border-color: #f5a623; }
 .ms-day.now img { opacity: .85; }
 .ms-day.now i { color: #f5a623; }
+
+/*
+ * WHAT THE DAY PAYS, under the item it pays it with.
+ *
+ * The box is icons/random<day>.png -- the original claim screen's art
+ * for a day not yet taken -- and it is replaced by the real currency
+ * once that day is claimed. Dim until then, for the same reason the
+ * item above it is: an unopened day should read as unopened.
+ */
+.ms-drw { display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 22px; }
+.ms-drw img { width: 18px; height: 18px; object-fit: contain; opacity: .3; }
+.ms-drw.done img { opacity: 1; }
+.ms-drw.now img { opacity: .85; }
+.ms-damt { font-size: .56rem; letter-spacing: .02em; color: #4f7488;
+  font-variant-numeric: tabular-nums; line-height: 1; }
+.ms-damt.done { color: #00c8a0; }
+.ms-damt.now { color: #f5a623; }
 .ms-daily-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
   justify-content: flex-start; min-width: 0; }
 /* dailyReward() sets display:flex on #claimed, #progress_bar and #remaining,

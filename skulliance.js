@@ -952,6 +952,29 @@ function dailyReward(){
 		       as DHC_SHOW_DROP below: missions-chest.php defines it, and the
 		       claim works exactly as before on any page that does not. */
 		    if (window.SK_CHEST_OPEN) SK_CHEST_OPEN();
+		    /*
+		     * TODAY'S BOX BECOMES THE CURRENCY IT DREW.
+		     *
+		     * The ladder under the masthead shows icons/random<day>.png for
+		     * a day not yet taken. The claim does not reload the page, so
+		     * without this the day you just took keeps showing an unopened
+		     * box until the next navigation -- the one chip on the row that
+		     * is now lying. Guarded on every part: this runs on points.php
+		     * too, which has no ladder of this shape at all.
+		     */
+		    try {
+		      var rwIcon = document.querySelector('[data-msrw="' + obj.day + '"]');
+		      if (rwIcon && obj.currency) {
+		        rwIcon.src = 'icons/' + String(obj.currency).toLowerCase() + '.png';
+		        var col = rwIcon.closest ? rwIcon.closest('.ms-dcol') : null;
+		        if (col) {
+		          col.querySelectorAll('.ms-day, .ms-drw, .ms-damt').forEach(function (p) {
+		            p.classList.remove('now');
+		            p.classList.add('done');
+		          });
+		        }
+		      }
+		    } catch (e) {}
 		    /* AND THE REVEAL, which is where the moment actually happens:
 		       a 240px chest, and the day's consumable and currency icons
 		       flying out of its mouth into their own row. Handed the whole
