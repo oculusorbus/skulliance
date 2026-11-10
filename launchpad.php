@@ -360,7 +360,9 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	background-color: #07111d;
 	background-image: url(images/launchpad-hero.jpg);
 	background-size: cover;
-	background-position: 50% 42%;
+	/* 25%, chosen on a full-width browser against the real art rather
+	   than computed from the crop maths. */
+	background-position: 50% 25%;
 	background-repeat: no-repeat;
 	overflow: hidden;
 }
@@ -412,9 +414,12 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	border-radius: 0;
 }
 @media (max-width: 700px) {
+	/* No background-position of its own any more: it was 26% against a
+	   base that is now 25%, and at 400px the band is 270px tall against
+	   a 3:2 image, so cover barely crops it and the position has almost
+	   no say. A rule that cannot change anything is just a thing to keep
+	   in step. */
 	.lp-banner-in { min-height: 270px; padding: 16px 12px 12px; }
-	/* Tighter crop on a phone, so the citadel still reads at 400px. */
-	.lp-banner { background-position: 50% 26%; }
 }
 .lp-hero-avatar { width: 64px; height: 64px; border-radius: 50%; border: 3px solid #00c8a0; object-fit: cover; flex-shrink: 0; }
 .lp-hero-text h2 { margin: 0 0 6px; }
