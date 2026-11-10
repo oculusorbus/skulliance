@@ -549,11 +549,50 @@ ok($poolW > 0 && $chestW > 0 && $poolW > $chestW,
    'the glow is ' . $poolW . 'px under a ' . $chestW . 'px chest, so it never reaches past the art');
 ok(preg_match('~#mcm-plinth::before \{[^}]*transform: translateX\(-50%\) rotate\(-4\.7deg\)~s', $modal) === 1,
    'the glow is level under a chest drawn in three-quarter view, so it is a floor at a different angle');
-foreach (array('base' => $modal, 'phone' => (preg_match('~@media \(max-width: 480px\) \{.*?\n\}~s', $modal, $smm) ? $smm[0] : ''))
-         as $poolWhich => $poolSrc) {
-	ok(preg_match('~#mcm-plinth::before \{[^}]*bottom: (-?\d+)px~s', $poolSrc, $pb) === 1 && (int)$pb[1] > 0,
-	   'the ' . $poolWhich . ' glow hangs below the chest\'s box instead of sitting on its ground line, '
-	 . 'which is 25px up from the bottom of that box');
+/*
+ * THE CENTRE AND THE DEPTH, COMPUTED RATHER THAN EYEBALLED.
+ *
+ * `bottom > 0` was the first version of this check and it was a proxy,
+ * not the property: it happened to hold while the ellipse was shallow
+ * and broke the moment the ellipse got deep enough to do its job, even
+ * though the geometry had just become MORE correct. So this works the
+ * real numbers out of the declared ones.
+ *
+ * MIDPOINT 89.2%, DEPTH 18.3%, both off open.webp's alpha channel --
+ * for each column, the lowest opaque row, over the chest's footprint.
+ *
+ * The glow has to be deeper than the footprint, not merely as deep: a
+ * 3/4 view has a footprint rather than a contact line (40px of floor on
+ * a 217px chest, front-left foot to back-right corner), and an ellipse
+ * no deeper than that lights a stripe across the middle and leaves both
+ * ends dark. That is what "not deep enough to cover the depth of the
+ * box" was.
+ */
+$MID = 0.892; $DEPTH = 0.183;
+$poolSizes = array('base' => $modal);
+if (preg_match('~@media \(max-width: 480px\) \{.*?\n\}~s', $modal, $smm)) $poolSizes['phone'] = $smm[0];
+ok(count($poolSizes) === 2, 'the small-screen block is gone, so only one size can be checked');
+foreach ($poolSizes as $poolWhich => $poolSrc) {
+	$g = array();
+	preg_match('~#mcm-plinth \{[^}]*height: (\d+)px~s', $poolSrc, $m) && $g['plinth'] = (int)$m[1];
+	preg_match('~#mcm-plinth \{[^}]*padding-bottom: (\d+)px~s', $poolSrc, $m) && $g['pad'] = (int)$m[1];
+	preg_match('~\.mcm-chest \{[^}]*height: (\d+)px~s', $poolSrc, $m) && $g['chest'] = (int)$m[1];
+	preg_match('~#mcm-plinth::before \{[^}]*bottom: (-?\d+)px~s', $poolSrc, $m) && $g['bottom'] = (int)$m[1];
+	preg_match('~#mcm-plinth::before \{[^}]*height: (\d+)px~s', $poolSrc, $m) && $g['h'] = (int)$m[1];
+	ok(count($g) === 5,
+	   'the ' . $poolWhich . ' size does not declare all of plinth height, floor, chest height, '
+	 . 'glow offset and glow depth, so none of it can be checked');
+	if (count($g) !== 5) continue;
+	/* Where the chest actually touches, and where the glow actually is. */
+	$chestTop  = $g['plinth'] - $g['pad'] - $g['chest'];
+	$footMid   = $chestTop + $g['chest'] * $MID;
+	$glowMid   = $g['plinth'] - $g['bottom'] - $g['h'] / 2;
+	ok(abs($glowMid - $footMid) <= 8,
+	   'the ' . $poolWhich . ' glow is centred ' . round($glowMid) . 'px down a ' . $g['plinth']
+	 . 'px plinth while the chest touches the floor at ' . round($footMid) . 'px');
+	ok($g['h'] >= $g['chest'] * $DEPTH * 1.8,
+	   'the ' . $poolWhich . ' glow is ' . $g['h'] . 'px deep against a '
+	 . round($g['chest'] * $DEPTH) . 'px footprint, so it lights a stripe across it and leaves the ends dark');
 }
 /*
  * AND IT MUST NOT BE inset:0 ON THE PLINTH.

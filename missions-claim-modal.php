@@ -260,23 +260,33 @@ foreach ($ms_daily['days'] as $mcm_d) {
  * stands on it. A glowing object seats itself by lighting what it
  * stands on.
  *
- * AND IT LIES IN THE CHEST'S GROUND PLANE, which is neither level nor
- * where the chest's BOX ends. Both numbers are measured off the alpha
- * channel of open.webp rather than chosen: for each column, the lowest
- * opaque row is where the chest meets the floor, and a least-squares
- * line through that footprint comes out at
+ * AND IT LIES IN THE CHEST'S GROUND PLANE -- which is not level, not
+ * where the chest's BOX ends, and not a line. All three numbers are
+ * measured off open.webp's alpha channel rather than chosen: for each
+ * column, the lowest opaque row is where the chest meets the floor.
  *
- *     slope -0.0826  =  -4.7 degrees,  rising to the right
- *     crossing the art's centre at 88.5% of its height
+ *     ANGLE    least-squares slope -0.0826 = -4.7 degrees,
+ *              rising to the right
+ *     DEPTH    the footprint spans 80.1% to 98.4% of the art's
+ *              height -- 18.3%, which is 40px on a 217px chest
+ *     CENTRE   its midpoint is 89.2% down, so 23px ABOVE the
+ *              bottom of the chest's own box
  *
- * The chest is drawn in three-quarter view, so a level ellipse under it
- * is a floor at a different angle from the one it is standing on -- it
- * reads as the chest hovering over a puddle rather than standing in it.
- * And 88.5% of a 217px chest is 192px, so the ground line sits 25px
- * ABOVE the bottom of the chest's box: every version of this centred on
- * the box bottom put the glow a clear 25px below the chest's feet.
- * That is the gap, and it is why pushing the chest down onto the glow
- * fixed it by hand.
+ * THE ANGLE, because the chest is drawn in three-quarter view and a
+ * level ellipse under it is a floor at a different angle from the one
+ * it is standing on -- which reads as hovering over a puddle.
+ *
+ * THE CENTRE, because every earlier version was centred on the bottom
+ * of the chest's BOX, which is 23px below where the chest actually
+ * touches. That is why pushing the chest down onto the glow fixed it
+ * by hand.
+ *
+ * THE DEPTH, because a 3/4 view has a footprint rather than a contact
+ * line: front-left foot to back-right corner is 40px of floor, and a
+ * glow thinner than that lights a stripe across the middle of it and
+ * leaves both ends dark. The ellipse is 96px -- comfortably more than
+ * the footprint, because a pool of light does not stop at the object
+ * making it.
  *
  * ITS OWN BOX, NOT inset:0 ON THE PLINTH. A background is clipped to
  * its own element, so as a full-bleed layer centred near the bottom the
@@ -284,11 +294,18 @@ foreach ($ms_daily['days'] as $mcm_d) {
  * nothing to clip it: the only clip here is the pane's, far outside.
  */
 #mcm-plinth::before { content: ""; position: absolute; z-index: 0;
-  left: 50%; bottom: 13px; width: 340px; height: 60px;
+  left: 50%; bottom: -7px; width: 334px; height: 96px;
   transform: translateX(-50%) rotate(-4.7deg);
   pointer-events: none; opacity: 0;
+  /* Five stops, not three. Three gave a bright line with nothing
+     either side of it; the middle pair are what put light across the
+     whole footprint and then let it fall away instead of ending. */
   background: radial-gradient(50% 50% at 50% 50%,
-    rgba(0,200,160,.46) 0, rgba(0,200,160,.17) 42%, rgba(0,200,160,0) 70%);
+    rgba(0,200,160,.48) 0,
+    rgba(0,200,160,.30) 26%,
+    rgba(0,200,160,.12) 50%,
+    rgba(0,200,160,.03) 68%,
+    rgba(0,200,160,0) 82%);
   transition: opacity .55s ease-out .08s; }
 #mcm-plinth:has(.mcm-chest.is-open)::before { opacity: 1; }
 /* No ::after here on purpose. See the note on the pool above: a dark
@@ -464,10 +481,10 @@ foreach ($ms_daily['days'] as $mcm_d) {
   /* Same floor, scaled: 186 of chest room plus 22 underneath. Without
      the padding here the phone gets back exactly the crop this fixed. */
   #mcm-plinth { height: 192px; padding-bottom: 16px; }
-  /* 88.5% of a 176px chest is 156px, and the chest's box bottom is at
-     the plinth's 176 -- so the ground line is 20px up, same measurement
-     scaled. The angle is the art's and does not change with size. */
-  #mcm-plinth::before { bottom: 11px; width: 280px; height: 50px; }
+  /* The same three measurements scaled: on a 176px chest the footprint
+     is 32px deep and its midpoint is 19px above the box bottom. The
+     angle is the art's and does not change with size. */
+  #mcm-plinth::before { bottom: -4px; width: 272px; height: 78px; }
   .mcm-chest { width: 170px; height: 176px; --mcrise: -58px; }
 }
 /*
