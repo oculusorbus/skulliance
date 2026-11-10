@@ -409,6 +409,39 @@ ok(strpos($admCode, 'dhcf_award(') === false,
 /* The art arrives by FTP, so a fresh deploy has markup and no pictures. */
 ok(strpos($admCode, "addEventListener('error'") !== false,
    'the preview shows broken frames rather than saying which files are missing');
+echo "\nthe dialog looks the same wherever it is mounted\n";
+/*
+ * THE HOST PAGE RESTYLED THE DIALOG, TWICE.
+ *
+ * missions-daily.php includes this inside .ms-daily, and missions.php
+ * carries `.ms-daily, .ms-daily * { text-align: left }`. That universal
+ * descendant selector hits every element in here DIRECTLY, and a direct
+ * rule always beats an inherited one -- so text-align:center on #mcm-box
+ * centred nothing, and the kicker, the title, the two reward labels and
+ * the countdown all shipped flush left while admin-chest.php, which
+ * mounts the same markup outside .ms-daily, looked exactly as designed.
+ *
+ * The same thing ran the other way on the title: it is an <h4>, and
+ * admin-css.php has `.adm h4 { text-transform: uppercase }`, so the
+ * PREVIEW said CLAIMED and the page said Claimed.
+ *
+ * Both are the flexbox.css trap in miniature. A component that can be
+ * mounted anywhere states its own alignment and its own case.
+ */
+$mcmBox = '';
+if (preg_match('~#mcm-box, #mcm-box \* \{[^}]*\}~s', $modal, $mb)) $mcmBox = $mb[0];
+ok(strpos($mcmBox, 'text-align: center') !== false,
+   'only #mcm-box is centred, so .ms-daily * flushes every child of it left');
+ok(preg_match('~#mcm-title \{[^}]*text-transform:\s*none~s', $modal) === 1,
+   'the title takes its case from the host page, so the preview and the page disagree');
+/* The host rule this defends against is real and still there; if it ever
+   goes, this guard is why the dialog stopped depending on it. */
+$msrc = (string) file_get_contents(__DIR__ . '/missions.php');
+ok(strpos($msrc, '.ms-daily, .ms-daily * { text-align: left; }') !== false,
+   'the .ms-daily left-align rule is gone, so this guard is documenting a trap that no longer exists');
+ok(strpos((string) file_get_contents(__DIR__ . '/admin-css.php'), 'h4{') !== false,
+   'admin-css no longer styles h4, so the case guard is documenting a trap that no longer exists');
+
 $tabs = (string) file_get_contents(__DIR__ . '/admin-lib.php');
 ok(strpos($tabs, "'chest' => array('admin-chest.php'") !== false,
    'there is no admin tab, so the preview cannot be reached');

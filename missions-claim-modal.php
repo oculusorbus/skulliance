@@ -100,9 +100,33 @@ foreach ($ms_daily['days'] as $mcm_d) {
 @keyframes mcmIn { from { transform: scale(.9) translateY(14px); opacity: 0; }
   to { transform: none; opacity: 1; } }
 
+/*
+ * CENTRED ON EVERY CHILD, not just on the box.
+ *
+ * This dialog renders INSIDE .ms-daily, and missions.php carries
+ * `.ms-daily, .ms-daily * { text-align: left }` -- a universal
+ * descendant selector, so it hits every element in here directly and a
+ * direct rule always beats an inherited one. text-align:center on
+ * #mcm-box alone therefore centred nothing: the kicker, the title, the
+ * labels and the countdown all came out flush left on the real page
+ * while admin-chest.php, which renders the same markup outside
+ * .ms-daily, looked exactly as designed.
+ *
+ * `#mcm-box *` is (1,0,0) against that rule's (0,1,0), so it wins
+ * wherever this dialog is mounted. Same trap as flexbox.css's global
+ * `a` and `.main` -- a scoped component restates its own alignment.
+ */
+#mcm-box, #mcm-box * { text-align: center; }
+
 #mcm-kicker { font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
   color: #6f8ba3; }
-#mcm-title { margin: 10px 0 0; font-size: 1.5rem; letter-spacing: .04em; color: #00c8a0; }
+/* text-transform STATED, for the same reason the alignment is. It is an
+   <h4>, and admin-css.php carries `.adm h4 { text-transform: uppercase }`
+   -- so the preview rendered CLAIMED while the real page rendered
+   Claimed. A preview that disagrees with the page is worse than no
+   preview, and the component owns its own case either way. */
+#mcm-title { margin: 10px 0 0; font-size: 1.5rem; letter-spacing: .04em; color: #00c8a0;
+  text-transform: none; }
 
 /*
  * THE CHEST, AT A SIZE WORTH LOOKING AT: 210px against the strip's 96px.
