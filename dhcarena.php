@@ -1718,6 +1718,21 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-lad .me .r{opacity:1}
 /* ---- the week's Crews, a full-width row under the panels ---- */
 .arena-wrap .a-feed{margin-top:14px;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+/*
+ * GONE WHILE YOU ARE PLAYING, like the rest of the setup screen.
+ *
+ * This panel sits OUTSIDE #arenaSetup -- it is a boss-mode block after
+ * the setup container closes -- so openBattle()'s `setup.style.display =
+ * 'none'` never reached it. It stayed on screen above the board, and
+ * since the board is further down the document you had to scroll past a
+ * week of other people's Crews to reach your own turn. Reported as the
+ * panel forcing a scroll to the gameboard.
+ *
+ * Hidden by the wrap's playing state rather than moved, because the
+ * reading order is right everywhere else: before a run it belongs under
+ * the Crew picker, and after one it is the first thing worth looking at.
+ */
+.arena-wrap.playing .a-feed{display:none}
 .arena-wrap .a-feed h2{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--dim);background:var(--panel2);
   border-bottom:1px solid var(--line);font-weight:600}

@@ -213,6 +213,23 @@ ok(preg_match('~prefers-reduced-motion: reduce\)\{\s*\.arena-wrap \.tok\.quaking
    'the crew quake ignores prefers-reduced-motion');
 
 /*
+ * THE WEEK'S CREWS ARE NOT ON SCREEN WHILE YOU PLAY.
+ *
+ * That panel is a boss-mode block emitted AFTER #arenaSetup closes, so
+ * openBattle()'s `setup.style.display = "none"` never reached it. It
+ * stayed above the board, and the board is further down the document --
+ * so starting a run meant scrolling past a week of other people's Crews
+ * to reach your own turn.
+ *
+ * Asserted OUTSIDE any media query: the .playing rules that hide the
+ * heading and the DHC strip are inside the phone block, and this one is
+ * about a desktop scroll.
+ */
+$ui_nomedia = preg_replace('~@media[^{]*\{(?:[^{}]|\{[^{}]*\})*\}~s', '', $ui);
+ok(strpos($ui_nomedia, '.arena-wrap.playing .a-feed{display:none}') !== false,
+   "the week's Crews stay on screen during a run, above the board, forcing a scroll to reach it");
+
+/*
  * THE HUE HOLDS AT THE LAST STEP past wave 5, and all three places that
  * decide it have to agree: dhcb_wave_hue() for the share card and the
  * Discord embed, the panel's data-wave, and the resurrection handler.
