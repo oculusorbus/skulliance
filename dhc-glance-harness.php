@@ -153,5 +153,47 @@ ok(strpos($css, '.nav-dropdown-menu a .dhcf-glance') !== false
 ok(preg_match('~\.nav-dropdown-menu a \{[^}]*display: flex~s', $css) === 1,
    'the menu anchors are not flex, so margin-left:auto does nothing');
 
+/*
+ * A ROW'S HEIGHT MUST NOT DEPEND ON WHETHER IT HAS A BADGE.
+ *
+ * It did. The badge was set at 1rem against a smaller label, so the row
+ * grew to its tallest inline box -- a menu of two different row heights,
+ * taller overall, long enough to need scrolling for something that used
+ * to be in view. Reported as the menu growing for no reason.
+ *
+ * Two things fix it together and both are asserted: the anchor fixes its
+ * own line-height, and the badge inherits rather than setting its own.
+ */
+ok(preg_match('~\.nav-dropdown-menu a \{[^}]*line-height: [\d.]+~s', $css) === 1,
+   'the menu anchors have no fixed line-height, so a tall glyph grows the row it is in');
+preg_match('~\.nav-dropdown-menu a \.dhcf-glance \{([^}]*)\}~s', $css, $m_bg);
+$bg = count($m_bg) === 2 ? $m_bg[1] : '';
+ok($bg !== '', 'the menu badge rule could not be found');
+/* CAPTURED AND COMPARED, not matched with a negative lookahead: `\s*`
+   backtracks to zero width, the lookahead then sees " inherit" rather
+   than "inherit", and the check reported correct CSS as broken. */
+$glance_prop = function ($block, $prop) {
+	return preg_match('~' . $prop . ':\s*([a-z0-9.%-]+)~', $block, $m) ? $m[1] : '(unset)';
+};
+ok($bg !== '' && $glance_prop($bg, 'font-size') === 'inherit',
+   'the menu badge font-size is ' . $glance_prop($bg, 'font-size')
+ . ', not inherit, so it can be taller than the label and grow the row');
+ok($bg !== '' && $glance_prop($bg, 'line-height') === 'inherit',
+   'the menu badge line-height is ' . $glance_prop($bg, 'line-height')
+ . ', not inherit, so it can be taller than the label and grow the row');
+/* Several platforms have a COLOUR glyph for these code points, whose
+   metrics are taller again than the text one. */
+ok($bg !== '' && strpos($bg, 'font-family: inherit') !== false,
+   'the menu badge does not pin its font-family, so an emoji face can substitute and grow the row');
+
+/* The Launchpad tile carries the same badge and the same risk. */
+$lpc = (string) file_get_contents(__DIR__ . '/launchpad.php');
+preg_match('~\.lp-tile-name \.dhcf-glance \{([^}]*)\}~s', $lpc, $m_tg);
+$tg = count($m_tg) === 2 ? $m_tg[1] : '';
+ok($tg !== '', 'the tile badge rule could not be found');
+ok($tg !== '' && $glance_prop($tg, 'font-size') === 'inherit',
+   'the tile badge font-size is ' . $glance_prop($tg, 'font-size')
+ . ', not inherit, so a tile with a count is taller than one without');
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

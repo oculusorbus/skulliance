@@ -240,6 +240,17 @@ a:hover { color: #00a882; }
   display: flex;
   align-items: center;
   gap: 10px;
+  /*
+   * FIXED, SO A BADGE CANNOT CHANGE A ROW'S HEIGHT.
+   *
+   * Without this the row is as tall as its tallest inline box, so an
+   * entry carrying a circled numeral grew while its neighbours did not --
+   * a menu of two different row heights, taller overall, and long enough
+   * to need scrolling for something that used to be in view. The badge
+   * below inherits this rather than setting its own, so every row is the
+   * same height whether or not a game pays today.
+   */
+  line-height: 1.25;
   text-decoration: none;
   border-bottom: 1px solid rgba(0,200,160,0.08);
 }
@@ -254,8 +265,14 @@ a:hover { color: #00a882; }
  */
 .nav-dropdown-menu a .dhcf-glance {
   margin-left: auto;
-  font-size: 1rem;
-  line-height: 1;
+  /* INHERITED, NOT SET. At 1rem the glyph was bigger than the label beside
+     it, and a taller inline box is what grew the row. The circled numerals
+     read perfectly well at the menu's own size. */
+  font-size: inherit;
+  line-height: inherit;
+  /* Block the emoji fonts: several platforms have a colour glyph for these
+     code points, and its metrics are taller again than the text one. */
+  font-family: inherit;
   color: #00c8a0;
   font-variant-numeric: tabular-nums;
 }

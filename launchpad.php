@@ -882,8 +882,11 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
  * place. Same reasoning as the Play menu, and the same glyphs.
  */
 .lp-tile-name { display: flex; align-items: baseline; gap: 8px; justify-content: center; }
+/* Same reasoning as the menu: inherited size and line-height, so a tile
+   carrying a count is exactly as tall as one that does not. */
 .lp-tile-name .dhcf-glance { margin-left: auto; font-weight: normal;
-  font-size: 0.95rem; line-height: 1; color: #00c8a0; font-variant-numeric: tabular-nums; }
+  font-size: inherit; line-height: inherit; font-family: inherit;
+  color: #00c8a0; font-variant-numeric: tabular-nums; }
 /* Zero is drawn rather than omitted: a blank beside a game is
    indistinguishable from a game that never pays. Dimmed, not alarmed --
    it is a reason to play something else, not a problem. */
