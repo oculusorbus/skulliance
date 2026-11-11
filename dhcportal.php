@@ -116,12 +116,10 @@ include 'header.php';
 
     <?php /* ---- 1. the portal ---- */ ?>
     <div class="dhcp-chute" aria-label="The Portal">
-      <?php /* The deposit sign from the art. DRAWN, not cropped: it is a
-               flat plate with an arrow, it has to stay crisp at any size,
-               and a bitmap of it would be the one soft edge on the page. */ ?>
-      <div class="dhcp-sign" aria-hidden="true">
-        <svg viewBox="0 0 48 22"><path d="M6 4 L42 4 L24 19 Z"/></svg>
-      </div>
+      <?php /* NO DRAWN SIGN. The vortex art already carries the green
+               plate and the down-arrow, and the page was stacking a CSS
+               copy of it directly above the real one. Two arrows saying
+               the same thing, one of them redundant by construction. */ ?>
       <div class="dhcp-vortex" id="dhcpVortex" aria-hidden="true">
         <canvas id="dhcpCanvas"></canvas>
       </div>
@@ -129,7 +127,8 @@ include 'header.php';
       <p class="dhcp-say" id="dhcpSay">Fill at least one row.</p>
     </div>
     <?php /* ---- 2. the board, in the middle: it is what both sides act on ---- */ ?>
-    <div class="dhcp-boardwrap" aria-label="Jettison board">
+    <div class="dhcp-mid">
+      <div class="dhcp-boardwrap" aria-label="Jettison board">
       <div class="dhcp-board" id="dhcpBoard">
         <?php for ($r = 0; $r < DHCP_ROWS; $r++): ?>
         <div class="dhcp-row" data-row="<?php echo $r; ?>">
@@ -147,6 +146,10 @@ include 'header.php';
         <?php endfor; ?>
         <div class="dhcp-pieces" id="dhcpPieces"></div>
       </div>
+      </div>
+      <?php /* OUTSIDE THE ART PANEL. It was inside, over the operator,
+               where it was unreadable -- and the panel has a fixed ratio
+               now, so text in it would stretch the frame too. */ ?>
       <div class="dhcp-readout" id="dhcpReadout"></div>
     </div>
 

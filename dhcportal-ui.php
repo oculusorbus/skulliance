@@ -33,41 +33,60 @@
  * enough to bury everything under it if it went first.
  */
 /*
- * CAPPED AND CENTRED. The page sits in the platform's full-width column,
- * which is 1960px on a wide monitor -- and a 1fr middle column there
- * gives a 4x4 board with 314px cells, a board thirteen hundred pixels
- * tall. The grid has to be told how big it wants to be; nothing else on
- * this page was going to stop it.
+ * CAPPED, BUT NOT SMALL. The page sits in the platform's full-width
+ * column, 1960px on a wide monitor, so a 1fr middle column with nothing
+ * holding it gave a 4x4 board with 314px cells. The first cap fixed
+ * that and overshot the other way, leaving the page in a third of the
+ * screen.
+ *
+ * BOTH ART PANELS ARE 2:3, because both source images are, so the
+ * columns are sized to the pictures rather than the pictures cropped to
+ * the columns.
  */
-.dhcp-rig { display: grid; gap: 18px; align-items: start;
-  max-width: 1220px; margin-inline: auto;
-  grid-template-columns: 300px minmax(0,1fr) 320px;
+.dhcp-rig { display: grid; gap: 20px; align-items: start;
+  max-width: 1500px; margin-inline: auto;
+  grid-template-columns: 400px minmax(0,1fr) 340px;
   grid-template-areas: "portal board pick"; }
 .dhcp-chute { grid-area: portal; }
-.dhcp-boardwrap { grid-area: board; }
+.dhcp-mid { grid-area: board; }
 .dhcp-pick { grid-area: pick; }
 
 /*
  * THE BOARD, ON THE OPERATOR.
+ *
+ * WHOLE PICTURE, NOT A CROP. The panel takes the art's own 2:3 and the
+ * board is centred inside it, so the operator is seen entire -- head,
+ * arms and all -- with the grid laid over the middle of it. The first
+ * version cropped to a square and lost most of the figure.
  *
  * background-color FIRST and always: art deploys by FTP outside this
  * repo, so until operator.webp is on the server this is exactly the
  * panel that was here before -- dark ground, no broken frame, nothing
  * moved. The art is an improvement layered on, never a dependency.
  *
- * The scrim is not decoration either. Sixteen trait tiles have to read
- * against it, and the art underneath is busy at full strength.
+ * THE SCRIM IS NOT DECORATION. Sixteen trait tiles and four row labels
+ * have to read against this, and at full strength the art swallowed
+ * them -- the readout was illegible and the grid nearly invisible. It
+ * is heaviest across the middle where the board sits and lightest at
+ * the edges, so the figure still reads around it.
  */
 .dhcp-boardwrap { position: relative; border-radius: 4px; overflow: hidden;
+  aspect-ratio: 1024 / 1536;
+  display: flex; flex-direction: column; justify-content: center;
   background-color: #071320;
   background-image: url(images/portal/operator.webp);
-  background-size: cover; background-position: 50% 18%;
+  background-size: contain; background-position: 50% 50%;
+  background-repeat: no-repeat;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.05); }
 .dhcp-boardwrap::before { content: ""; position: absolute; inset: 0;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(7,19,32,.62) 0, rgba(7,19,32,.86) 100%); }
+  background: linear-gradient(180deg,
+    rgba(7,19,32,.30) 0,
+    rgba(7,19,32,.82) 24%,
+    rgba(7,19,32,.86) 76%,
+    rgba(7,19,32,.34) 100%); }
 .dhcp-board { position: relative; z-index: 1; display: flex;
-  flex-direction: column-reverse; gap: 6px; padding: 16px 16px 14px; }
+  flex-direction: column-reverse; gap: 6px; padding: 16px; }
 /* column-reverse: row one is the BOTTOM row, because a board fills up
    rather than down and the tier climbs with it. */
 .dhcp-row { position: relative; display: grid; grid-template-columns: repeat(4, 1fr);
@@ -97,19 +116,20 @@
 
 /* ---- the Portal ----------------------------------------------------- */
 .dhcp-chute { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.dhcp-sign { width: 96px; padding: 7px 0; border-radius: 2px; background: #2ff07a;
-  box-shadow: 0 0 22px rgba(47,240,122,.3); }
-.dhcp-sign svg { display: block; width: 44px; margin: 0 auto; }
-.dhcp-sign path { fill: #06110a; }
 /*
- * THE MOUTH. Same FTP rule: the colour is the fallback and the art sits
- * on top of it, so a missing upload is a dark well rather than a hole.
- * The canvas draws over both.
+ * THE MOUTH, WHOLE. 2:3, the art's own ratio, so the machinery around
+ * the vortex and the flames beneath it are all in frame -- a square
+ * crop threw most of the picture away and kept the swirl.
+ *
+ * Same FTP rule: the colour is the fallback and the art sits on top of
+ * it, so a missing upload is a dark well rather than a hole. The canvas
+ * draws over both.
  */
-.dhcp-vortex { position: relative; width: 100%; aspect-ratio: 1; border-radius: 4px;
-  overflow: hidden; background-color: #0a0410;
+.dhcp-vortex { position: relative; width: 100%; aspect-ratio: 1024 / 1536;
+  border-radius: 4px; overflow: hidden; background-color: #0a0410;
   background-image: url(images/portal/vortex.webp);
-  background-size: cover; background-position: 50% 50%;
+  background-size: contain; background-position: 50% 50%;
+  background-repeat: no-repeat;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
 .dhcp-vortex canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 #dhcpGo { width: 100%; padding: 12px 14px; font: inherit; font-size: .95rem;
@@ -165,7 +185,7 @@
   font-size: .5rem; letter-spacing: .06em; padding: 1px 4px; border-radius: 2px;
   background: rgba(4,12,22,.85); color: var(--c, var(--dhcp-common)); }
 
-@media (max-width: 1080px) {
+@media (max-width: 1400px) {
   /* Two columns before one: the Portal and the board belong together and
      the spares list is the thing that wants the full width to browse. */
   .dhcp-rig { grid-template-columns: 260px minmax(0,1fr);

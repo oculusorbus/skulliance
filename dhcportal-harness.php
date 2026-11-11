@@ -339,6 +339,32 @@ foreach (array('operator' => '#071320', 'vortex' => '#0a0410') as $img => $colou
 	ok(strpos($ui, 'background-color: ' . $colour) !== false,
 	   'the ' . $img . ' panel has no fallback colour, so a missing upload is a hole');
 }
+/*
+ * WHOLE PICTURES, NOT CROPS. Both sources are 1024x1536, so both panels
+ * take that ratio and `contain` -- which makes cropping impossible
+ * rather than merely unlikely. The first pass cropped the vortex to a
+ * square and threw away the machinery and the flames, and cropped the
+ * operator to a band that lost most of the figure.
+ */
+foreach (array('.dhcp-boardwrap', '.dhcp-vortex') as $sel) {
+	$rule = preg_match('~' . preg_quote($sel, '~') . ' \{[^}]*\}~s', $ui, $rm) ? $rm[0] : '';
+	ok($rule !== '', $sel . ' has no rule');
+	ok(strpos($rule, 'aspect-ratio: 1024 / 1536') !== false,
+	   $sel . ' is not the shape of the art it carries, so the art gets cropped to fit');
+	ok(strpos($rule, 'background-size: contain') !== false,
+	   $sel . ' uses cover, which crops; the whole picture is meant to show');
+}
+/*
+ * AND NO SECOND ARROW. The vortex art carries its own green plate and
+ * down-arrow; the page was stacking a CSS copy directly above the real
+ * one. Two arrows saying the same thing, one redundant by construction.
+ */
+ok(strpos($ui, '.dhcp-sign') === false && strpos($page, 'dhcp-sign') === false,
+   'the drawn deposit sign is back, duplicating the one already in the art');
+/* The readout lives outside the art panel: inside, it was unreadable
+   over the operator, and the panel has a fixed ratio now. */
+ok(preg_match('~</div>\s*<\?php /\* OUTSIDE THE ART PANEL~s', $page) === 1,
+   'the readout is back inside the art panel, where it is illegible and stretches the frame');
 ok(preg_match('~background:\s*url\(images/portal~', $ui) !== 1,
    'the art is in a background shorthand, which takes the fallback colour down with it');
 /* Sixteen tiles have to read against it. */
