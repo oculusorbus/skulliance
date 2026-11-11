@@ -2377,8 +2377,15 @@ foreach ($waveRules as $hit) {
  */
 ok(dhcb_wave_hue(1) === 0,
    'wave 1 is rotated, and it is the baseline every other wave is read against');
-ok(dhcb_wave_hue(6) === dhcb_wave_hue(1),
-   'the colourway does not wrap, so a sixth wave would have no colour at all');
+/* IT HOLDS AT THE LAST HUE, it does not wrap. It DID wrap, and the first
+   week to reach wave 6 showed why that was wrong: the deepest the week had
+   ever gone came back wearing the colours it opened on. */
+ok(dhcb_wave_hue(6) === dhcb_wave_hue(5),
+   'wave 6 does not hold the last hue, so the series runs out of colours');
+ok(dhcb_wave_hue(6) !== dhcb_wave_hue(1),
+   'the colourway wraps again, so a sixth wave looks exactly like the first');
+ok(dhcb_wave_hue(40) === dhcb_wave_hue(5),
+   'a very deep wave does not hold the last hue, so the series wraps somewhere further out');
 ok(is_file(__DIR__ . '/lib/hue-rotate.php'),
    'lib/hue-rotate.php is gone, so the rotation is inlined somewhere again');
 foreach (array('dhc-arena-card.php', 'dhc-boss-art.php') as $hf2) {
@@ -2791,22 +2798,24 @@ ok(preg_match('~hue <b><\?php echo \(int\)dhcb_wave_hue\(\$w\)~', $hueBlk) === 1
 ok(preg_match('~\$ab_hue_waves\s*=\s*[2-9]\d*\s*;~', $ADM) !== 1,
    'the length of the hue series is a literal, so one edit to dhcb_wave_hue() leaves the '
  . 'page showing the wrong number of colourways and a footnote that is wrong about the wrap');
-ok(strpos($ADM, 'dhcb_wave_hue($w) === dhcb_wave_hue(1)') !== false,
-   'the series length is not derived by walking dhcb_wave_hue() back to its start');
-/* The derivation has to actually produce the cycle, or it is decoration. */
+/* WALKED UNTIL IT STOPS MOVING, not until it returns to the start. The
+   old derivation detected the WRAP, so when the series stopped wrapping it
+   ran to its own ceiling and reported a series 64 long. */
+ok(strpos($ADM, 'dhcb_wave_hue($w) === dhcb_wave_hue($w - 1)') !== false,
+   'the series length is derived by looking for a wrap that no longer happens');
 $cyc = 1;
 for ($w = 2; $w <= 64; $w++) {
-	if (dhcb_wave_hue($w) === dhcb_wave_hue(1)) { $cyc = $w - 1; break; }
+	if (dhcb_wave_hue($w) === dhcb_wave_hue($w - 1)) break;
 	$cyc = $w;
 }
 ok($cyc === 5, 'the hue series is ' . $cyc . ' long, not 5 -- check the reference page and '
              . 'the Skull Paper still say so');
-ok(dhcb_wave_hue($cyc + 1) === dhcb_wave_hue(1),
-   'the series does not wrap where the page says it does');
-/* AND THE WRAP IS FLAGGED, because the art repeats and the threat does not. */
+ok(dhcb_wave_hue($cyc + 1) === dhcb_wave_hue($cyc),
+   'the series does not settle where the page says it does');
+/* AND THE REPEAT IS FLAGGED, because the art stops changing and the threat
+   does not. */
 ok(strpos($ADM, 'dhcb_wave_pow($ab_hue_waves + 1)') !== false,
-   'nothing on the page says that the wave after the wrap looks identical to wave 1 and '
- . 'hits twice as hard');
+   'nothing on the page says that the waves past the end look identical and hit harder');
 /*
  * EVERY DEFAULT DATE IN THIS FEATURE IS A THURSDAY.
  *

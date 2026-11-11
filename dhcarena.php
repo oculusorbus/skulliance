@@ -2334,30 +2334,26 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <div class="body">
 <?php
 /*
- * A BOARD ON DEMAND, FOR ADMINS, SO THE RESURRECTION CAN BE LOOKED AT.
+ * NO PRACTICE BOARD HERE, AND THE ATTEMPT IS WORTH RECORDING.
  *
- * The rez preview needs a live board, and a live board needs a run --
- * and runs are DHCB_DAILY_RUNS a day, so the one person who needs to
- * review the animation is also the person most likely to be out of
- * them. ("I can't start a boss run because I burnt all my attempts.")
+ * The rez preview needs a live board, a live board needs a run, and runs
+ * are DHCB_DAILY_RUNS a day -- so the one person who has to review the
+ * animation is the one most likely to be out of them. Practice looked
+ * like the answer: it costs no run, touches no table and needs no
+ * session.
  *
- * Practice is the answer and it already exists: ajax/dhcarena-practice.php
- * touches no table, pays nothing, ranks nobody and needs neither a
- * database nor a signed-in player -- the board is rebuilt each move from
- * a spec the client holds. So it costs no run, no Crew, no allowance,
- * and it cannot touch the shared bars.
+ * It is not the answer. Practice deals two random CREWS, so the foes on
+ * that board are Fighters with Fighter art. The resurrection repaints
+ * foe tokens and turns the boss colourway; against Fighters it produces
+ * a shake and a sound and nothing that looks like a boss getting up.
+ * Reported exactly that way: "doesn't show the bosses, just random
+ * characters... Only the sound and board shake."
  *
- * The .a-bosses panel this sits in is rendered whenever boss mode is on,
- * run or no run, so the hue has somewhere to land.
+ * A preview of the wrong thing is worse than no preview, which is the
+ * same lesson the iframed Arena landing page taught one commit earlier.
+ * The button on a REAL boss board is correct and stays.
  */
-if (function_exists('adminIsSuper') && adminIsSuper()): ?>
-        <p style="margin:0 0 10px">
-          <button class="btn" id="bossPrac" style="font-size:.72rem;padding:6px 10px">
-            Practice board (admin)</button>
-          <span class="a-sub" style="margin-left:8px">Costs no run. Open it, then use
-            <b>preview rez</b> under the Enemy Crew.</span>
-        </p>
-<?php endif; ?>
+?>
         <details class="a-note"><summary>How it works</summary>
         <p class="a-sub" style="margin:0 0 10px">Three bosses, one health bar each, shared by
            everybody, standing all week. <b>Every point of damage counts</b> — the traits
@@ -2406,12 +2402,12 @@ if (function_exists('adminIsSuper') && adminIsSuper()): ?>
         </details>
         <?php endif; ?>
 
-        <?php /* CYCLED, NOT CAPPED. dhcb_wave_hue() is (($w - 1) % 5) * 72,
-                 so wave 6 is wave 1's colour -- min(5, $wv) pinned it at
-                 288deg from wave 5 onward instead, and the resurrection
-                 handler on the client cycles, so the two would have
-                 disagreed the moment a run crossed into wave 6. */ ?>
-        <div class="a-bosses" data-wave="<?php echo ((max(1, (int)$wv) - 1) % 5) + 1; ?>">
+        <?php /* HELD AT THE LAST HUE past wave 5, matching dhcb_wave_hue().
+                 This read min(5, $wv) while that function WRAPPED, so at
+                 wave 6 the page and the share card drew different crews;
+                 the function caps now, so the two agree again and the
+                 deepest the week has gone no longer looks like wave 1. */ ?>
+        <div class="a-bosses" data-wave="<?php echo min(5, max(1, (int)$wv)); ?>">
           <?php foreach ($dhcb_on as $bz):
             $pct = $bz['max_health'] > 0 ? max(0, min(100, round(100 * $bz['health'] / $bz['max_health']))) : 0; ?>
           <div class="a-boss<?php echo $bz['dead'] ? ' dead' : ''; ?>">
@@ -3782,7 +3778,14 @@ var FOE_LEAD = 1000, FOE_LEAD_AGAIN = 700;
  * Harmless in a player's browser -- it animates and returns, touching no
  * state the server has not already sent.
  */
-window.DHCA_PLAY_FX = function (fx) { playTimeline(fx || [], null, function () {}); };
+/*
+ * THE CURRENT STATE, NOT null. playTimeline()'s finish() ends with
+ * `S = state` -- the server's word is final -- so passing null made the
+ * first preview NULL THE BOARD. The button then did nothing on the second
+ * press because S.foes was gone, and on a real run it would have taken
+ * the battle down with it. Handing it S restores S to itself.
+ */
+window.DHCA_PLAY_FX = function (fx) { playTimeline(fx || [], S, function () {}); };
 
 /*
  * The admin preview button, wired to the same player the server's event
@@ -3967,10 +3970,11 @@ function playTimeline(fx, state, done){
         /* THE HUE LIVES ON data-wave, not on a variable: the five
            filter:hue-rotate() rules are already there and are already
            checked against dhcb_wave_hue() by dhc-arena-card-harness.php.
-           Cycled to 1..5 the same way that function cycles its degrees,
-           so wave 6 is wave 1's colour rather than no colour at all. */
+           CAPPED at 5 the same way that function caps its degrees, so a
+           resurrection into wave 6 holds the last hue instead of landing
+           back on wave 1's. */
         var bosses = document.querySelector('.a-bosses');
-        if (bosses) bosses.setAttribute('data-wave', ((e.wave - 1) % 5) + 1);
+        if (bosses) bosses.setAttribute('data-wave', Math.min(5, Math.max(1, e.wave)));
         rezFoes.forEach(function(nf, i){
           var t = fighterAt('foes', i); if (!t) return;
           t.ko = false; t.shield = 0;
@@ -5286,20 +5290,6 @@ function startPractice(onFail){
     onFail && onFail('The Arena did not answer.');
   }, PRACTICE_URL);
 }
-
-/* The boss page has no Arena setup panel and therefore no #aPractice and
-   no #aMsg, so this binds its own button and reports failure to the
-   console rather than to an element that is not there. */
-var bossPracBtn = $('bossPrac');
-if (bossPracBtn) bossPracBtn.addEventListener('click', function(){
-  if (busy || battle.classList.contains('on')) return;
-  bossPracBtn.disabled = true;
-  startPractice(function(msg){
-    bossPracBtn.disabled = false;
-    if (window.console) console.warn('practice:', msg);
-  });
-  setTimeout(function(){ bossPracBtn.disabled = false; }, 600);
-});
 
 var practiceBtn = $('aPractice');
 if (practiceBtn) practiceBtn.addEventListener('click', function(){

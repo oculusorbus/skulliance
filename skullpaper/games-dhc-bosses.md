@@ -56,7 +56,10 @@ crew next time, a quieter one gets a smaller crew, and nobody tunes anything by
 hand.
 
 So a downed crew **stands back up the same week**, one wave higher, in a
-different colourway, hitting harder. The week's question is not "can we drop
+different colourway, hitting harder. There are five colourways and the
+fifth is the last one: past wave 5 a crew keeps getting angrier but stops
+changing colour, so deep into a week the art has stopped telling you how
+hard they hit. The week's question is not "can we drop
 them", it is **how many times**.
 
 If they fall while you are out there, you see it happen: the board goes still,

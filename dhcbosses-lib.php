@@ -361,14 +361,20 @@ function dhcb_runs_per_day($conn) {
  * EVEN FIFTHS, WALKED IN ONE DIRECTION, so the series reads as a sequence
  * rather than five unrelated colours. Wave 1 is deliberately 0: it is the
  * baseline the rest are read against, and a rotation on it would just be a
- * rotation. Past wave 5 it wraps rather than running out of colours.
+ * rotation.
  *
- * dhc-arena-card-harness.php checks the CSS literals in dhcarena.php
- * against this function, so the browser and the server cannot drift.
+ * PAST WAVE 5 IT HOLDS AT THE LAST HUE. It used to wrap, and the first
+ * week to reach wave 6 showed why that is wrong: the crew came back in
+ * wave 1's colours, so the deepest the week had ever gone looked exactly
+ * like the shallowest. The owner's call, and the right one -- a sequence
+ * that walks one way and then stops is still a sequence, while one that
+ * loops says the opposite of what the week is doing. A wave 20 crew wears
+ * the same 288deg as wave 5 and that is fine: past the end of the ladder
+ * the colour has stopped being the thing that tells them apart.
  */
 function dhcb_wave_hue($wave) {
 	$w = max(1, (int)$wave);
-	return (($w - 1) % 5) * 72;
+	return min(4, $w - 1) * 72;
 }
 
 function dhcb_wave_pow($wave) {

@@ -261,12 +261,19 @@ admin_chrome('dhcbosses');
 /*
  * HOW LONG THE SERIES IS, ASKED RATHER THAN TYPED. A literal 5 here is one
  * edit to dhcb_wave_hue() away from a reference page that shows four of six
- * colourways and a footnote that is wrong about where it wraps. Walk the
- * function until it returns to where it started.
+ * colourways.
+ *
+ * WALKED UNTIL IT STOPS MOVING, not until it returns to the start. This
+ * detected the WRAP -- it looked for the wave that came back to wave 1's
+ * hue -- and the series stopped wrapping when the owner asked for it to
+ * hold at the last colour instead, so the detector ran to its own ceiling
+ * and reported a series 64 long. A series that ends by repeating its last
+ * value and one that ends by returning to its first both end; only the
+ * second is a cycle, and only the first is what this now is.
  */
 $ab_hue_waves = 1;
 for ($w = 2; $w <= 64; $w++) {
-	if (dhcb_wave_hue($w) === dhcb_wave_hue(1)) { $ab_hue_waves = $w - 1; break; }
+	if (dhcb_wave_hue($w) === dhcb_wave_hue($w - 1)) break;
 	$ab_hue_waves = $w;
 }
 $ab_now_wave  = $ab_prog ? max(1, (int)$ab_prog['wave']) : 1;
@@ -307,11 +314,18 @@ $ab_now_wave  = $ab_prog ? max(1, (int)$ab_prog['wave']) : 1;
     mtime, so replacing a boss picture retires every rotated copy of it.
   </p>
   <p class="ab-note flag">
-    <b>The series wraps at <?php echo $ab_hue_waves; ?>.</b> Wave <?php echo $ab_hue_waves + 1; ?>
-    is pixel-identical to wave 1 &mdash; the renders hash the same &mdash; but its power
-    multiplier is <b>&times;<?php echo number_format(dhcb_wave_pow($ab_hue_waves + 1), 3); ?></b>
-    against wave 1's &times;1.000. A crew that looks like the one the week opened on hits more
-    than twice as hard, and nothing on the art says so.
+    <b>The series ends at <?php echo $ab_hue_waves; ?> and holds there.</b>
+    Wave <?php echo $ab_hue_waves + 1; ?> and every wave after it is pixel-identical to
+    wave <?php echo $ab_hue_waves; ?> &mdash; the renders hash the same &mdash; while the
+    power multiplier keeps climbing:
+    <b>&times;<?php echo number_format(dhcb_wave_pow($ab_hue_waves + 1), 3); ?></b> at wave
+    <?php echo $ab_hue_waves + 1; ?>,
+    <b>&times;<?php echo number_format(dhcb_wave_pow($ab_hue_waves + 5), 3); ?></b> five
+    waves later. Past the end of the ladder the colour has stopped telling them apart, so
+    nothing on the art says how hard a deep crew hits.
+    <br>It used to WRAP instead, and the first week to reach wave <?php echo $ab_hue_waves + 1; ?>
+    showed why that was worse: the deepest the week had ever gone came back wearing the
+    colours it opened on.
   </p>
 </details>
 

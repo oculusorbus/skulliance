@@ -153,11 +153,29 @@ ok(strpos($ui, 'REZ_LAYERS') !== false && strpos($ui, 'sfxReversed') !== false,
    'the resurrection cue is gone, or is no longer reversed');
 ok(strpos($ui, 'var lead = REZ_LEN - full') !== false,
    'the cue layers are no longer end-aligned, so each one lands at its own time');
-/* The hue cycles on both sides or they disagree from wave 6. */
-ok(strpos($ui, '((e.wave - 1) % 5) + 1') !== false,
-   'the client caps the wave hue instead of cycling it');
-ok(strpos($ui, '((max(1, (int)$wv) - 1) % 5) + 1') !== false,
-   'the page caps the wave hue instead of cycling it, so it disagrees with the client');
+/*
+ * THE HUE HOLDS AT THE LAST STEP past wave 5, and all three places that
+ * decide it have to agree: dhcb_wave_hue() for the share card and the
+ * Discord embed, the panel's data-wave, and the resurrection handler.
+ *
+ * This was WRAPPING, and the first week to reach wave 6 showed why that
+ * is wrong -- the deepest the week had ever gone came back in wave 1's
+ * colours. Executed rather than matched, so the next rewrite has to stay
+ * correct rather than stay recognisable.
+ */
+for ($hw = 1; $hw <= 20; $hw++) {
+	$want = min(4, $hw - 1) * 72;
+	ok(dhcb_wave_hue($hw) === $want,
+	   'dhcb_wave_hue(' . $hw . ') is ' . dhcb_wave_hue($hw) . 'deg, not ' . $want . 'deg');
+}
+ok(dhcb_wave_hue(20) === dhcb_wave_hue(5),
+   'wave 20 does not wear wave 5\'s colour, so the series wraps again somewhere');
+ok(dhcb_wave_hue(6) !== dhcb_wave_hue(1),
+   'wave 6 is back to wave 1\'s colour, so the deepest the week has gone looks like the shallowest');
+ok(strpos($ui, 'Math.min(5, Math.max(1, e.wave))') !== false,
+   'the resurrection handler no longer caps the hue, so a rez into wave 6 lands on wave 1 colours');
+ok(strpos($ui, 'data-wave="<?php echo min(5, max(1, (int)$wv)); ?>"') !== false,
+   'the panel no longer caps the hue the same way dhcb_wave_hue() does');
 /*
  * THE PREVIEW LIVES ON THE BOARD IT ANIMATES.
  *
@@ -177,25 +195,25 @@ ok(!is_file(__DIR__ . '/admin-bossrez-preview.php'),
    'admin-bossrez-preview.php is back; it iframed the Arena landing page, which has no board');
 
 /*
- * AND A BOARD TO PREVIEW IT ON. The rez preview needs a live board, a
- * live board needs a run, and runs are rationed -- so the one person who
- * has to review the animation is the one most likely to be out of them.
- * Practice costs no run and touches no table, so the boss page carries
- * an admin-only button that opens one.
+ * NO PRACTICE BOARD. Practice deals two random CREWS, so its foes are
+ * Fighters with Fighter art -- the resurrection repaints foe tokens and
+ * turns the boss colourway, and against Fighters that is a shake and a
+ * sound with nothing that looks like a boss getting up. A preview of the
+ * wrong thing is worse than no preview.
  */
-ok(strpos($ui, "id=\"bossPrac\"") !== false,
-   'the boss page has no admin practice board, so the rez preview needs a run nobody may have');
-ok(strpos($ui, "\$bossPracBtn = \$('bossPrac')") !== false
-   || strpos($ui, "var bossPracBtn = $('bossPrac')") !== false,
-   'the admin practice button is not wired to anything');
-/* It must be practice, not a run: a run spends an allowance and lands
-   real damage on the shared bars. */
-preg_match("~var bossPracBtn = \\\$\\('bossPrac'\\);(.*?)\n\\}\\);~s", $ui, $m_bp);
-$bp = count($m_bp) === 2 ? $m_bp[1] : '';
-ok($bp !== '' && strpos($bp, 'startPractice(') !== false,
-   'the admin board button does not start a PRACTICE battle, so looking at the animation costs a run');
-ok($bp !== '' && strpos($bp, 'BOSS_URL') === false && strpos($bp, 'startBossRun') === false,
-   'the admin board button starts a real boss run, which spends an allowance and hits the shared bars');
+ok(strpos($ui, "id=\"bossPrac\"") === false,
+   'the practice board button is back; practice deals Fighters, so it cannot preview a boss rising');
+
+/*
+ * AND THE PREVIEW MUST NOT CLOBBER THE BOARD. playTimeline()'s finish()
+ * ends with `S = state`, so handing it null nulled the live board: the
+ * second press did nothing because S.foes was gone, and on a real run it
+ * would have taken the battle down with it.
+ */
+ok(strpos($ui, 'playTimeline(fx || [], S, function () {})') !== false,
+   'DHCA_PLAY_FX passes something other than S as the state, and finish() assigns it over the live board');
+ok(strpos($ui, 'playTimeline(fx || [], null') === false,
+   'DHCA_PLAY_FX passes null as the state again, which nulls S on the first preview');
 /* It must not reach the server: a preview that commits is not a preview. */
 preg_match('~var pv = document\.getElementById\(.rezPrev.\);(.*?)\n\}\)\(\);~s', $ui, $m_pv);
 $pv = count($m_pv) === 2 ? $m_pv[1] : '';
