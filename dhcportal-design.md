@@ -73,22 +73,39 @@ not a currency sink, and CARBON-to-DIAMOND pressure has to come from elsewhere.
 Volume drives it. Rarity gets you there **faster, not higher** — a shortcut to the
 same prize, never a better one.
 
-### Point values
+### The grid IS the meter
 
-Derived from the `run` table in `DHCF_TIERS` (common 55, uncommon 28, epic 13,
-legendary 3.5, mythic 0.5) as inverse frequency relative to a common, so a trait is
-worth what it cost to come by:
+**Twenty-five slots, five by five. Twenty-five points to max. A common is one point.**
 
-| rarity | drop rate | points |
+So a full grid of commons tops the meter exactly, and rarity fills the *meter* faster
+than it fills the *grid* — which is "faster, not higher" in the most literal form
+available. One mythic takes one slot and sixteen points. The bar and the board are the
+same object, and nobody has to be taught how to read it.
+
+| rarity | points | slots to max |
 |---|---|---|
-| common | 55% | 1 |
-| uncommon | 28% | 2 |
-| epic | 13% | 4 |
-| legendary | 3.5% | 16 |
-| mythic | 0.5% | 110 |
+| common | 1 | 25 |
+| uncommon | 2 | 13 |
+| epic | 4 | 7 |
+| legendary | 8 | 4 |
+| mythic | 16 | 2 |
 
-Derived rather than chosen, because any hand-picked set is an exchange rate between
-tiers and a wrong one is a laundering vector.
+### Why these numbers are chosen and not derived
+
+The honest version: inverse frequency against the `run` table is the only *derived*
+scale, and it puts a mythic at **110 commons** — unusable when the hopper is
+twenty-five slots. Any scale that fits a grid is therefore a choice, and it should be
+made deliberately rather than dressed up as arithmetic.
+
+A clean doubling was picked against three requirements:
+
+1. **Monotonic.** Rarer is always worth more.
+2. **Rares are deliberately undervalued.** A legendary is worth 8 commons here against
+   roughly 16 by true scarcity, so feeding one is a *poor trade* for the player. That
+   is the point: it discourages dumping rares, which is what protects the collection,
+   and it means the meter gets filled with commons, which is what the feature is for.
+3. **Readable.** 1, 2, 4, 8, 16 is memorable, and a player can work out their own
+   hopper without a calculator.
 
 ### Thresholds
 
@@ -99,45 +116,51 @@ guaranteed, which is exactly the shape wanted.
 | meter | table | mythic | legendary |
 |---|---|---|---|
 | 0 | `run` | 0.5% | 3.5% |
-| 12 | `placement_10` | 2% | 9% |
-| 30 | `placement_3` | 3% | 15% |
-| 60 (max) | `placement_1` | 8% | 22% |
+| 5 | `placement_10` | 2% | 9% |
+| 12 | `placement_3` | 3% | 15% |
+| 25 (max) | `placement_1` | 8% | 22% |
 
-**60 points is the ceiling of the meter and the size of one run.**
+### Is it deflationary?
 
-### Is it deflationary, and how cheap can it be?
+25 commons is roughly 45 drops' worth of play, which at `run` rates would itself have
+produced about 0.23 mythics and 1.6 legendaries. The Portal pays 0.08 and 0.22 for the
+same material, so converting is **2.8x worse than playing** for a mythic and 7.2x
+worse for a legendary. Supply still strictly falls.
 
-60 commons is roughly 109 drops' worth of play, which at `run` rates would itself have
-produced about 0.55 mythics and 3.8 legendaries. The Portal pays 0.08 and 0.22 for the
-same material, so converting is **6.8x worse than playing** for a mythic and 17x worse
-for a legendary. Nothing skews.
+This went 120 to 60 to 25 across two passes, and the size kept being decided by the
+wrong thing. The first two were set by the deflation margin alone, which is how you end
+up with a hopper of sixty tiles that is unreadable as a grid and soup as an animation.
+**The grid size is a UI constraint first; the margin only has to clear a bar, not be
+maximised.**
 
-The first draft of this put the ceiling at 120, and the arithmetic is what argued it
-down. The safety margin is enormous, so the question stops being "is it safe" and
-becomes "how cheap can it be while staying safe":
-
-| max | vs playing, mythic | vs playing, legendary |
+| slots | grid | vs playing, mythic |
 |---|---|---|
-| 40 | 4.5x worse | 11.6x worse |
-| **60** | **6.8x worse** | **17.4x worse** |
-| 80 | 9.1x worse | 23.1x worse |
-| 120 | 13.6x worse | 34.7x worse |
+| 16 | 4x4 | 1.8x worse |
+| 20 | 4x5 | 2.3x worse |
+| **25** | **5x5** | **2.8x worse** |
+| 30 | 5x6 | 3.4x worse |
+| 36 | 6x6 | 4.1x worse |
 
-Every row is deflationary. Given *cheap and fair*, the right move is the low end of
-the safe range rather than the middle, and 60 leaves room to come down again.
+Every row is still deflationary — even 4x4 — so the whole range was available and the
+choice could be made on how it looks and plays. 5x5 is the largest grid that stays
+legible on a phone and about the most objects you can throw into a vortex before it
+reads as a smear.
 
-**One consequence at 60:** a mythic is worth 110, so feeding one maxes the meter and
-wastes 50 points with nothing for the auto-return to eject. That is correct rather
-than a bug. Dumping a mythic should be a bad idea, and the staging area says so
-plainly. The Portal is for commons, uncommons and epics; a legendary is a real
-sacrifice at 16; a mythic is a mistake the UI warns you about.
+**The margin is thinner here and that is fine.** 2.8x is a smaller reduction than 6.8x,
+not an inflation. And the material being fed is residue that would otherwise sit in a
+pile doing nothing, so "worse than playing" was never the player's real alternative.
 
-### The one number that needs calibrating
+### What still needs calibrating
 
-The **ratios** above are derived and defensible. The **scale** is not: whether 120
-points is a month's accumulated junk or a year's depends on what players actually
-hold, and that is not knowable from the code. Ship it, watch it, move it. The owner's
-position is that adjustment after launch is expected.
+Nothing above is derived any more — the one derivable scale did not fit a grid, so
+the points and the thresholds are both choices, and they should be read as a starting
+position rather than an answer.
+
+The unknown behind all of them is the same: whether twenty-five points is a month's
+accumulated junk or a year's depends on what players actually hold, which is not
+knowable from the code. Ship it, watch it, move it. The owner's position is that
+adjustment after launch is expected, and the grid size is the part that should stay
+put while the numbers inside it move.
 
 ---
 
@@ -148,21 +171,22 @@ back out to tune it. Managing the hopper is the game before the gamble.
 
 ### Overshoot is the trap, and the fix is automatic
 
-Ninety-nine commons puts the meter at 99. Dropping a mythic on top takes it to 209
-against a ceiling of 120 — eighty-nine points of fuel thrown away, enough for most of
-another run, with nothing to warn you.
+Twenty-four commons puts the meter at 24 of 25. Dropping a mythic on top takes it to
+40 — fifteen points of fuel thrown away, most of another run's worth, with nothing to
+warn you.
 
 **Rule: the hopper never holds more leverage than the meter can spend.** When a trait
 would overshoot, the staging area returns the **cheapest** traits already in it until
-the overshoot is gone.
+the overshoot is gone. Twenty-four commons plus a mythic becomes nine commons plus the
+mythic, exactly at max, and fifteen commons drop back into the pile.
 
 * Cheapest-first preserves the dense item the player just deliberately chose, and
   returns the ones most reusable next time. Ejecting the mythic instead would be the
   system overruling the player's last action.
-* **Edge:** a single trait worth more than the whole meter (a mythic at 110 against a
-  max of 120 is fine; a lower max would not be). If the first thing in already
-  overshoots there is nothing to eject, so it goes in with the overshoot shown
-  plainly and the player decides.
+* **Edge:** nothing is now worth more than the whole meter — a mythic is 16 against a
+  max of 25 — so the auto-return can always make room, and the pathological case the
+  earlier 110-point mythic created is gone. The rule stays anyway, because the point
+  values are the first thing anyone will reach for when tuning.
 * **Edge:** accepting is gated on the meter being *below* max, not on whether the
   addition would exceed it. Otherwise an empty hopper could refuse its own first
   trait.
@@ -245,8 +269,9 @@ outward. **Do not write a second one.**
 
 ### The one technical decision
 
-A hopper can hold sixty traits. Sixty elements flying into a vortex is sixty animated
-DOM nodes, which is how a reveal becomes a slideshow on a phone.
+A hopper holds twenty-five traits. Twenty-five elements flying into a vortex is
+twenty-five animated DOM nodes, which is where a reveal starts becoming a slideshow on
+a phone.
 
 **The hopper is DOM until it commits, then it becomes particles.** You interact with
 elements — slot them, pull them back, read their rarity — and the moment the jettison
@@ -272,7 +297,8 @@ for the part you touch, canvas for the part that is spectacle.
 
 ## Open
 
-* The threshold scale (above), pending real holdings.
+* The point values and thresholds, pending real holdings. The grid size is settled at
+  5x5; everything inside it is the tuning dial.
 * Minimum hopper size, if any.
 * Whether portal provenance is surfaced to players or stays an internal `source`.
 
