@@ -32,7 +32,15 @@
  * the board is what you came to look at, and the spares list is long
  * enough to bury everything under it if it went first.
  */
+/*
+ * CAPPED AND CENTRED. The page sits in the platform's full-width column,
+ * which is 1960px on a wide monitor -- and a 1fr middle column there
+ * gives a 4x4 board with 314px cells, a board thirteen hundred pixels
+ * tall. The grid has to be told how big it wants to be; nothing else on
+ * this page was going to stop it.
+ */
 .dhcp-rig { display: grid; gap: 18px; align-items: start;
+  max-width: 1220px; margin-inline: auto;
   grid-template-columns: 300px minmax(0,1fr) 320px;
   grid-template-areas: "portal board pick"; }
 .dhcp-chute { grid-area: portal; }
@@ -193,7 +201,24 @@
 	var TIERNAME = { common:'Common', uncommon:'Uncommon', epic:'Epic',
 	                 legendary:'Legendary', mythic:'Mythic' };
 
-	function art(p) { return D.art + '/250/' + p.category + '/' + p.slug + '.png'; }
+	/*
+	 * TWO SIZES, PICKED BY HOW BIG THE THING WILL BE DRAWN.
+	 *
+	 * The board column is a 1fr between two fixed ones, so on a wide
+	 * screen a cell is around 175px and a piece spanning the row is near
+	 * 700px. A 250px source upscaled that far is visibly soft, and the
+	 * pieces that span the row are exactly the ones a player has paid
+	 * the most to put there.
+	 *
+	 * NOT 1000 FOR EVERYTHING. A tray chip is 54px and a board full of
+	 * commons is sixteen cells at ~175px; pulling 1000px art for those
+	 * is bandwidth spent on pixels nobody can see. So: 250 for the tray
+	 * and for single-cell pieces, 1000 for anything wider than a cell.
+	 */
+	function art(p, onBoard) {
+		var px = (onBoard && size(p) > 1) ? 1000 : 250;
+		return D.art + '/' + px + '/' + p.category + '/' + p.slug + '.png';
+	}
 	function size(p) { return D.sizes[p.tier] || 1; }
 
 	/*
@@ -231,7 +256,7 @@
 			/* bottom, not top: the board fills upward. */
 			b.style.bottom = 'calc((' + cell + ' + 6px) * ' + row + ')';
 			b.title = TIERNAME[p.tier] + ' — click to take it off';
-			b.innerHTML = '<img src="' + art(p) + '" alt="" loading="lazy" '
+			b.innerHTML = '<img src="' + art(p, true) + '" alt="" loading="lazy" '
 			            + 'onerror="this.style.display=\'none\'">';
 			b.addEventListener('click', function () { send('remove', p.drop_id); });
 			piecesEl.appendChild(b);

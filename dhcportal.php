@@ -100,7 +100,13 @@ include 'header.php';
   </p>
   <?php endif; ?>
 
-  <?php /* THREE COLUMNS: the Portal, the board, your spares. DOM order
+  <?php /* <div>, NOT <section>. flexbox.css:1735 starts every <section>
+           on the platform at opacity:0 for a scroll reveal that adds
+           .active -- so all three columns rendered, measured 1960px
+           wide, and were completely invisible. Reported as "nothing is
+           displayed on the page at all", which is exactly what it was.
+
+           THREE COLUMNS: the Portal, the board, your spares. DOM order
            is screen order so a keyboard walks the page the way it reads,
            and the phone stack is re-ordered in CSS rather than here --
            there it goes board, Portal, spares, because the board is what
@@ -109,7 +115,7 @@ include 'header.php';
   <div class="dhcp-rig">
 
     <?php /* ---- 1. the portal ---- */ ?>
-    <section class="dhcp-chute" aria-label="The Portal">
+    <div class="dhcp-chute" aria-label="The Portal">
       <?php /* The deposit sign from the art. DRAWN, not cropped: it is a
                flat plate with an arrow, it has to stay crisp at any size,
                and a bitmap of it would be the one soft edge on the page. */ ?>
@@ -121,9 +127,9 @@ include 'header.php';
       </div>
       <button type="button" id="dhcpGo" disabled>Jettison</button>
       <p class="dhcp-say" id="dhcpSay">Fill at least one row.</p>
-    </section>
+    </div>
     <?php /* ---- 2. the board, in the middle: it is what both sides act on ---- */ ?>
-    <section class="dhcp-boardwrap" aria-label="Jettison board">
+    <div class="dhcp-boardwrap" aria-label="Jettison board">
       <div class="dhcp-board" id="dhcpBoard">
         <?php for ($r = 0; $r < DHCP_ROWS; $r++): ?>
         <div class="dhcp-row" data-row="<?php echo $r; ?>">
@@ -142,10 +148,10 @@ include 'header.php';
         <div class="dhcp-pieces" id="dhcpPieces"></div>
       </div>
       <div class="dhcp-readout" id="dhcpReadout"></div>
-    </section>
+    </div>
 
     <?php /* ---- 3. what you have, on the right where a trait picker lives everywhere else ---- */ ?>
-    <section class="dhcp-pick" aria-label="Your unused traits">
+    <div class="dhcp-pick" aria-label="Your unused traits">
       <h3>Your spares</h3>
       <?php /* CATEGORY TABS, the same way the assembler browses traits --
                a flat dump of everything was the first version and it is
@@ -155,7 +161,7 @@ include 'header.php';
       <div class="dhcp-rar" id="dhcpRar"></div>
       <div class="dhcp-tray" id="dhcpTray"></div>
       <p class="dhcp-empty" id="dhcpEmpty" hidden>Nothing spare here.</p>
-    </section>
+    </div>
 
   </div>
 

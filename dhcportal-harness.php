@@ -251,6 +251,30 @@ ok(strpos($rev, "won.image") === false,
    'the reveal reads won.image, which dhcf_drop_payload has never returned — every win shows an empty frame');
 ok(strpos($rev, "'/250/' + won.category") !== false,
    'the reveal does not compose the trait art path the way every other drop surface does');
+
+/*
+ * THE BOARD PULLS THE HI-RES SOURCE FOR ANYTHING WIDER THAN A CELL.
+ *
+ * The board column is a 1fr between two fixed ones, so on a wide screen
+ * a cell is around 175px and a piece spanning the row is near 700px. A
+ * 250px source upscaled that far is visibly soft -- and the pieces that
+ * span the row are exactly the ones the player paid most to put there.
+ *
+ * BOTH HALVES ARE CHECKED. 1000 for everything would be bandwidth spent
+ * on pixels nobody can see: a tray chip is 54px and a full board of
+ * commons is sixteen cells at ~175px.
+ */
+ok(strpos($ui, "var px = (onBoard && size(p) > 1) ? 1000 : 250;") !== false,
+   'the board does not pick its art size by how big the piece will be drawn');
+ok(strpos($ui, 'art(p, true)') !== false,
+   'the board does not ask for the board-sized art, so a mythic spanning the grid is upscaled 250px art');
+ok(preg_match('~drawTray[\s\S]*?art\(p\)~', $ui) === 1,
+   'the tray asks for board-sized art, which is 1000px pulled for a 54px chip');
+/* Both sizes have to exist on disk or the choice is academic. */
+foreach (array(250, 1000) as $px) {
+	ok(is_dir(__DIR__ . '/' . dhcf_art_dir() . '/' . $px),
+	   'there is no ' . $px . 'px art directory, so that branch 404s');
+}
 /* Row one is the bottom row: a board fills upward. */
 ok(strpos($ui, 'flex-direction: column-reverse') !== false,
    'the board fills downward, so the tier climbs the wrong way');
@@ -263,6 +287,38 @@ echo "\nthree columns, and the art is never a dependency\n";
  */
 ok(strpos($ui, 'grid-template-areas: "portal board pick"') !== false,
    'the three columns are not in the owner\'s order: Portal, board, spares');
+/*
+ * NO <section> ON THIS PAGE.
+ *
+ * flexbox.css:1735 starts every <section> on the platform at opacity:0
+ * for a scroll reveal that adds .active. All three columns were
+ * <section>, so they rendered, measured 1960px wide, and were
+ * completely invisible -- reported as "nothing is displayed on the page
+ * at all", which is exactly what it was. Asserted because <section> is
+ * the obvious tag for a page of three panels and nothing about the
+ * markup would warn the next person.
+ */
+/* THE MARKUP, NOT THE COMMENTARY. The note above that rule in the page
+   names <section> in order to explain why it is not used, so a plain
+   search over the source matches my own prose and reports the thing it
+   is warning about. token_get_all: only inline HTML is looked at. */
+$pageHtml = '';
+foreach (token_get_all($page) as $t) {
+	if (is_array($t) && $t[0] === T_INLINE_HTML) $pageHtml .= $t[1];
+}
+ok(stripos($pageHtml, '<section') === false,
+   'the page uses <section>, which flexbox.css starts at opacity 0 — it will render invisible');
+/* And the rule it is dodging is real and still there; if it ever goes,
+   this guard is why the page stopped depending on it. */
+ok(preg_match('~\nsection \{\s*\n\topacity: 0;~', (string) file_get_contents(__DIR__ . '/dist/flexbox.css')) === 1,
+   'flexbox.css no longer hides <section>, so this guard is documenting a trap that no longer exists');
+/*
+ * AND THE GRID HAS TO SAY HOW BIG IT WANTS TO BE. This page sits in the
+ * platform's full-width column, 1960px on a wide monitor, and a 1fr
+ * middle column there gave a 4x4 board with 314px cells.
+ */
+ok(preg_match('~\.dhcp-rig \{[^}]*max-width: \d+px~s', $ui) === 1,
+   'the rig is uncapped, so the board grows to whatever the 2000px column gives it');
 ok(substr_count($ui, 'grid-template-areas') >= 3,
    'there is only one layout, so the three columns are still three columns on a phone');
 /* BOARD FIRST on a phone: it is what the page is for, and the spares
