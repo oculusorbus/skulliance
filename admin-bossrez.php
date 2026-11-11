@@ -49,7 +49,20 @@ admin_chrome('bossrez');
 			<input type="range" id="abrFloor" min="0.25" max="0.80" step="0.01" value="0.45"></label>
 		<label>Gain <b id="abrGainV">0.80</b>
 			<input type="range" id="abrGain" min="0.2" max="1" step="0.05" value="0.80"></label>
+		<label>Lead-in <b id="abrLeadV">1.30</b>s
+			<input type="range" id="abrLead" min="0.4" max="3" step="0.1" value="1.30"></label>
 	</div>
+	<p>
+		<label style="font-size:.82rem;color:#c3d2dd">
+			<input type="checkbox" id="abrRev" checked> Reverse it
+		</label>
+		<small style="display:block;margin-top:6px;color:#8fa7bb">
+			Reversed, the sound swells and cuts instead of hitting and decaying, so it
+			has to FINISH on the visual rather than start on it. The lead-in is how long
+			the swell runs before the crew lands -- held constant, because a deeper pitch
+			makes the whole sound longer and the lead would otherwise stretch with it.
+		</small>
+	</p>
 
 	<p>
 		<button type="button" class="button abr-go" id="abrLadder" style="width:auto">▶ Play waves 1 to 10</button>
@@ -99,7 +112,22 @@ admin_chrome('bossrez');
 (function () {
   var POW = <?php echo json_encode($abr_pow); ?>;
   var FILES = { rise: 'sounds/hypercube_create.ogg', win: 'sounds/voice_levelcomplete.ogg' };
-  var actx = null, buf = {}, live = [], note = document.getElementById('abrNote');
+  var actx = null, buf = {}, rbuf = {}, live = [], note = document.getElementById('abrNote');
+
+  /* Reversed once per file, not per play: copying two channels of a three
+     second buffer on every button press is wasted work, and the reversed
+     take is the one being auditioned most. */
+  function reversed(key) {
+    if (rbuf[key] || !buf[key]) return rbuf[key];
+    var src = buf[key];
+    var out = actx.createBuffer(src.numberOfChannels, src.length, src.sampleRate);
+    for (var c = 0; c < src.numberOfChannels; c++) {
+      var i = src.getChannelData(c), o = out.getChannelData(c), n = src.length;
+      for (var k = 0; k < n; k++) o[k] = i[n - 1 - k];
+    }
+    rbuf[key] = out;
+    return out;
+  }
 
   /* The Arena's own loader, shortened: decode once into AudioContext so
      playbackRate is real resampling rather than a tempo trick. */
@@ -118,13 +146,29 @@ admin_chrome('bossrez');
     }));
   }
 
-  function play(key, rate, gain, when) {
+  function play(key, rate, gain, when, rev) {
     if (actx && buf[key]) {
       if (actx.state === 'suspended') actx.resume();
-      var s = actx.createBufferSource(); s.buffer = buf[key];
+      var s = actx.createBufferSource();
+      s.buffer = rev ? reversed(key) : buf[key];
       s.playbackRate.value = rate;
       var g = actx.createGain(); g.gain.value = gain;
       s.connect(g); g.connect(actx.destination);
+      /*
+       * A REVERSED SWELL IS PLAYED FROM ITS TAIL. At rate 0.465 the whole
+       * thing runs five and a half seconds, so starting at the top would
+       * put the landing five seconds after the button. Only the last
+       * lead-in seconds are played, which keeps the moment the swell
+       * cuts a fixed distance from the start whatever the pitch.
+       */
+      if (rev) {
+        var lead = parseFloat(document.getElementById('abrLead').value);
+        var full = s.buffer.duration / rate;
+        var off  = Math.max(0, (full - lead)) * rate;
+        s.start(actx.currentTime + (when || 0), off);
+        live.push(s);
+        return;
+      }
       s.start(actx.currentTime + (when || 0));
       live.push(s);
       return;
@@ -132,6 +176,7 @@ admin_chrome('bossrez');
     /* No decode: an <audio> element also has playbackRate, and turning
        preservesPitch OFF is what makes it drop in pitch rather than just
        play slower. */
+    if (rev) { note.textContent = 'Reverse needs Web Audio, which this browser did not give us.'; return; }
     setTimeout(function () {
       var a = new Audio(FILES[key]);
       a.preservesPitch = false; a.mozPreservesPitch = false; a.webkitPreservesPitch = false;
@@ -144,13 +189,14 @@ admin_chrome('bossrez');
   function stopAll() { live.forEach(function (s) { try { s.stop(); } catch (e) {} }); live = []; }
 
   function val(id) { return parseFloat(document.getElementById(id).value); }
+  function rev() { return document.getElementById('abrRev').checked; }
   function rateFor(w) {
     return Math.max(val('abrFloor'), val('abrBase') - val('abrStep') * (w - 1));
   }
 
   var grid = document.getElementById('abrGrid');
   function draw() {
-    ['abrBase', 'abrStep', 'abrFloor', 'abrGain', 'abrHold'].forEach(function (id) {
+    ['abrBase', 'abrStep', 'abrFloor', 'abrGain', 'abrHold', 'abrLead'].forEach(function (id) {
       document.getElementById(id + 'V').textContent = document.getElementById(id).value;
     });
     grid.innerHTML = '';
@@ -162,21 +208,22 @@ admin_chrome('bossrez');
                     + '<span class="r">' + rateFor(w).toFixed(3) + '</span>'
                     + '<span class="p">power ' + POW[w].toFixed(2) + '&times;</span>';
         b.addEventListener('click', function () {
-          init().then(function () { stopAll(); play('rise', rateFor(w), val('abrGain'), 0); });
+          init().then(function () { stopAll(); play('rise', rateFor(w), val('abrGain'), 0, rev()); });
         });
         grid.appendChild(b);
       })(w);
     }
   }
-  ['abrBase', 'abrStep', 'abrFloor', 'abrGain', 'abrHold'].forEach(function (id) {
+  ['abrBase', 'abrStep', 'abrFloor', 'abrGain', 'abrHold', 'abrLead'].forEach(function (id) {
     document.getElementById(id).addEventListener('input', draw);
   });
+  document.getElementById('abrRev').addEventListener('change', draw);
   draw();
 
   document.getElementById('abrLadder').addEventListener('click', function () {
     init().then(function () {
       stopAll();
-      for (var w = 1; w <= 10; w++) play('rise', rateFor(w), val('abrGain'), (w - 1) * 1.25);
+      for (var w = 1; w <= 10; w++) play('rise', rateFor(w), val('abrGain'), (w - 1) * 1.6, rev());
     });
   });
   document.getElementById('abrStop').addEventListener('click', stopAll);
@@ -184,7 +231,7 @@ admin_chrome('bossrez');
     init().then(function () {
       stopAll();
       play('win', 1, 0.75, 0);
-      play('rise', rateFor(4), val('abrGain'), 1.1 + val('abrHold') / 1000);
+      play('rise', rateFor(4), val('abrGain'), 1.1 + val('abrHold') / 1000, rev());
     });
   });
 })();
