@@ -188,21 +188,36 @@ ok($rungs === $sorted, 'the cascade does not widen monotonically, so it can skip
 ok(strpos($lib, 'user_id <> \'" . $ex . "\'') !== false,
    'the cascade does not exclude the submitter, so the last rung can hand somebody their own trait back');
 
-echo "\nthe board is persisted by copy, not by name\n";
+echo "\nthe board is session state, held by copy\n";
 /*
- * A player can own three copies of a trait. Staging two has to be
- * unambiguous and the delete has to take exactly those rows, which is
- * why the board holds drop_id and why UNIQUE sits on it.
+ * NO TABLE. The board is a draft of something about to be destroyed;
+ * giving it durable storage bought nothing anybody asked for and cost a
+ * migration and a second place for state to go stale.
  */
-ok(strpos($lib, 'UNIQUE KEY uniq_drop (drop_id)') !== false,
-   'drop_id is not unique, so the same copy can be staged twice');
-ok(strpos($lib, 'INNER JOIN dhc_trait_drops d ON d.id = b.drop_id') !== false,
-   'the board does not join back to the drop rows, so it cannot tell a sold trait from a held one');
+ok(strpos($lib, 'dhc_portal_board') === false,
+   'the board still wants a table; it is session state now and a stray reference will fatal on a fresh install');
+ok(!is_file(__DIR__ . '/dhcportal-schema.md'),
+   'the schema doc is still there describing a table that does not exist');
+ok(strpos($lib, "\$_SESSION['dhcp_board']") !== false,
+   'the board is not in the session, so it is nowhere at all');
+/*
+ * KEYED BY USER. One browser can sign out and in as somebody else
+ * without a reload, and a board inherited across that would point at
+ * traits the new account does not own.
+ */
+/* strpos, not a regex: the first version of these two drowned in
+   backslashes and reported correct code as broken. */
+ok(strpos($lib, "['uid'] ?? 0) !== " . '$uid') !== false,
+   'the session board is not keyed to the account, so it survives a sign-out into somebody else\'s session');
+/*
+ * STILL drop_ids, NOT category+slug: a player can own three copies and
+ * the jettison must destroy exactly the ones staged.
+ */
 ok(strpos($lib, 'dhcf_available($conn, $uid)') !== false,
    'the board does not self-heal against Fighters, so a trait on a Fighter can still be jettisoned');
-$schema = (string) file_get_contents(__DIR__ . '/dhcportal-schema.md');
-ok(strpos($schema, 'UNIQUE KEY uniq_drop') !== false,
-   'the schema doc and the code disagree about the unique key');
+ok(strpos($lib, 'SELECT id, category, slug FROM dhc_trait_drops') !== false
+   && strpos($lib, "WHERE user_id = '" . '$uid' . "' AND id IN") !== false,
+   'the board does not resolve its ids against what the player owns, so a forged id reaches the jettison');
 
 echo "\nboth ends announce, and neither is capped\n";
 /*

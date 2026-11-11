@@ -93,7 +93,7 @@ if (!$del || $conn->affected_rows !== count($ids)) {
 	dhcp_out(false, array('why' => 'Your board changed while that was firing. Nothing was taken.',
 	                      'reload' => true));
 }
-$conn->query("DELETE FROM dhc_portal_board WHERE user_id = '$uid'");
+dhcp_clear($conn, $uid);   /* the board is session state; see the note in the lib */
 
 /*
  * THE WIN. Committed with source 'portal' so it announces like any other

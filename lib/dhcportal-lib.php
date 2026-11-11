@@ -238,106 +238,98 @@ function dhcp_pick_recipient($conn, $exclude_user_id) {
 /*
  * ===== THE STAGED BOARD ==================================================
  *
- * The board persists. Sixteen pieces is enough arrangement that losing it
- * to a closed tab would sting, and a player who stacks a board on a phone
- * and gets interrupted should find it waiting.
+ * IN THE SESSION, NOT A TABLE.
  *
- * IT HOLDS drop_id, NOT category+slug, and that is the whole double-spend
- * defence. A player can own three copies of the same trait; staging two
- * of them has to be unambiguous, and the delete at jettison has to remove
- * exactly the rows that were staged rather than "two of these". Pointing
- * at dhc_trait_drops.id makes every piece on the board a specific copy
- * that either still exists and is still free, or does not.
+ * The first build gave this its own table with a UNIQUE key and a
+ * schema doc. That was over-engineering a scratchpad: the board is a
+ * draft of something about to be destroyed, and persisting it properly
+ * bought durability nobody asked for at the cost of a migration, a
+ * cleanup story and a second place for state to go stale.
  *
- * STAGED IS NOT COMMITTED. A trait on the board stays available to the
- * assembler, because a draft that quietly locks your traits is worse than
- * one that goes stale. So the board SELF-HEALS: dhcp_board() drops any
- * piece that has since been spent on a Fighter, sold or otherwise left,
- * and tells the page how many went. The endpoint then re-verifies from
- * scratch before anything moves, because a page can be stale by the time
- * a button is pressed and the staging area is not the authority.
+ * So it is a list of drop_ids in $_SESSION. It survives navigation and
+ * reloads, and it is lost on logout or a long enough idle gap. That is
+ * the right trade for a pile you assembled two minutes ago and are
+ * about to throw away.
+ *
+ * WHAT THE TABLE WAS ACTUALLY DEFENDING IS STILL DEFENDED. Its UNIQUE
+ * key stopped the same copy being staged twice, and a session does that
+ * better: one array, one owner, no second tab racing it. And the real
+ * double-spend guard was never here -- it is in the endpoint, where the
+ * delete names the owner and checks its own affected-row count against
+ * the board. That is untouched.
+ *
+ * STILL ONLY drop_ids, NOT category+slug. A player can own three copies
+ * of a trait; staging two has to be unambiguous and the jettison has to
+ * destroy exactly the ones staged rather than "two of these".
  */
 
-/** CREATE TABLE, for the record. Run once; see dhcportal-schema.md. */
-function dhcp_schema() {
-	return "CREATE TABLE IF NOT EXISTS dhc_portal_board (
-	  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-	  user_id INT UNSIGNED NOT NULL,
-	  drop_id INT UNSIGNED NOT NULL,
-	  added_at DATETIME NOT NULL,
-	  PRIMARY KEY (id),
-	  UNIQUE KEY uniq_drop (drop_id),
-	  KEY idx_user (user_id)
-	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+/** The raw list. Always a list of ints, never trusted to be valid. */
+function dhcp_raw($user_id) {
+	$uid = (int) $user_id;
+	if ($uid <= 0) return array();
+	/* KEYED BY USER. One browser can sign out and in as somebody else
+	   without a reload, and a board inherited across that would be
+	   pointing at traits the new account does not own. */
+	if (!isset($_SESSION['dhcp_board']) || !is_array($_SESSION['dhcp_board'])) return array();
+	if ((int) ($_SESSION['dhcp_board']['uid'] ?? 0) !== $uid) return array();
+	$ids = isset($_SESSION['dhcp_board']['ids']) ? $_SESSION['dhcp_board']['ids'] : array();
+	return is_array($ids) ? array_values(array_map('intval', $ids)) : array();
+}
+
+function dhcp_put($user_id, $ids) {
+	$_SESSION['dhcp_board'] = array('uid' => (int) $user_id,
+	                                'ids' => array_values(array_map('intval', $ids)));
 }
 
 /**
  * The board as it stands, self-healed.
  *
- * UNIQUE ON drop_id is the first half of the double-spend defence: the
- * same copy cannot be staged twice, by this player or any other, and the
- * database refuses rather than the code remembering to.
+ * SELF-HEALING IS NOT OPTIONAL HERE. Staged is deliberately NOT
+ * committed -- a draft that silently locks your traits is worse than one
+ * that goes stale -- so a piece can be spent on a Fighter while it sits
+ * on the board. This checks what is staged against dhcf_available(),
+ * which already knows how many copies of each trait are free, rather
+ * than inventing a second idea of what "spent" means.
  *
  * @return array array('pieces' => [...], 'slots' => n, 'dropped' => n)
  */
 function dhcp_board($conn, $user_id) {
-	$uid  = (int) $user_id;
-	$out  = array('pieces' => array(), 'slots' => 0, 'dropped' => 0);
+	$uid = (int) $user_id;
+	$out = array('pieces' => array(), 'slots' => 0, 'dropped' => 0);
 	if ($uid <= 0) return $out;
+	$ids = dhcp_raw($uid);
+	if (!$ids) return $out;
 
-	$r = @$conn->query(
-		"SELECT b.drop_id, d.category, d.slug
-		   FROM dhc_portal_board b
-		   INNER JOIN dhc_trait_drops d ON d.id = b.drop_id
-		  WHERE b.user_id = '$uid' AND d.user_id = '$uid'
-		  ORDER BY b.id ASC");
-	if (!$r) return $out;
-
+	/* Resolve against what they actually own, in the staged order. */
 	$rows = array();
-	while ($x = $r->fetch_assoc()) $rows[] = $x;
-	if (!$rows) {
-		/* Nothing joined. Either the board is empty or every piece has
-		   left the account; clear any orphans so the next read is cheap. */
-		@$conn->query("DELETE FROM dhc_portal_board WHERE user_id = '$uid'");
-		return $out;
-	}
+	$r = @$conn->query("SELECT id, category, slug FROM dhc_trait_drops
+	                     WHERE user_id = '$uid' AND id IN (" . implode(',', $ids) . ")");
+	if ($r) while ($x = $r->fetch_assoc()) $rows[(int) $x['id']] = $x;
 
-	/*
-	 * SELF-HEAL AGAINST FIGHTERS. dhcf_available() already knows how many
-	 * copies of each trait are free, so the board is checked against it
-	 * rather than against a second idea of what "spent" means. More
-	 * staged copies than free copies means the difference went into a
-	 * Fighter since, and the newest staged ones go.
-	 */
 	$free = dhcf_available($conn, $uid);
+	$rarity = dhcf_rarity();
 	$seen = array();
-	$keep = array(); $drop = array();
-	foreach ($rows as $x) {
-		$cat = $x['category']; $slug = $x['slug'];
+	$keep = array();
+	$dropped = 0;
+	foreach ($ids as $did) {
+		if (!isset($rows[$did])) { $dropped++; continue; }   /* sold, gone, never theirs */
+		$cat = $rows[$did]['category']; $slug = $rows[$did]['slug'];
 		$have = isset($free[$cat][$slug]) ? (int) $free[$cat][$slug]['free'] : 0;
 		$k = $cat . '|' . $slug;
 		$seen[$k] = isset($seen[$k]) ? $seen[$k] + 1 : 1;
-		if ($seen[$k] <= $have) $keep[] = $x; else $drop[] = (int) $x['drop_id'];
-	}
-	if ($drop) {
-		@$conn->query("DELETE FROM dhc_portal_board WHERE user_id = '$uid'
-		                AND drop_id IN (" . implode(',', array_map('intval', $drop)) . ")");
-		$out['dropped'] = count($drop);
-	}
-
-	$rarity = dhcf_rarity();
-	foreach ($keep as $x) {
-		$cat = $x['category']; $slug = $x['slug'];
+		if ($seen[$k] > $have) { $dropped++; continue; }     /* went onto a Fighter */
 		$tier = isset($rarity[$cat][$slug][0]) ? $rarity[$cat][$slug][0] : 'common';
-		$out['pieces'][] = array(
-			'drop_id'  => (int) $x['drop_id'],
-			'category' => $cat,
-			'slug'     => $slug,
-			'tier'     => $tier,
-			'size'     => dhcp_size($tier),
-		);
+		$keep[] = array('drop_id' => $did, 'category' => $cat, 'slug' => $slug,
+		                'tier' => $tier, 'size' => dhcp_size($tier));
 	}
-	$out['slots'] = dhcp_slots($out['pieces']);
+	if ($dropped > 0) {
+		$ok = array();
+		foreach ($keep as $p) $ok[] = $p['drop_id'];
+		dhcp_put($uid, $ok);
+	}
+	$out['pieces']  = $keep;
+	$out['slots']   = dhcp_slots($keep);
+	$out['dropped'] = $dropped;
 	return $out;
 }
 
@@ -345,8 +337,8 @@ function dhcp_board($conn, $user_id) {
  * Put one trait on the board.
  *
  * VERIFIES OWNERSHIP AND FREEDOM HERE TOO, not only at the jettison. A
- * staging call is a write and every write checks for itself -- the page
- * that sent it may be minutes stale.
+ * staging call is a state change and every one checks for itself: the
+ * page that sent it may be minutes stale.
  *
  * @return array array(bool ok, string why, array returned_drop_ids)
  */
@@ -379,16 +371,14 @@ function dhcp_stage($conn, $user_id, $drop_id) {
 	$incoming = array('drop_id' => $did, 'category' => $row['category'],
 	                  'slug' => $row['slug'], 'tier' => $tier, 'size' => dhcp_size($tier));
 
-	/* THE EJECT RULE, applied before anything is written. */
+	/* THE EJECT RULE, applied before anything is stored. */
 	list($kept, $returned) = dhcp_fit($board['pieces'], $incoming);
+	$ids = array();
+	foreach ($kept as $p) $ids[] = $p['drop_id'];
+	dhcp_put($uid, $ids);
+
 	$back = array();
 	foreach ($returned as $t) $back[] = (int) $t['drop_id'];
-	if ($back) {
-		@$conn->query("DELETE FROM dhc_portal_board WHERE user_id = '$uid'
-		                AND drop_id IN (" . implode(',', $back) . ")");
-	}
-	@$conn->query("INSERT INTO dhc_portal_board (user_id, drop_id, added_at)
-	               VALUES ('$uid', '$did', NOW())");
 	return array(true, '', $back);
 }
 
@@ -396,13 +386,18 @@ function dhcp_stage($conn, $user_id, $drop_id) {
 function dhcp_unstage($conn, $user_id, $drop_id) {
 	$uid = (int) $user_id; $did = (int) $drop_id;
 	if ($uid <= 0 || $did <= 0) return false;
-	return (bool) @$conn->query("DELETE FROM dhc_portal_board
-	                              WHERE user_id = '$uid' AND drop_id = '$did'");
+	$ids = dhcp_raw($uid);
+	$out = array();
+	$found = false;
+	foreach ($ids as $i) { if ($i === $did) { $found = true; continue; } $out[] = $i; }
+	dhcp_put($uid, $out);
+	return $found;
 }
 
 /** Clear it. */
 function dhcp_clear($conn, $user_id) {
 	$uid = (int) $user_id;
 	if ($uid <= 0) return false;
-	return (bool) @$conn->query("DELETE FROM dhc_portal_board WHERE user_id = '$uid'");
+	dhcp_put($uid, array());
+	return true;
 }
