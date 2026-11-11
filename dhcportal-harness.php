@@ -230,11 +230,20 @@ foreach ($three as $pc) foreach ($pc['drop_ids'] as $i) $ids[] = $i;
 sort($ids);
 ok($ids === array(1, 2, 3), 'a row was dropped or paired twice: ' . implode(',', $ids));
 ok(count($three) === 2, 'three rows with one pair came out as ' . count($three) . ' pieces, not two');
-/* And they travel together out the other side. */
-ok(preg_match('~\$to = dhcp_pick_recipient.*?foreach \(\$slugs as~s', $end0) === 1,
-   'the recipient is picked per slug rather than per piece, so a pair is split between two players');
-ok(strpos($end0, 'DHCF_PAIRED_MARK') !== false,
-   'the second half of a gifted pair is not marked, so it counts as a drop of its own');
+/*
+ * AND THEY TRAVEL TOGETHER OUT THE OTHER SIDE -- enforced somewhere else
+ * now. This loop used to send both halves itself; dhcf_commit_drop()
+ * grants the tethered partner for EVERY caller, to the same user_id and
+ * marked so it cannot pair again, so sending both from here would award
+ * the second twice. The requirement is unchanged: one recipient per
+ * PIECE, and a piece is a whole weapon.
+ */
+ok(preg_match('~\$to = dhcp_pick_recipient~', $end0) === 1,
+   'the gift loop no longer picks a recipient at all');
+ok(preg_match('~foreach \(\$pieces as \$p\) \{\s*\$to = dhcp_pick_recipient~', $end0) === 1,
+   'the recipient is not picked once per piece, so a pair can be split between two players');
+ok(strpos($end0, 'foreach ($slugs as') === false,
+   'the gift loop sends both halves itself again, which now awards the partner twice');
 
 echo "\nthe jettison cannot half-happen\n";
 /*
@@ -703,7 +712,7 @@ ok($end_notify !== false && $end_gifts !== false && $end_notify > $end_gifts,
 /* The gifts going OUT must keep it: those land on other players, who
    have no Portal reveal of their own and whose modal is the whole
    woo-back. */
-ok(preg_match("~'portalgift', \\\$detail\\)~", $end) === 1,
+ok(preg_match("~'portalgift', 'jettisoned by another player'\\)~", $end) === 1,
    'the outgoing gifts changed shape, so the recipients may have lost their reveal');
 
 echo "\nthe tray is the whole pile, so a piece can come back\n";

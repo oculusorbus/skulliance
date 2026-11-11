@@ -454,17 +454,17 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
 	 * already been paid for this draw, and dhcf_cap_count() skips rows marked
 	 * this way. A failure here costs the partner, never the drop.
 	 */
-	$partner = dhcf_tethered_partner($slug);
-	if ($partner !== '') {
-		// Same category by definition -- both halves are weapon art, and the
-		// rarity table is keyed by art directory.
-		$pinfo = dhcf_trait_info($cat, $partner);
-		if ($pinfo) {
-			dhcf_commit_drop($conn, $user_id, $cat, $partner, $pinfo,
-				$source, DHCF_PAIRED_MARK . $slug);
-		}
-	}
-
+	/*
+	 * THE PARTNER IS dhcf_commit_drop()'S JOB NOW, not this function's. It
+	 * was here, which meant it only happened on a DRAW -- and three paths
+	 * grant traits without drawing: the Portal's win, the Portal's gifts
+	 * and the welcome-back package all call dhcf_commit_drop() directly.
+	 * So winning a tethered half from the Portal handed out exactly one
+	 * half of a weapon that cannot be built with, which is how a player
+	 * ended up holding four Lil Fren straps against three Lil Frens.
+	 *
+	 * Pairing is a property of GRANTING a trait, not of rolling for one.
+	 */
 	return $drop;
 }
 
@@ -801,6 +801,47 @@ function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_
 		require_once __DIR__ . '/dhcfighters-notify.php';
 		dhcf_notify_drop($conn, $user_id, $drop, $source);
 		ob_end_clean();
+	}
+
+	/*
+	 * BOTH HALVES OR NEITHER, FOR EVERY CALLER.
+	 *
+	 * A tethered weapon is one weapon in two art files, and the assembler
+	 * will not place either without the other -- so granting a lone sash
+	 * grants something the player owns and cannot build with, refused at
+	 * save with a shortfall naming a trait they have never held.
+	 *
+	 * This lived in dhcf_award(), so it only ran on a DRAW. The Portal's
+	 * win, the Portal's gifts and the welcome-back package all grant
+	 * traits without drawing, and all three called straight in here --
+	 * each one able to hand out half a weapon. Found from the ledger: four
+	 * Lil Fren straps against three Lil Frens, which no sequence of
+	 * ordinary drops can produce.
+	 *
+	 * THE MARK IS THE RECURSION GUARD. The partner's own row carries
+	 * DHCF_PAIRED_MARK, and a row written under that mark does not pair
+	 * again -- so this goes exactly one level deep however it is reached,
+	 * and the backfill in dhcf_tether_repair(), which already writes under
+	 * the mark, cannot double-award.
+	 *
+	 * Awarded even when they already hold the partner: duplicates are
+	 * ordinary here, and a rule that sometimes pays the partner would be
+	 * harder to explain than one that always does.
+	 *
+	 * AFTER the primary row and after the announcement, deliberately: a
+	 * failure here costs the partner, never the drop.
+	 */
+	if (strpos((string) $source_detail, DHCF_PAIRED_MARK) !== 0) {
+		$partner = dhcf_tethered_partner($slug);
+		if ($partner !== '') {
+			/* Same category by definition -- both halves are the same art
+			   directory, and the rarity table is keyed by directory. */
+			$pinfo = dhcf_trait_info($cat, $partner);
+			if ($pinfo) {
+				dhcf_commit_drop($conn, $user_id, $cat, $partner, $pinfo, $source,
+					DHCF_PAIRED_MARK . $slug, $announce, $reveal);
+			}
+		}
 	}
 
 	return $drop;

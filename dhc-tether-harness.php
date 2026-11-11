@@ -125,6 +125,97 @@ $spy3 = new TetherSpy(array(array(array('user_id' => 9, 'username' => 'ok', 'a' 
 ok(count(dhcf_tether_orphans($spy3)) === 0,
    'a player holding two of each half is reported as owed something');
 
+echo "\nevery path that grants a trait grants both halves\n";
+/*
+ * THE BUG THIS PINS, found in the ledger: four Lil Fren straps against
+ * three Lil Frens, which no sequence of ordinary drops can produce.
+ *
+ * The partner award lived in dhcf_award(), so it only ran on a DRAW --
+ * and three paths grant traits without drawing. The Portal's win, the
+ * Portal's gifts and the welcome-back package all call
+ * dhcf_commit_drop() directly, and every one of them could hand out half
+ * a weapon that the assembler then refuses to build with.
+ */
+$lib_src = (string) file_get_contents(__DIR__ . '/dhcfighters-lib.php');
+$lib_code = '';
+foreach (token_get_all($lib_src) as $t) {
+	if (is_array($t)) { if ($t[0] === T_COMMENT || $t[0] === T_DOC_COMMENT) continue; $lib_code .= $t[1]; }
+	else $lib_code .= $t;
+}
+$fn_award  = new ReflectionFunction('dhcf_award');
+$fn_commit = new ReflectionFunction('dhcf_commit_drop');
+$src_lines = explode("\n", $lib_src);
+$body_of = function ($fn) use ($src_lines) {
+	return implode("\n", array_slice($src_lines, $fn->getStartLine() - 1,
+		$fn->getEndLine() - $fn->getStartLine() + 1));
+};
+$award_body  = $body_of($fn_award);
+$commit_body = $body_of($fn_commit);
+
+/*
+ * DRIVEN, NOT READ. The first version of this searched the function for
+ * dhcf_tethered_partner( and passed with the whole branch disabled --
+ * the call was still there, just unreachable. Counting the INSERTs a
+ * grant actually produces cannot be fooled that way.
+ */
+class TetherIns {
+	public $q = array(); public $insert_id = 1; public $error = '';
+	public function query($s) {
+		$this->q[] = $s;
+		if (stripos($s, 'INSERT') === 0) $this->insert_id++;
+		return new TetherInsRes();
+	}
+	public function real_escape_string($v) { return $v; }
+}
+class TetherInsRes {
+	private $i = 0; public $num_rows = 1;
+	public function fetch_assoc() {
+		return $this->i++ ? null : array('c' => 0, 'worn' => 0, 'username' => 'x');
+	}
+}
+function tether_inserts($slug) {
+	$c = new TetherIns();
+	$info = dhcf_trait_info('weapon', $slug);
+	if (!$info) return array();
+	dhcf_commit_drop($c, 5, 'weapon', $slug, $info, 'portal', 'test', false, false);
+	$out = array();
+	foreach ($c->q as $q) {
+		if (stripos($q, 'INSERT INTO dhc_trait_drops') !== 0) continue;
+		if (preg_match("~,\s*'([a-z0-9-]+)',\s*'[a-z]+',~i", $q, $m)) $out[] = $m[1];
+	}
+	return $out;
+}
+$t_pair = tether_inserts('lil-fren');
+ok(count($t_pair) === 2,
+   'granting a tethered half wrote ' . count($t_pair) . ' ledger rows, not 2 -- '
+ . 'every caller that does not draw can hand out half a weapon');
+ok(in_array('lil-fren', $t_pair, true) && in_array('lil-fren-1', $t_pair, true),
+   'granting lil-fren did not write both halves: ' . implode(', ', $t_pair));
+
+/* AND EXACTLY TWO. Without the mark the partner pairs back to the trait
+   that pulled it in, and that is an infinite recursion, not a duplicate. */
+$t_solo = tether_inserts('dh-raider-equipment');
+ok(count($t_solo) === 1,
+   'granting an UNtethered trait wrote ' . count($t_solo) . ' rows, not 1');
+
+ok(substr_count($award_body, 'dhcf_tethered_partner(') === 0,
+   'dhcf_award() grants the partner as well, so a drawn pair is awarded twice');
+
+/* THE MARK IS THE RECURSION GUARD, and without it this recurses forever:
+   the partner's partner is the trait that pulled it in. */
+ok(strpos($commit_body, 'DHCF_PAIRED_MARK) !== 0') !== false,
+   'nothing stops a paired row pairing again, so a tethered award recurses');
+ok(strpos($commit_body, 'DHCF_PAIRED_MARK . $slug') !== false,
+   'the partner row is not marked, so it counts as a drop of its own AND pairs again');
+
+/* Every direct caller is covered BY that, so none of them may carry its
+   own copy -- two implementations is how the halves drift apart again. */
+foreach (array('ajax/dhcportal-jettison.php', 'lib/return-gift.php') as $cf) {
+	$csrc = (string) file_get_contents(__DIR__ . '/' . $cf);
+	ok(strpos($csrc, 'dhcf_tethered_partner(') === false,
+	   $cf . ' grants the tethered partner itself, so the partner is awarded twice');
+}
+
 echo "\nthe repair is silent, and shaped like the draw\n";
 $lib = '';
 foreach (token_get_all((string) file_get_contents(__DIR__ . '/dhcfighters-lib.php')) as $t) {

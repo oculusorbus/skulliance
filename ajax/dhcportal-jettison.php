@@ -221,22 +221,20 @@ foreach ($pieces as $p) {
 	$to = dhcp_pick_recipient($conn, $uid);
 	if ($to <= 0) { error_log('dhcportal: no recipient for ' . $p['slug']); continue; }
 	/*
-	 * BOTH HALVES TO THE SAME PERSON. A tethered weapon and its strap
-	 * have to arrive together, or the cascade hands two lapsed players
-	 * half a weapon each and recreates the exact bug the pairing exists
-	 * to prevent -- on somebody who did nothing to deserve it.
+	 * BOTH HALVES TO THE SAME PERSON, and this loop no longer has to
+	 * arrange it. dhcf_commit_drop() grants the tethered partner itself
+	 * now, to the same user_id, marked so it cannot pair again -- so
+	 * sending both halves from here would award the second one twice.
+	 *
+	 * The requirement is unchanged and still load-bearing: a pair split
+	 * across two lapsed players hands each of them half a weapon they can
+	 * never build with, on somebody who did nothing to deserve it.
 	 */
-	$slugs = isset($p['slugs']) ? $p['slugs'] : array($p['slug']);
-	foreach ($slugs as $i => $sl) {
-		$info = isset($rarity[$p['category']][$sl]) ? $rarity[$p['category']][$sl] : null;
-		if (!$info) continue;
-		/* The second row carries the same mark dhcf_award() uses, so a
-		   paired half is never counted as a drop in its own right. */
-		$detail = $i === 0 ? 'jettisoned by another player'
-		                   : DHCF_PAIRED_MARK . 'jettisoned by another player';
-		if (dhcf_commit_drop($conn, $to, $p['category'], $sl, $info, 'portalgift', $detail)
-		    && $i === 0) $sent++;
-	}
+	$sl   = $p['slug'];
+	$info = isset($rarity[$p['category']][$sl]) ? $rarity[$p['category']][$sl] : null;
+	if (!$info) continue;
+	if (dhcf_commit_drop($conn, $to, $p['category'], $sl, $info,
+	                     'portalgift', 'jettisoned by another player')) $sent++;
 }
 
 /* Logged rather than returned: nobody is listening any more. */
