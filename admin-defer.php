@@ -68,6 +68,60 @@ include 'header.php';
         : 'At least one does not hold. A queued notification would still move off the critical path but the browser would not be released early.'; ?></p>
   <?php endif; ?>
 
+  <h4>Prove it</h4>
+  <p>The capability check above says a function exists. It does not say the server
+     honours it. <code>skullpaper/MAINTENANCE.md</code> records three production failures
+     at deferring work past the response here and concludes it cannot be done -- but what
+     was tried was <code>fastcgi_finish_request()</code>, which does not exist on this
+     SAPI and so did nothing, and <code>X-Accel-Buffering</code>, which is an nginx header.
+     <code>litespeed_finish_request()</code> was never tried.</p>
+  <p>This fires a request that answers at once, releases, then works for 3 seconds before
+     writing a marker. If the reply comes back in milliseconds and the marker still shows
+     3 seconds of work, the release is real.</p>
+  <p><button type="button" id="dpGo" class="button" style="width:auto">Run the test</button></p>
+  <pre id="dpOut" style="white-space:pre-wrap;background:#080f18;padding:12px;border-radius:3px;
+       color:#c3d2dd;font-size:.82rem;overflow-x:auto">Not run.</pre>
+  <script>
+  (function () {
+    var go = document.getElementById('dpGo'), out = document.getElementById('dpOut');
+    go.addEventListener('click', function () {
+      go.disabled = true; out.textContent = 'Firing...';
+      var t0 = performance.now();
+      fetch('ajax/defer-probe.php?mode=fire', { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var ms = Math.round(performance.now() - t0);
+          if (!d.ok) { out.textContent = 'Refused: ' + (d.why || '?'); go.disabled = false; return; }
+          var lines = ['SAPI: ' + d.sapi,
+                       'released with: ' + d.released,
+                       'reply came back in: ' + ms + ' ms',
+                       'server then works for: ' + d.sleep + ' s',
+                       ''];
+          /* The reply time is the whole answer. Under the sleep means the
+             browser was let go; at or over it means it waited. */
+          lines.push(ms < (d.sleep * 1000 * 0.6)
+            ? 'RELEASED. The browser did not wait for the work.'
+            : 'NOT RELEASED. The reply took as long as the work did.');
+          lines.push('', 'Checking the work actually finished...');
+          out.textContent = lines.join('\n');
+          setTimeout(function () {
+            fetch('ajax/defer-probe.php?mode=read&token=' + encodeURIComponent(d.token),
+                  { credentials: 'same-origin' })
+              .then(function (r) { return r.json(); })
+              .then(function (m) {
+                lines.pop();
+                lines.push(m.done
+                  ? 'Work finished: ' + m.marker.worked_for + ' s after the reply was written.'
+                  : 'NO MARKER. The work did not complete -- the request was killed when the browser left.');
+                out.textContent = lines.join('\n');
+                go.disabled = false;
+              });
+          }, (d.sleep + 1) * 1000);
+        }, function () { out.textContent = 'Request failed.'; go.disabled = false; });
+    });
+  })();
+  </script>
+
   <h4>What is blocking today</h4>
   <p>173 <code>discordmsg()</code> calls across 55 files, and no caller uses the return
      value, so the sender can queue instead of post without touching any of them.</p>
