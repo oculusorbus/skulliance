@@ -53,6 +53,13 @@ admin_chrome('bossrez');
 			<input type="range" id="abrLead" min="0.4" max="3" step="0.1" value="1.30"></label>
 	</div>
 	<p>
+		<label style="font-size:.82rem;color:#c3d2dd;margin-right:18px">
+			Rise sound
+			<select id="abrSrc" style="margin-left:6px">
+				<option value="ko" selected>skullcoinlose (the KO sound)</option>
+				<option value="hyper">hypercube_create</option>
+			</select>
+		</label>
 		<label style="font-size:.82rem;color:#c3d2dd">
 			<input type="checkbox" id="abrRev" checked> Reverse it
 		</label>
@@ -73,9 +80,9 @@ admin_chrome('bossrez');
 
 	<h4>The two-beat cue</h4>
 	<p><small>
-		Triumph, stillness, dread. The wipe keeps the sound it already has
-		(<code>voice_levelcomplete</code>, today's win cue, which resurrection would
-		otherwise orphan), then a held beat of nothing, then the rise.
+		Three bosses knocked out, a held beat of nothing, then the same KO sound
+		running backwards and pitched down. The thing the player heard go down is
+		the thing they hear come back up.
 	</small></p>
 	<p>
 		<label>Held beat <b id="abrHoldV">500</b>ms
@@ -83,7 +90,7 @@ admin_chrome('bossrez');
 			       style="vertical-align:middle;width:180px"></label>
 	</p>
 	<p>
-		<button type="button" class="button abr-go" id="abrCue" style="width:auto">▶ Play the whole cue (wave 4)</button>
+		<button type="button" class="button abr-go" id="abrCue" style="width:auto">▶ Play the whole cue: crew falls, then rises (wave 4)</button>
 	</p>
 </div></div>
 
@@ -111,7 +118,16 @@ admin_chrome('bossrez');
 <script>
 (function () {
   var POW = <?php echo json_encode($abr_pow); ?>;
-  var FILES = { rise: 'sounds/hypercube_create.ogg', win: 'sounds/voice_levelcomplete.ogg' };
+  /*
+   * TWO CANDIDATES FOR THE RISE, and the second one is the better idea:
+   * skullcoinlose is what plays when anything is knocked out, so reversed
+   * it is literally the sound of a boss going down, undone. hypercube is
+   * the sound of something powerful being assembled, which is thematically
+   * close but is not the same sound the player just heard three times.
+   */
+  var FILES = { hyper: 'sounds/hypercube_create.ogg',
+                ko:    'sounds/skullcoinlose.ogg',
+                win:   'sounds/voice_levelcomplete.ogg' };
   var actx = null, buf = {}, rbuf = {}, live = [], note = document.getElementById('abrNote');
 
   /* Reversed once per file, not per play: copying two channels of a three
@@ -190,6 +206,7 @@ admin_chrome('bossrez');
 
   function val(id) { return parseFloat(document.getElementById(id).value); }
   function rev() { return document.getElementById('abrRev').checked; }
+  function src() { return document.getElementById('abrSrc').value; }
   function rateFor(w) {
     return Math.max(val('abrFloor'), val('abrBase') - val('abrStep') * (w - 1));
   }
@@ -208,7 +225,7 @@ admin_chrome('bossrez');
                     + '<span class="r">' + rateFor(w).toFixed(3) + '</span>'
                     + '<span class="p">power ' + POW[w].toFixed(2) + '&times;</span>';
         b.addEventListener('click', function () {
-          init().then(function () { stopAll(); play('rise', rateFor(w), val('abrGain'), 0, rev()); });
+          init().then(function () { stopAll(); play(src(), rateFor(w), val('abrGain'), 0, rev()); });
         });
         grid.appendChild(b);
       })(w);
@@ -218,20 +235,24 @@ admin_chrome('bossrez');
     document.getElementById(id).addEventListener('input', draw);
   });
   document.getElementById('abrRev').addEventListener('change', draw);
+  document.getElementById('abrSrc').addEventListener('change', draw);
   draw();
 
   document.getElementById('abrLadder').addEventListener('click', function () {
     init().then(function () {
       stopAll();
-      for (var w = 1; w <= 10; w++) play('rise', rateFor(w), val('abrGain'), (w - 1) * 1.6, rev());
+      for (var w = 1; w <= 10; w++) play(src(), rateFor(w), val('abrGain'), (w - 1) * 1.6, rev());
     });
   });
   document.getElementById('abrStop').addEventListener('click', stopAll);
   document.getElementById('abrCue').addEventListener('click', function () {
     init().then(function () {
       stopAll();
-      play('win', 1, 0.75, 0);
-      play('rise', rateFor(4), val('abrGain'), 1.1 + val('abrHold') / 1000, rev());
+      /* THE CREW FALLING IS THREE KOs, not a win chime. That is what the
+         player actually hears in the half second before the rise, so the
+         cue has to be auditioned against it. */
+      play('ko', 1, 0.6, 0); play('ko', 1, 0.6, 0.45); play('ko', 1, 0.6, 0.9);
+      play(src(), rateFor(4), val('abrGain'), 1.9 + val('abrHold') / 1000, rev());
     });
   });
 })();
