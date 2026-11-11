@@ -69,6 +69,30 @@ ok(strpos($all, 'SUM(d.slug') !== false,
 ok(strpos($all, 'GROUP BY d.user_id') !== false, 'the scan does not group by player');
 ok(strpos($all, 'LEFT JOIN users') !== false,
    'the scan does not fetch usernames, so the page can only show numeric ids');
+/*
+ * EVERY COPY, NOT THE FREE ONES. The invariant is "holds as many straps
+ * as weapons", and a worn gun has a worn strap so those cancel out of the
+ * difference anyway.
+ *
+ * Counting only FREE copies would miss the case that matters most:
+ * dhcf_shortfall() checks that each trait sent is owned and free but does
+ * NOT enforce tethering -- both halves being sent is a client-side rule --
+ * so a legacy or crafted save could have put a lone gun on a Fighter. That
+ * player has 0 free guns and 0 free straps and reads as whole, while being
+ * owed two. Counting totals reports them.
+ *
+ * It is also what makes the repair idempotent: once the counts balance, a
+ * second run finds nothing whatever is equipped.
+ */
+ok(strpos($all, 'dhc_trait_drops') !== false,
+   'the scan no longer counts the ledger, which is the only place every copy is recorded');
+ok(stripos($all, 'dhc_fighters') === false && stripos($all, 'free') === false,
+   'the scan has started filtering on what is free, so a lone half worn on a Fighter reads as whole');
+$lib_pre = (string) file_get_contents(__DIR__ . '/dhcfighters-lib.php');
+preg_match('~function dhcf_tether_orphans\(\$conn\) \{(.*?)\n\}~s', $lib_pre, $m_or);
+ok(count($m_or) === 2 && strpos($m_or[1], 'dhcf_available(') === false,
+   'the orphan scan consults dhcf_available(), so it counts free copies rather than every copy');
+
 /* It must read, never write. */
 foreach (array('INSERT', 'UPDATE', 'DELETE') as $w) {
 	ok(stripos($all, $w) === false, "the orphan scan issues a $w; it is supposed to only read");

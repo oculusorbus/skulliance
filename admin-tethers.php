@@ -91,9 +91,13 @@ admin_chrome('tethers');
 		<button type="submit" name="repair" value="1" class="button" style="width:auto">
 			Hand out the <?php echo $at_pieces; ?> missing piece(s)</button>
 		<small style="display:block;margin-top:6px">
-			Counts, not presence: two guns and one strap is owed a second strap. Written
-			through the same call the draw makes for a tethered partner, with announcing
-			off &mdash; a backfill is not news.
+			<b>Counts, not presence:</b> two guns and one strap is owed a second strap.
+			<b>Every copy, not the free ones:</b> a worn weapon has a worn strap, so those
+			cancel out of the difference &mdash; and counting only what is free would read a
+			lone half already sitting on a Fighter as whole. It also means running this
+			twice is harmless: once the counts balance there is nothing to find.
+			Written through the same call the draw makes for a tethered partner, with
+			announcing off &mdash; a backfill is not news.
 		</small>
 	</form>
 	<?php endif; ?>
