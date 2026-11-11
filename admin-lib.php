@@ -930,6 +930,10 @@ function admin_tabs() {
 		   at 390px in a desktop browser and wrong on a phone, so the only
 		   place left to measure it is the phone. */
 		'viewport' => array('admin-viewport.php', 'Viewport'),
+		/* What this server can do about blocking Discord posts. The shell
+		   php here is a different build from the one serving the site, so
+		   the web SAPI's capabilities can only be read from the web. */
+		'defer'    => array('admin-defer.php', 'Deferred Posts'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }
