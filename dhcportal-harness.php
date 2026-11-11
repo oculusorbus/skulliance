@@ -37,12 +37,13 @@ $rev     = (string) file_get_contents(__DIR__ . '/dhcportal-reveal.php');
 $end     = (string) file_get_contents(__DIR__ . '/ajax/dhcportal-jettison.php');
 $end0    = $end;
 $dropsrc = (string) file_get_contents(__DIR__ . '/dhc-dropmodal.php');
+$fighters = (string) file_get_contents(__DIR__ . '/dhcfighters-lib.php');
 $flexcss = (string) file_get_contents(__DIR__ . '/dist/flexbox.css');
 
 /* And a guard on the guards: an empty read means every strpos below is
    searching nothing and passing for it. */
 foreach (array('lib' => $lib, 'page' => $page, 'ui' => $ui, 'rev' => $rev,
-               'endpoint' => $end, 'dropmodal' => $dropsrc, 'flexbox.css' => $flexcss) as $n => $src) {
+               'endpoint' => $end, 'dropmodal' => $dropsrc, 'fighters-lib' => $fighters, 'flexbox.css' => $flexcss) as $n => $src) {
 	ok($src !== '', "could not read $n, so every source check below is searching an empty string");
 }
 
@@ -354,6 +355,180 @@ foreach (array('portal', 'portalgift') as $src) {
 }
 ok(dhcf_game('portal')['label'] !== dhcf_game('portalgift')['label'],
    'both ends announce with the same words, so a gift reads as a win');
+
+echo "\nthe player is paid before anyone else is told\n";
+/*
+ * THE TEN SECOND WAIT. Everything below the commit -- up to sixteen
+ * recipient cascades and twenty-three dhcf_commit_drop() calls, each
+ * posting to Discord over the network -- used to run BEFORE the JSON
+ * was written. The reveal could not begin until every lapsed player on
+ * the platform had been pinged.
+ */
+/*
+ * ORDERING IS READ FROM CODE, NOT FROM PROSE. The comment above the
+ * gift loop explains the cascade by name, so a plain strpos found
+ * dhcp_pick_recipient() in the explanation -- before the answer -- and
+ * reported the bug it was written to catch. That mistake has now been
+ * made four times in this project, so: strip the comments first.
+ */
+$endCode = '';
+foreach (token_get_all($end) as $t) {
+	if (is_array($t)) {
+		if ($t[0] === T_COMMENT || $t[0] === T_DOC_COMMENT) continue;
+		$endCode .= $t[1];
+	} else {
+		$endCode .= $t;
+	}
+}
+ok(strpos($endCode, 'ORDERING IS READ FROM CODE') === false
+   && strlen($endCode) < strlen($end),
+   'comment stripping did nothing, so these ordering checks can match explanations again');
+
+$ans_at   = strpos($endCode, 'dhcp_answer(array(');
+$gift_at  = strpos($endCode, "'portalgift'");
+$pick_at  = strpos($endCode, 'dhcp_pick_recipient(');
+ok($ans_at !== false, 'the endpoint no longer answers the player separately, so it answers last again');
+/* UNCONDITIONALLY. The position checks below are satisfied by a call
+   that sits in the right place and never runs, which is what a
+   disabled answer looks like. */
+ok($ans_at !== false && preg_match('~(?:^|\n)dhcp_answer\(array\(~', $endCode) === 1,
+   'the answer is nested inside a branch, so it is not guaranteed to run before the redistribution');
+ok($ans_at !== false && $gift_at !== false && $ans_at < $gift_at,
+   'the gift loop runs before the player is answered, so the reveal waits on every Discord post');
+ok($ans_at !== false && $pick_at !== false && $ans_at < $pick_at,
+   'the recipient cascade runs before the player is answered, so the reveal waits on it too');
+
+/* AND THE CONNECTION IS ACTUALLY RELEASED. Writing the body early
+   achieves nothing on its own: without a declared length the browser
+   holds the socket open waiting for EOF and the player waits exactly as
+   long as before. */
+ok(strpos($endCode, "header('Content-Length: ' . strlen(\$body))") !== false,
+   'the early answer declares no length, so the browser waits for EOF and nothing is gained');
+ok(strpos($endCode, 'ignore_user_abort(true)') !== false,
+   'the redistribution depends on a connection that is being closed, with no ignore_user_abort');
+ok(strpos($endCode, 'fastcgi_finish_request') !== false
+   && strpos($endCode, 'litespeed_finish_request') !== false,
+   'only one SAPI is handled, so the handoff silently does nothing under the others');
+
+/* The session lock is the other thing that would hold the player up:
+   the reveal reloads the page, and that reload queues behind this
+   request until the session is written. */
+ok(strpos($endCode, 'session_write_close()') !== false,
+   'the session stays locked through the redistribution, so the post-reveal page reload blocks on it');
+
+/* Nothing may try to answer twice: dhcp_out() echoes and exits, and
+   after a Content-Length has been declared a second body is garbage. */
+$tail = $ans_at !== false ? substr($endCode, $ans_at + 10) : '';
+ok(strpos($tail, 'dhcp_out(') === false,
+   'something still calls dhcp_out() after the answer has been sent, which writes past the declared length');
+
+echo "\nthe pieces travel from the board to the Portal\n";
+/*
+ * THE REPORT: "it displays over the grid instead of the portal, the
+ * traits don't get sent into the portal, there's just the animation
+ * effect over the grid and the items in the grid disappear."
+ *
+ * Three separate faults behind one description, so three checks.
+ */
+
+/* ONE: the vortex opened at the middle of the VIEWPORT, which on a
+   three-column page is the middle of the board. It has to find the
+   Portal element. */
+ok(strpos($rev, "querySelector('.dhcp-vortex')") !== false,
+   'the reveal does not look up the Portal element, so it plays wherever the viewport centre happens to be');
+ok(preg_match('~var cx = AX, cy = AY;~', $rev) === 1,
+   'the vortex is drawn at the viewport centre again rather than at the Portal');
+ok(preg_match('~var cx = r\.width / 2, cy = r\.height / 2;~', $rev) !== 1,
+   'the old viewport-centre vortex is back');
+
+/* TWO: the veil was .93 opaque from the first frame, so the board was
+   gone before anything could be seen leaving it. It starts light and
+   only closes once the board is empty. */
+preg_match('~#dhcpVeil \{[^}]*?background-color: rgba\([^)]*?,\s*([\d.]+)\)~s', $rev, $m_v0);
+preg_match('~#dhcpVeil\.deep \{[^}]*?background-color: rgba\([^)]*?,\s*([\d.]+)\)~s', $rev, $m_v1);
+$veil0 = count($m_v0) === 2 ? (float) $m_v0[1] : 1.0;
+$veil1 = count($m_v1) === 2 ? (float) $m_v1[1] : 0.0;
+ok($veil0 <= 0.45,
+   'the veil opens at ' . $veil0 . ' opaque, so the board is hidden before the pieces can be seen leaving it');
+ok($veil1 >= 0.85,
+   'the veil never closes over the page, so the result lands on a lit board');
+/* IN THE BEAT, not just somewhere in the file. There is a second
+   copy of this on the reduced-motion path, which opens straight to the
+   result and has no travel to watch -- so a plain search for the call
+   passed with the animated path's darkening deleted. */
+preg_match('~at\(GIVE, function \(\) \{(.*?)\}\);~s', $rev, $m_beat);
+ok(count($m_beat) === 2 && strpos($m_beat[1], "veil.classList.add('deep')") !== false,
+   'the veil never darkens on the held beat, so the result lands on a lit board');
+ok(substr_count($rev, "veil.classList.add('deep')") >= 2,
+   'the reduced-motion path no longer darkens the veil, so it opens the result over a tint');
+
+/* THREE: particles crawled inward at a flat 1.6-3.0px a frame. From
+   400px out that is 150+ frames inside a 90-frame take, so most never
+   arrived -- the speed has to come from the distance. */
+ok(strpos($rev, 'vr: -(rad - 6) /') !== false,
+   'the inward speed is a constant again, so distant particles never reach the Portal inside the take');
+ok(strpos($rev, 'vr: -(1.6 + Math.random() * 1.4)') === false,
+   'the old flat inward speed is back');
+
+/* And what crosses the gap is the trait, taken from the <img> already
+   in the board piece -- recognisable, and no second request for art the
+   page has already decoded. */
+ok(strpos($rev, "node.querySelector('img')") !== false,
+   'the reveal no longer carries the trait art across, so only abstract sparks travel');
+ok(strpos($rev, 'img.complete && img.naturalWidth') !== false,
+   'the travelling sprite does not check the image decoded, so drawImage can throw on a half-loaded trait');
+
+echo "\nthe Portal's win is revealed once, not twice\n";
+/*
+ * dhcf_commit_drop() parks a win in $_SESSION['dhcf_unseen'], and
+ * dhc-dropmodal.php -- included from header.php on EVERY page -- flushes
+ * that queue. The Portal runs its own vortex reveal and then reloads the
+ * page behind it, so the generic trait modal opened on the same trait
+ * the player had just watched arrive.
+ */
+$commit_fn = new ReflectionFunction('dhcf_commit_drop');
+$commit_params = array();
+foreach ($commit_fn->getParameters() as $cp) $commit_params[$cp->getName()] = $cp;
+ok(isset($commit_params['reveal']),
+   'dhcf_commit_drop() has no $reveal flag, so a caller with its own win screen cannot opt out of the generic one');
+ok(isset($commit_params['reveal']) && $commit_params['reveal']->isOptional()
+   && $commit_params['reveal']->getDefaultValue() === true,
+   '$reveal does not default to true, so every game that wants the generic modal silently lost it');
+/* $announce is its twin and must stay independent: opting out of the
+   reveal must not quietly stop Discord hearing about the win. */
+ok(isset($commit_params['announce']) && $commit_params['announce']->isOptional()
+   && $commit_params['announce']->getDefaultValue() === true,
+   '$announce is gone or no longer defaults true, so the Portal win stopped being announced');
+
+/* The queue push is actually gated on it, rather than the flag existing
+   and doing nothing. */
+ok(preg_match('~if \(\$reveal\s*\n\s*&&\s*session_status\(\) === PHP_SESSION_ACTIVE~', $fighters) === 1,
+   '$reveal exists but does not gate the dhcf_unseen push, so it changes nothing');
+
+/* And the Portal passes it. Both trailing arguments, since $reveal sits
+   after $announce and cannot be reached without it. */
+ok(preg_match("~dhcf_commit_drop\\(\\\$conn, \\\$uid,[^;]*'portal', \\\$detail, false, false\\)~", $end) === 1,
+   'the Portal no longer opts out of BOTH the generic reveal and the immediate announcement');
+/*
+ * THE ANNOUNCEMENT IS DEFERRED, NOT DROPPED. One jettison posts up to
+ * two dozen Discord messages, and the player's own win going first
+ * buries it under every gift that follows -- so it is skipped at the
+ * commit and posted at the very end, where they will actually find it.
+ * Asserting it is still sent matters more than asserting it is skipped:
+ * passing false to $announce and then forgetting to post would be a
+ * silent loss.
+ */
+ok(strpos($endCode, "dhcf_notify_drop(\$conn, \$uid, \$drop, 'portal')") !== false,
+   'the Portal win is never announced at all now, having been skipped at the commit');
+$end_notify = strpos($endCode, 'dhcf_notify_drop');
+$end_gifts  = strpos($endCode, "'portalgift'");
+ok($end_notify !== false && $end_gifts !== false && $end_notify > $end_gifts,
+   'the player\'s own announcement fires before the gift loop again, so it is buried under the gifts');
+/* The gifts going OUT must keep it: those land on other players, who
+   have no Portal reveal of their own and whose modal is the whole
+   woo-back. */
+ok(preg_match("~'portalgift', \\\$detail\\)~", $end) === 1,
+   'the outgoing gifts changed shape, so the recipients may have lost their reveal');
 
 echo "\nthe tray is the whole pile, so a piece can come back\n";
 /*

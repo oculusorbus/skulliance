@@ -1373,13 +1373,15 @@ $GLOBALS['DHCF_GAMES'] = array(
 	 * own table (dhcp_table), and a gift is not a roll at all -- it is a
 	 * specific trait being moved, so no table is consulted.
 	 */
-	'portal'         => array('label' => 'DHC Portal', 'earned_from' => 'a Portal jettison',
+	/* Labels read after "Dropped from " in the Discord footer, which is
+	   where "Dropped from Through the Portal" came from. */
+	'portal'         => array('label' => 'the DHC Portal', 'earned_from' => 'a Portal jettison',
 	                          'url' => 'dhcportal.php', 'category' => 'wildcard',
 	                          'trigger' => 'fill the board and jettison',
 	                          'base' => 'run', 'cap' => 0,
 	                          'limit_note' => 'one trait back per jettison',
 	                          'unlisted' => true),
-	'portalgift'     => array('label' => 'Through the Portal', 'earned_from' => 'somebody else jettisoning it',
+	'portalgift'     => array('label' => 'the Portal', 'earned_from' => 'somebody else jettisoning it',
 	                          'url' => 'dhcportal.php', 'category' => 'wildcard',
 	                          'trigger' => 'being away when somebody clears out',
 	                          'base' => 'run', 'cap' => 0,

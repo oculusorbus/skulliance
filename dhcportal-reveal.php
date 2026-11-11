@@ -29,13 +29,31 @@
  */
 ?>
 <style>
+/*
+ * THE VEIL STARTS ALMOST CLEAR, AND THAT IS THE WHOLE POINT OF IT.
+ *
+ * At .93 opaque from the first frame the board was simply gone, so the
+ * player's report was exactly right: the pieces did not travel
+ * anywhere, they vanished and an effect played over the space where
+ * they had been. You cannot watch something leave a board you cannot
+ * see. The veil is a light tint while the Portal is taking, and only
+ * closes over the page once there is nothing left on it to watch.
+ *
+ * The blur waits too: blurring the board during the one beat the player
+ * is meant to be reading it is the same mistake in a different form.
+ */
 #dhcpVeil { position: fixed; inset: 0; z-index: 99995; display: none;
   align-items: center; justify-content: center; padding: 20px;
-  background-color: rgba(4,12,22,.93);
+  background-color: rgba(4,12,22,.28);
+  transition: background-color .55s ease-in, backdrop-filter .55s ease-in; }
+#dhcpVeil.on { display: flex; }
+#dhcpVeil.deep { background-color: rgba(4,12,22,.93);
   background-image: radial-gradient(78% 58% at 50% 42%,
     rgba(40,8,20,.55) 0, rgba(4,12,22,0) 70%);
   backdrop-filter: blur(3px); }
-#dhcpVeil.on { display: flex; }
+@media (prefers-reduced-motion: reduce) {
+  #dhcpVeil { transition: none; }
+}
 #dhcpVeil canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 #dhcpOut { position: relative; z-index: 2; width: min(360px, 100%); text-align: center;
   color: #e8eaed; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -135,24 +153,101 @@
 	}
 
 	/*
+	 * WHERE THE PORTAL ACTUALLY IS ON SCREEN.
+	 *
+	 * This was the middle of the viewport, which on a three-column page
+	 * is the middle of the BOARD -- so the vortex opened on top of the
+	 * grid the pieces were supposed to be leaving, and the Portal in the
+	 * left-hand column sat there doing nothing. The canvas is fixed and
+	 * full-viewport, so a client rect is already in its coordinates.
+	 *
+	 * Falls back to the centre only if the element is missing, which
+	 * means the reveal still plays on a page that never drew a Portal.
+	 */
+	var ELL = .62;          /* the vortex is a disc seen from above */
+	var AX = 0, AY = 0;
+	function anchor() {
+		var r = veil.getBoundingClientRect();
+		AX = r.width / 2; AY = r.height / 2;
+		var v = document.querySelector('.dhcp-vortex');
+		if (!v) return;
+		var b = v.getBoundingClientRect();
+		if (!b.width || !b.height) return;
+		AX = b.left + b.width / 2;
+		AY = b.top + b.height / 2;
+	}
+
+	/*
 	 * ONE PARTICLE PER PIECE, WEIGHTED BY SIZE. A mythic takes sixteen
 	 * slots and throws sixteen times the material, so what goes down the
 	 * chute looks like what the board was holding rather than like a
 	 * uniform handful.
 	 */
+	/*
+	 * THE PIECES LEAVE THE SLOTS THEY ARE SITTING IN.
+	 *
+	 * Particles used to spawn on a ring around the screen centre, which
+	 * is to say nowhere in particular, and drifted inward at a flat
+	 * 1.6-3.0px a frame. From 400px out that is over 150 frames to
+	 * arrive inside a 90-frame window, so most of them were still
+	 * halfway there when the Portal gave its answer -- another reason
+	 * nothing appeared to go in. The speed is now derived from the
+	 * distance each one actually has to cover.
+	 *
+	 * The board is still on screen at this point: the Go handler copies
+	 * D.board and calls here before anything redraws, so the nth .dhcp-
+	 * piece element is the nth entry of fed, and its rect is where that
+	 * trait is sitting under the player's eyes.
+	 *
+	 * S carries one travelling SPRITE per piece, drawn from the <img>
+	 * already in that element -- the real trait art, already decoded,
+	 * no second request -- so what crosses the gap is recognisably the
+	 * thing that was in the slot and not an abstract spark.
+	 */
+	var S = [];
 	function feed(fed) {
 		var r = veil.getBoundingClientRect();
-		P = [];
+		var nodes = document.querySelectorAll('#dhcpPieces .dhcp-piece');
+		P = []; S = []; spin = 0;
 		fed.forEach(function (p, i) {
+			var node = nodes[i];
+			var b = node ? node.getBoundingClientRect() : null;
+			var sx, sy, sw, sh;
+			if (b && b.width) {
+				sx = b.left + b.width / 2; sy = b.top + b.height / 2;
+				sw = b.width; sh = b.height;
+			} else {
+				/* No element to leave from: fall back to a ring, which is
+				   what this always did. */
+				var ang0 = Math.random() * Math.PI * 2;
+				var rad0 = Math.min(r.width, r.height) * .42;
+				sx = AX + Math.cos(ang0) * rad0; sy = AY + Math.sin(ang0) * rad0 * ELL;
+				sw = sh = 90;
+			}
+
+			var img = node ? node.querySelector('img') : null;
+			if (img && img.complete && img.naturalWidth) {
+				S.push({ img: img, x: sx, y: sy, w: sw, h: sh,
+				         born: i * .05, col: TIERCOL[p.tier] || '#5a7888' });
+			}
+
 			var n = Math.max(3, (p.size || 1) * 3);
 			for (var k = 0; k < n; k++) {
-				var ang = Math.random() * Math.PI * 2;
-				var rad = (Math.min(r.width, r.height) * .42) * (.6 + Math.random() * .5);
+				/* Scattered across the footprint of the piece, not its
+				   centre point, so a mythic spanning the board throws from
+				   the whole board. */
+				var px = sx + (Math.random() - .5) * sw * .8;
+				var py = sy + (Math.random() - .5) * sh * .8;
+				var dx = px - AX, dy = (py - AY) / ELL;
+				var rad = Math.sqrt(dx * dx + dy * dy);
 				P.push({
-					a: ang, r: rad, vr: -(1.6 + Math.random() * 1.4),
+					a: Math.atan2(dy, dx),
+					r: rad,
+					/* Sized to the trip: everything lands inside the take. */
+					vr: -(rad - 6) / (62 + Math.random() * 28),
 					va: .018 + Math.random() * .022,
 					col: TIERCOL[p.tier] || '#5a7888',
-					age: Math.random() * .3, born: i * .012, out: false
+					age: Math.random() * .3, born: i * .05 + Math.random() * .12, out: false
 				});
 			}
 		});
@@ -172,7 +267,7 @@
 		if (!t0) t0 = ts;
 		var el = (ts - t0) / 1000;
 		var r = veil.getBoundingClientRect();
-		var cx = r.width / 2, cy = r.height / 2;
+		var cx = AX, cy = AY;
 
 		CTX.clearRect(0, 0, r.width, r.height);
 		CTX.globalCompositeOperation = 'lighter';
@@ -189,6 +284,40 @@
 			g.addColorStop(1, 'rgba(226,24,74,0)');
 			CTX.fillStyle = g;
 			CTX.beginPath(); CTX.arc(cx, cy, rad, 0, Math.PI * 2); CTX.fill();
+		}
+
+		/*
+		 * THE TRAITS THEMSELVES, CROSSING THE GAP. Drawn before the
+		 * particles so the sparks read as trailing it rather than
+		 * sitting on top of it, and only while the Portal is taking --
+		 * once it is swallowed it does not come back out.
+		 *
+		 * Eased in rather than linear: a piece should hang for a beat
+		 * and then be pulled, which is what being taken looks like. It
+		 * shrinks to nothing at the mouth instead of stopping dead.
+		 */
+		if (phase === 'in' || phase === 'hold') {
+			CTX.globalCompositeOperation = 'source-over';
+			for (var si = 0; si < S.length; si++) {
+				var sp2 = S[si];
+				var tt = (el - sp2.born) / 1.15;
+				if (tt < 0) tt = 0;
+				if (tt >= 1) continue;                  /* gone down the chute */
+				var e = tt * tt * (3 - 2 * tt);         /* smoothstep */
+				var pull = e * e;                       /* then bite, late */
+				var x2 = sp2.x + (cx - sp2.x) * pull;
+				var y2 = sp2.y + (cy - sp2.y) * pull;
+				var k2 = 1 - pull;
+				var w2 = sp2.w * k2, h2 = sp2.h * k2;
+				if (w2 < 1 || h2 < 1) continue;
+				CTX.save();
+				CTX.globalAlpha = Math.min(1, 1.25 - pull);
+				CTX.translate(x2, y2);
+				CTX.rotate(pull * 2.4);
+				try { CTX.drawImage(sp2.img, -w2 / 2, -h2 / 2, w2, h2); } catch (err) {}
+				CTX.restore();
+			}
+			CTX.globalCompositeOperation = 'lighter';
 		}
 
 		var alive = 0;
@@ -220,6 +349,7 @@
 
 	window.DHCP_REVEAL = function (fed, res) {
 		clear();
+		veil.classList.remove('deep');
 		veil.classList.add('on');
 		veil.setAttribute('aria-hidden', 'false');
 		out.classList.remove('in');
@@ -252,6 +382,7 @@
 		 * needs to know is in the panel; only the journey goes.
 		 */
 		if (calm) {
+			veil.classList.add('deep');
 			out.classList.add('in');
 			document.getElementById('dhcpOutGo').focus();
 			return;
@@ -259,6 +390,10 @@
 
 		/* ONE CLOCK. Every beat below is an offset from here. */
 		var TAKE = 0, GIVE = 1500, SHOW = GIVE + 520;
+		/* Read AFTER the veil is shown, so the rects are the ones the
+		   player is looking at, and before feed(), which spawns against
+		   them. */
+		anchor();
 		feed(fed);
 		phase = 'in'; t0 = 0;
 		cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
@@ -267,6 +402,10 @@
 			/* The held beat. The chest taught this: stillness before the
 			   payoff is what makes the payoff land. */
 			phase = 'hold';
+			/* And NOW the page goes away. The board is empty by this
+			   point, so there is nothing left on it worth seeing and the
+			   result needs a dark ground to land on. */
+			veil.classList.add('deep');
 		});
 		at(GIVE + 240, function () { phase = 'out'; t0 = 0; erupt(tier); });
 		at(SHOW + 240, function () {
@@ -282,6 +421,12 @@
 		veil.setAttribute('aria-hidden', 'true');
 		location.reload();      /* the tray and the board both changed */
 	});
-	window.addEventListener('resize', function () { if (phase !== 'idle') fit(); });
+	window.addEventListener('resize', function () {
+		if (phase === 'idle') return;
+		fit();
+		/* The Portal moved; the vortex has to move with it or the rest of
+		   the sequence plays to a point that is no longer there. */
+		anchor();
+	});
 })();
 </script>

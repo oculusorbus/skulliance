@@ -598,7 +598,7 @@ function dhcf_replay_unattended($conn, $user_id) {
 	return $out;
 }
 
-function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_detail = '', $announce = true) {
+function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_detail = '', $announce = true, $reveal = true) {
 	$sql = sprintf(
 		"INSERT INTO dhc_trait_drops (user_id, category, slug, tier, drop_rate, source, source_detail, awarded_at)
 		 VALUES (%d, '%s', '%s', '%s', %.3f, '%s', '%s', NOW())",
@@ -633,7 +633,17 @@ function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_
 	 * what is session-scoped is the reveal, so it is scoped to the right
 	 * session or skipped.
 	 */
-	if (session_status() === PHP_SESSION_ACTIVE
+	/*
+	 * AND ONLY IF NOBODY ELSE IS ALREADY SHOWING IT. $reveal is the
+	 * reveal-side twin of $announce: a caller that runs its own win
+	 * screen passes false, because the queue is what dhc-dropmodal.php
+	 * flushes on the next page it is included from -- which is every
+	 * page -- and the player would watch the same trait arrive twice.
+	 * The Portal is the first caller with its own reveal; everything
+	 * else still wants the generic one, which is why this defaults true.
+	 */
+	if ($reveal
+	    && session_status() === PHP_SESSION_ACTIVE
 	    && isset($_SESSION['userData']['user_id'])
 	    && (int)$_SESSION['userData']['user_id'] === $user_id) {
 		if (!isset($_SESSION['dhcf_unseen']) || !is_array($_SESSION['dhcf_unseen'])) {

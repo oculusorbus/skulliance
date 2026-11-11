@@ -24,6 +24,45 @@ function dhcp_out($ok, $extra = array()) {
 	exit;
 }
 
+/**
+ * Answer the player and let go of their browser, with work still to do.
+ *
+ * THE PLAYER IS WATCHING A TEN SECOND WAIT OTHERWISE. The redistribution
+ * below this is up to sixteen recipient cascades and twenty-three
+ * dhcf_commit_drop() calls, each of which posts to Discord over the
+ * network. All of it used to run before the JSON was written, so the
+ * reveal could not begin until every lapsed player on the platform had
+ * been pinged. The player earned the win; they should not be queuing
+ * behind everyone else's notification.
+ *
+ * THREE WAYS TO LET GO, because the right one depends on the SAPI and
+ * this platform has run under more than one. fastcgi_finish_request()
+ * under FPM, litespeed_finish_request() under LSAPI, and otherwise the
+ * Content-Length-and-close handshake, which is what actually frees a
+ * browser under mod_php. Declaring the length is the load-bearing part:
+ * without it the browser holds the connection open waiting for EOF and
+ * the whole exercise is pointless.
+ *
+ * ignore_user_abort, because the connection the work used to depend on
+ * is the one being closed. Nothing after this point may touch the
+ * session: it is written and closed here so the page reload that
+ * follows the reveal is not blocked on the session lock.
+ */
+function dhcp_answer($payload) {
+	$body = json_encode($payload);
+	ignore_user_abort(true);
+	if (!headers_sent()) {
+		header('Content-Length: ' . strlen($body));
+		header('Connection: close');
+	}
+	echo $body;
+	if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+	if (function_exists('fastcgi_finish_request'))  { fastcgi_finish_request();  return; }
+	if (function_exists('litespeed_finish_request')) { litespeed_finish_request(); return; }
+	while (ob_get_level() > 0) { @ob_end_flush(); }
+	@flush();
+}
+
 $uid = (int) ($_SESSION['userData']['user_id'] ?? 0);
 if ($uid <= 0) dhcp_out(false, array('why' => 'Sign in first.'));
 
@@ -102,9 +141,21 @@ dhcp_clear($conn, $uid);   /* the board is session state; see the note in the li
 /*
  * THE WIN. Committed with source 'portal' so it announces like any other
  * drop and carries its own provenance for ever.
+ *
+ * reveal: false, because this page runs its own. dhcf_commit_drop()
+ * parks a win in $_SESSION['dhcf_unseen'] for dhc-dropmodal.php to
+ * flush, and that modal is included from header.php on EVERY page --
+ * so the vortex reveal played, the page reloaded behind it, and the
+ * generic trait modal opened on the same trait.
+ *
+ * announce: false TOO, but only deferred, not skipped. One jettison can
+ * post two dozen messages to Discord, and the player's own win posting
+ * FIRST buries it under everything that follows. It goes out last, at
+ * the foot of this file, so the message they are looking for is the one
+ * at the bottom of the channel.
  */
 $detail = dhcp_rows($slots) . ' row' . (dhcp_rows($slots) === 1 ? '' : 's') . ', ' . count($pieces) . ' in';
-$drop = dhcf_commit_drop($conn, $uid, $won[0], $won[1], $won[2], 'portal', $detail);
+$drop = dhcf_commit_drop($conn, $uid, $won[0], $won[1], $won[2], 'portal', $detail, false, false);
 if (!$drop) {
 	$conn->rollback();
 	dhcp_out(false, array('why' => 'The Portal jammed. Nothing was taken.'));
@@ -125,7 +176,35 @@ $conn->commit();
  * people, which is the point -- the owner's call that lighting up the
  * server with this is fine. Each is announced in real time by
  * dhcf_commit_drop(), which is the entire woo-back.
+ *
+ * AND IT RUNS AFTER THE PLAYER HAS BEEN ANSWERED. See dhcp_answer()
+ * above: the reveal is already playing while this loop works. The
+ * ordering that matters is unchanged -- the player's trait is committed
+ * and the transaction closed before any of this -- so a gift that fails
+ * still cannot touch a jettison that succeeded.
+ *
+ * 'sent' IS WHAT WENT IN, NOT WHAT LANDED. The count cannot be known
+ * before the loop runs and the loop no longer runs before the answer.
+ * It is the honest number anyway: dhcp_pick_recipient()'s last rung is
+ * every active player, so the only way a piece finds no home is a
+ * platform with nobody on it, and that case is logged below.
  */
+dhcp_answer(array(
+	'ok'    => true,
+	'won'   => $drop,
+	'fed'   => array_map(function ($p) {
+		return array('category' => $p['category'], 'slug' => $p['slug'],
+		             'tier' => $p['tier'], 'size' => $p['size']);
+	}, $pieces),
+	'rows'  => dhcp_rows($slots),
+	'table' => dhcp_table_name($slots),
+	'sent'  => count($pieces),
+));
+
+/* The browser is gone; this must not die halfway through handing out
+   sixteen traits because of a default web timeout. */
+@set_time_limit(180);
+
 $sent = 0;
 $rarity = dhcf_rarity();
 foreach ($pieces as $p) {
@@ -150,13 +229,28 @@ foreach ($pieces as $p) {
 	}
 }
 
-dhcp_out(true, array(
-	'won'   => $drop,
-	'fed'   => array_map(function ($p) {
-		return array('category' => $p['category'], 'slug' => $p['slug'],
-		             'tier' => $p['tier'], 'size' => $p['size']);
-	}, $pieces),
-	'rows'  => dhcp_rows($slots),
-	'table' => dhcp_table_name($slots),
-	'sent'  => $sent,
-));
+/* Logged rather than returned: nobody is listening any more. */
+if ($sent !== count($pieces)) {
+	error_log('dhcportal: ' . $sent . ' of ' . count($pieces) . ' pieces placed for user ' . $uid);
+}
+
+/*
+ * AND NOW THE PLAYER'S OWN, LAST. Deferred from the commit above so it
+ * lands at the bottom of the channel, under the pile of gift messages
+ * this jettison just generated, instead of being the first thing posted
+ * and the hardest to find.
+ *
+ * Buffered around the require as well as the call, the same as
+ * dhcf_commit_drop() does it: loading the notifier pulls in webhooks.php
+ * and its credentials file, display_errors is on platform-wide, and a
+ * warning from that chain would otherwise be written into a response
+ * that has already declared its Content-Length.
+ */
+if (!(defined('DHCF_NO_NOTIFY') && DHCF_NO_NOTIFY)
+    && is_file(__DIR__ . '/../dhcfighters-notify.php')) {
+	ob_start();
+	require_once __DIR__ . '/../dhcfighters-notify.php';
+	dhcf_notify_drop($conn, $uid, $drop, 'portal');
+	ob_end_clean();
+}
+exit;
