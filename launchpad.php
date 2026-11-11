@@ -95,6 +95,19 @@ if ($lp_user_id > 0) {
    the same reason admin_tabs() exists. */
 require_once __DIR__ . '/lib/launchpad-catalogue.php';
 
+/* The per-game drop counts the tiles carry. Guarded the same way the
+   navbar guards them: a failure here must not stop the first page after
+   login from drawing. */
+$lp_glance_uid = 0;
+if (is_file(__DIR__ . '/dhcfighters-lib.php') && !empty($_SESSION['userData']['user_id'])) {
+	require_once __DIR__ . '/dhcfighters-config.php';
+	require_once __DIR__ . '/dhcfighters-lib.php';
+	$lp_glance_uid = (int) $_SESSION['userData']['user_id'];
+}
+if (!function_exists('dhcf_drops_badge')) {
+	function dhcf_drops_badge($conn, $uid, $url) { return ''; }
+}
+
 /*
  * Start Here -- only rendered while something is genuinely incomplete, and it
  * disappears on its own once the account is set up. A permanent checklist a
@@ -423,7 +436,22 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 							alt="" decoding="async"
 							onerror="this.parentNode.textContent=this.parentNode.dataset.emoji;this.closest('.lp-tile').classList.remove('lp-tile-art-on')"><?php
 						else: echo $it[1]; endif; ?></span>
-					<span class="lp-tile-name"><?php echo htmlspecialchars($it[2]); ?></span>
+					<span class="lp-tile-name"><?php echo htmlspecialchars($it[2]); ?><?php
+						/*
+						 * HOW MANY TRAIT DROPS THIS GAME STILL HAS TODAY.
+						 *
+						 * The one thing somebody wants before choosing what
+						 * to play, and the reason the full table on
+						 * dhcfighters.php was being opened before every
+						 * session. Beside the name rather than in the
+						 * description, because the description says what the
+						 * game IS and this says whether to bother now.
+						 *
+						 * Silent for a game with no daily count, and for
+						 * anyone we cannot read -- it never becomes a
+						 * reason the Launchpad does not draw.
+						 */
+						echo dhcf_drops_badge($conn, $lp_glance_uid, $it[0]); ?></span>
 					<span class="lp-tile-desc"><?php echo htmlspecialchars($it[3]); ?></span>
 					<?php if (!$lp_ok): ?>
 					<span class="lp-tile-need"><?php
@@ -848,6 +876,21 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	.lp-tile-art, .lp-tile-art-on:hover .lp-tile-art { transition: none; transform: none; }
 }
 .lp-tile-name { font-weight: bold; font-size: 0.95rem; }
+/*
+ * THE DROP COUNT, pushed to the right edge of the name row so the glyphs
+ * line up down the grid instead of trailing each name at a different
+ * place. Same reasoning as the Play menu, and the same glyphs.
+ */
+.lp-tile-name { display: flex; align-items: baseline; gap: 8px; justify-content: center; }
+.lp-tile-name .dhcf-glance { margin-left: auto; font-weight: normal;
+  font-size: 0.95rem; line-height: 1; color: #00c8a0; font-variant-numeric: tabular-nums; }
+/* Zero is drawn rather than omitted: a blank beside a game is
+   indistinguishable from a game that never pays. Dimmed, not alarmed --
+   it is a reason to play something else, not a problem. */
+.lp-tile-name .dhcf-glance.out { color: rgba(255,255,255,0.32); }
+/* The name itself keeps the whole row; without this the flex row centres
+   the pair and the badge stops being a column. */
+.lp-tile-name > .dhcf-glance:only-child { margin-left: 0; }
 .lp-tile-desc { font-size: 0.73rem; color: rgba(255,255,255,0.45); margin-top: 4px; }
 
 /*

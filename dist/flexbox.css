@@ -234,10 +234,36 @@ a:hover { color: #00a882; }
   padding: 12px 20px;
   text-align: left;
   white-space: nowrap;
-  display: block;
+  /* flex, not block, so the drop-count badge can be pushed to the right
+     edge with margin-left:auto. Every entry keeps its left alignment --
+     the label is still the first thing in the row. */
+  display: flex;
+  align-items: center;
+  gap: 10px;
   text-decoration: none;
   border-bottom: 1px solid rgba(0,200,160,0.08);
 }
+/*
+ * HOW MANY TRAIT DROPS THIS GAME STILL HAS FOR YOU TODAY.
+ *
+ * RIGHT-ALIGNED SO THEY READ AS A COLUMN. Trailing each label they sit at
+ * a different x on every row, which is a dozen small things to look at
+ * rather than one list to scan -- reported as obnoxious, and it was.
+ * tabular-nums keeps the column honest if a cap ever goes past nine and
+ * the glyph falls back to a plain digit.
+ */
+.nav-dropdown-menu a .dhcf-glance {
+  margin-left: auto;
+  font-size: 1rem;
+  line-height: 1;
+  color: #00c8a0;
+  font-variant-numeric: tabular-nums;
+}
+/* Spent is the signal that matters most, and an empty space beside a game
+   is indistinguishable from a game that never pays -- so zero is drawn,
+   dimmed rather than coloured in alarm. It is not a problem, it is a
+   reason to play something else. */
+.nav-dropdown-menu a .dhcf-glance.out { color: #4d6575; }
 /*
  * NOT YET, IN THE MENU.
  *

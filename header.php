@@ -466,6 +466,32 @@
 		  	require_once __DIR__ . '/lib/launchpad-catalogue.php';
 		  	$sk_nav_state = player_state($conn);
 		  }
+
+		  /*
+		   * HOW MANY TRAIT DROPS EACH GAME STILL HAS TODAY, for the Play
+		   * menu. Same defensiveness as the block above: the navigation
+		   * draws on sixty-three pages and must never be the reason one of
+		   * them does not. A failure leaves $sk_glance_uid at 0, and
+		   * dhcf_drops_badge() returns '' for every URL -- the menu is
+		   * exactly what it was before.
+		   *
+		   * The library is required here rather than assumed: most pages
+		   * carrying this navbar have never heard of DHC.
+		   */
+		  $sk_glance_uid = 0;
+		  if (isset($name) && isset($conn) && is_object($conn)
+		      && !empty($_SESSION['userData']['user_id'])
+		      && is_file(__DIR__ . '/dhcfighters-lib.php')) {
+		  	require_once __DIR__ . '/dhcfighters-config.php';
+		  	require_once __DIR__ . '/dhcfighters-lib.php';
+		  	if (function_exists('dhcf_drops_badge')) {
+		  		$sk_glance_uid = (int) $_SESSION['userData']['user_id'];
+		  	}
+		  }
+		  /* So the menu can echo it unconditionally. */
+		  if (!function_exists('dhcf_drops_badge')) {
+		  	function dhcf_drops_badge($conn, $uid, $url) { return ''; }
+		  }
 		  ?>
 		  <?php if(isset($name)){?>
 		  <?php if(isset($avatar_url)){?>
@@ -534,11 +560,11 @@
 		       * marks nothing. See lib/player-state.php.
 		       */
 		      ?>
-		      <a href="missions.php"<?php echo player_nav_attrs('missions.php', $sk_nav_state); ?>>Missions</a>
-		      <a href="realms.php"<?php echo player_nav_attrs('realms.php', $sk_nav_state); ?>>Realms</a>
+		      <a href="missions.php"<?php echo player_nav_attrs('missions.php', $sk_nav_state); ?>>Missions<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'missions.php'); ?></a>
+		      <a href="realms.php"<?php echo player_nav_attrs('realms.php', $sk_nav_state); ?>>Realms<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'realms.php'); ?></a>
 		      <!-- Listed under Realms deliberately: it reads that realm's
 		           locations, soldiers and gear to build its starting position. -->
-		      <a href="guardians.php">Guardians</a>
+		      <a href="guardians.php">Guardians<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'guardians.php'); ?></a>
 		      <a href="dhcfighters.php">DHC Fighters</a>
 		      <!-- The real Arena, wired to the platform: real Fighters, a real
 		           opponent, a server that owns every rule, real trait drops. The
@@ -546,14 +572,14 @@
 		           dhcarena-prototype.php, deliberately unlisted -- it keeps no
 		           state and pays nothing, so a player finding it would only be
 		           confused about which one counts. See dhcarena.md. -->
-		      <a href="dhcarena.php"<?php echo player_nav_attrs('dhcarena.php', $sk_nav_state); ?>>DHC Arena</a>
+		      <a href="dhcarena.php"<?php echo player_nav_attrs('dhcarena.php', $sk_nav_state); ?>>DHC Arena<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'dhcarena.php'); ?></a>
 		      <!-- DHC Bosses has its own address and its own ladder, but it is
 		           not a second implementation: dhcbosses.php is dhcarena.php with
 		           $DHC_MODE set, so the board, the client and the Crew picker are
 		           the same code. It is a page rather than a panel because each
 		           Fighter has a separate recovery clock for the two games, and
 		           one picker showing both clocks at once could not be read. -->
-		      <a href="dhcbosses.php"<?php echo player_nav_attrs('dhcbosses.php', $sk_nav_state); ?>>DHC Bosses</a>
+		      <a href="dhcbosses.php"<?php echo player_nav_attrs('dhcbosses.php', $sk_nav_state); ?>>DHC Bosses<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'dhcbosses.php'); ?></a>
 		      <!-- WITH THE OTHER TWO DHC ENTRIES, not down with the Drop Ship
 		           themes, because what a player is picking here is DHC and not
 		           a battler. Every Fighter they have assembled fields in this
@@ -565,16 +591,16 @@
 		           session value, so without it the link opens whichever theme
 		           the session was last left on. -->
 		      <a href="dropship/dashboard.php?project_id=5">DHC Drop Ship</a>
-		      <a href="cryptcrawl.php">Crypt Crawl</a>
-		      <a href="cryptconquest.php">Crypt Conquest</a>
-		      <a href="monstrocity.php">Monstrocity</a>
-		      <a href="monstrocity.php#boss">Boss Battles</a>
-		      <a href="skullswap.php">Skull Swap</a>
-		      <a href="skullracer.php">Skull Racer</a>
-              <a href="gauntlets.php"<?php echo player_nav_attrs('gauntlets.php', $sk_nav_state); ?>>Gauntlets</a>		
+		      <a href="cryptcrawl.php">Crypt Crawl<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'cryptcrawl.php'); ?></a>
+		      <a href="cryptconquest.php">Crypt Conquest<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'cryptconquest.php'); ?></a>
+		      <a href="monstrocity.php">Monstrocity<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'monstrocity.php'); ?></a>
+		      <a href="monstrocity.php#boss">Boss Battles<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'monstrocity.php#boss'); ?></a>
+		      <a href="skullswap.php">Skull Swap<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'skullswap.php'); ?></a>
+		      <a href="skullracer.php">Skull Racer<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'skullracer.php'); ?></a>
+              <a href="gauntlets.php"<?php echo player_nav_attrs('gauntlets.php', $sk_nav_state); ?>>Gauntlets<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'gauntlets.php'); ?></a>		
 		      <!-- Obscura has no public page at all; it is internal. It used
 		           to be the exception to a rule that no longer exists. -->
-		      <a href="obscura.php">Obscura</a>
+		      <a href="obscura.php">Obscura<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'obscura.php'); ?></a>
 		      <!-- DHC Fighters and DHC Arena only. The Fighter Collection and
 		           Rivalries are deliberately NOT listed here: Play is a list of
 		           things to PLAY, and those two are things to look at. Both are

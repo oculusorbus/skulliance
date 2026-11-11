@@ -1310,6 +1310,92 @@ function dhcf_rename_fighter($conn, $user_id, $fighter_id, $name) {
  * counts against -- so what the interface promises and what the server allows
  * cannot drift apart.
  */
+/**
+ * HOW MANY TRAITS A GAME STILL HAS FOR YOU TODAY, keyed by its own URL.
+ *
+ * THE QUESTION THIS ANSWERS IS NOT THE ONE dhcfighters.php ANSWERS. That
+ * page's table is a reference: every game, the category it pays, what you
+ * hold of it, how far the set has filled. Useful, and too much to read
+ * before deciding what to play. The owner was opening it before every
+ * session, clicking through to the games tab, and reading fourteen rows
+ * to learn one thing per row: if I play this, do I get a trait.
+ *
+ * So this is that one thing and nothing else. No totals, no categories,
+ * no unlock progress -- a count, against the same CURDATE() boundary the
+ * claim endpoint enforces.
+ *
+ * KEYED BY URL BECAUSE THAT IS WHAT THE READERS HAVE. The Play menu is
+ * hand-written anchors and the Launchpad catalogue is a list of URLs;
+ * neither knows a DHCF game key, and teaching both of them one would be
+ * a third list to keep in step.
+ *
+ * ONLY GAMES WITH A REAL DAILY COUNT. DHC Bosses pays when the week
+ * closes and Drop Ship only when you take the lead -- a number against
+ * either would be a lie, and those rows carry limit_note for exactly
+ * that reason on the full table.
+ *
+ * MEMOISED, because the navbar draws on every page and this is one query.
+ *
+ * @return array url => array('left','cap')
+ */
+function dhcf_drops_glance($conn, $user_id) {
+	static $memo = null, $memo_for = null;
+	$uid = (int) $user_id;
+	if ($memo !== null && $memo_for === $uid) return $memo;
+
+	$out = array();
+	if ($uid > 0) {
+		$today = dhcf_drops_today($conn, $uid);
+		foreach ($GLOBALS['DHCF_GAMES'] as $key => $g) {
+			if (!empty($g['unlisted'])) continue;
+			if (empty($g['url']))       continue;
+			/* A limit that is not a daily count cannot be shown as one. */
+			if (!empty($g['limit_note'])) continue;
+			$cap = dhcf_cap($key);
+			if ($cap <= 0) continue;
+			$used = isset($today[$key]) ? (int) $today[$key] : 0;
+			$out[$g['url']] = array('left' => max(0, $cap - $used), 'cap' => $cap);
+		}
+	}
+	$memo = $out; $memo_for = $uid;
+	return $out;
+}
+
+/**
+ * The glance as one character.
+ *
+ * A CIRCLED NUMERAL RATHER THAN "2 of 3", which is the owner's call and
+ * the right one: beside a menu entry the denominator is noise -- it is
+ * the same 3 on every row -- and the question is only ever "is there one
+ * for me". Zero is drawn too, and is the whole point: an empty space
+ * beside a game is indistinguishable from a game that never pays.
+ */
+function dhcf_drops_glyph($n) {
+	$g = array('⓪', '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩');
+	$n = (int) $n;
+	return isset($g[$n]) ? $g[$n] : (string) $n;
+}
+
+/**
+ * The badge for one URL, or '' when that URL has nothing to say.
+ *
+ * Returns markup, so it is safe to echo straight into a menu. The title
+ * carries the sentence the glyph compresses, for anyone who hovers and
+ * for a screen reader -- the glyph alone reads as "circled digit two".
+ */
+function dhcf_drops_badge($conn, $user_id, $url) {
+	$all = dhcf_drops_glance($conn, $user_id);
+	if (!isset($all[$url])) return '';
+	$left = (int) $all[$url]['left'];
+	$cap  = (int) $all[$url]['cap'];
+	$txt  = $left > 0
+		? $left . ' of ' . $cap . ' trait drops left today'
+		: 'no trait drops left today';
+	return '<span class="dhcf-glance' . ($left > 0 ? '' : ' out')
+	     . '" title="' . htmlspecialchars($txt) . '" aria-label="' . htmlspecialchars($txt)
+	     . '">' . dhcf_drops_glyph($left) . '</span>';
+}
+
 function dhcf_drops_today($conn, $user_id) {
 	$out = array();
 	// Excludes tethered second halves, exactly as the cap in dhcf_award() does.
