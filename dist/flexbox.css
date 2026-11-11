@@ -286,6 +286,16 @@ a:hover { color: #00a882; }
 .nav-dropdown-menu a .dhcf-glance {
   margin-left: auto;
   flex: 0 0 auto;
+  /*
+   * ZEROED, AND THIS IS THE WHOLE BUG. `.navbar span` up at the top of
+   * this file sets `padding: 14px 20px` on EVERY span in the navbar --
+   * it exists for the trigger labels. That is 28px of vertical padding
+   * and 40px of horizontal, which is: the rows that grew, the ring that
+   * came out an ellipse when it was drawn here, and every height this
+   * rule declared being ignored. Three symptoms, one inherited rule, and
+   * I chased all three as font problems first.
+   */
+  padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;

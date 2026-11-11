@@ -197,6 +197,22 @@ ok($bg !== '' && strpos($bg, 'overflow: hidden') !== false,
    'nothing backstops a face with stranger metrics, so the glyph can spill out of its box');
 ok($bg !== '' && strpos($bg, 'flex: 0 0 auto') !== false,
    'the badge can be stretched by the flex row, so its height is not actually fixed');
+/*
+ * THE ACTUAL BUG, AND IT WAS NEVER THE FONT.
+ *
+ * `.navbar span` sets `padding: 14px 20px` on EVERY span in the navbar,
+ * for the trigger labels. 28px of vertical padding and 40px of
+ * horizontal, inherited by the count: that is the rows that grew, the
+ * ring that came out an ellipse when it was drawn in CSS, and every
+ * height this rule declared appearing to be ignored. Measured in
+ * headless Chrome -- a badged row was 53px against 44px, and the badge's
+ * computed height was 28px while this rule asked for 16px.
+ *
+ * Three symptoms, one inherited rule, and both earlier fixes were aimed
+ * at font metrics that had nothing to do with it.
+ */
+ok($bg !== '' && preg_match('~(^|[^-])padding:\s*0~', $bg) === 1,
+   'the count does not zero its padding, so .navbar span gives it 14px 20px and the row grows again');
 /* NO WIDTH. One was set when the ring was drawn here and the box came
    out wider than asked, so the ring was an ellipse. The glyph brings its
    own circle; nothing in this rule has to be round. */
