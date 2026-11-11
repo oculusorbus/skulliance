@@ -263,16 +263,32 @@ a:hover { color: #00a882; }
  * tabular-nums keeps the column honest if a cap ever goes past nine and
  * the glyph falls back to a plain digit.
  */
+/*
+ * A DIGIT IN A RING THIS RULE DRAWS, not a circled numeral from a font.
+ *
+ * The glyphs were U+2460 and friends, and every row carrying one came out
+ * half as tall again as its neighbours. Setting font-size and
+ * font-family to inherit did NOT fix it, and could not: font fallback
+ * ignores font-family. A face without U+2460 is substituted for one that
+ * has it, which on Apple platforms is the colour emoji face, and its
+ * metrics are what grew the row.
+ *
+ * A digit exists in every font, so nothing is substituted. The box is
+ * sized here in px and cannot exceed the label's own line box, so a row
+ * with a count is exactly as tall as a row without one.
+ */
 .nav-dropdown-menu a .dhcf-glance {
   margin-left: auto;
-  /* INHERITED, NOT SET. At 1rem the glyph was bigger than the label beside
-     it, and a taller inline box is what grew the row. The circled numerals
-     read perfectly well at the menu's own size. */
-  font-size: inherit;
-  line-height: inherit;
-  /* Block the emoji fonts: several platforms have a colour glyph for these
-     code points, and its metrics are taller again than the text one. */
-  font-family: inherit;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 10px;
+  line-height: 1;
   color: #00c8a0;
   font-variant-numeric: tabular-nums;
 }

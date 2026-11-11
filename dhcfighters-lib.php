@@ -1364,16 +1364,28 @@ function dhcf_drops_glance($conn, $user_id) {
 /**
  * The glance as one character.
  *
- * A CIRCLED NUMERAL RATHER THAN "2 of 3", which is the owner's call and
- * the right one: beside a menu entry the denominator is noise -- it is
- * the same 3 on every row -- and the question is only ever "is there one
- * for me". Zero is drawn too, and is the whole point: an empty space
- * beside a game is indistinguishable from a game that never pays.
+ * A NUMBER RATHER THAN "2 of 3", which is the owner's call and the right
+ * one: beside a menu entry the denominator is noise -- it is the same 3
+ * on every row -- and the question is only ever "is there one for me".
+ * Zero is drawn too, and is the whole point: an empty space beside a
+ * game is indistinguishable from a game that never pays.
+ *
+ * A PLAIN DIGIT, WITH THE CIRCLE DRAWN IN CSS. It was U+2460 and friends
+ * (the circled numerals), and they grew every row that carried one to
+ * half as tall again as its neighbours.
+ *
+ * The cause is worth recording because the obvious fix does not work:
+ * FONT FALLBACK IGNORES font-family. If the inherited face has no glyph
+ * for U+2460 the browser substitutes one that does, and on Apple
+ * platforms that is the colour emoji face, whose metrics are far taller
+ * than the text around it. `font-family: inherit` pins a family that was
+ * never going to render the character in the first place.
+ *
+ * A digit is in every font there has ever been, so nothing substitutes,
+ * and the ring is a border on a box whose size this code controls.
  */
 function dhcf_drops_glyph($n) {
-	$g = array('⓪', '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩');
-	$n = (int) $n;
-	return isset($g[$n]) ? $g[$n] : (string) $n;
+	return (string) max(0, (int) $n);
 }
 
 /**

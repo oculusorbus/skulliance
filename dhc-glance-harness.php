@@ -109,10 +109,21 @@ echo "\nzero is drawn, because a blank means something else\n";
  * never pays -- which is the question the whole badge exists to answer.
  */
 for ($i = 0; $i <= 3; $i++) {
-	ok(dhcf_drops_glyph($i) !== '', 'the glyph for ' . $i . ' is empty');
+	ok(dhcf_drops_glyph($i) === (string) $i, 'the glyph for ' . $i . ' is not the digit ' . $i);
 }
 ok(dhcf_drops_glyph(0) !== dhcf_drops_glyph(3), 'spent and full draw the same glyph');
-ok(dhcf_drops_glyph(99) === '99', 'a count past the glyph table does not fall back to digits');
+ok(dhcf_drops_glyph(99) === '99', 'a count of 99 does not render as a number');
+/*
+ * A PLAIN DIGIT, NOT A CIRCLED NUMERAL. U+2460 and friends grew every row
+ * that carried one, because FONT FALLBACK IGNORES font-family: a face
+ * without the glyph is substituted for one that has it, which on Apple
+ * platforms is the colour emoji face. A digit is in every font, so
+ * nothing is substituted and the ring is drawn in CSS instead.
+ */
+for ($i = 0; $i <= 9; $i++) {
+	ok(strlen(dhcf_drops_glyph($i)) === 1,
+	   'the glyph for ' . $i . ' is multi-byte, so it is a font character and can be substituted');
+}
 
 $uid = 500;
 $badge_out  = dhcf_drops_badge(new GlanceDb(array(array('source' => 'skullswap', 'c' => '3'))), 501, 'skullswap.php');
@@ -175,25 +186,27 @@ ok($bg !== '', 'the menu badge rule could not be found');
 $glance_prop = function ($block, $prop) {
 	return preg_match('~' . $prop . ':\s*([a-z0-9.%-]+)~', $block, $m) ? $m[1] : '(unset)';
 };
-ok($bg !== '' && $glance_prop($bg, 'font-size') === 'inherit',
-   'the menu badge font-size is ' . $glance_prop($bg, 'font-size')
- . ', not inherit, so it can be taller than the label and grow the row');
-ok($bg !== '' && $glance_prop($bg, 'line-height') === 'inherit',
-   'the menu badge line-height is ' . $glance_prop($bg, 'line-height')
- . ', not inherit, so it can be taller than the label and grow the row');
-/* Several platforms have a COLOUR glyph for these code points, whose
-   metrics are taller again than the text one. */
-ok($bg !== '' && strpos($bg, 'font-family: inherit') !== false,
-   'the menu badge does not pin its font-family, so an emoji face can substitute and grow the row');
+/*
+ * THE BOX IS SIZED HERE, IN PX, so it cannot exceed the label's line box
+ * whatever renders inside it. Inheriting font-size was the previous
+ * attempt and it did not work -- the character was being rendered by a
+ * substituted face, and nothing about font-size or font-family reaches a
+ * fallback.
+ */
+ok($bg !== '' && preg_match('~height:\s*(\d+)px~', $bg, $m_h) === 1 && (int)$m_h[1] <= 20,
+   'the menu badge has no fixed pixel height under 20px, so it can grow the row it is in');
+ok($bg !== '' && strpos($bg, 'border-radius: 50%') !== false,
+   'the ring is no longer drawn in CSS, so the count depends on a font having the glyph');
+ok($bg !== '' && strpos($bg, 'flex: 0 0 auto') !== false,
+   'the badge can be stretched by the flex row, so its height is not actually fixed');
 
 /* The Launchpad tile carries the same badge and the same risk. */
 $lpc = (string) file_get_contents(__DIR__ . '/launchpad.php');
 preg_match('~\.lp-tile-name \.dhcf-glance \{([^}]*)\}~s', $lpc, $m_tg);
 $tg = count($m_tg) === 2 ? $m_tg[1] : '';
 ok($tg !== '', 'the tile badge rule could not be found');
-ok($tg !== '' && $glance_prop($tg, 'font-size') === 'inherit',
-   'the tile badge font-size is ' . $glance_prop($tg, 'font-size')
- . ', not inherit, so a tile with a count is taller than one without');
+ok($tg !== '' && preg_match('~height:\s*(\d+)px~', $tg, $m_th) === 1 && (int)$m_th[1] <= 20,
+   'the tile badge has no fixed pixel height under 20px, so a tile with a count is taller than one without');
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);
