@@ -20,6 +20,32 @@ function piece($tier, $id = 0) {
 }
 function board($tiers) { $o = array(); $i = 1; foreach ($tiers as $t) $o[] = piece($t, $i++); return $o; }
 
+/*
+ * EVERY SOURCE FILE READ IN ONE PLACE, AT THE TOP.
+ *
+ * These used to be defined next to the first check that wanted them,
+ * which meant a check added above that point got null and PHP's
+ * strpos(null, ...) is merely deprecated, not fatal -- so the assertion
+ * quietly passed on nothing. That has now happened three times in this
+ * file. Reading them all up front makes the order impossible to get
+ * wrong.
+ */
+$lib     = (string) file_get_contents(__DIR__ . '/lib/dhcportal-lib.php');
+$page    = (string) file_get_contents(__DIR__ . '/dhcportal.php');
+$ui      = (string) file_get_contents(__DIR__ . '/dhcportal-ui.php');
+$rev     = (string) file_get_contents(__DIR__ . '/dhcportal-reveal.php');
+$end     = (string) file_get_contents(__DIR__ . '/ajax/dhcportal-jettison.php');
+$end0    = $end;
+$dropsrc = (string) file_get_contents(__DIR__ . '/dhc-dropmodal.php');
+$flexcss = (string) file_get_contents(__DIR__ . '/dist/flexbox.css');
+
+/* And a guard on the guards: an empty read means every strpos below is
+   searching nothing and passing for it. */
+foreach (array('lib' => $lib, 'page' => $page, 'ui' => $ui, 'rev' => $rev,
+               'endpoint' => $end, 'dropmodal' => $dropsrc, 'flexbox.css' => $flexcss) as $n => $src) {
+	ok($src !== '', "could not read $n, so every source check below is searching an empty string");
+}
+
 echo "every piece divides a row\n";
 /*
  * THE PROPERTY THE WHOLE DESIGN RESTS ON. Four commons make a row, two
@@ -127,7 +153,6 @@ echo "\nnothing you fed can come back\n";
  * The one hard rule of the feature, and the only thing standing between
  * a player and the single most enraging outcome it could produce.
  */
-$lib = (string) file_get_contents(__DIR__ . '/lib/dhcportal-lib.php');
 ok(preg_match('~function dhcp_roll.*?if \(!isset\(\$fed\[\$d\[1\]\]\)\) return \$d;~s', $lib) === 1,
    'dhcp_roll does not exclude what was fed, so a player can be handed back the trait they just threw away');
 /*
@@ -205,14 +230,12 @@ sort($ids);
 ok($ids === array(1, 2, 3), 'a row was dropped or paired twice: ' . implode(',', $ids));
 ok(count($three) === 2, 'three rows with one pair came out as ' . count($three) . ' pieces, not two');
 /* And they travel together out the other side. */
-$end0 = (string) file_get_contents(__DIR__ . '/ajax/dhcportal-jettison.php');
 ok(preg_match('~\$to = dhcp_pick_recipient.*?foreach \(\$slugs as~s', $end0) === 1,
    'the recipient is picked per slug rather than per piece, so a pair is split between two players');
 ok(strpos($end0, 'DHCF_PAIRED_MARK') !== false,
    'the second half of a gifted pair is not marked, so it counts as a drop of its own');
 
 echo "\nthe jettison cannot half-happen\n";
-$end = (string) file_get_contents(__DIR__ . '/ajax/dhcportal-jettison.php');
 /*
  * THE ONLY FAILURE THAT CANNOT BE APOLOGISED AWAY is traits gone and
  * nothing back. The roll is taken BEFORE anything is destroyed and the
@@ -298,7 +321,6 @@ echo "\nthe rarity colours are the platform's, not invented\n";
  * copies. Reading the drop modal's own TIER map means they cannot
  * drift apart without this failing.
  */
-$dropsrc = (string) file_get_contents(__DIR__ . '/dhc-dropmodal.php');
 $mine = dhcf_tier_colours();
 ok(count($mine) === 5, 'the palette does not cover all five tiers');
 foreach ($mine as $tier => $hex) {
@@ -333,9 +355,79 @@ foreach (array('portal', 'portalgift') as $src) {
 ok(dhcf_game('portal')['label'] !== dhcf_game('portalgift')['label'],
    'both ends announce with the same words, so a gift reads as a win');
 
+echo "\nthe tray is the whole pile, so a piece can come back\n";
+/*
+ * THE BUG: taking a piece off the board did not restore it to the
+ * selector, only a page load did. The page built the tray inline and
+ * skipped whatever was staged, so the array sent to the client never
+ * held the staged copies -- the client removed a piece from the board,
+ * looked for it in the tray, and it was not there to find.
+ *
+ * The guard is structural: dhcp_tray_pieces() takes rows, free counts
+ * and rarity, and nothing else. It CANNOT subtract the board.
+ */
+$tray_fn = new ReflectionFunction('dhcp_tray_pieces');
+ok($tray_fn->getNumberOfParameters() === 3,
+   'dhcp_tray_pieces() takes a fourth argument, which is where the board crept back in');
+$tray_params = array();
+foreach ($tray_fn->getParameters() as $tp) $tray_params[] = $tp->getName();
+ok(!in_array('board', $tray_params, true) && !in_array('staged', $tray_params, true),
+   'dhcp_tray_pieces() can see the board again, so it can pre-subtract and lose pieces: '
+   . implode(', ', $tray_params));
+
+/* And the page hands it every row, rather than filtering first. */
+ok(strpos($page, 'dhcp_tray_pieces(') !== false,
+   'the page builds the tray inline again instead of through the pure builder');
+ok(strpos($page, '$staged[') === false,
+   'the page is filtering staged traits out of the tray again, which is the bug itself');
+
+/* THE QUANTITY HALF, which the old inline version also got wrong: it
+   skipped staged rows BEFORE counting against the free total, so a
+   staged copy did not consume its own quota. Three copies held, two
+   free: the tray must show two whatever is staged, never three. */
+$fx_free   = array('head' => array('visor' => array('free' => 2)));
+$fx_rarity = array('head' => array('visor' => array('common')));
+$fx_rows   = array(
+	array('id' => 11, 'category' => 'head', 'slug' => 'visor'),
+	array('id' => 12, 'category' => 'head', 'slug' => 'visor'),
+	array('id' => 13, 'category' => 'head', 'slug' => 'visor'),
+);
+$fx_tray = dhcp_tray_pieces($fx_rows, $fx_free, $fx_rarity);
+ok(count($fx_tray) === 2,
+   'three copies with two free produced ' . count($fx_tray) . ' tray entries, not 2');
+
+/* THE RESTORE ITSELF. Whatever the board holds, the piece is still in
+   the pile the client is given -- that is what it comes back into. */
+$fx_ids = array();
+foreach ($fx_tray as $fp) $fx_ids[] = $fp['drop_id'];
+ok(in_array(11, $fx_ids, true),
+   'the first copy is missing from the tray, so taking it off the board has nowhere to put it');
+
+/* Cheapest first: the clear-out order, and the rares out of reach of a
+   stray click. */
+/* Fed in cheapest-first ALREADY, so a sort that merely preserves input
+   order -- or reverses it -- cannot pass by luck. The check is that the
+   mythic ends last however it arrives, so it runs both ways round. */
+$fx_sfree = array('head' => array('crown' => array('free' => 1), 'cap' => array('free' => 1)));
+$fx_srar  = array('head' => array('crown' => array('mythic'), 'cap' => array('common')));
+foreach (array(array('cap', 'crown'), array('crown', 'cap')) as $fx_order) {
+	$fx_sort = dhcp_tray_pieces(
+		array(array('id' => 1, 'category' => 'head', 'slug' => $fx_order[0]),
+		      array('id' => 2, 'category' => 'head', 'slug' => $fx_order[1])),
+		$fx_sfree, $fx_srar);
+	ok(count($fx_sort) === 2 && $fx_sort[0]['tier'] === 'common'
+	   && $fx_sort[1]['tier'] === 'mythic',
+	   'the tray does not lead with the cheapest when the rows arrive '
+	   . $fx_order[0] . '-first, so the rares sit under the cursor');
+}
+
+/* The client takes the board out itself, and must do it by every id a
+   piece carries: a pair reaches the tray ordered by id and the board in
+   staged order, so their primary ids can differ. */
+ok(strpos($ui, 'function spare()') !== false && strpos($ui, 'ids(p).forEach') !== false,
+   'spare() compares primary drop_ids again, so a staged pair stays sitting in the tray');
+
 echo "\nthe page and the UI agree with the library\n";
-$page = (string) file_get_contents(__DIR__ . '/dhcportal.php');
-$ui   = (string) file_get_contents(__DIR__ . '/dhcportal-ui.php');
 /* The sizes reach the client from the library rather than being typed
    twice -- two copies of this table is two different games. */
 ok(strpos($page, 'json_encode(dhcp_sizes())') !== false,
@@ -345,7 +437,6 @@ ok(strpos($page, 'json_encode($dhcp_tables)') !== false,
 ok(preg_match('~cols: <\?php echo DHCP_COLS~', $page) === 1,
    'the page hardcodes the board width');
 /* The reveal composes its own art path, because the payload has none. */
-$rev = (string) file_get_contents(__DIR__ . '/dhcportal-reveal.php');
 ok(strpos($rev, "won.image") === false,
    'the reveal reads won.image, which dhcf_drop_payload has never returned — every win shows an empty frame');
 ok(strpos($rev, "'/250/' + won.category") !== false,
@@ -409,7 +500,7 @@ ok(stripos($pageHtml, '<section') === false,
    'the page uses <section>, which flexbox.css starts at opacity 0 — it will render invisible');
 /* And the rule it is dodging is real and still there; if it ever goes,
    this guard is why the page stopped depending on it. */
-ok(preg_match('~\nsection \{\s*\n\topacity: 0;~', (string) file_get_contents(__DIR__ . '/dist/flexbox.css')) === 1,
+ok(preg_match('~\nsection \{\s*\n\topacity: 0;~', $flexcss) === 1,
    'flexbox.css no longer hides <section>, so this guard is documenting a trap that no longer exists');
 /*
  * AND THE GRID HAS TO SAY HOW BIG IT WANTS TO BE -- within a window, at

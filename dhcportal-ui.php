@@ -452,11 +452,26 @@
 	                effects:'Effects', head:'Head', headgear:'Headgear',
 	                torso:'Torso', weapon:'Weapon' };
 
-	/* What is left in the tray, i.e. not already on the board. */
+	/*
+	 * What is left in the tray, i.e. not already on the board. D.tray is
+	 * the WHOLE pile -- the server does not pre-subtract it -- so this is
+	 * the only place the board is taken out, and taking a piece off the
+	 * board puts it straight back here.
+	 *
+	 * Matched on drop_ids, not drop_id. A tethered pair is one piece with
+	 * two ids, and the two lists reach it in different orders: the tray
+	 * is built from rows ordered by id, the board from the order the
+	 * player staged them. So the pair's primary id can differ between the
+	 * two, and comparing primaries alone would leave a staged pair
+	 * sitting in the tray as well.
+	 */
+	function ids(p) { return p.drop_ids && p.drop_ids.length ? p.drop_ids : [p.drop_id]; }
 	function spare() {
 		var on = {};
-		D.board.forEach(function (p) { on[p.drop_id] = true; });
-		return D.tray.filter(function (p) { return !on[p.drop_id]; });
+		D.board.forEach(function (p) { ids(p).forEach(function (i) { on[i] = true; }); });
+		return D.tray.filter(function (p) {
+			return !ids(p).some(function (i) { return on[i]; });
+		});
 	}
 
 	function drawTabs(list) {

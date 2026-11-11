@@ -209,6 +209,66 @@ function dhcp_pieces($rows) {
 }
 
 /**
+ * THE TRAY: every free copy the player holds, one entry per copy,
+ * cheapest first. Pure -- rows in, pieces out.
+ *
+ * NOTE WHAT THIS FUNCTION CANNOT SEE: the board. That is the fix for a
+ * real bug and the reason this is a function at all.
+ *
+ * The page used to build the tray inline and skip anything currently
+ * staged, so the array handed to the client held only the UNstaged
+ * copies. Taking a piece off the board then had nothing to put it back
+ * into -- the client removed it from the board, looked for it in the
+ * tray, and it had never been sent. Only a page load restored it.
+ *
+ * The client already owns that subtraction (spare() hides what is on
+ * the board), so doing it here too was both redundant and lossy. It was
+ * also wrong about quantity: the skip happened BEFORE the free-copy
+ * tally, so a staged copy did not consume its own quota and a player
+ * with two free copies of a trait could have one on the board and still
+ * see two in the tray.
+ *
+ * Keeping the board out of the signature is what stops either from
+ * coming back.
+ *
+ * ONE ENTRY PER COPY rather than a stack with a count, because the board
+ * holds specific drop_ids and the player is choosing which copy to
+ * surrender. A pile of "x3" would have to pick one for them.
+ *
+ * Cheapest first because that is the order a clear-out happens in: the
+ * commons are what the Portal is for, and the rares should take a
+ * deliberate scroll to reach rather than sitting under the cursor.
+ *
+ * @param array $rows   id/category/slug, ordered by id
+ * @param array $free   dhcf_available() shape: [cat][slug]['free']
+ * @param array $rarity dhcf_rarity() shape: [cat][slug][0] = tier
+ */
+function dhcp_tray_pieces($rows, $free, $rarity) {
+	$flat = array(); $seen = array();
+	foreach ($rows as $x) {
+		$cat = $x['category']; $slug = $x['slug'];
+		$have = isset($free[$cat][$slug]['free']) ? (int) $free[$cat][$slug]['free'] : 0;
+		$k = $cat . '|' . $slug;
+		$seen[$k] = isset($seen[$k]) ? $seen[$k] + 1 : 1;
+		/* Copies beyond the free count are wearing a Fighter. */
+		if ($seen[$k] > $have) continue;
+		$tier = isset($rarity[$cat][$slug][0]) ? $rarity[$cat][$slug][0] : 'common';
+		$flat[] = array('drop_id' => (int) $x['id'], 'category' => $cat,
+		                'slug' => $slug, 'tier' => $tier);
+	}
+	/* PAIRS ARE ONE CHIP. A tethered weapon and its strap are one object
+	   and the assembler refuses to build with half of one, so the tray
+	   must not offer them separately either. */
+	$out = dhcp_pieces($flat);
+	$order = array('common' => 0, 'uncommon' => 1, 'epic' => 2, 'legendary' => 3, 'mythic' => 4);
+	usort($out, function ($a, $b) use ($order) {
+		$d = $order[$a['tier']] - $order[$b['tier']];
+		return $d !== 0 ? $d : strcmp($a['slug'], $b['slug']);
+	});
+	return $out;
+}
+
+/**
  * Roll a trait for a board, excluding everything the board holds.
  *
  * NOTHING YOU FED COMES BACK. The one hard rule of the feature, and the

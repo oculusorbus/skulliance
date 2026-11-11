@@ -32,44 +32,19 @@ $dhcp_free   = $dhcp_uid > 0 ? dhcf_available($conn, $dhcp_uid) : array();
 $dhcp_rarity = dhcf_rarity();
 
 /*
- * THE TRAY: every free copy, one entry per copy, cheapest first.
- *
- * ONE ENTRY PER COPY rather than a stack with a count, because the board
- * holds specific drop_ids and the player is choosing which copy to
- * surrender. A pile of "x3" would have to pick one for them.
- *
- * Cheapest first because that is the order a clear-out happens in: the
- * commons are what the Portal is for, and the rares should take a
- * deliberate scroll to reach rather than sitting under the cursor.
+ * THE TRAY IS THE WHOLE PILE, including whatever is on the board right
+ * now. The client subtracts the board itself (spare()), so sending it
+ * pre-subtracted meant a piece taken off the board had nowhere to land
+ * and only came back on a page load. dhcp_tray_pieces() cannot see the
+ * board, which is how it stays that way.
  */
 $dhcp_tray = array();
 if ($dhcp_uid > 0) {
-	$staged = array();
-	foreach ($dhcp_board['pieces'] as $p) $staged[$p['drop_id']] = true;
+	$dhcp_rows = array();
 	$r = @$conn->query("SELECT id, category, slug FROM dhc_trait_drops
 	                     WHERE user_id = '" . $dhcp_uid . "' ORDER BY id ASC");
-	$seen = array();
-	if ($r) while ($x = $r->fetch_assoc()) {
-		if (isset($staged[(int)$x['id']])) continue;
-		$cat = $x['category']; $slug = $x['slug'];
-		$free = isset($dhcp_free[$cat][$slug]) ? (int) $dhcp_free[$cat][$slug]['free'] : 0;
-		$k = $cat . '|' . $slug;
-		$seen[$k] = isset($seen[$k]) ? $seen[$k] + 1 : 1;
-		/* Copies beyond the free count are wearing a Fighter. */
-		if ($seen[$k] > $free) continue;
-		$tier = isset($dhcp_rarity[$cat][$slug][0]) ? $dhcp_rarity[$cat][$slug][0] : 'common';
-		$dhcp_tray[] = array('drop_id' => (int) $x['id'], 'category' => $cat,
-		                     'slug' => $slug, 'tier' => $tier);
-	}
-	/* PAIRS ARE ONE CHIP. A tethered weapon and its strap are one object
-	   and the assembler refuses to build with half of one, so the tray
-	   must not offer them separately either. */
-	$dhcp_tray = dhcp_pieces($dhcp_tray);
-	$order = array('common' => 0, 'uncommon' => 1, 'epic' => 2, 'legendary' => 3, 'mythic' => 4);
-	usort($dhcp_tray, function ($a, $b) use ($order) {
-		$d = $order[$a['tier']] - $order[$b['tier']];
-		return $d !== 0 ? $d : strcmp($a['slug'], $b['slug']);
-	});
+	if ($r) while ($x = $r->fetch_assoc()) $dhcp_rows[] = $x;
+	$dhcp_tray = dhcp_tray_pieces($dhcp_rows, $dhcp_free, $dhcp_rarity);
 }
 
 $dhcp_tables = dhcp_tables();
