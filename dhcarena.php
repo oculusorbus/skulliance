@@ -4103,7 +4103,11 @@ function playTimeline(fx, state, done){
           paintTok(t);
         });
         paintCharge('foes');
-        shakeBoard();
+        /* NO SHAKE HERE. There was one, and it fired AFTER the flash --
+           so the sequence ended on a jolt that belonged to the build
+           rather than to the arrival. The build is the shaking; the
+           landing is the thing the shaking was leading to, and it has
+           its own flash. */
         setTimeout(function(){ if (bw) bw.classList.remove('rez-land'); }, 900);
       }, span);
 

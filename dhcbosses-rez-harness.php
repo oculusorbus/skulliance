@@ -179,6 +179,14 @@ ok(strpos($ui, 'rt.ko = true;') !== false,
 ok(strpos($ui, "re.classList.add('rez-flash')") !== false,
    'nothing flashes at the landing, so the moment passes rather than arrives');
 ok(preg_match('~@keyframes tokRezFlash\{~', $ui) === 1, 'the flash keyframes are gone');
+/* AND THE SEQUENCE ENDS ON THE ARRIVAL, not on another jolt. There was a
+   shakeBoard() after the flash, which ended the whole thing on a beat
+   belonging to the build. */
+preg_match('~bw\.classList\.add\(.rez-land.\);(.*?)\}, span\);~s', $ui, $m_land);
+$land = count($m_land) === 2 ? $m_land[1] : '';
+ok($land !== '', 'the landing block could not be lifted');
+ok($land !== '' && strpos($land, 'shakeBoard()') === false,
+   'the landing shakes the board again after the flash, so the sequence ends on a jolt');
 
 /* A BOSS DOES NOT COME APART. The collapse takes a Fighter to pieces
    trait by trait, which on one flat picture slides a rectangle off at an
