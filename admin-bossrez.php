@@ -127,6 +127,17 @@ admin_chrome('bossrez');
 	</small></p>
 	<div id="abrLayers"></div>
 	<p>
+		<label style="font-size:.78rem;color:#8fa7bb;margin-right:10px">
+			Rate, all layers
+			<input type="number" id="abrRate" min="0.3" max="1.5" step="0.005" value="0.675"
+			       style="width:72px;margin-left:4px">
+		</label>
+		<button type="button" class="button abr-go" id="abrAll" style="width:auto">⟳ Set all &amp; play</button>
+		<label style="font-size:.78rem;color:#8fa7bb;margin:0 10px">
+			Cue length
+			<input type="number" id="abrCueLen" min="0" max="12" step="0.25" value="0"
+			       style="width:64px;margin-left:4px">s
+		</label>
 		<button type="button" class="button abr-go" id="abrAdd" style="width:auto">+ Add layer</button>
 		<button type="button" class="button abr-go" id="abrPlay" style="width:auto">▶ Play the stack (wave 4)</button>
 	</p>
@@ -242,7 +253,7 @@ admin_chrome('bossrez');
       .catch(function () { note.textContent = 'Could not decode ' + FILES[key] + '.'; });
   }
 
-  function play(key, rate, gain, when, rev, stackPlay) {
+  function play(key, rate, gain, when, rev, stackPlay, skip) {
     if (actx && buf[key]) {
       if (actx.state === 'suspended') actx.resume();
       var s = actx.createBufferSource();
@@ -271,7 +282,7 @@ admin_chrome('bossrez');
           return;
         }
       }
-      s.start(actx.currentTime + (when || 0));
+      s.start(actx.currentTime + (when || 0), skip || 0);
       live.push(s);
       return;
     }
@@ -380,6 +391,16 @@ admin_chrome('bossrez');
                + '  offset ' + v.off + 's' + (rev() ? '  (reversed, end-aligned)' : ''); }).join('\n')
       : 'No layers.';
   }
+  /* ONE RATE FOR THE WHOLE CUE. Per-layer rates were there first and
+     nobody wants them: the cue is one sound made of several, so the
+     pitch is a property of the cue. This writes it into every row. */
+  document.getElementById('abrAll').addEventListener('click', function () {
+    var r = parseFloat(document.getElementById('abrRate').value);
+    rows.forEach(function (row) { row.el.querySelector('[data-f=rate]').value = r; });
+    writeDump();
+    document.getElementById('abrPlay').click();
+  });
+
   document.getElementById('abrAdd').addEventListener('click', function () {
     addRow('sounds/skullcoinlose.ogg', 0.675, 1, 0);
   });
@@ -396,9 +417,19 @@ admin_chrome('bossrez');
           return buf[v.path] ? buf[v.path].duration / v.rate : 0;
         });
         var longest = Math.max.apply(null, durs);
+        /*
+         * CUE LENGTH TRIMS FROM THE FRONT, never the back. The cut is
+         * the landing, so a shorter cue loses its build and keeps its
+         * ending. 0 means play every swell whole.
+         */
+        var cue  = parseFloat(document.getElementById('abrCueLen').value) || 0;
+        var head = (cue > 0 && longest > cue) ? (longest - cue) : 0;
         specs.forEach(function (v, i) {
           var lead = rev() ? (longest - durs[i]) : 0;
-          play(v.path, v.rate, v.gain, Math.max(0, lead + v.off), rev(), true);
+          var at   = lead + v.off - head;
+          /* A layer whose whole swell is before the window starts part-way in. */
+          var skip = at < 0 ? (-at) * v.rate : 0;
+          play(v.path, v.rate, v.gain, Math.max(0, at), rev(), true, skip);
         });
       });
   });
