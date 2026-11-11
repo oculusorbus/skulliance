@@ -85,9 +85,8 @@ include 'header.php';
     <h2>The Portal</h2>
     <p>
       Feed it what you will never use. Fill a row and it gives something back,
-      fill the board and it rolls on the best table on the platform. Whatever
-      goes in never comes back to you, and it never comes back to nobody:
-      every piece lands on another player.
+      fill the board and it rolls on the best table on the platform. Nothing you
+      send in comes back to you. Every piece goes to another player.
     </p>
   </div>
 
@@ -133,6 +132,11 @@ include 'header.php';
     <?php /* ---- 2. the board, in the middle: it is what both sides act on ---- */ ?>
     <div class="dhcp-mid">
       <div class="dhcp-boardwrap" aria-label="Jettison board">
+      <?php /* THE PANEL IS THE ART'S SHAPE, so the picture shows whole --
+               and a square board in a 2:3 frame leaves room above and
+               below it. That room holds the status and the readout
+               rather than sitting empty, which is what it did first. */ ?>
+      <div class="dhcp-status" id="dhcpStatus"></div>
       <div class="dhcp-board" id="dhcpBoard">
         <?php for ($r = 0; $r < DHCP_ROWS; $r++): ?>
         <div class="dhcp-row" data-row="<?php echo $r; ?>">
@@ -151,9 +155,12 @@ include 'header.php';
         <div class="dhcp-pieces" id="dhcpPieces"></div>
       </div>
       </div>
-      <?php /* OUTSIDE THE ART PANEL. It was inside, over the operator,
-               where it was unreadable -- and the panel has a fixed ratio
-               now, so text in it would stretch the frame too. */ ?>
+      <?php /* OUTSIDE THE ART PANEL, and it stays outside. It was moved
+               in when the board was centred and there was room under it;
+               now the board rides at the top and the scrim is clear
+               below the halfway mark, so in there it would sit on bright
+               art with nothing behind it. The status line above the
+               board is the only text inside, where the scrim is heavy. */ ?>
       <div class="dhcp-readout" id="dhcpReadout"></div>
     </div>
 

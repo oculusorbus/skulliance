@@ -39,19 +39,30 @@
  * enough to bury everything under it if it went first.
  */
 /*
- * CAPPED, BUT NOT SMALL. The page sits in the platform's full-width
- * column, 1960px on a wide monitor, so a 1fr middle column with nothing
- * holding it gave a 4x4 board with 314px cells. The first cap fixed
- * that and overshot the other way, leaving the page in a third of the
- * screen.
+ * RATIOS, NOT FIXED TRACKS. Two numbers were wrong before, in opposite
+ * directions: a bare 1fr middle column in the platform's 1960px content
+ * column gave a 4x4 board with 314px cells, and the 1500px cap that
+ * fixed that left a few hundred pixels of dead page either side of the
+ * rig.
  *
- * BOTH ART PANELS ARE 2:3, because both source images are, so the
- * columns are sized to the pictures rather than the pictures cropped to
- * the columns.
+ * So the tracks are fr ratios inside a cap just under the column's own
+ * width. Every track grows and shrinks together, there is nothing left
+ * over to pool at the edges, and the board cannot run away again
+ * because it only ever gets its share.
+ *
+ * BOTH ART PANELS ARE 2:3, because both source images are, so a track's
+ * width sets its panel's height. That is the real ceiling on the middle
+ * column: 1.26fr here puts the board panel near 780x1170, and widening
+ * it further buys a taller picture than a screen has room for rather
+ * than a better board. The spare width goes to the tray instead, where
+ * more of it means more traits in view at once.
+ *
+ * minmax(0, ...) on each: without it a track floors at its min-content
+ * width and the row overflows instead of shrinking.
  */
 .dhcp-rig { display: grid; gap: 20px; align-items: start;
-  max-width: 1500px; margin-inline: auto;
-  grid-template-columns: 400px minmax(0,1fr) 340px;
+  max-width: 1920px; margin-inline: auto;
+  grid-template-columns: minmax(0,.78fr) minmax(0,1.26fr) minmax(0,1fr);
   grid-template-areas: "portal board pick"; }
 .dhcp-chute { grid-area: portal; }
 .dhcp-mid { grid-area: board; }
@@ -70,15 +81,22 @@
  * panel that was here before -- dark ground, no broken frame, nothing
  * moved. The art is an improvement layered on, never a dependency.
  *
- * THE SCRIM IS NOT DECORATION. Sixteen trait tiles and four row labels
- * have to read against this, and at full strength the art swallowed
- * them -- the readout was illegible and the grid nearly invisible. It
- * is heaviest across the middle where the board sits and lightest at
- * the edges, so the figure still reads around it.
+ * TOP-ALIGNED, AND THAT IS WHAT LETS THE ART BREATHE. The block sat
+ * centred first, which put it across the middle of the figure and meant
+ * the scrim had to be heavy from a quarter of the way down to
+ * three-quarters -- most of the picture -- for sixteen tiles and four
+ * labels to read. Dropping the block to the top confines everything
+ * that needs contrast to the top third, so the scrim can fade out by
+ * the middle and the lower two-thirds of the operator is seen at full
+ * strength. The grid was muddying the art because it was sitting in the
+ * middle of it.
+ *
+ * The scrim is therefore top-weighted and gone by 64%: enough behind
+ * the status line and the rows, nothing over the rest.
  */
 .dhcp-boardwrap { position: relative; border-radius: 4px; overflow: hidden;
   aspect-ratio: 1024 / 1536;
-  display: flex; flex-direction: column; justify-content: center;
+  display: flex; flex-direction: column; justify-content: flex-start;
   background-color: #071320;
   background-image: url(images/portal/operator.webp);
   background-size: contain; background-position: 50% 50%;
@@ -87,10 +105,10 @@
 .dhcp-boardwrap::before { content: ""; position: absolute; inset: 0;
   pointer-events: none;
   background: linear-gradient(180deg,
-    rgba(7,19,32,.30) 0,
-    rgba(7,19,32,.82) 24%,
-    rgba(7,19,32,.86) 76%,
-    rgba(7,19,32,.34) 100%); }
+    rgba(7,19,32,.70) 0,
+    rgba(7,19,32,.52) 30%,
+    rgba(7,19,32,.14) 50%,
+    rgba(7,19,32,0) 64%); }
 .dhcp-board { position: relative; z-index: 1; display: flex;
   flex-direction: column-reverse; gap: 6px; padding: 16px; }
 /* column-reverse: row one is the BOTTOM row, because a board fills up
@@ -101,8 +119,15 @@
   font-size: .52rem; letter-spacing: .12em; text-transform: uppercase;
   color: var(--dhcp-dim); opacity: .5; transition: opacity .2s, color .2s; }
 .dhcp-row.lit .dhcp-rowtag { opacity: 1; color: var(--dhcp-uncommon); }
+/*
+ * AN EMPTY CELL IS A HAIRLINE, NOT A PANEL. At .5 the sixteen fills
+ * stacked on top of the scrim and read as a dark slab laid over the
+ * figure. A faint wash is enough to separate the cell from whatever is
+ * behind it; the outline is what actually says "slot", so the fill
+ * comes down and the outline goes up.
+ */
 .dhcp-cell { display: block; aspect-ratio: 1; border-radius: 3px;
-  background: rgba(4,12,22,.5); box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); }
+  background: rgba(4,12,22,.16); box-shadow: inset 0 0 0 1px rgba(255,255,255,.15); }
 
 /* The pieces float over the cells, sized in cell-widths. */
 .dhcp-pieces { position: absolute; inset: 16px 16px 14px; z-index: 2; pointer-events: none; }
@@ -125,8 +150,13 @@
   box-shadow: inset 0 0 0 2px var(--c, var(--dhcp-common)); border-radius: 3px; }
 .dhcp-piece:hover { transform: scale(1.04); z-index: 3; }
 
+/* Under the panel, on the page's own ground. */
 .dhcp-readout { margin-top: 10px; font-size: .82rem; color: var(--dhcp-dim);
   text-align: left; min-height: 2.4em; line-height: 1.45; }
+.dhcp-status { position: relative; z-index: 1; padding: 14px 18px 0;
+  font-size: .62rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--dhcp-dim); text-align: left;
+  text-shadow: 0 1px 3px rgba(4,12,22,.9); }
 .dhcp-readout b { color: var(--dhcp-ink); font-weight: normal; }
 .dhcp-readout .odds { color: var(--dhcp-uncommon); }
 
@@ -204,7 +234,7 @@
 @media (max-width: 1400px) {
   /* Two columns before one: the Portal and the board belong together and
      the spares list is the thing that wants the full width to browse. */
-  .dhcp-rig { grid-template-columns: 260px minmax(0,1fr);
+  .dhcp-rig { grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr);
     grid-template-areas: "portal board" "pick pick"; }
 }
 @media (max-width: 720px) {
@@ -228,6 +258,7 @@
 	var piecesEl = document.getElementById('dhcpPieces');
 	var trayEl  = document.getElementById('dhcpTray');
 	var readEl  = document.getElementById('dhcpReadout');
+	var statEl  = document.getElementById('dhcpStatus');
 	var sayEl   = document.getElementById('dhcpSay');
 	var goEl    = document.getElementById('dhcpGo');
 	var busy = false;
@@ -291,7 +322,7 @@
 			b.style.left   = 'calc((' + cell + ' + 6px) * ' + col + ')';
 			/* bottom, not top: the board fills upward. */
 			b.style.bottom = 'calc((' + cell + ' + 6px) * ' + row + ')';
-			b.title = TIERNAME[p.tier] + ' — click to take it off';
+			b.title = TIERNAME[p.tier] + ', click to take it off';
 			b.innerHTML = '<img src="' + art(p, true) + '" alt="" loading="lazy" '
 			            + 'onerror="this.style.display=\'none\'">';
 			b.addEventListener('click', function () { send('remove', p.drop_id); });
@@ -305,6 +336,7 @@
 		});
 
 		var table = rows > 0 ? D.tables[rows - 1] : null;
+		statEl.textContent = slots + ' of ' + D.slots + ' slots filled';
 		goEl.disabled = rows < 1 || busy;
 		if (rows < 1) {
 			readEl.innerHTML = '<b>' + slots + ' of ' + D.slots + ' slots.</b> '
@@ -312,8 +344,8 @@
 			sayEl.textContent = 'Fill at least one row.';
 		} else {
 			var left = (rows < D.rows) ? ((rows + 1) * D.cols - slots) : 0;
-			readEl.innerHTML = '<b>' + rows + ' row' + (rows === 1 ? '' : 's') + ' filled</b> — '
-			  + 'rolling on <span class="odds">' + LABEL[table] + '</span>.'
+			readEl.innerHTML = '<b>' + rows + ' row' + (rows === 1 ? '' : 's') + ' filled.</b> '
+			  + 'Rolling on <span class="odds">' + LABEL[table] + '</span>.'
 			  + (left > 0 ? ' ' + left + ' more slot' + (left === 1 ? '' : 's') + ' for the next row.'
 			              : ' This is the best the Portal has.');
 			sayEl.textContent = pieces.length + ' piece' + (pieces.length === 1 ? '' : 's') + ' in.';
@@ -398,7 +430,7 @@
 			b.className = 'dhcp-chip';
 			b.style.setProperty('--c', 'var(--dhcp-' + p.tier + ')');
 			b.title = TIERNAME[p.tier] + ' ' + (CATNAME[p.category] || p.category)
-			        + ' — takes ' + sz + ' slot' + (sz === 1 ? '' : 's');
+			        + ', takes ' + sz + ' slot' + (sz === 1 ? '' : 's');
 			b.innerHTML = '<img src="' + art(p) + '" alt="" loading="lazy" '
 			            + 'onerror="this.style.display=\'none\'">'
 			            + '<span class="sz">' + sz + '</span>';

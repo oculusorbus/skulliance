@@ -412,12 +412,78 @@ ok(stripos($pageHtml, '<section') === false,
 ok(preg_match('~\nsection \{\s*\n\topacity: 0;~', (string) file_get_contents(__DIR__ . '/dist/flexbox.css')) === 1,
    'flexbox.css no longer hides <section>, so this guard is documenting a trap that no longer exists');
 /*
- * AND THE GRID HAS TO SAY HOW BIG IT WANTS TO BE. This page sits in the
- * platform's full-width column, 1960px on a wide monitor, and a 1fr
- * middle column there gave a 4x4 board with 314px cells.
+ * AND THE GRID HAS TO SAY HOW BIG IT WANTS TO BE -- within a window, at
+ * both ends. Both ends have been wrong on this page: a bare 1fr middle
+ * column in the platform's 1960px content column gave a 4x4 board with
+ * 314px cells, and the 1500px cap that fixed that left a few hundred
+ * pixels of dead page either side of the rig.
+ *
+ * So rather than assert a cap exists -- which the old check did, and
+ * which both of those broken layouts satisfied -- read the cap and the
+ * track ratios out of the CSS and work out the board the pair of them
+ * actually produce.
  */
-ok(preg_match('~\.dhcp-rig \{[^}]*max-width: \d+px~s', $ui) === 1,
-   'the rig is uncapped, so the board grows to whatever the 2000px column gives it');
+preg_match('~\.dhcp-rig \{[^}]*?max-width: (\d+)px~s', $ui, $m_cap);
+preg_match('~\.dhcp-rig \{[^}]*?gap: (\d+)px~s', $ui, $m_gap);
+preg_match('~\.dhcp-rig \{[^}]*?grid-template-columns: minmax\(0,([\d.]+)fr\) '
+         . 'minmax\(0,([\d.]+)fr\) minmax\(0,([\d.]+)fr\)~s', $ui, $m_fr);
+ok(count($m_cap) === 2 && count($m_gap) === 2 && count($m_fr) === 4,
+   'the rig is not a capped three-ratio grid any more, so the geometry below is not measuring the page');
+
+$rig_cap  = count($m_cap) === 2 ? (int) $m_cap[1] : 0;
+$rig_gap  = count($m_gap) === 2 ? (int) $m_gap[1] : 0;
+$fr_total = count($m_fr) === 4 ? ((float) $m_fr[1] + (float) $m_fr[2] + (float) $m_fr[3]) : 0.0;
+$fr_board = count($m_fr) === 4 ? (float) $m_fr[2] : 0.0;
+
+/* THE GUTTERS. The content column is the platform's 2000px .container,
+   so anything the cap leaves under that is dead page either side. 1500
+   left 500px of it, which is what got reported. */
+ok($rig_cap >= 1900, 'the rig cap leaves ' . (2000 - $rig_cap)
+   . 'px of unused page either side of the three columns');
+
+/* THE BOARD ITSELF, from the cap and the ratios: wide enough that a
+   cell is a readable tile, and not so wide that its 2:3 panel is taller
+   than a screen. 1fr gave 1256px here (314px cells); 1500px/400-1fr-340
+   gave 720. */
+$board_w = $fr_total > 0 ? ((($rig_cap - 2 * $rig_gap) * $fr_board) / $fr_total) : 0;
+$cell_w  = ($board_w - 2 * 16 - 3 * 6) / DHCP_COLS;   /* padding 16, three 6px gaps */
+$panel_h = $board_w * 1536 / 1024;                     /* the art's own ratio */
+ok($cell_w >= 120 && $cell_w <= 220,
+   'the board cell computes to ' . round($cell_w) . 'px, outside the 120-220px a trait tile reads at');
+ok($panel_h <= 1250,
+   'the board panel computes to ' . round($panel_h) . 'px tall, past what a screen shows at once');
+
+/*
+ * THE BLOCK RIDES AT THE TOP OF THE PANEL, and the scrim is spent
+ * there. Centred, the grid sat across the middle of the figure and the
+ * scrim had to be heavy over most of the picture to keep sixteen tiles
+ * legible, which is what muddied the art. The two go together: if the
+ * block is ever centred again the scrim has to come back, so assert
+ * both or neither.
+ */
+preg_match('~\.dhcp-boardwrap \{[^}]*?justify-content: ([a-z-]+)~s', $ui, $m_jc);
+ok(count($m_jc) === 2 && $m_jc[1] === 'flex-start',
+   'the board block is not top-aligned in its panel, so the scrim has to cover the middle of the art');
+
+/* Every stop below the halfway mark is near clear, so the lower art is
+   seen at full strength. */
+preg_match('~\.dhcp-boardwrap::before \{.*?linear-gradient\(180deg,(.*?)\);~s', $ui, $m_sc);
+$scrim_low = 0.0;
+if (count($m_sc) === 2 && preg_match_all('~rgba\([^)]*?,\s*([\d.]+)\)\s+(\d+)%~',
+    $m_sc[1], $stops, PREG_SET_ORDER)) {
+	foreach ($stops as $st) {
+		if ((int) $st[2] >= 50) $scrim_low = max($scrim_low, (float) $st[1]);
+	}
+}
+ok(count($m_sc) === 2 && $scrim_low <= 0.2,
+   'the scrim is still ' . $scrim_low . ' opaque over the bottom half of the art, which is what muddied it');
+
+/* And an empty cell is an outline, not a filled panel: sixteen fills at
+   .5 stacked into a dark slab laid over the figure. */
+preg_match('~\.dhcp-cell \{[^}]*?background: rgba\([^)]*?,\s*([\d.]+)\)~s', $ui, $m_cf);
+ok(count($m_cf) === 2 && (float) $m_cf[1] <= 0.25,
+   'the empty-cell fill is back up to ' . (count($m_cf) === 2 ? $m_cf[1] : '?')
+   . ', so sixteen of them read as a slab over the art');
 ok(substr_count($ui, 'grid-template-areas') >= 3,
    'there is only one layout, so the three columns are still three columns on a phone');
 /* BOARD FIRST on a phone: it is what the page is for, and the spares
