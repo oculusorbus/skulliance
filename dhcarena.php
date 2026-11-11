@@ -858,6 +858,32 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 /* THE LANDING. One flash on arrival rather than a pulse that keeps
    going, because the thing that just happened is an arrival. */
 .arena-wrap .boardwrap.rez-land{animation:bRezLand .9s ease-out}
+/*
+ * EACH BOSS RISES ON ITS OWN BEAT.
+ *
+ * The board shook and the bars refilled in one frame, which read as a
+ * repaint rather than as three things getting up. Reported exactly that
+ * way -- the quake and the cue landed, the crew did not.
+ *
+ * It is the death animation run backwards in spirit: deathShake is a
+ * stagger on the spot, so this hauls the token up from under its own
+ * floor and overshoots once before settling. transform and opacity only,
+ * like everything else on this board.
+ *
+ * The stagger is the audio's: the three arena swells in the cue land
+ * about a second apart, so each token leaves on the one that belongs to
+ * it rather than all three at once.
+ */
+.arena-wrap .tok.rezzing{animation:tokRez .62s cubic-bezier(.17,.89,.32,1.28) both}
+@keyframes tokRez{
+  0%{transform:translateY(26%) scale(.88);opacity:0;filter:brightness(2.4) saturate(.3)}
+  45%{opacity:1}
+  70%{transform:translateY(-5%) scale(1.04);filter:brightness(1.5)}
+  100%{transform:translateY(0) scale(1);opacity:1;filter:none}
+}
+@media (prefers-reduced-motion: reduce){
+  .arena-wrap .tok.rezzing{animation:none}
+}
 @keyframes bRezLand{0%{filter:brightness(2.6) saturate(.4)}100%{filter:none}}
 /* The colour TURNS rather than snapping, so the new crew is visibly a
    different crew rather than a repaint nobody notices. */
@@ -3967,6 +3993,35 @@ function playTimeline(fx, state, done){
          than as a sequence of repaints. */
       setTimeout(function(){
         if (bw) { bw.classList.remove('shake', 'shake-hard'); bw.classList.add('rez-land'); }
+        /*
+         * THE CREW GETS UP, ONE AT A TIME.
+         *
+         * Repainting all three in the frame the bars refill reads as a
+         * repaint. They rise on the beat of the three arena swells in
+         * the cue, which land about a second apart -- so the stagger is
+         * the audio's rather than a number picked to look right.
+         */
+        rezFoes.forEach(function(nf, i){
+          var rt = fighterAt('foes', i), re = rt ? elFor(rt) : null;
+          if (!re) return;
+          re.classList.remove('dying', 'rezzing');
+          void re.offsetWidth;            /* or the class never restarts */
+          /*
+           * DELAYED BY THE ANIMATION, NOT BY A TIMER. The bars are
+           * repainted for all three in this frame, so a timer would
+           * leave the second and third standing there full and healthy
+           * until their turn and then animate them -- they would look
+           * like they were already up. `both` fill holds each one at
+           * the first keyframe, under the floor and invisible, until
+           * its own beat arrives.
+           */
+          re.style.animationDelay = (i * 0.34) + 's';
+          re.classList.add('rezzing');
+          setTimeout(function(){
+            re.classList.remove('rezzing');
+            re.style.animationDelay = '';
+          }, 700 + i * 340);
+        });
         /* THE HUE LIVES ON data-wave, not on a variable: the five
            filter:hue-rotate() rules are already there and are already
            checked against dhcb_wave_hue() by dhc-arena-card-harness.php.

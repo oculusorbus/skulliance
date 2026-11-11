@@ -154,6 +154,44 @@ ok(strpos($ui, 'REZ_LAYERS') !== false && strpos($ui, 'sfxReversed') !== false,
 ok(strpos($ui, 'var lead = REZ_LEN - full') !== false,
    'the cue layers are no longer end-aligned, so each one lands at its own time');
 /*
+ * EACH BOSS RISES ON ITS OWN BEAT, which is the half that was missing.
+ * The board quake and the cue landed and the crew did not -- the bars
+ * were repainted in one frame, which reads as a repaint rather than as
+ * three things getting up.
+ */
+/* The rule must NAME the keyframes: a bare `.tok.rezzing{` also appears
+   inside the reduced-motion block, where it sets animation:none -- so
+   searching for the selector alone passed with the real rule deleted. */
+ok(preg_match('~\.arena-wrap \.tok\.rezzing\{animation:tokRez ~', $ui) === 1,
+   'there is no per-boss rise animation, so the crew just repaints');
+ok(strpos($ui, '@keyframes tokRez{') !== false, 'the rise keyframes are gone');
+/* transform and opacity only, like everything else on this board. */
+preg_match('~@keyframes tokRez\{(.*?)\n\}~s', $ui, $m_kf);
+$kf = count($m_kf) === 2 ? $m_kf[1] : '';
+ok($kf !== '', 'the rise keyframes could not be lifted');
+foreach (array('left:', 'top:', 'width:', 'height:', 'margin') as $thrash) {
+	ok($kf !== '' && strpos($kf, $thrash) === false,
+	   'the rise animates ' . $thrash . ' which is a layout thrash on every frame');
+}
+/*
+ * STAGGERED BY animation-delay, NOT BY A TIMER. The bars are repainted
+ * for all three in one frame, so a timer would leave the second and
+ * third standing full and healthy until their turn and then animate
+ * them -- they would look like they were already up. `both` fill holds
+ * each at the first keyframe until its own beat.
+ */
+ok(strpos($ui, "re.style.animationDelay = (i * 0.34) + 's'") !== false,
+   'the rise is not staggered by animation-delay, so the later bosses stand up before their beat');
+ok(preg_match('~\.arena-wrap \.tok\.rezzing\{animation:tokRez [^}]*both\}~', $ui) === 1,
+   'the rise has no `both` fill, so a delayed token is visible and upright before it animates');
+/* The class has to be restarted or a second resurrection does nothing. */
+ok(strpos($ui, 'void re.offsetWidth;') !== false,
+   'nothing forces a reflow before re-adding the class, so a second resurrection does not animate');
+/* And it must honour reduced motion, like the rest of the board. */
+ok(preg_match('~prefers-reduced-motion: reduce\)\{\s*\.arena-wrap \.tok\.rezzing\{animation:none\}~s', $ui) === 1,
+   'the rise ignores prefers-reduced-motion');
+
+/*
  * THE HUE HOLDS AT THE LAST STEP past wave 5, and all three places that
  * decide it have to agree: dhcb_wave_hue() for the share card and the
  * Discord embed, the panel's data-wave, and the resurrection handler.
