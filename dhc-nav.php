@@ -11,7 +11,7 @@
  * slightly different strips. Set $dhcnav_at before including:
  *
  *     $dhcnav_at = 'fighters' | 'collection' | 'arena' | 'bosses' | 'rivalries'
- *                | 'siege' | 'sandbox';
+ *                | 'siege' | 'portal' | 'sandbox';
  *     include 'dhc-nav.php';
  *
  * SIGNED OUT, ONE OF THE THREE IS A TRAP. The Arena and the Collection are
@@ -70,6 +70,13 @@ $dhcnav_items = array(
 	   one across the week as the bars come down, which is a different
 	   relationship than watching a feud. */
 	'siege'      => array('siege.php',       'Siege',      'track',  0, 0),
+	/* AFTER THE PLACES YOU FIGHT AND BEFORE THE ONES YOU WATCH would be
+	   tidier, but it goes here because of what it does to a trait pile
+	   rather than what it does to a Fighter: you come to it with the
+	   leftovers of everything above. Hint is `gamble`, which is the only
+	   honest word for it -- nothing about the Portal is a safe trade and
+	   the tab should not imply otherwise. */
+	'portal'     => array('dhcportal.php',   'Portal',     'gamble', 0, 0),
 	'sandbox'    => array('dhcsandbox.php',  'Sandbox',    'experiment', 0, 0),
 );
 ?>

@@ -1346,6 +1346,46 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// because it is not something anybody can go and do -- it appears on
 	// dhcfighters.php as "where traits drop" otherwise, under a heading
 	// telling a signed-in member to go and play it.
+	/*
+	 * THE PORTAL, both ends of it.
+	 *
+	 * 'portal' is what the player who fired it wins. 'portalgift' is each
+	 * trait out of their hopper landing on somebody else. Two sources and
+	 * not one, because they are two different events to the people
+	 * receiving them and the Discord line has to read differently: one is
+	 * "you gambled and this came back", the other is "somebody threw this
+	 * away and the Portal found you".
+	 *
+	 * CAP 0 ON BOTH, which is deliberate and unusual here.
+	 *
+	 * The player's own roll is capped by the board: sixteen slots in and
+	 * one trait out, so the Portal is self-limiting in the only currency
+	 * it accepts. A daily cap on top would punish the clear-out the
+	 * feature exists for -- somebody finally dealing with three hundred
+	 * junk traits should not be told to come back tomorrow.
+	 *
+	 * The gift end MUST be uncapped. It is involuntary: a lapsed player
+	 * does nothing to earn it and is not present to retry. A cap there
+	 * would silently drop traits on the floor, which is the one outcome
+	 * the cascade exists to make impossible.
+	 *
+	 * base 'run' on both. The player's roll overrides it with the board's
+	 * own table (dhcp_table), and a gift is not a roll at all -- it is a
+	 * specific trait being moved, so no table is consulted.
+	 */
+	'portal'         => array('label' => 'DHC Portal', 'earned_from' => 'a Portal jettison',
+	                          'url' => 'dhcportal.php', 'category' => 'wildcard',
+	                          'trigger' => 'fill the board and jettison',
+	                          'base' => 'run', 'cap' => 0,
+	                          'limit_note' => 'one trait back per jettison',
+	                          'unlisted' => true),
+	'portalgift'     => array('label' => 'Through the Portal', 'earned_from' => 'somebody else jettisoning it',
+	                          'url' => 'dhcportal.php', 'category' => 'wildcard',
+	                          'trigger' => 'being away when somebody clears out',
+	                          'base' => 'run', 'cap' => 0,
+	                          'limit_note' => 'arrives unasked',
+	                          'unlisted' => true),
+
 	'returngift'     => array('label' => 'Welcome back', 'earned_from' => 'coming back after a month away',
 	                          'url' => 'dhcfighters.php', 'category' => 'wildcard',
 	                          'trigger' => 'signing in after 30 days away',
@@ -1516,9 +1556,21 @@ function dhcf_band_label($key, $value = 0, $placement = null) {
 	}
 	$p = dhcf_placement_table($placement);
 	if (dhcf_table_rank($p) > dhcf_table_rank($name)) $name = $p;
-	$labels = array('run' => 'standard odds', 'placement_10' => 'improved odds',
-	                'placement_3' => 'strong odds', 'placement_1' => 'best odds');
+	$labels = dhcf_table_labels();
 	return isset($labels[$name]) ? $labels[$name] : 'standard odds';
+}
+
+/**
+ * What each table is called in front of a player.
+ *
+ * LIFTED OUT OF dhcf_band_label() when the Portal needed the same four
+ * words for its rows. They were inline there, which was fine while one
+ * caller owned them and is exactly how two pages end up describing the
+ * same odds differently.
+ */
+function dhcf_table_labels() {
+	return array('run' => 'standard odds', 'placement_10' => 'improved odds',
+	             'placement_3' => 'strong odds', 'placement_1' => 'best odds');
 }
 
 /* ------------------------------------------------------------------ *
