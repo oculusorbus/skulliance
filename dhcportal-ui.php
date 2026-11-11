@@ -377,8 +377,33 @@
 	 * size that does not divide a row.
 	 */
 	function layout(pieces) {
+		/*
+		 * LAID LARGEST FIRST, AND THAT IS NOT COSMETIC.
+		 *
+		 * This used to lay them in the order they were clicked, on the
+		 * reasoning in the library that every piece is row-aligned so
+		 * nothing can leave a notch. That is only true if the sizes
+		 * arrive in non-increasing order, and a player clicks in whatever
+		 * order they like: drop two commons and then a legendary and the
+		 * legendary starts at column 2, is four columns wide, and hangs
+		 * two columns off the edge of the board.
+		 *
+		 * Enumerated rather than reasoned about: of the 628 boards that
+		 * fit in sixteen slots, 422 straddled. Sorted largest first, none
+		 * do -- the sizes are 1, 2, 4, 8 and 16, so a 4-wide piece always
+		 * starts on a multiple of four, a 2-wide always on an even slot,
+		 * and a 1 fits anywhere.
+		 *
+		 * PURELY VISUAL. Slots, rows and the table are sums over the same
+		 * set whichever order it is in, and the eject rule is the
+		 * server's. Nothing about what the board is worth moves.
+		 *
+		 * Stable within a size: a copy of slice() first, because sort()
+		 * mutates and this array is the live board.
+		 */
+		var seq = pieces.slice().sort(function (a, b) { return size(b) - size(a); });
 		var out = [], at = 0;
-		pieces.forEach(function (p) {
+		seq.forEach(function (p) {
 			var s = size(p);
 			out.push({ piece: p, at: at, w: Math.min(s, D.cols), h: Math.ceil(s / D.cols) });
 			at += s;

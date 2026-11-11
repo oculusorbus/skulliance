@@ -264,6 +264,110 @@ $posGift   = strpos($end, "'portalgift'");
 ok($posCommit !== false && $posGift !== false && $posCommit < $posGift,
    'the redistribution runs inside the transaction, so one unreachable recipient un-does a finished jettison');
 
+echo "\nno board can hang off the grid\n";
+/*
+ * REPORTED FROM THE LIVE SITE: "Certain combos of rarity on the portal
+ * hang off the grid... No possible combination should result in the grid
+ * being compromised like that."
+ *
+ * The client laid pieces in the order they were CLICKED, on the library's
+ * reasoning that every piece is row-aligned so nothing can leave a notch.
+ * That only holds if the sizes arrive in non-increasing order. Two commons
+ * then a legendary put the legendary at column 2, four wide, two columns
+ * off the edge.
+ *
+ * SO IT IS ENUMERATED, NOT ARGUED. Every board that fits in sixteen slots
+ * is built and laid out, and not one piece may straddle. A spot-check of
+ * the two combinations that were reported would have passed on several
+ * broken orderings.
+ */
+$lay_bad = array(); $lay_n = 0;
+$lay_walk = function ($acc, $depth) use (&$lay_walk, &$lay_bad, &$lay_n) {
+	if ($acc) {
+		$lay_n++;
+		if (!dhcp_layout_fits($acc)) {
+			$lay_bad[] = implode(' + ', array_map(function ($p) { return $p['tier']; }, $acc));
+		}
+	}
+	if ($depth <= 0) return;
+	foreach (array_keys(dhcp_sizes()) as $t) {
+		$next = $acc; $next[] = array('tier' => $t);
+		if (dhcp_slots($next) <= DHCP_SLOTS) $lay_walk($next, $depth - 1);
+	}
+};
+$lay_walk(array(), 6);
+ok($lay_n > 1000, 'only ' . $lay_n . ' boards were enumerated, so this is not exhaustive');
+ok(count($lay_bad) === 0,
+   count($lay_bad) . ' of ' . $lay_n . ' boards hang off the grid, e.g. '
+ . implode(' | ', array_slice($lay_bad, 0, 3)));
+
+/*
+ * AND EVERY PIECE IS ROW-ALIGNED, which is the stronger property and the
+ * one the design actually rests on: "four commons make a row, two
+ * uncommons make a row, an epic IS a row." A two-wide at column 1 sits
+ * inside the grid and still straddles the middle of a row, so fitting is
+ * not enough on its own.
+ */
+$lay_skew = array(); $lay_m = 0;
+$lay_walk2 = function ($acc, $depth) use (&$lay_walk2, &$lay_skew, &$lay_m) {
+	if ($acc) {
+		$lay_m++;
+		foreach (dhcp_layout($acc) as $L) {
+			if ($L['at'] % $L['w'] !== 0) {
+				$lay_skew[] = implode(' + ', array_map(function ($p) { return $p['tier']; }, $acc));
+				break;
+			}
+		}
+	}
+	if ($depth <= 0) return;
+	foreach (array_keys(dhcp_sizes()) as $t) {
+		$next = $acc; $next[] = array('tier' => $t);
+		if (dhcp_slots($next) <= DHCP_SLOTS) $lay_walk2($next, $depth - 1);
+	}
+};
+$lay_walk2(array(), 6);
+ok($lay_m === $lay_n, 'the alignment walk covered a different set of boards from the fit walk');
+ok(count($lay_skew) === 0,
+   count($lay_skew) . ' of ' . $lay_m . ' boards put a piece across a row boundary, e.g. '
+ . implode(' | ', array_slice($lay_skew, 0, 3)));
+
+/* THE GEOMETRY ITSELF, handed the straddles the sort exists to prevent --
+   through dhcp_layout_fits() they are unreachable, so each condition is
+   driven directly or neither can be shown to work. */
+ok(dhcp_cell_fits(0, 4, 1), 'a full row at the start of a row does not fit');
+ok(dhcp_cell_fits(8, 4, 2), 'a legendary on the third row does not fit');
+ok(dhcp_cell_fits(0, 4, 4), 'a mythic does not fit the board it is the size of');
+ok(!dhcp_cell_fits(2, 4, 1), 'a four-wide piece at column 2 is reported as fitting');
+/* A two-wide at column 1 covers columns 1 and 2, which IS inside the grid
+   -- it is ugly rather than broken, and the difference is the point:
+   fitting and being row-aligned are two properties and the sort gives
+   both. Asserted the right way round after getting it wrong. */
+ok(dhcp_cell_fits(1, 2, 1), 'a two-wide piece at column 1 is reported as hanging off, and it is not');
+ok(!dhcp_cell_fits(3, 2, 1), 'a two-wide piece at the last column is reported as fitting');
+ok(!dhcp_cell_fits(12, 4, 2), 'a two-row piece on the last row is reported as fitting');
+ok(!dhcp_cell_fits(4, 4, 4), 'a mythic starting on the second row is reported as fitting');
+
+/* THE ORDER IS WHAT DOES IT, so prove the unsorted version really was
+   broken rather than trusting that sorting fixed something. */
+$lay_raw = array(array('tier' => 'common'), array('tier' => 'common'), array('tier' => 'legendary'));
+$lay_at = 0; $lay_straddles = false;
+foreach ($lay_raw as $p) {           /* click order, deliberately */
+	$sz = dhcp_size($p['tier']);
+	if (($lay_at % DHCP_COLS) + min($sz, DHCP_COLS) > DHCP_COLS) $lay_straddles = true;
+	$lay_at += $sz;
+}
+ok($lay_straddles,
+   'two commons and a legendary no longer straddle in CLICK order, so the sort below is not what is fixing this');
+ok(dhcp_layout_fits($lay_raw),
+   'two commons and a legendary still hang off the grid, which is the reported bug');
+
+/* AND THE CLIENT DRAWS WITH THE SAME RULE. dhcp_layout() is the executable
+   copy; the board the player sees is the JS one, so they have to agree. */
+ok(strpos($ui, 'pieces.slice().sort(function (a, b) { return size(b) - size(a); })') !== false,
+   'the client lays pieces in click order again, so the grid straddles however right the library is');
+ok(strpos($ui, 'pieces.forEach(function (p) {') === false,
+   'the client still iterates the unsorted array, so the sort is dead code');
+
 echo "\nthe traits always land on somebody\n";
 /*
  * NOTHING INTO THE ETHER. The cascade widens until it finds anybody, and

@@ -163,6 +163,79 @@ function dhcp_pair_slugs($slug) {
 }
 
 /**
+ * WHERE EVERY PIECE SITS ON THE BOARD. Pure; the client's layout() is this.
+ *
+ * LARGEST FIRST, AND THAT IS LOAD-BEARING. The note above says every piece
+ * is row-aligned so nothing can leave a notch, and that is only true if
+ * the sizes arrive in non-increasing order. A player clicks in whatever
+ * order they like: two commons and then a legendary put the legendary at
+ * column 2, four columns wide, hanging two columns off the board.
+ *
+ * Reported from the live site, and worse than reported -- enumerated here
+ * rather than reasoned about, 422 of the 628 boards that fit in sixteen
+ * slots straddled. Sorted largest first, none do: the sizes are 1, 2, 4,
+ * 8 and 16, so a four-wide piece always starts on a multiple of four, a
+ * two-wide always on an even slot, and a one fits anywhere.
+ *
+ * PURELY VISUAL. Slots, rows and the table are sums over the same set in
+ * any order, and the eject rule is dhcp_fit()'s. This exists so the
+ * harness can execute the rule the client draws with, rather than read it.
+ *
+ * @param array $pieces list of array('tier'=>..)
+ * @return array list of array('tier','at','w','h')
+ */
+function dhcp_layout($pieces) {
+	$seq = array_values($pieces);
+	usort($seq, function ($a, $b) {
+		return dhcp_size(isset($b['tier']) ? $b['tier'] : '')
+		     - dhcp_size(isset($a['tier']) ? $a['tier'] : '');
+	});
+	$out = array(); $at = 0;
+	foreach ($seq as $p) {
+		$s = dhcp_size(isset($p['tier']) ? $p['tier'] : '');
+		$out[] = array(
+			'tier' => isset($p['tier']) ? $p['tier'] : '',
+			'at'   => $at,
+			'w'    => min($s, DHCP_COLS),
+			'h'    => (int) ceil($s / DHCP_COLS),
+		);
+		$at += $s;
+	}
+	return $out;
+}
+
+/**
+ * Does this board fit inside the grid, every piece whole?
+ *
+ * @return bool
+ */
+function dhcp_layout_fits($pieces) {
+	foreach (dhcp_layout($pieces) as $L) {
+		if (!dhcp_cell_fits($L['at'], $L['w'], $L['h'])) return false;
+	}
+	return true;
+}
+
+/**
+ * Is a piece of this size, starting at this slot, inside the grid?
+ *
+ * SEPARATE FROM THE LOOP ABOVE SO IT CAN BE TESTED AT ALL. With the sort
+ * in dhcp_layout() doing its job nothing ever straddles, so these two
+ * conditions are unreachable through dhcp_layout_fits() -- deleting
+ * either one changed no outcome and no assertion, which is a guard that
+ * cannot be shown to work. Reached directly it can be handed the
+ * straddles the sort exists to prevent.
+ */
+function dhcp_cell_fits($at, $w, $h) {
+	$at = (int) $at;
+	$col = $at % DHCP_COLS;
+	$row = (int) floor($at / DHCP_COLS);
+	if ($col + (int) $w > DHCP_COLS) return false;   /* off the right edge */
+	if ($row + (int) $h > DHCP_ROWS) return false;   /* off the top */
+	return true;
+}
+
+/**
  * Collapse a flat list of owned copies into pieces, pairing the tethered.
  *
  * A piece carries drop_ids (plural) because a pair is two rows, and

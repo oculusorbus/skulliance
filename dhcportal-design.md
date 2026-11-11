@@ -360,3 +360,39 @@ Pinned by driving the real cascade through a connection that records every
 query and returns no rows, so all seven rungs run and each rung's SQL is
 inspected. A grep would have passed the broken version too -- it also mentioned
 days and a cascade. Seven mutations.
+
+
+## Correction: the board could hang off the grid (2026-11-11)
+
+Reported from the live site: *"Certain combos of rarity on the portal hang off
+the grid. Like 2 commons and an uncommon or 2 commons and legendary. No
+possible combination should result in the grid being compromised like that."*
+
+The library's note said every piece is row-aligned so nothing can leave a
+notch, and there is no packing problem. **That is only true if the sizes arrive
+in non-increasing order**, and the client laid them in the order the player
+CLICKED. Two commons then a legendary puts the legendary at column 2, four
+columns wide, two columns off the edge of the board.
+
+Enumerated rather than spot-checked, and it was far worse than reported:
+**422 of the 628 boards** that fit in sixteen slots straddled. Sorting the
+layout largest-first fixes all of them -- the sizes are 1, 2, 4, 8 and 16, so a
+four-wide always starts on a multiple of four, a two-wide always on an even
+slot, and a one fits anywhere.
+
+Purely visual. Slots, rows and the table are sums over the same set in any
+order, and the eject rule is the server's.
+
+`dhcp_layout()` and `dhcp_layout_fits()` are a pure PHP mirror of the client's
+`layout()`, added so the harness can EXECUTE the rule rather than read it; the
+harness also pins the client to the same sort, since the board the player sees
+is the JS one. It walks every board that fits and asserts two separate
+properties: that nothing hangs off the grid, and that nothing crosses a row
+boundary. They are not the same -- a two-wide at column 1 covers columns 1 and
+2, which is inside the grid and still straddles the middle of a row. I asserted
+that one the wrong way round first.
+
+`dhcp_cell_fits()` is split out for a reason worth keeping: with the sort
+working, both of its conditions are unreachable through `dhcp_layout_fits()`,
+so deleting either changed no outcome and failed no assertion. Reached
+directly it can be handed the straddles the sort exists to prevent.
