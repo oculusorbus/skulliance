@@ -484,9 +484,28 @@ ok(count($m_sc) === 2 && $scrim_low <= 0.2,
  * 500px up the page with empty column under it -- and the tray scrolled
  * 372 traits inside a fixed 420px box while that space sat there.
  */
+/* NOT stretch. A grid row sizes to its items' content height, and the
+   tray's content is 372 traits -- about 4600px at seven across. Letting
+   the columns share a height made the tray set the page height, and the
+   portal column ended up halfway down the page. */
 preg_match('~\.dhcp-rig \{[^}]*?align-items: ([a-z]+)~s', $ui, $m_ai);
-ok(count($m_ai) === 2 && $m_ai[1] === 'stretch',
-   'the rig columns do not share a height, so the short ones end early and leave the page empty under them');
+ok(count($m_ai) === 2 && $m_ai[1] !== 'stretch',
+   'the rig columns stretch, so the tray\'s full trait list sets the height of the whole page');
+
+/* The tray is the one list with no natural end, so the panel holding it
+   is the one panel that has to be told how tall to be -- from the
+   window, which is neither its contents nor its siblings. */
+/* ALL the .dhcp-pick blocks, not the first one: the selector appears
+   three times -- the grid-area line, the panel itself, and the phone
+   override -- and matching the first found grid-area and reported the
+   cap missing while it was sitting in the second. */
+preg_match_all('~\.dhcp-pick \{([^}]*)\}~s', $ui, $m_pk);
+$pick = count($m_pk[1]) ? implode(' ', $m_pk[1]) : '';
+ok(count($m_pk[1]) >= 2, 'the spares panel rules moved, so the checks below are reading the wrong block');
+ok($pick !== '' && preg_match('~max-height: calc\(100dvh~', $pick) === 1,
+   'the spares panel has no viewport height cap, so 372 traits stretch the page instead of scrolling');
+ok($pick !== '' && preg_match('~max-height: calc\(100vh~', $pick) === 1,
+   'the spares panel caps in dvh with no vh fallback, so it has no height where dvh is unknown');
 
 preg_match('~\.dhcp-tray \{([^}]*)\}~s', $ui, $m_tr);
 $tray = count($m_tr) === 2 ? $m_tr[1] : '';
@@ -525,11 +544,30 @@ ok($piece_max > $cell_fill,
 ok($piece_max < 1.0,
    'the plate behind a placed trait is solid, which punches a hole in the picture it sits on');
 
-/* The portal column cannot flex -- the vortex is a fixed 2:3 picture --
-   so its slack has to split above and below rather than pool under it. */
-preg_match('~\.dhcp-chute \{ display: flex;[^}]*?justify-content: ([a-z-]+)~s', $ui, $m_ch2);
-ok(count($m_ch2) === 2 && $m_ch2[1] === 'center',
-   'the portal column is top-packed in a stretched track, so its slack all pools under the vortex');
+/*
+ * THE READOUT HAS TO BE READABLE. It is the only line on the page that
+ * says what you get for what you have loaded, and it was .82rem of
+ * --dhcp-dim floating on the page ground. Three things make it legible
+ * and all three are easy to undo by hand later.
+ */
+preg_match('~\.dhcp-readout \{([^}]*)\}~s', $ui, $m_ro);
+$ro = count($m_ro) === 2 ? $m_ro[1] : '';
+preg_match('~font-size: ([\d.]+)rem~', $ro, $m_rs);
+ok(count($m_rs) === 2 && (float) $m_rs[1] >= 0.9,
+   'the readout is set at ' . (count($m_rs) === 2 ? $m_rs[1] : '?')
+   . 'rem, too small for the most important line on the page');
+ok($ro !== '' && strpos($ro, 'var(--dhcp-dim)') === false,
+   'the readout is painted in --dhcp-dim, the quietest colour on the page');
+ok($ro !== '' && strpos($ro, 'background-color') !== false,
+   'the readout has no surface, so it floats on the page ground with nothing holding it');
+
+/* The odds phrase is FILLED, not merely coloured: coloured text on a
+   dark ground is still text, and this has to beat the sentence it sits
+   in. The old rule set a colour and nothing else. */
+preg_match('~\.dhcp-readout \.odds \{([^}]*)\}~s', $ui, $m_od);
+$od = count($m_od) === 2 ? $m_od[1] : '';
+ok($od !== '' && preg_match('~background: var\(--dhcp-[a-z]+\)~', $od) === 1,
+   'the odds phrase is coloured text again rather than a filled pill, so it does not carry');
 
 /* AND THE CHIPS HAVE ROOM. At 54px the grid fitted nine across a 618px
    column and the trait art came out smaller than the count badge. */

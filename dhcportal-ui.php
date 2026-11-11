@@ -18,7 +18,10 @@
          accents and came out with epic, legendary and mythic rotated --
          legendary is the orange one and mythic is the pink one, which the
          drop modal and the gallery have both known all along. */ ?>
-.dhcp { --dhcp-ink:#e8eaed; --dhcp-dim:#7a9eb0; --dhcp-line:#1b3346;
+/* --dhcp-read sits between ink and dim: the readout is the page's most
+   important line and dim was too quiet for it, but it is still a
+   sentence and not a heading. */
+.dhcp { --dhcp-ink:#e8eaed; --dhcp-dim:#7a9eb0; --dhcp-read:#c3d2dd; --dhcp-line:#1b3346;
 <?php foreach (dhcf_tier_colours() as $dhcp_t => $dhcp_c): ?>
   --dhcp-<?php echo $dhcp_t; ?>:<?php echo $dhcp_c; ?>;
 <?php endforeach; ?>
@@ -60,11 +63,19 @@
  * minmax(0, ...) on each: without it a track floors at its min-content
  * width and the row overflows instead of shrinking.
  */
-/* stretch, not start: start let each column stop wherever its contents
-   happened to end, which left the spares panel finishing 500px up the
-   page with empty column under it. Stretched, the two side columns get
-   the board column's height to spend. */
-.dhcp-rig { display: grid; gap: 20px; align-items: stretch;
+/*
+ * start, NOT stretch -- and stretch was tried and was wrong. The spares
+ * panel was ending 500px up the page with empty column under it, so I
+ * stretched the tracks to share the board column's height. But a grid
+ * row sizes to its items' CONTENT height, and the tray's content is 372
+ * traits: seven across is 54 rows, about 4600px. The row grew to that,
+ * the page grew with it and the portal column, centred in the track,
+ * ended up halfway down it.
+ *
+ * The tray's height can't come from its contents or from its siblings.
+ * It comes from the viewport -- see .dhcp-pick.
+ */
+.dhcp-rig { display: grid; gap: 20px; align-items: start;
   max-width: 1920px; margin-inline: auto;
   grid-template-columns: minmax(0,.78fr) minmax(0,1.26fr) minmax(0,1fr);
   grid-template-areas: "portal board pick"; }
@@ -164,22 +175,34 @@
   box-shadow: inset 0 0 0 2px var(--c, var(--dhcp-common)); border-radius: 3px; }
 .dhcp-piece:hover { transform: scale(1.04); z-index: 3; }
 
-/* Under the panel, on the page's own ground. */
-.dhcp-readout { margin-top: 10px; font-size: .82rem; color: var(--dhcp-dim);
-  text-align: left; min-height: 2.4em; line-height: 1.45; }
+/*
+ * THE READOUT IS THE PAGE. Everything else here is something to look
+ * at; this line is the only place that says what you are about to get
+ * for what you have loaded, and it was .82rem of dim blue-grey floating
+ * on the page ground under the panel. It now reads like the answer it
+ * is: its own surface, a full-size sentence, and the odds themselves
+ * set in a filled pill so the one phrase that decides whether you pull
+ * the lever is the loudest thing in the block.
+ */
+.dhcp-readout { margin-top: 12px; padding: 12px 14px;
+  background-color: #0a1929; background-image: var(--msp-lift);
+  border: 1px solid var(--dhcp-line); border-radius: 4px;
+  font-size: .95rem; line-height: 1.55; color: var(--dhcp-read);
+  text-align: left; min-height: 3.1em; }
 .dhcp-status { position: relative; z-index: 1; padding: 14px 18px 0;
-  font-size: .62rem; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--dhcp-dim); text-align: left;
+  font-size: .7rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--dhcp-read); text-align: left;
   text-shadow: 0 1px 3px rgba(4,12,22,.9); }
-.dhcp-readout b { color: var(--dhcp-ink); font-weight: normal; }
-.dhcp-readout .odds { color: var(--dhcp-uncommon); }
+.dhcp-readout b { color: var(--dhcp-ink); font-weight: 600; }
+/* Filled, not coloured text: coloured text on a dark ground is still
+   just text, and this has to beat the sentence around it. Dark ink on
+   the fill rather than light, so the pill is the bright object. */
+.dhcp-readout .odds { display: inline-block; padding: 1px 10px; border-radius: 999px;
+  font-weight: 600; letter-spacing: .03em; white-space: nowrap;
+  color: #04121c; background: var(--dhcp-uncommon); }
 
 /* ---- the Portal ----------------------------------------------------- */
-/* Centred in the stretched column: the vortex is a fixed 2:3 picture
-   and cannot fill the board column's height, so the slack splits above
-   and below it rather than all pooling underneath. */
-.dhcp-chute { display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 12px; }
+.dhcp-chute { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 /*
  * THE MOUTH, WHOLE. 2:3, the art's own ratio, so the machinery around
  * the vortex and the flames beneath it are all in frame -- a square
@@ -209,7 +232,20 @@
   min-height: 1.2em; }
 
 /* ---- your spares ---------------------------------------------------- */
+/*
+ * AS TALL AS THE SCREEN, AND IT FOLLOWS YOU. This is the one panel
+ * whose contents have no natural end -- 372 traits and climbing -- so
+ * it is the one panel that has to be told how tall to be, and the only
+ * honest answer is the window. Capped at the viewport it is never the
+ * thing that sets the page height, and sticky it stays beside the board
+ * while you scroll instead of leaving the top of the page.
+ *
+ * dvh after vh: dvh is what a phone's retracting address bar actually
+ * leaves, vh is the fallback for anything that does not know dvh.
+ */
 .dhcp-pick { display: flex; flex-direction: column;
+  position: sticky; top: 14px;
+  max-height: calc(100vh - 28px); max-height: calc(100dvh - 28px);
   background-color: #0a1929; background-image: var(--msp-lift);
   border: 1px solid var(--dhcp-line); border-radius: 4px; padding: 14px; }
 .dhcp-pick h3 { margin: 0 0 10px; font-size: .74rem; letter-spacing: .14em;
@@ -241,16 +277,17 @@
  * for another 500px, so the list was cramped and the page was empty in
  * the same place.
  *
- * min-height is doing two jobs. A flex item's default is auto, which
- * floors it at content height and makes overflow-y do nothing, so it
- * has to be set at all; 280px rather than 0 so the tray is still a list
- * and not a sliver when the column it is matching is short.
+ * min-height is load-bearing: a flex item's default is auto, which
+ * floors it at content height and makes overflow-y do nothing. It has
+ * to be a small number, not a comfortable one -- it is a floor on a box
+ * that is being squeezed by the window, so anything generous here is
+ * just the panel overflowing the screen on a short viewport.
  *
  * 72px chips: at 54 the grid fitted nine across and the art inside each
  * one was smaller than the count badge on it. Seven across reads.
  */
 .dhcp-tray { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: 10px; flex: 1 1 auto; min-height: 280px; overflow-y: auto;
+  gap: 10px; flex: 1 1 auto; min-height: 120px; overflow-y: auto;
   align-content: start; padding-right: 6px; }
 .dhcp-empty { margin: 8px 0 0; font-size: .78rem; color: var(--dhcp-dim); text-align: left; }
 .dhcp-chip { position: relative; aspect-ratio: 1; cursor: pointer; padding: 0; border: 0;
@@ -270,6 +307,11 @@
      the spares list is the thing that wants the full width to browse. */
   .dhcp-rig { grid-template-columns: minmax(0,.8fr) minmax(0,1.2fr);
     grid-template-areas: "portal board" "pick pick"; }
+  /* Full-width band under the other two now, not a side column: there
+     is nothing beside it to stay level with, so it stops sticking. The
+     viewport cap stays -- that is what keeps 372 traits from setting
+     the page height, which is a different job. */
+  .dhcp-pick { position: static; }
 }
 @media (max-width: 720px) {
   /* BOARD FIRST. It is what the page is for, and the spares list is long
@@ -277,7 +319,10 @@
   .dhcp-rig { grid-template-columns: minmax(0,1fr);
     grid-template-areas: "board" "portal" "pick"; }
   .dhcp-chute { max-width: 300px; margin: 0 auto; }
-  .dhcp-tray { max-height: none; }
+  /* Shorter than the window on a phone, so the page can still be
+     scrolled past the spares rather than the list catching every swipe
+     that lands on it. */
+  .dhcp-pick { max-height: 70vh; max-height: 70dvh; }
 }
 @media (prefers-reduced-motion: reduce) {
   .dhcp-piece, .dhcp-chip { transition: none; }
@@ -379,7 +424,7 @@
 		} else {
 			var left = (rows < D.rows) ? ((rows + 1) * D.cols - slots) : 0;
 			readEl.innerHTML = '<b>' + rows + ' row' + (rows === 1 ? '' : 's') + ' filled.</b> '
-			  + 'Rolling on <span class="odds">' + LABEL[table] + '</span>.'
+			  + 'Rolling on <span class="odds">' + LABEL[table] + '</span>'
 			  + (left > 0 ? ' ' + left + ' more slot' + (left === 1 ? '' : 's') + ' for the next row.'
 			              : ' This is the best the Portal has.');
 			sayEl.textContent = pieces.length + ' piece' + (pieces.length === 1 ? '' : 's') + ' in.';
