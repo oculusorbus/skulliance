@@ -33,10 +33,11 @@ $ad_fb = array(
 $ad_fb_ok = !in_array(false, $ad_fb, true);
 
 include 'header.php';
+admin_chrome('defer');
 ?>
-<div class="container"><div class="row"><div class="col1of3" style="margin:0 auto;flex:1 1 100%;max-width:none;">
-<div class="adm">
-  <h2>Deferred notifications</h2>
+<?php include 'admin-css.php'; ?>
+<div class="row"><div class="adm">
+  <h3>Deferred notifications</h3>
   <p>Discord posts block the request that triggers them: <code>CURLOPT_TIMEOUT</code> is
      8 seconds on an embed and 20 on an upload, and the player waits for every one. This
      page reports whether this server can answer the browser first and post afterwards.</p>
@@ -125,6 +126,5 @@ include 'header.php';
   <h4>What is blocking today</h4>
   <p>173 <code>discordmsg()</code> calls across 55 files, and no caller uses the return
      value, so the sender can queue instead of post without touching any of them.</p>
-</div>
-</div></div></div>
-<?php include 'footer.php'; ?>
+</div></div>
+</html>

@@ -117,10 +117,17 @@ echo "\nthe embed carries its own image\n";
  * something to verify by reading it.
  */
 $wh = file_get_contents(__DIR__ . '/webhooks.php');
-ok(strpos($wh, 'CURLFile($attachfile') !== false,
+/* The post moved into skl_discord_send() and reads its inputs off a job
+   array, so the attachment is $J['attachfile'] rather than a local. Both
+   spellings are accepted: what is being asserted is that the file is
+   uploaded, not where the path came from. */
+ok(preg_match("/CURLFile\\(\\\$(?:attachfile|J\\['attachfile'\\])/", $wh) === 1,
    'discordmsg() no longer uploads the file, so Discord is back to fetching '
  . 'the URL at the one moment it is least likely to work');
-ok(preg_match('/if \(\$attachok\) \{(?:(?!CURLOPT_HTTPHEADER).)*?\n            \} else/s', $wh) === 1,
+/* Indentation-independent: the branch de-indented a level when it moved
+   out of skl_discordmsg(), and a pattern pinned to a column fails on a
+   move that changed nothing that matters. */
+ok(preg_match("/if \\(\\\$(?:attachok|J\\['attachok'\\])\\) \\{(?:(?!CURLOPT_HTTPHEADER).)*?\\n\\s*\\} else/s", $wh) === 1,
    'the multipart branch sets its own Content-type; curl has to write the '
  . 'boundary itself or Discord rejects the post');
 
@@ -219,7 +226,23 @@ if (!function_exists('skl_embed_trim')) eval(be2($wh, 'function skl_embed_trim('
  * traversal guard that stops a source file being uploaded to Discord.
  * Three commits with the guard not actually running.
  */
-$fn = be2($wh, 'function skl_discordmsg(') . "\n" . be2($wh, 'function discordmsg(');
+/*
+ * AND NOW THREE MORE, for the same reason one paragraph up. The post no
+ * longer happens inside skl_discordmsg(): it builds a job and hands it
+ * to skl_discord_dispatch(), which asks skl_discord_defers() whether to
+ * queue it and otherwise calls skl_discord_send(), where the curl now
+ * lives. Lifting the builder without the chain is the identical fatal
+ * this file already learned about once.
+ *
+ * NOTHING IS DEFERRED HERE and that is not luck: skl_discord_defers()
+ * returns false on CLI, because a cron that exits immediately would post
+ * nothing. So the stand-in webhook below still receives the post inline,
+ * and this harness goes on testing what it always tested.
+ */
+$fn = be2($wh, 'function skl_discordmsg(') . "\n" . be2($wh, 'function discordmsg(')
+    . "\n" . be2($wh, 'function skl_discord_defers(')
+    . "\n" . be2($wh, 'function skl_discord_dispatch(')
+    . "\n" . be2($wh, 'function skl_discord_send(');
 /* EVERY assignment, and matched loosely: discordmsg picks its webhook
    through ~24 branches and several are ternaries
    (function_exists('getXWebhook') ? getXWebhook() : ""), so a pattern for

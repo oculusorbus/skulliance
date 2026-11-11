@@ -124,6 +124,222 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
      * and keeps its own discordmsg(). Every one of the 150-odd callers in
      * this app is unaffected: the alias is defined exactly as before.
      */
+    /*
+     * ===== DISCORD POSTS DO NOT HAPPEN ON THE PLAYER'S TIME ================
+     *
+     * Every post from here is a blocking curl: CURLOPT_TIMEOUT 8 on an
+     * embed, 20 on an upload. That sat inside the request that triggered
+     * it, so the player waited on Discord before the game loop, the modal
+     * or the animation could continue -- in the Arena the pause itself
+     * leaked that something notable had just happened, which is a tell in
+     * a game where the next move matters.
+     *
+     * 173 call sites across 55 files, and not one of them uses the return
+     * value, so the fix belongs here rather than at any of them: queue the
+     * job, answer the browser, post afterwards.
+     *
+     * THIS WAS BELIEVED IMPOSSIBLE ON THIS SERVER and the belief is
+     * recorded in skullpaper/MAINTENANCE.md: three production failures at
+     * deferring work past the response. What was tried, though, was
+     * fastcgi_finish_request(), which does not exist on this SAPI and was
+     * therefore a silent no-op, and X-Accel-Buffering, an nginx header
+     * that means nothing to LiteSpeed. litespeed_finish_request() -- the
+     * one call that applies -- was never among them. Measured in
+     * production via admin-defer.php: reply in 91ms, the server still
+     * working three seconds later. It works.
+     */
+
+    /** Jobs waiting for the response to go out. */
+    $GLOBALS['skl_discord_queue'] = array();
+
+    /**
+     * Should this post wait for the response, or go out now?
+     *
+     * Pure, and separate from dispatch, so the decision can be executed
+     * rather than read: a harness can put every combination through it
+     * without a webhook, a browser or a Discord account.
+     *
+     * SYNCHRONOUS IN THREE CASES, each for its own reason. On CLI there is
+     * no browser to release and a cron that exits immediately would post
+     * nothing. Inside the flush itself, because alertAdmin() calls back in
+     * here and a job appended mid-drain could be left in the queue. And
+     * under SKL_DISCORD_SYNC, which is how a harness asserts a post was
+     * actually made rather than parked.
+     */
+    function skl_discord_defers($sapi, $sync, $flushing) {
+        if ($sapi === 'cli') return false;
+        if ($sync) return false;
+        if ($flushing) return false;
+        return true;
+    }
+
+    function skl_discord_dispatch($job) {
+        if (!skl_discord_defers(PHP_SAPI,
+                defined('SKL_DISCORD_SYNC') && SKL_DISCORD_SYNC,
+                !empty($GLOBALS['skl_discord_flushing']))) {
+            skl_discord_send($job);
+            return;
+        }
+        if (empty($GLOBALS['skl_discord_queue'])) {
+            register_shutdown_function('skl_discord_flush');
+        }
+        $GLOBALS['skl_discord_queue'][] = $job;
+    }
+
+    /**
+     * Let go of the browser. Idempotent; safe to call when nothing queued.
+     *
+     * ORDER MATTERS. The session is closed BEFORE the release and before
+     * any posting, or the player's next request queues behind this one on
+     * the session lock and the stall has only moved somewhere harder to
+     * see. ignore_user_abort because the connection the remaining work
+     * would otherwise depend on is the one being closed.
+     */
+    function skl_discord_release() {
+        if (!empty($GLOBALS['skl_discord_released'])) return;
+        $GLOBALS['skl_discord_released'] = true;
+        if (PHP_SAPI === 'cli') return;
+        ignore_user_abort(true);
+        if (session_status() === PHP_SESSION_ACTIVE) @session_write_close();
+        if (function_exists('litespeed_finish_request'))   { litespeed_finish_request(); return; }
+        if (function_exists('fastcgi_finish_request'))     { fastcgi_finish_request(); return; }
+        /* Nothing native: flush what there is and keep working. The player
+           is no better off, but no worse, and the posts still go out. */
+        while (ob_get_level() > 0) { @ob_end_flush(); }
+        @flush();
+    }
+
+    /**
+     * Drain the queue after the response has gone.
+     *
+     * Runs as a shutdown function, so PHP has finished the script and the
+     * body is complete before a single byte is posted anywhere.
+     */
+    function skl_discord_flush() {
+        if (empty($GLOBALS['skl_discord_queue'])) return;
+        skl_discord_release();
+        @set_time_limit(120);
+        $GLOBALS['skl_discord_flushing'] = true;
+        /* Drained by index rather than foreach: alertAdmin() posts from
+           inside a failing send, and the sync branch above handles that --
+           but a job appended here must still be seen. */
+        while ($GLOBALS['skl_discord_queue']) {
+            $job = array_shift($GLOBALS['skl_discord_queue']);
+            try { skl_discord_send($job); }
+            catch (Throwable $e) { error_log('discordmsg: queued post threw -- ' . $e->getMessage()); }
+        }
+        $GLOBALS['skl_discord_flushing'] = false;
+    }
+
+    /** The post itself. Everything below here used to run inline. */
+    function skl_discord_send($J) {
+        static $skl_alerting = false;
+        $ch = curl_init( $J['webhook'] );
+        if ($J['attachok']) {
+            /* Multipart: the embed JSON goes in payload_json and the
+               image rides along as files[0]. NO Content-type header --
+               curl has to set its own multipart boundary, and forcing
+               application/json here makes Discord reject the whole
+               post. The timeout is longer because this one carries a
+               couple of hundred KB rather than a line of JSON. */
+            curl_setopt( $ch, CURLOPT_POST, 1);
+            curl_setopt( $ch, CURLOPT_POSTFIELDS, array(
+                'payload_json' => $J['msg'],
+                'files[0]'     => new CURLFile($J['attachfile'], 'image/png', basename($J['attachfile'])),
+            ));
+            curl_setopt( $ch, CURLOPT_TIMEOUT, 20);
+        } else {
+            curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+            curl_setopt( $ch, CURLOPT_POST, 1);
+            curl_setopt( $ch, CURLOPT_POSTFIELDS, $J['msg']);
+            curl_setopt( $ch, CURLOPT_TIMEOUT, 8);
+        }
+        curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt( $ch, CURLOPT_HEADER, 0);
+        curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
+        $response = curl_exec( $ch );
+        /*
+         * THE RESPONSE USED TO BE READ INTO A VARIABLE AND THROWN AWAY.
+         * Every way a Discord post can fail -- a rotated webhook (401), a
+         * deleted one (404), an embed over a limit (400), rate limiting
+         * (429) -- looked exactly like success from in here, and the cron
+         * runner swallows stdout anyway. The reported symptom was "the
+         * monthly script didn't run"; it had run, and paid out, and only
+         * the announcements were missing. Nothing on the platform could
+         * have told anyone that.
+         *
+         * Discord answers a webhook POST with 204 No Content on success.
+         */
+        $status = (int) curl_getinfo( $ch, CURLINFO_RESPONSE_CODE );
+        $cerr   = curl_error( $ch );
+        /* NO curl_close(). It has had no effect since PHP 8.0 -- the
+           handle is an object freed when it falls out of scope -- and it
+           is DEPRECATED from 8.5, which this machine already runs.
+           display_errors is ON here, so on a newer build the notice
+           prints wherever discordmsg() was called from: into a page, into
+           an AJAX endpoint's JSON, or into an image. Same removal, same
+           reasoning, as dhc-card.php and dhcfighters-notify.php. */
+
+        /*
+         * MIRROR TO THE ACTIVITY FEED -- only what Discord actually took.
+         *
+         * Deliberately inside the 2xx branch's sibling check rather than
+         * up beside the json_encode(): a post that was rejected (401 from
+         * a rotated webhook, 400 from an over-length embed, 429) reached
+         * nobody, and a feed whose premise is "this was announced" must
+         * not carry it. An unconfigured webhook never gets here at all --
+         * the enclosing `if ($J['webhook'] != "")` already skipped it.
+         *
+         * NOT alertAdmin()'s posts. Those are operational failure reports
+         * with an @ping down the default webhook -- a dead cron, a
+         * database error, a rejected embed. They are not player activity
+         * and they would put internal failure detail on a page every
+         * member can read. $skl_alerting covers the alert raised from the
+         * failure branch below (statics are shared across calls to the
+         * same function, so it is still true inside the nested call);
+         * $GLOBALS['skl_ops_alert'] covers alertAdmin() called directly
+         * from anywhere else on the platform.
+         *
+         * Best-effort, like everything else in this function: by the time
+         * we are here the announced thing has already happened and been
+         * paid for, so a logging problem must not reach the response.
+         */
+        if ($status >= 200 && $status < 300
+            /* DECIDED AT QUEUE TIME, NOT HERE. Both of these said "the
+               post being made is itself an operational alert" and both
+               are request-scoped: the static resets between calls and
+               the global is long cleared by the time a queued job runs,
+               so read from here an alertAdmin() post would mirror
+               internal failure detail into a feed every member reads.
+               skl_discordmsg() records the answer in the job. */
+            && empty($J['ops'])
+            && function_exists('activity_log')) {
+            activity_log($J['channel'], $J['title'], $J['description'], $J['url'], $J['imageurl'],
+                         $J['thumbnail'], $J['color'], $J['author'], $J['footer'], $J['aid'], (int) $J['actor_id2']);
+        }
+
+        if ($status < 200 || $status >= 300) {
+            $where = ($J['channel'] !== "" ? $J['channel'] : "default");
+            $why   = $cerr !== "" ? $cerr : substr((string)$response, 0, 400);
+            error_log("discordmsg: $where webhook returned $status for \"{$J['title']}\" -- $why");
+            /*
+             * Signature is the channel + status, NOT the message: a board
+             * that posts 12 results would otherwise raise 12 alerts, and
+             * a NEW kind of failure still gets through immediately
+             * because its signature differs.
+             */
+            if (!$skl_alerting && function_exists('alertAdmin')) {
+                $skl_alerting = true;
+                alertAdmin(
+                    "Discord post rejected ($status)",
+                    "**Channel:** " . $where . "\n**Post:** " . $J['title'] . "\n**Response:** " . $why,
+                    "discordmsg-" . $where . "-" . $status
+                );
+                $skl_alerting = false;
+            }
+        }
+    }
+
     function skl_discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="", $color="000000", $author=null, $footer=null, $content="", $actor_id=null, $actor_id2=0) {
         /*
          * $actor_id / $actor_id2 exist ONLY for the Activity feed -- neither
@@ -332,107 +548,35 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 
 	    $msg = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 
-        if($webhook != "") {
-            $ch = curl_init( $webhook );
-            if ($attachok) {
-                /* Multipart: the embed JSON goes in payload_json and the
-                   image rides along as files[0]. NO Content-type header --
-                   curl has to set its own multipart boundary, and forcing
-                   application/json here makes Discord reject the whole
-                   post. The timeout is longer because this one carries a
-                   couple of hundred KB rather than a line of JSON. */
-                curl_setopt( $ch, CURLOPT_POST, 1);
-                curl_setopt( $ch, CURLOPT_POSTFIELDS, array(
-                    'payload_json' => $msg,
-                    'files[0]'     => new CURLFile($attachfile, 'image/png', basename($attachfile)),
-                ));
-                curl_setopt( $ch, CURLOPT_TIMEOUT, 20);
-            } else {
-                curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
-                curl_setopt( $ch, CURLOPT_POST, 1);
-                curl_setopt( $ch, CURLOPT_POSTFIELDS, $msg);
-                curl_setopt( $ch, CURLOPT_TIMEOUT, 8);
-            }
-            curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
-            curl_setopt( $ch, CURLOPT_HEADER, 0);
-            curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
-            $response = curl_exec( $ch );
-            /*
-             * THE RESPONSE USED TO BE READ INTO A VARIABLE AND THROWN AWAY.
-             * Every way a Discord post can fail -- a rotated webhook (401), a
-             * deleted one (404), an embed over a limit (400), rate limiting
-             * (429) -- looked exactly like success from in here, and the cron
-             * runner swallows stdout anyway. The reported symptom was "the
-             * monthly script didn't run"; it had run, and paid out, and only
-             * the announcements were missing. Nothing on the platform could
-             * have told anyone that.
-             *
-             * Discord answers a webhook POST with 204 No Content on success.
-             */
-            $status = (int) curl_getinfo( $ch, CURLINFO_RESPONSE_CODE );
-            $cerr   = curl_error( $ch );
-            /* NO curl_close(). It has had no effect since PHP 8.0 -- the
-               handle is an object freed when it falls out of scope -- and it
-               is DEPRECATED from 8.5, which this machine already runs.
-               display_errors is ON here, so on a newer build the notice
-               prints wherever discordmsg() was called from: into a page, into
-               an AJAX endpoint's JSON, or into an image. Same removal, same
-               reasoning, as dhc-card.php and dhcfighters-notify.php. */
+        /*
+         * THE ACTOR IS RESOLVED HERE, NOT AT SEND TIME. Passing null means
+         * "work it out from the session", and the session is written and
+         * closed before a queued job runs -- so this lookup has to happen
+         * while the request it belongs to is still standing up.
+         */
+        $skl_aid = ($actor_id === null && function_exists('activity_actor'))
+                 ? activity_actor() : (int) $actor_id;
 
-            /*
-             * MIRROR TO THE ACTIVITY FEED -- only what Discord actually took.
-             *
-             * Deliberately inside the 2xx branch's sibling check rather than
-             * up beside the json_encode(): a post that was rejected (401 from
-             * a rotated webhook, 400 from an over-length embed, 429) reached
-             * nobody, and a feed whose premise is "this was announced" must
-             * not carry it. An unconfigured webhook never gets here at all --
-             * the enclosing `if ($webhook != "")` already skipped it.
-             *
-             * NOT alertAdmin()'s posts. Those are operational failure reports
-             * with an @ping down the default webhook -- a dead cron, a
-             * database error, a rejected embed. They are not player activity
-             * and they would put internal failure detail on a page every
-             * member can read. $skl_alerting covers the alert raised from the
-             * failure branch below (statics are shared across calls to the
-             * same function, so it is still true inside the nested call);
-             * $GLOBALS['skl_ops_alert'] covers alertAdmin() called directly
-             * from anywhere else on the platform.
-             *
-             * Best-effort, like everything else in this function: by the time
-             * we are here the announced thing has already happened and been
-             * paid for, so a logging problem must not reach the response.
-             */
-            if ($status >= 200 && $status < 300
-                && !$skl_alerting
-                && empty($GLOBALS['skl_ops_alert'])
-                && function_exists('activity_log')) {
-                $aid = ($actor_id === null && function_exists('activity_actor'))
-                     ? activity_actor() : (int) $actor_id;
-                activity_log($channel, $title, $description, $url, $imageurl,
-                             $thumbnail, $color, $author, $footer, $aid, (int) $actor_id2);
-            }
-
-            if ($status < 200 || $status >= 300) {
-                $where = ($channel !== "" ? $channel : "default");
-                $why   = $cerr !== "" ? $cerr : substr((string)$response, 0, 400);
-                error_log("discordmsg: $where webhook returned $status for \"$title\" -- $why");
-                /*
-                 * Signature is the channel + status, NOT the message: a board
-                 * that posts 12 results would otherwise raise 12 alerts, and
-                 * a NEW kind of failure still gets through immediately
-                 * because its signature differs.
-                 */
-                if (!$skl_alerting && function_exists('alertAdmin')) {
-                    $skl_alerting = true;
-                    alertAdmin(
-                        "Discord post rejected ($status)",
-                        "**Channel:** " . $where . "\n**Post:** " . $title . "\n**Response:** " . $why,
-                        "discordmsg-" . $where . "-" . $status
-                    );
-                    $skl_alerting = false;
-                }
-            }
+        if ($webhook != "") {
+            skl_discord_dispatch(array(
+                'webhook'     => $webhook,
+                'msg'         => $msg,
+                'attachok'    => $attachok,
+                'attachfile'  => $attachfile,
+                'title'       => $title,
+                'description' => $description,
+                'url'         => $url,
+                'imageurl'    => $imageurl,
+                'thumbnail'   => $thumbnail,
+                'color'       => $color,
+                'author'      => $author,
+                'footer'      => $footer,
+                'channel'     => $channel,
+                'aid'         => $skl_aid,
+                'actor_id2'   => (int) $actor_id2,
+                /* Request-scoped, so it cannot be read at send time. */
+                'ops'         => ($skl_alerting || !empty($GLOBALS['skl_ops_alert'])) ? 1 : 0,
+            ));
         }
     }
 

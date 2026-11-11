@@ -56,9 +56,19 @@ function dhcp_answer($payload) {
 		header('Connection: close');
 	}
 	echo $body;
+	/*
+	 * ONE RELEASE PER REQUEST. webhooks.php owns this now -- every
+	 * discordmsg() on the platform queues and releases through
+	 * skl_discord_release() -- but it is loaded lazily, so it may not
+	 * exist yet at this point in the request. Either way the flag is
+	 * shared, so whichever of the two gets here first wins and the other
+	 * does not try to close an already closed request.
+	 */
+	if (function_exists('skl_discord_release')) { skl_discord_release(); return; }
+	$GLOBALS['skl_discord_released'] = true;
 	if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
-	if (function_exists('fastcgi_finish_request'))  { fastcgi_finish_request();  return; }
 	if (function_exists('litespeed_finish_request')) { litespeed_finish_request(); return; }
+	if (function_exists('fastcgi_finish_request'))   { fastcgi_finish_request();   return; }
 	while (ob_get_level() > 0) { @ob_end_flush(); }
 	@flush();
 }
