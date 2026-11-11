@@ -478,6 +478,26 @@ ok(strpos($rev, "node.querySelector('img')") !== false,
 ok(strpos($rev, 'img.complete && img.naturalWidth') !== false,
    'the travelling sprite does not check the image decoded, so drawImage can throw on a half-loaded trait');
 
+/*
+ * AND THE SLOT EMPTIES AS THE PIECE LEAVES IT. The veil is a tint, so
+ * the board is visible throughout -- which means a DOM piece left in
+ * place while its canvas copy flies off is simply two of everything.
+ * It has to go on the same born beat the sprite starts on.
+ */
+ok(preg_match('~at\(Math\.round\(born \* 1000\), function \(\) \{\s*'
+            . "node\.style\.visibility = 'hidden';~s", $rev) === 1,
+   'the board pieces are not hidden as they depart, so each trait is drawn twice: in its slot and in flight');
+/* display would reflow the pieces that are left; they are positioned
+   off a cell grid and must not move while the board empties. */
+ok(strpos($rev, "node.style.display = 'none'") === false,
+   'a departing piece is removed from layout, which shifts the pieces still waiting to go');
+
+/* The handover must be pixel-identical: the piece's <img> carries
+   object-fit: contain, so the painted art is letterboxed inside the
+   button box and drawing the sprite at the button's rect stretches it. */
+ok(strpos($rev, 'Math.min(sw / img.naturalWidth, sh / img.naturalHeight)') !== false,
+   'the sprite is drawn at the button box rather than the contained art, so the handover jumps');
+
 echo "\nthe Portal's win is revealed once, not twice\n";
 /*
  * dhcf_commit_drop() parks a win in $_SESSION['dhcf_unseen'], and

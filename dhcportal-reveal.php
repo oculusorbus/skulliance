@@ -225,10 +225,44 @@
 				sw = sh = 90;
 			}
 
+			/*
+			 * THE SPRITE IS THE PAINTED ART, NOT THE BUTTON BOX. The
+			 * piece's <img> fills its button but carries object-fit:
+			 * contain, so the art inside is letterboxed. Drawing it at
+			 * the button's rect stretches it, and the handover from the
+			 * DOM piece to the canvas sprite has to be pixel-identical
+			 * or it reads as a jump. So the contain fit is recomputed
+			 * here from the natural size, which is what the browser is
+			 * already doing.
+			 */
 			var img = node ? node.querySelector('img') : null;
+			var born = i * .05;
 			if (img && img.complete && img.naturalWidth) {
-				S.push({ img: img, x: sx, y: sy, w: sw, h: sh,
-				         born: i * .05, col: TIERCOL[p.tier] || '#5a7888' });
+				var sc = Math.min(sw / img.naturalWidth, sh / img.naturalHeight);
+				S.push({ img: img, x: sx, y: sy,
+				         w: img.naturalWidth * sc, h: img.naturalHeight * sc,
+				         born: born, col: TIERCOL[p.tier] || '#5a7888' });
+			}
+
+			/*
+			 * AND THE SLOT EMPTIES AS IT LEAVES.
+			 *
+			 * The veil is a tint now, so the board is visible behind all
+			 * of this -- which means the DOM piece sat in its slot while
+			 * a canvas copy of it flew to the Portal. Two of everything.
+			 * Hiding it on its own born beat is what makes the sprite
+			 * read as the piece itself leaving rather than as a
+			 * duplicate: same art, same place, same instant.
+			 *
+			 * visibility, not display: the piece is absolutely
+			 * positioned off a cell grid and removing it from layout
+			 * would shift what is left. Nothing restores it because the
+			 * board is gone -- the reveal's only exit reloads the page.
+			 */
+			if (node) {
+				at(Math.round(born * 1000), function () {
+					node.style.visibility = 'hidden';
+				});
 			}
 
 			var n = Math.max(3, (p.size || 1) * 3);
