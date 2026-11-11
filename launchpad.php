@@ -882,15 +882,14 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
  * place. Same reasoning as the Play menu, and the same glyphs.
  */
 .lp-tile-name { display: flex; align-items: baseline; gap: 8px; justify-content: center; }
-/* Same ring as the menu, and for the same reason: a circled numeral from
-   a font is substituted by the colour emoji face wherever the text face
-   has no glyph for it, and that face's metrics grow the row. A digit is
-   in every font; the ring is drawn here. */
+/* Contained the same way as the menu: an explicit height gives the box a
+   line box the glyph's own metrics cannot push, and font-size reaches a
+   substituted face where font-family does not. No width -- the glyph
+   brings its own circle. */
 .lp-tile-name .dhcf-glance { margin-left: auto; flex: 0 0 auto;
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 17px; height: 17px; border: 1px solid currentColor;
-  border-radius: 50%; font-size: 10px; line-height: 1; font-weight: normal;
-  color: #00c8a0; font-variant-numeric: tabular-nums; }
+  display: inline-flex; align-items: center; justify-content: flex-end;
+  height: 16px; line-height: 1; font-size: 14px; overflow: hidden;
+  font-weight: normal; color: #00c8a0; }
 /* Zero is drawn rather than omitted: a blank beside a game is
    indistinguishable from a game that never pays. Dimmed, not alarmed --
    it is a reason to play something else, not a problem. */

@@ -1370,22 +1370,29 @@ function dhcf_drops_glance($conn, $user_id) {
  * Zero is drawn too, and is the whole point: an empty space beside a
  * game is indistinguishable from a game that never pays.
  *
- * A PLAIN DIGIT, WITH THE CIRCLE DRAWN IN CSS. It was U+2460 and friends
- * (the circled numerals), and they grew every row that carried one to
- * half as tall again as its neighbours.
+ * THE CIRCLED NUMERALS, U+2460 and friends, and the height they cost is
+ * the stylesheet's problem rather than this function's.
  *
- * The cause is worth recording because the obvious fix does not work:
- * FONT FALLBACK IGNORES font-family. If the inherited face has no glyph
- * for U+2460 the browser substitutes one that does, and on Apple
- * platforms that is the colour emoji face, whose metrics are far taller
- * than the text around it. `font-family: inherit` pins a family that was
- * never going to render the character in the first place.
+ * Worth recording, because one obvious fix does not work and one less
+ * obvious one does. FONT FALLBACK IGNORES font-family: a face without
+ * U+2460 is substituted for one that has it -- on Apple platforms the
+ * colour emoji face -- so pinning the family pins something that was
+ * never going to render the character. That face's LINE BOX is what grew
+ * every row carrying a count to half as tall again as its neighbours.
  *
- * A digit is in every font there has ever been, so nothing substitutes,
- * and the ring is a border on a box whose size this code controls.
+ * But font-size DOES reach a substituted glyph, and a box with an
+ * explicit height has a line box of its own that the glyph's metrics
+ * cannot push. So the characters are kept and contained -- see
+ * .dhcf-glance in dist/flexbox.css.
+ *
+ * Drawing a digit and ringing it in CSS was tried in between. It worked
+ * on height and came out as an ellipse, because the width was being
+ * taken from somewhere this rule did not control.
  */
 function dhcf_drops_glyph($n) {
-	return (string) max(0, (int) $n);
+	$g = array('⓪', '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩');
+	$n = max(0, (int) $n);
+	return isset($g[$n]) ? $g[$n] : (string) $n;
 }
 
 /**

@@ -264,38 +264,37 @@ a:hover { color: #00a882; }
  * the glyph falls back to a plain digit.
  */
 /*
- * A DIGIT IN A RING THIS RULE DRAWS, not a circled numeral from a font.
+ * THE COUNT, CONTAINED.
  *
- * The glyphs were U+2460 and friends, and every row carrying one came out
- * half as tall again as its neighbours. Setting font-size and
- * font-family to inherit did NOT fix it, and could not: font fallback
- * ignores font-family. A face without U+2460 is substituted for one that
- * has it, which on Apple platforms is the colour emoji face, and its
- * metrics are what grew the row.
+ * The characters are the circled numerals and the browser may well render
+ * them from a face this stylesheet never names: FONT FALLBACK IGNORES
+ * font-family, so a face without U+2460 is swapped for one that has it,
+ * and on Apple platforms that is the colour emoji face. Its LINE BOX is
+ * what grew every row carrying a count.
  *
- * A digit exists in every font, so nothing is substituted. The box is
- * sized here in px and cannot exceed the label's own line box, so a row
- * with a count is exactly as tall as a row without one.
+ * Two declarations beat that, and neither is font-family. An explicit
+ * HEIGHT gives the box a line box of its own, which the glyph's metrics
+ * cannot push; font-size DOES reach a substituted glyph, so the character
+ * is drawn to fit rather than clipped. overflow:hidden is the backstop
+ * for a face with stranger metrics still.
+ *
+ * No width: an earlier version drew the ring in CSS and set one, and it
+ * came out an ellipse -- the box was wider than this rule asked for, from
+ * something it does not control. The glyph brings its own circle, so
+ * there is nothing here that has to be round.
  */
 .nav-dropdown-menu a .dhcf-glance {
   margin-left: auto;
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 17px;
-  height: 17px;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  font-size: 10px;
+  justify-content: flex-end;
+  height: 16px;
   line-height: 1;
+  font-size: 14px;
+  overflow: hidden;
   color: #00c8a0;
-  font-variant-numeric: tabular-nums;
 }
-/* Spent is the signal that matters most, and an empty space beside a game
-   is indistinguishable from a game that never pays -- so zero is drawn,
-   dimmed rather than coloured in alarm. It is not a problem, it is a
-   reason to play something else. */
 .nav-dropdown-menu a .dhcf-glance.out { color: #4d6575; }
 /*
  * NOT YET, IN THE MENU.
