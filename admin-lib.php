@@ -934,6 +934,10 @@ function admin_tabs() {
 		   php here is a different build from the one serving the site, so
 		   the web SAPI's capabilities can only be read from the web. */
 		'defer'    => array('admin-defer.php', 'Deferred Posts'),
+		/* The boss crew resurrection cue. A playbackRate curve is a feel
+		   decision and cannot be read off a page, so it plays the real
+		   file through the Arena's own path. Plays audio, writes nothing. */
+		'bossrez'  => array('admin-bossrez.php', 'Boss Rez Sound'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }
