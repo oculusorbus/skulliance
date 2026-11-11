@@ -478,6 +478,66 @@ if (count($m_sc) === 2 && preg_match_all('~rgba\([^)]*?,\s*([\d.]+)\)\s+(\d+)%~'
 ok(count($m_sc) === 2 && $scrim_low <= 0.2,
    'the scrim is still ' . $scrim_low . ' opaque over the bottom half of the art, which is what muddied it');
 
+/*
+ * THE COLUMNS END TOGETHER. With align-items: start each column stopped
+ * wherever its contents ran out -- the spares panel finished about
+ * 500px up the page with empty column under it -- and the tray scrolled
+ * 372 traits inside a fixed 420px box while that space sat there.
+ */
+preg_match('~\.dhcp-rig \{[^}]*?align-items: ([a-z]+)~s', $ui, $m_ai);
+ok(count($m_ai) === 2 && $m_ai[1] === 'stretch',
+   'the rig columns do not share a height, so the short ones end early and leave the page empty under them');
+
+preg_match('~\.dhcp-tray \{([^}]*)\}~s', $ui, $m_tr);
+$tray = count($m_tr) === 2 ? $m_tr[1] : '';
+ok($tray !== '' && strpos($tray, 'flex: 1') !== false,
+   'the tray does not flex, so it cannot take the height the stretched column gives it');
+ok($tray !== '' && preg_match('~max-height: \d+px~', $tray) !== 1,
+   'the tray is back inside a fixed-height box, which is what left the column empty below it');
+/* An explicit min-height is load-bearing: a flex item defaults to
+   min-height auto, which floors at content height and kills overflow-y. */
+ok($tray !== '' && preg_match('~min-height: \d+px~', $tray) === 1,
+   'the tray has no explicit min-height, so its auto floor cancels overflow-y and it grows forever');
+
+/*
+ * A PLACED TRAIT GETS A PLATE, AN EMPTY SLOT DOES NOT. Both halves
+ * matter and they have been wrong in both directions: every cell filled
+ * at .5 read as a slab over the figure, and no fill anywhere left a
+ * placed trait, which is a mostly-dark transparent PNG, invisible
+ * against the lit art. So the fill belongs under the piece only, and it
+ * has to be heavier than the empty cell's wash but short of solid.
+ */
+/* Both alphas read here, not borrowed from a block further down the
+   file -- this check is a comparison between the two, so it has to own
+   both sides of it or it breaks when either block moves. */
+preg_match('~\.dhcp-piece \{([^}]*)\}~s', $ui, $m_pblk);
+preg_match_all('~rgba\([^)]*?,\s*([\d.]+)\)~', count($m_pblk) === 2 ? $m_pblk[1] : '', $m_pa);
+$piece_max = count($m_pa[1]) ? max(array_map('floatval', $m_pa[1])) : 0.0;
+
+preg_match('~\.dhcp-cell \{[^}]*?background: rgba\([^)]*?,\s*([\d.]+)\)~s', $ui, $m_cell0);
+$cell_fill = count($m_cell0) === 2 ? (float) $m_cell0[1] : 0.0;
+
+ok($piece_max > 0 && $cell_fill > 0,
+   'the piece or cell fill could not be read, so the comparison below is not measuring anything');
+
+ok($piece_max > $cell_fill,
+   'a placed trait has no more backing than an empty slot, so the part itself is lost against the art');
+ok($piece_max < 1.0,
+   'the plate behind a placed trait is solid, which punches a hole in the picture it sits on');
+
+/* The portal column cannot flex -- the vortex is a fixed 2:3 picture --
+   so its slack has to split above and below rather than pool under it. */
+preg_match('~\.dhcp-chute \{ display: flex;[^}]*?justify-content: ([a-z-]+)~s', $ui, $m_ch2);
+ok(count($m_ch2) === 2 && $m_ch2[1] === 'center',
+   'the portal column is top-packed in a stretched track, so its slack all pools under the vortex');
+
+/* AND THE CHIPS HAVE ROOM. At 54px the grid fitted nine across a 618px
+   column and the trait art came out smaller than the count badge. */
+preg_match('~\.dhcp-tray \{[^}]*?minmax\((\d+)px~s', $ui, $m_ch);
+ok(count($m_ch) === 2 && (int) $m_ch[1] >= 68,
+   'the spares chips are back to ' . (count($m_ch) === 2 ? $m_ch[1] : '?')
+   . 'px, which packs the tray too tight to read a trait');
+
 /* And an empty cell is an outline, not a filled panel: sixteen fills at
    .5 stacked into a dark slab laid over the figure. */
 preg_match('~\.dhcp-cell \{[^}]*?background: rgba\([^)]*?,\s*([\d.]+)\)~s', $ui, $m_cf);

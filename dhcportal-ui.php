@@ -60,7 +60,11 @@
  * minmax(0, ...) on each: without it a track floors at its min-content
  * width and the row overflows instead of shrinking.
  */
-.dhcp-rig { display: grid; gap: 20px; align-items: start;
+/* stretch, not start: start let each column stop wherever its contents
+   happened to end, which left the spares panel finishing 500px up the
+   page with empty column under it. Stretched, the two side columns get
+   the board column's height to spend. */
+.dhcp-rig { display: grid; gap: 20px; align-items: stretch;
   max-width: 1920px; margin-inline: auto;
   grid-template-columns: minmax(0,.78fr) minmax(0,1.26fr) minmax(0,1fr);
   grid-template-areas: "portal board pick"; }
@@ -132,17 +136,27 @@
 /* The pieces float over the cells, sized in cell-widths. */
 .dhcp-pieces { position: absolute; inset: 16px 16px 14px; z-index: 2; pointer-events: none; }
 /*
- * NO FILL BEHIND A TRAIT. The art is a robot in pieces being worked on,
- * and trait PNGs are transparent character parts -- so a solid panel
- * behind each one covers the thing that makes the board look like a
- * workbench. The rarity ring is what says "this is placed"; the tile
- * itself is just the part.
+ * TRANSLUCENT BEHIND A TRAIT, NOT SOLID -- and this is a correction.
+ * The first version had no fill at all, on the reasoning that the art
+ * is a robot in pieces being worked on and a solid panel behind every
+ * trait covers the thing that makes the board look like a workbench.
+ * That reasoning is right about an EMPTY cell and wrong about a filled
+ * one: trait PNGs are transparent character parts, mostly dark, and
+ * against a busy lit picture a placed trait was hard to make out. The
+ * rarity ring said a slot was filled; it did not help you see what was
+ * in it.
+ *
+ * So the plate is graded and partial. Enough to lift a dark part off
+ * the art behind it, not enough to punch a hole in the picture -- and
+ * only under pieces, so the fifteen empty cells still read as grid over
+ * art rather than as a slab.
  *
  * contain, not cover: a part floating in its cell reads as a component.
  * cover crops it to a texture.
  */
 .dhcp-piece { position: absolute; pointer-events: auto; cursor: pointer;
-  border-radius: 3px; padding: 0; border: 0; background: transparent;
+  border-radius: 3px; padding: 0; border: 0;
+  background: linear-gradient(180deg, rgba(12,26,44,.62), rgba(4,12,22,.80));
   transition: transform .26s cubic-bezier(.2,.85,.3,1), opacity .2s linear; }
 .dhcp-piece img { width: 100%; height: 100%; object-fit: contain; display: block;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,.75)); }
@@ -161,7 +175,11 @@
 .dhcp-readout .odds { color: var(--dhcp-uncommon); }
 
 /* ---- the Portal ----------------------------------------------------- */
-.dhcp-chute { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+/* Centred in the stretched column: the vortex is a fixed 2:3 picture
+   and cannot fill the board column's height, so the slack splits above
+   and below it rather than all pooling underneath. */
+.dhcp-chute { display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 12px; }
 /*
  * THE MOUTH, WHOLE. 2:3, the art's own ratio, so the machinery around
  * the vortex and the flames beneath it are all in frame -- a square
@@ -191,8 +209,9 @@
   min-height: 1.2em; }
 
 /* ---- your spares ---------------------------------------------------- */
-.dhcp-pick { background-color: #0a1929; background-image: var(--msp-lift);
-  border: 1px solid var(--dhcp-line); border-radius: 4px; padding: 12px; }
+.dhcp-pick { display: flex; flex-direction: column;
+  background-color: #0a1929; background-image: var(--msp-lift);
+  border: 1px solid var(--dhcp-line); border-radius: 4px; padding: 14px; }
 .dhcp-pick h3 { margin: 0 0 10px; font-size: .74rem; letter-spacing: .14em;
   text-transform: uppercase; color: var(--dhcp-dim); text-align: left; }
 /*
@@ -216,8 +235,23 @@
   border: 2px solid var(--c, var(--dhcp-common)); border-radius: 50%;
   background: transparent; }
 .dhcp-rar button[aria-pressed="true"] { background: var(--c, var(--dhcp-common)); }
-.dhcp-tray { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
-  gap: 6px; max-height: 420px; overflow-y: auto; padding-right: 4px; }
+/*
+ * THE TRAY TAKES WHATEVER THE PANEL HAS LEFT. It was a fixed 420px box
+ * scrolling 372 traits nine-across while the column it sits in ran on
+ * for another 500px, so the list was cramped and the page was empty in
+ * the same place.
+ *
+ * min-height is doing two jobs. A flex item's default is auto, which
+ * floors it at content height and makes overflow-y do nothing, so it
+ * has to be set at all; 280px rather than 0 so the tray is still a list
+ * and not a sliver when the column it is matching is short.
+ *
+ * 72px chips: at 54 the grid fitted nine across and the art inside each
+ * one was smaller than the count badge on it. Seven across reads.
+ */
+.dhcp-tray { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 10px; flex: 1 1 auto; min-height: 280px; overflow-y: auto;
+  align-content: start; padding-right: 6px; }
 .dhcp-empty { margin: 8px 0 0; font-size: .78rem; color: var(--dhcp-dim); text-align: left; }
 .dhcp-chip { position: relative; aspect-ratio: 1; cursor: pointer; padding: 0; border: 0;
   border-radius: 3px; background: rgba(255,255,255,.03);
