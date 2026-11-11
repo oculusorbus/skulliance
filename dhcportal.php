@@ -100,53 +100,63 @@ include 'header.php';
   </p>
   <?php endif; ?>
 
-  <div class="dhcp-stage">
-    <?php /* THE MACHINE. Board on the left, chute and vortex on the right,
-             tray underneath. The operator art sits behind the board because
-             the arms are what hold the slots. */ ?>
-    <div class="dhcp-rig">
+  <?php /* THREE COLUMNS: the Portal, the board, your spares. DOM order
+           is screen order so a keyboard walks the page the way it reads,
+           and the phone stack is re-ordered in CSS rather than here --
+           there it goes board, Portal, spares, because the board is what
+           you came to look at and the spares list is long enough to bury
+           everything under it. */ ?>
+  <div class="dhcp-rig">
 
-      <div class="dhcp-boardwrap">
-        <div class="dhcp-board" id="dhcpBoard" aria-label="Jettison board, four rows">
-          <?php for ($r = 0; $r < DHCP_ROWS; $r++): ?>
-          <div class="dhcp-row" data-row="<?php echo $r; ?>">
-            <?php /* The row's own name, from the one place those four
-                     words live -- lifted out of dhcf_band_label() for
-                     exactly this, so the Portal cannot describe the same
-                     odds differently from the drop modal. */ ?>
-            <span class="dhcp-rowtag"><?php
-              $dhcp_lab = dhcf_table_labels();
-              echo htmlspecialchars(isset($dhcp_lab[$dhcp_tables[$r]]) ? $dhcp_lab[$dhcp_tables[$r]] : ''); ?></span>
-            <?php for ($c = 0; $c < DHCP_COLS; $c++): ?>
-            <i class="dhcp-cell" data-i="<?php echo $r * DHCP_COLS + $c; ?>"></i>
-            <?php endfor; ?>
-          </div>
+    <?php /* ---- 1. the portal ---- */ ?>
+    <section class="dhcp-chute" aria-label="The Portal">
+      <?php /* The deposit sign from the art. DRAWN, not cropped: it is a
+               flat plate with an arrow, it has to stay crisp at any size,
+               and a bitmap of it would be the one soft edge on the page. */ ?>
+      <div class="dhcp-sign" aria-hidden="true">
+        <svg viewBox="0 0 48 22"><path d="M6 4 L42 4 L24 19 Z"/></svg>
+      </div>
+      <div class="dhcp-vortex" id="dhcpVortex" aria-hidden="true">
+        <canvas id="dhcpCanvas"></canvas>
+      </div>
+      <button type="button" id="dhcpGo" disabled>Jettison</button>
+      <p class="dhcp-say" id="dhcpSay">Fill at least one row.</p>
+    </section>
+    <?php /* ---- 2. the board, in the middle: it is what both sides act on ---- */ ?>
+    <section class="dhcp-boardwrap" aria-label="Jettison board">
+      <div class="dhcp-board" id="dhcpBoard">
+        <?php for ($r = 0; $r < DHCP_ROWS; $r++): ?>
+        <div class="dhcp-row" data-row="<?php echo $r; ?>">
+          <?php /* The row's own name, from the one place those four words
+                   live -- lifted out of dhcf_band_label() for exactly this,
+                   so the Portal cannot describe the same odds differently
+                   from the drop modal. */ ?>
+          <span class="dhcp-rowtag"><?php
+            $dhcp_lab = dhcf_table_labels();
+            echo htmlspecialchars(isset($dhcp_lab[$dhcp_tables[$r]]) ? $dhcp_lab[$dhcp_tables[$r]] : ''); ?></span>
+          <?php for ($c = 0; $c < DHCP_COLS; $c++): ?>
+          <i class="dhcp-cell"></i>
           <?php endfor; ?>
-          <div class="dhcp-pieces" id="dhcpPieces"></div>
         </div>
-        <div class="dhcp-readout" id="dhcpReadout"></div>
+        <?php endfor; ?>
+        <div class="dhcp-pieces" id="dhcpPieces"></div>
       </div>
+      <div class="dhcp-readout" id="dhcpReadout"></div>
+    </section>
 
-      <div class="dhcp-chute">
-        <?php /* The deposit sign from the art: a green plate with a down
-                 arrow. It is the only thing on the page that says which
-                 way the traits go, so it is drawn rather than written. */ ?>
-        <div class="dhcp-sign" aria-hidden="true">
-          <svg viewBox="0 0 48 22"><path d="M6 4 L42 4 L24 19 Z"/></svg>
-        </div>
-        <div class="dhcp-vortex" id="dhcpVortex" aria-hidden="true">
-          <canvas id="dhcpCanvas" width="420" height="420"></canvas>
-        </div>
-        <button type="button" id="dhcpGo" disabled>Jettison</button>
-        <p class="dhcp-say" id="dhcpSay">Fill at least one row.</p>
-      </div>
-    </div>
+    <?php /* ---- 3. what you have, on the right where a trait picker lives everywhere else ---- */ ?>
+    <section class="dhcp-pick" aria-label="Your unused traits">
+      <h3>Your spares</h3>
+      <?php /* CATEGORY TABS, the same way the assembler browses traits --
+               a flat dump of everything was the first version and it is
+               unusable past a few dozen. Built in script so the counts can
+               fall as pieces move onto the board. */ ?>
+      <div class="dhcp-tabs" id="dhcpTabs" role="tablist"></div>
+      <div class="dhcp-rar" id="dhcpRar"></div>
+      <div class="dhcp-tray" id="dhcpTray"></div>
+      <p class="dhcp-empty" id="dhcpEmpty" hidden>Nothing spare here.</p>
+    </section>
 
-    <div class="dhcp-tray" id="dhcpTray" aria-label="Your unused traits">
-      <?php if (!$dhcp_tray): ?>
-      <p class="dhcp-note">Nothing spare. Everything you hold is on a Fighter.</p>
-      <?php endif; ?>
-    </div>
   </div>
 
 <?php endif; ?>

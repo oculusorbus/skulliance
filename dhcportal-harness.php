@@ -255,5 +255,65 @@ ok(strpos($rev, "'/250/' + won.category") !== false,
 ok(strpos($ui, 'flex-direction: column-reverse') !== false,
    'the board fills downward, so the tier climbs the wrong way');
 
+echo "\nthree columns, and the art is never a dependency\n";
+/*
+ * PORTAL, BOARD, SPARES -- with the picker on the right where a trait
+ * picker lives everywhere else on the platform. Named grid areas, so the
+ * phone can restack without the markup caring.
+ */
+ok(strpos($ui, 'grid-template-areas: "portal board pick"') !== false,
+   'the three columns are not in the owner\'s order: Portal, board, spares');
+ok(substr_count($ui, 'grid-template-areas') >= 3,
+   'there is only one layout, so the three columns are still three columns on a phone');
+/* BOARD FIRST on a phone: it is what the page is for, and the spares
+   list is long enough to push everything else off the screen. */
+ok(strpos($ui, 'grid-template-areas: "board" "portal" "pick"') !== false,
+   'the phone stack does not lead with the board');
+
+/*
+ * THE ART DEPLOYS BY FTP, OUTSIDE THIS REPO. Until it lands, both panels
+ * have to be exactly what was there before -- a colour, no broken frame,
+ * nothing moved. The colour is declared separately from the image for
+ * that reason, never in a `background:` shorthand that would take the
+ * colour down with a missing file.
+ */
+foreach (array('operator' => '#071320', 'vortex' => '#0a0410') as $img => $colour) {
+	ok(strpos($ui, 'url(images/portal/' . $img . '.webp)') !== false,
+	   'the ' . $img . ' art is not referenced, so the page is still all CSS');
+	ok(strpos($ui, 'background-color: ' . $colour) !== false,
+	   'the ' . $img . ' panel has no fallback colour, so a missing upload is a hole');
+}
+ok(preg_match('~background:\s*url\(images/portal~', $ui) !== 1,
+   'the art is in a background shorthand, which takes the fallback colour down with it');
+/* Sixteen tiles have to read against it. */
+ok(strpos($ui, '.dhcp-boardwrap::before') !== false,
+   'the board art has no scrim, so the pieces sit on a busy picture at full strength');
+
+echo "\nthe spares browse like the assembler\n";
+/*
+ * CATEGORY TABS AND A RARITY FILTER. The first build dumped all eight
+ * categories into one grid, which is unusable past a few dozen pieces --
+ * and a third way to browse the same traits would be worse than either.
+ */
+/* AND 'all' IS THE DEFAULT. The Portal opens on the whole pile laid out,
+   because seeing the scale of the junk is half of what makes a clear-out
+   worth starting. The tabs narrow it; they are not a gate. */
+ok(strpos($ui, "var cat = 'all', rar = null;") !== false,
+   'the picker does not open on the whole pile, so the quantity is hidden behind a tab');
+ok(strpos($ui, 'function drawTabs') !== false, 'there are no category tabs');
+ok(preg_match('~cats = Object\.keys\(CATNAME\)\.filter~', $ui) === 1,
+   'every category gets a tab whether the player holds any or not, so most lead nowhere');
+/* The counts have to fall as pieces move onto the board, or they lie. */
+ok(preg_match('~function spare\(\).*?return D\.tray\.filter~s', $ui) === 1,
+   'the tray is not filtered against the board, so a staged piece shows in both places');
+ok(preg_match('~drawTabs\(list\)~', $ui) === 1,
+   'the tabs are not rebuilt from the live list, so their counts go stale');
+/*
+ * "Show me my commons" is the whole clear-out, so the rarity filter is
+ * not optional decoration here.
+ */
+ok(strpos($ui, "rar = (rar === t) ? null : t") !== false,
+   'the rarity filter cannot be switched off once set');
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

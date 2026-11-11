@@ -25,34 +25,54 @@
   color: #ffd4d4; background-color: rgba(224,122,122,.1);
   background-image: var(--msp-lift-soft); border: 1px solid rgba(224,122,122,.35); }
 
-/* ---- the rig -------------------------------------------------------- */
-.dhcp-rig { display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 22px;
-  align-items: start; }
-.dhcp-boardwrap { position: relative; }
+/* ---- the rig: Portal, board, spares ---------------------------------- */
+/*
+ * THREE COLUMNS, and the areas are named so the phone can restack them
+ * without the markup caring. On a phone it goes board, Portal, spares:
+ * the board is what you came to look at, and the spares list is long
+ * enough to bury everything under it if it went first.
+ */
+.dhcp-rig { display: grid; gap: 18px; align-items: start;
+  grid-template-columns: 300px minmax(0,1fr) 320px;
+  grid-template-areas: "portal board pick"; }
+.dhcp-chute { grid-area: portal; }
+.dhcp-boardwrap { grid-area: board; }
+.dhcp-pick { grid-area: pick; }
 
 /*
- * THE BOARD. Four rows of four, and the rows are the tiers -- so the
- * grid lines are information rather than decoration and the row labels
- * sit on the board itself.
+ * THE BOARD, ON THE OPERATOR.
+ *
+ * background-color FIRST and always: art deploys by FTP outside this
+ * repo, so until operator.webp is on the server this is exactly the
+ * panel that was here before -- dark ground, no broken frame, nothing
+ * moved. The art is an improvement layered on, never a dependency.
+ *
+ * The scrim is not decoration either. Sixteen trait tiles have to read
+ * against it, and the art underneath is busy at full strength.
  */
-.dhcp-board { position: relative; display: flex; flex-direction: column-reverse;
-  gap: 6px; padding: 14px; border-radius: 4px;
-  background-color: #071320; background-image: var(--msp-lift);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04); }
+.dhcp-boardwrap { position: relative; border-radius: 4px; overflow: hidden;
+  background-color: #071320;
+  background-image: url(images/portal/operator.webp);
+  background-size: cover; background-position: 50% 18%;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.05); }
+.dhcp-boardwrap::before { content: ""; position: absolute; inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(7,19,32,.62) 0, rgba(7,19,32,.86) 100%); }
+.dhcp-board { position: relative; z-index: 1; display: flex;
+  flex-direction: column-reverse; gap: 6px; padding: 16px 16px 14px; }
 /* column-reverse: row one is the BOTTOM row, because a board fills up
    rather than down and the tier climbs with it. */
 .dhcp-row { position: relative; display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 6px; }
-.dhcp-rowtag { position: absolute; right: 100%; top: 50%; transform: translateY(-50%);
-  margin-right: 10px; white-space: nowrap; font-size: .58rem; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--dhcp-dim); opacity: .55;
-  transition: opacity .2s, color .2s; }
+.dhcp-rowtag { position: absolute; left: 2px; top: -9px; z-index: 2;
+  font-size: .52rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--dhcp-dim); opacity: .5; transition: opacity .2s, color .2s; }
 .dhcp-row.lit .dhcp-rowtag { opacity: 1; color: var(--dhcp-uncommon); }
 .dhcp-cell { display: block; aspect-ratio: 1; border-radius: 3px;
-  background: rgba(255,255,255,.03); box-shadow: inset 0 0 0 1px rgba(255,255,255,.05); }
+  background: rgba(4,12,22,.5); box-shadow: inset 0 0 0 1px rgba(255,255,255,.07); }
 
 /* The pieces float over the cells, sized in cell-widths. */
-.dhcp-pieces { position: absolute; inset: 14px; pointer-events: none; }
+.dhcp-pieces { position: absolute; inset: 16px 16px 14px; z-index: 2; pointer-events: none; }
 .dhcp-piece { position: absolute; pointer-events: auto; cursor: pointer;
   border-radius: 3px; overflow: hidden; padding: 0; border: 0;
   background: #0d1e30; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1);
@@ -62,20 +82,27 @@
   box-shadow: inset 0 0 0 2px var(--c, var(--dhcp-common)); border-radius: 3px; }
 .dhcp-piece:hover { transform: scale(1.04); z-index: 3; }
 
-.dhcp-readout { margin-top: 12px; font-size: .82rem; color: var(--dhcp-dim);
+.dhcp-readout { margin-top: 10px; font-size: .82rem; color: var(--dhcp-dim);
   text-align: left; min-height: 2.4em; line-height: 1.45; }
 .dhcp-readout b { color: var(--dhcp-ink); font-weight: normal; }
 .dhcp-readout .odds { color: var(--dhcp-uncommon); }
 
-/* ---- the chute ------------------------------------------------------ */
+/* ---- the Portal ----------------------------------------------------- */
 .dhcp-chute { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .dhcp-sign { width: 96px; padding: 7px 0; border-radius: 2px; background: #2ff07a;
   box-shadow: 0 0 22px rgba(47,240,122,.3); }
 .dhcp-sign svg { display: block; width: 44px; margin: 0 auto; }
 .dhcp-sign path { fill: #06110a; }
+/*
+ * THE MOUTH. Same FTP rule: the colour is the fallback and the art sits
+ * on top of it, so a missing upload is a dark well rather than a hole.
+ * The canvas draws over both.
+ */
 .dhcp-vortex { position: relative; width: 100%; aspect-ratio: 1; border-radius: 4px;
-  overflow: hidden; background: #050a12;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.05); }
+  overflow: hidden; background-color: #0a0410;
+  background-image: url(images/portal/vortex.webp);
+  background-size: cover; background-position: 50% 50%;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
 .dhcp-vortex canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 #dhcpGo { width: 100%; padding: 12px 14px; font: inherit; font-size: .95rem;
   letter-spacing: .08em; text-transform: uppercase; color: #04121c;
@@ -89,9 +116,35 @@
 .dhcp-say { margin: 0; font-size: .78rem; color: var(--dhcp-dim); text-align: center;
   min-height: 1.2em; }
 
-/* ---- the tray ------------------------------------------------------- */
-.dhcp-tray { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
-  gap: 6px; margin-top: 22px; max-height: 320px; overflow-y: auto; padding-right: 4px; }
+/* ---- your spares ---------------------------------------------------- */
+.dhcp-pick { background-color: #0a1929; background-image: var(--msp-lift);
+  border: 1px solid var(--dhcp-line); border-radius: 4px; padding: 12px; }
+.dhcp-pick h3 { margin: 0 0 10px; font-size: .74rem; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--dhcp-dim); text-align: left; }
+/*
+ * CATEGORY TABS, the way the assembler browses traits. The first build
+ * dumped all eight categories into one grid, which is unusable past a
+ * few dozen pieces -- and inventing a third way to browse the same
+ * traits would be worse than either.
+ */
+.dhcp-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.dhcp-tabs button { padding: 5px 8px; font: inherit; font-size: .64rem;
+  letter-spacing: .06em; text-transform: uppercase; cursor: pointer;
+  color: var(--dhcp-dim); background: rgba(255,255,255,.04);
+  border: 1px solid transparent; border-radius: 2px; }
+.dhcp-tabs button[aria-selected="true"] { color: #04121c;
+  background: var(--dhcp-uncommon); border-color: var(--dhcp-uncommon); }
+.dhcp-tabs button .n { opacity: .6; margin-left: 4px; }
+/* The rarity filter matters more here than anywhere else: "show me my
+   commons" is the whole clear-out. */
+.dhcp-rar { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+.dhcp-rar button { width: 22px; height: 22px; padding: 0; cursor: pointer;
+  border: 2px solid var(--c, var(--dhcp-common)); border-radius: 50%;
+  background: transparent; }
+.dhcp-rar button[aria-pressed="true"] { background: var(--c, var(--dhcp-common)); }
+.dhcp-tray { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+  gap: 6px; max-height: 420px; overflow-y: auto; padding-right: 4px; }
+.dhcp-empty { margin: 8px 0 0; font-size: .78rem; color: var(--dhcp-dim); text-align: left; }
 .dhcp-chip { position: relative; aspect-ratio: 1; cursor: pointer; padding: 0; border: 0;
   border-radius: 3px; overflow: hidden; background: #0d1e30;
   transition: transform .14s ease, opacity .2s linear; }
@@ -99,20 +152,24 @@
 .dhcp-chip::after { content: ""; position: absolute; inset: 0;
   box-shadow: inset 0 0 0 2px var(--c, var(--dhcp-common)); border-radius: 3px; }
 .dhcp-chip:hover { transform: translateY(-2px); }
-.dhcp-chip:disabled { opacity: .25; cursor: default; transform: none; }
 /* The size a piece will take, so the trade is visible before it is made. */
 .dhcp-chip .sz { position: absolute; left: 3px; bottom: 3px; z-index: 2;
-  font-size: .54rem; letter-spacing: .06em; padding: 1px 4px; border-radius: 2px;
-  background: rgba(4,12,22,.82); color: var(--c, var(--dhcp-common)); }
+  font-size: .5rem; letter-spacing: .06em; padding: 1px 4px; border-radius: 2px;
+  background: rgba(4,12,22,.85); color: var(--c, var(--dhcp-common)); }
 
-@media (max-width: 860px) {
-  .dhcp-rig { grid-template-columns: minmax(0,1fr); }
+@media (max-width: 1080px) {
+  /* Two columns before one: the Portal and the board belong together and
+     the spares list is the thing that wants the full width to browse. */
+  .dhcp-rig { grid-template-columns: 260px minmax(0,1fr);
+    grid-template-areas: "portal board" "pick pick"; }
+}
+@media (max-width: 720px) {
+  /* BOARD FIRST. It is what the page is for, and the spares list is long
+     enough to push everything else off the screen if it leads. */
+  .dhcp-rig { grid-template-columns: minmax(0,1fr);
+    grid-template-areas: "board" "portal" "pick"; }
   .dhcp-chute { max-width: 300px; margin: 0 auto; }
-  /* The row labels move inside: there is no gutter left for them. */
-  .dhcp-rowtag { right: auto; left: 4px; top: -2px; transform: none; margin: 0;
-    font-size: .5rem; }
-  .dhcp-board { padding: 18px 14px 14px; }
-  .dhcp-pieces { inset: 18px 14px 14px; }
+  .dhcp-tray { max-height: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .dhcp-piece, .dhcp-chip { transition: none; }
@@ -202,31 +259,94 @@
 		}
 	}
 
-	function drawTray(tray, staged) {
+	/*
+	 * THE PICKER. Category tabs and a rarity filter, which is how the
+	 * assembler browses the same traits -- the first build dumped all
+	 * eight categories into one grid and it is unusable past a few dozen
+	 * pieces. Inventing a third way to browse would be worse than either.
+	 */
+	var tabsEl = document.getElementById('dhcpTabs');
+	var rarEl  = document.getElementById('dhcpRar');
+	var emptyEl = document.getElementById('dhcpEmpty');
+	/*
+	 * 'all' IS THE DEFAULT AND THAT IS THE POINT. The Portal opens on the
+	 * whole pile laid out, because seeing the scale of your own junk is
+	 * half of what makes a clear-out worth starting -- the tabs narrow
+	 * it if you want, they are not a wall to click through first.
+	 */
+	var cat = 'all', rar = null;
+	var TIERS = ['common', 'uncommon', 'epic', 'legendary', 'mythic'];
+	var CATNAME = { arms:'Arms', background:'Background', companion:'Companion',
+	                effects:'Effects', head:'Head', headgear:'Headgear',
+	                torso:'Torso', weapon:'Weapon' };
+
+	/* What is left in the tray, i.e. not already on the board. */
+	function spare() {
 		var on = {};
-		staged.forEach(function (p) { on[p.drop_id] = true; });
+		D.board.forEach(function (p) { on[p.drop_id] = true; });
+		return D.tray.filter(function (p) { return !on[p.drop_id]; });
+	}
+
+	function drawTabs(list) {
+		var counts = { all: list.length };
+		list.forEach(function (p) { counts[p.category] = (counts[p.category] || 0) + 1; });
+		/* Categories the player actually holds, in a stable order. A tab
+		   for a category they own none of is a dead end. */
+		var cats = Object.keys(CATNAME).filter(function (c) { return counts[c]; });
+		if (cats.indexOf(cat) < 0 && cat !== 'all') cat = 'all';
+
+		tabsEl.innerHTML = '';
+		[['all', 'All']].concat(cats.map(function (c) { return [c, CATNAME[c]]; }))
+			.forEach(function (pair) {
+				var b = document.createElement('button');
+				b.type = 'button'; b.setAttribute('role', 'tab');
+				b.setAttribute('aria-selected', pair[0] === cat ? 'true' : 'false');
+				b.innerHTML = pair[1] + '<span class="n">' + (counts[pair[0]] || 0) + '</span>';
+				b.addEventListener('click', function () { cat = pair[0]; render(); });
+				tabsEl.appendChild(b);
+			});
+
+		rarEl.innerHTML = '';
+		TIERS.forEach(function (t) {
+			if (!list.some(function (p) { return p.tier === t; })) return;
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.style.setProperty('--c', 'var(--dhcp-' + t + ')');
+			b.title = TIERNAME[t];
+			b.setAttribute('aria-label', TIERNAME[t]);
+			b.setAttribute('aria-pressed', rar === t ? 'true' : 'false');
+			b.addEventListener('click', function () { rar = (rar === t) ? null : t; render(); });
+			rarEl.appendChild(b);
+		});
+	}
+
+	function drawTray() {
+		var list = spare();
+		drawTabs(list);
+		var shown = list.filter(function (p) {
+			return (cat === 'all' || p.category === cat) && (!rar || p.tier === rar);
+		});
 		trayEl.innerHTML = '';
-		if (!tray.length) {
-			trayEl.innerHTML = '<p class="dhcp-note">Nothing spare. Everything you hold is on a Fighter.</p>';
-			return;
-		}
-		tray.forEach(function (p) {
-			if (on[p.drop_id]) return;
-			var s = size(p);
+		emptyEl.hidden = shown.length > 0;
+		if (!list.length) emptyEl.textContent = 'Nothing spare. Everything you hold is on a Fighter.';
+		else if (!shown.length) emptyEl.textContent = 'Nothing spare in that filter.';
+		shown.forEach(function (p) {
+			var sz = size(p);
 			var b = document.createElement('button');
 			b.type = 'button';
 			b.className = 'dhcp-chip';
 			b.style.setProperty('--c', 'var(--dhcp-' + p.tier + ')');
-			b.title = TIERNAME[p.tier] + ' — takes ' + s + ' slot' + (s === 1 ? '' : 's');
+			b.title = TIERNAME[p.tier] + ' ' + (CATNAME[p.category] || p.category)
+			        + ' — takes ' + sz + ' slot' + (sz === 1 ? '' : 's');
 			b.innerHTML = '<img src="' + art(p) + '" alt="" loading="lazy" '
 			            + 'onerror="this.style.display=\'none\'">'
-			            + '<span class="sz">' + s + '</span>';
+			            + '<span class="sz">' + sz + '</span>';
 			b.addEventListener('click', function () { send('add', p.drop_id); });
 			trayEl.appendChild(b);
 		});
 	}
 
-	function render() { drawBoard(D.board); drawTray(D.tray, D.board); }
+	function render() { drawBoard(D.board); drawTray(); }
 
 	function send(action, dropId) {
 		if (busy) return;
