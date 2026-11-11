@@ -278,6 +278,58 @@ ok($rungs === $sorted, 'the cascade does not widen monotonically, so it can skip
 ok(strpos($lib, 'user_id <> \'" . $ex . "\'') !== false,
    'the cascade does not exclude the submitter, so the last rung can hand somebody their own trait back');
 
+/*
+ * WHAT "QUIET" MEANS, EXECUTED RATHER THAN READ.
+ *
+ * This shipped measuring quiet by MAX(awarded_at) over the recipient's
+ * own trait drops -- which is not an activity signal, it is "when did we
+ * last give them something". So our own gift marked them active: a lapsed
+ * player who received a piece dropped out of every rung at once, the pool
+ * drained one trait each, and a big jettison fell through to the last
+ * rung and showered ACTIVE players. Reported from the live site.
+ *
+ * Driven through a connection that records every query and returns no
+ * rows, so the cascade runs all the way down and every rung's SQL can be
+ * inspected. A grep would have passed on the broken version too -- it
+ * also mentioned days and a cascade.
+ */
+class PortalPickSpy {
+	public $sql = array();
+	public function query($q) { $this->sql[] = $q; return false; }
+	public function real_escape_string($v) { return $v; }
+}
+$spy = new PortalPickSpy();
+ok(dhcp_pick_recipient($spy, 42) === 0,
+   'the cascade found a recipient from a connection that returns nothing');
+ok(count($spy->sql) === count(dhcp_lapse_rungs()),
+   'the cascade ran ' . count($spy->sql) . ' rungs, not ' . count(dhcp_lapse_rungs())
+ . ' -- it is not widening all the way down');
+
+$all_sql = implode("\n", $spy->sql);
+ok(strpos($all_sql, 'MAX(awarded_at)') === false,
+   'quiet is measured by the recipient\'s own trait drops again, so a gift we sent marks them active');
+ok(substr_count($all_sql, 'u.last_login') >= 2 * (count(dhcp_lapse_rungs()) - 1),
+   'the cascade does not read users.last_login, which is the only signal that says they were HERE');
+ok(strpos($all_sql, 'INNER JOIN users u ON u.id = d.user_id') !== false,
+   'the cascade no longer joins users, so it cannot see when anybody was last here');
+ok(strpos($all_sql, 'dhc_trait_drops') !== false,
+   'the cascade no longer requires a recipient to hold a trait, so a Fighter trait can land on somebody who has never played');
+ok(strpos($all_sql, 'u.last_login IS NULL') !== false,
+   'a trait-holder who has never loaded a signed-in page is not counted as lapsed, though they have never been here');
+ok(substr_count($all_sql, 'ORDER BY RAND()') === count($spy->sql),
+   'a rung does not pick at random, so the same player takes everything at that depth');
+
+/* THE FLOOR TAKES ANYBODY. The last rung is 0 days, and it must carry no
+   last_login condition at all or a quiet week drops traits on the floor. */
+$floor = end($spy->sql);
+ok(strpos($floor, 'last_login') === false,
+   'the floor rung still filters on last_login, so there is no rung that takes anybody');
+/* And every rung above it must, or they are all the floor. */
+for ($ri = 0; $ri < count($spy->sql) - 1; $ri++) {
+	ok(strpos($spy->sql[$ri], 'INTERVAL ' . dhcp_lapse_rungs()[$ri] . ' DAY') !== false,
+	   'rung ' . $ri . ' does not ask for ' . dhcp_lapse_rungs()[$ri] . ' days of quiet');
+}
+
 echo "\nthe board is session state, held by copy\n";
 /*
  * NO TABLE. The board is a draft of something about to be destroyed;

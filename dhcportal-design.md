@@ -314,3 +314,49 @@ Two pieces, supplied:
 The reveal gets a whole page rather than a dialog, which is why the Portal is its own
 page rather than a section: the crafting ring is 276px inside a 392px dialog and the
 chest reveal is 210px, and neither could sell "this is a machine you feed".
+
+
+## Correction: what "quiet" means (2026-11-11)
+
+Reported from the live site: a player dumping heavily, and **active players
+including the owner receiving the gifts**.
+
+Falling through to active players is by design -- the cascade's last rung is
+"anybody who holds a trait", so nothing goes into the ether. But it was
+reaching that rung far too easily, because `dhcp_pick_recipient()` measured
+quiet with
+
+```sql
+GROUP BY user_id HAVING MAX(awarded_at) <= DATE_SUB(NOW(), INTERVAL N DAY)
+```
+
+over `dhc_trait_drops` -- which is not an activity signal. It is *when did we
+last give them something*. Three faults followed:
+
+- **Our own gift marked them active.** The instant a lapsed player received a
+  piece their `MAX(awarded_at)` was `NOW()`, so they dropped out of *every*
+  rung. Each lapsed player absorbed exactly one trait, the pool drained one
+  each, and a big jettison fell straight through to the floor.
+- **And it persisted.** Everyone gifted today looked active for the next
+  `RETURN_GIFT_DAYS`, so the next jettison had a smaller lapsed pool and leaned
+  harder on active players still. The feature eroded itself with use.
+- **The inverse too.** Somebody who opened the site daily but had not *earned*
+  a trait in a month read as lapsed.
+
+Now `users.last_login`, which the welcome-back feature already uses for this
+exact question. Despite the name it is not an auth event -- `skulliance.php`
+updates it on any signed-in page load, once a day -- so a persisted session
+popping in to look at a realm counts as being here. That distinction is the
+reason the fix works: players rarely re-authenticate, and if it had been an
+auth event it would have been no better than what it replaced. NULL counts as
+maximally lapsed.
+
+**Gifts can now land more than once on the same returner**, since a gift no
+longer removes them from the pool. Kept deliberately: `ORDER BY RAND()` per
+piece spreads them anyway, and somebody opening Discord to three traits is a
+better woo-back than one.
+
+Pinned by driving the real cascade through a connection that records every
+query and returns no rows, so all seven rungs run and each rung's SQL is
+inspected. A grep would have passed the broken version too -- it also mentioned
+days and a cascade. Seven mutations.

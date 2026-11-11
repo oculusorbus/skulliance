@@ -360,17 +360,50 @@ function dhcp_pick_recipient($conn, $exclude_user_id) {
 	$ex = (int) $exclude_user_id;
 	foreach (dhcp_lapse_rungs() as $days) {
 		/*
-		 * "Holds a trait, is not the submitter, and has been quiet for at
-		 * least this long." Quiet is measured by their most recent trait,
-		 * which is the only activity signal dhc_trait_drops can see --
-		 * and the one that matters here, since the gift is a trait.
+		 * "Holds a trait, is not the submitter, and has not been HERE for
+		 * at least this long."
+		 *
+		 * QUIET IS users.last_login, AND THAT IS A CORRECTION. It used to
+		 * be MAX(awarded_at) over this player's own trait drops, which is
+		 * not an activity signal at all -- it is "when did we last give
+		 * them something". Three things went wrong with it, and the first
+		 * is the one that got reported:
+		 *
+		 *   OUR OWN GIFT MARKED THEM ACTIVE. The instant a lapsed player
+		 *   received a piece their MAX(awarded_at) became NOW(), so they
+		 *   dropped out of EVERY rung at once. Each lapsed player could
+		 *   absorb exactly one trait, the pool drained one-each, and a big
+		 *   jettison fell through to the last rung -- showering active
+		 *   players, which is how the owner came to be handed traits from
+		 *   somebody else's clear-out.
+		 *
+		 *   AND IT PERSISTED. Everyone gifted today looked active for the
+		 *   next RETURN_GIFT_DAYS, so the NEXT jettison had a smaller
+		 *   lapsed pool and leaned harder on active players still. The
+		 *   feature eroded itself the more it was used.
+		 *
+		 *   THE INVERSE TOO: somebody who opens the site daily but has not
+		 *   EARNED a trait in a month read as lapsed and got a woo-back
+		 *   they never needed.
+		 *
+		 * last_login is the signal the welcome-back feature already uses
+		 * for this exact question. Despite the name it is not an auth
+		 * event: skulliance.php updates it for any signed-in page load,
+		 * once a day, so a persisted session that pops in to look at a
+		 * realm counts as being here. Day-level accuracy is ample for a
+		 * cascade whose tightest rung is one day.
+		 *
+		 * NULL IS MAXIMALLY LAPSED. A trait-holder who has never loaded a
+		 * signed-in page has not been here, which is the whole question.
 		 */
-		$having = $days > 0
-			? "HAVING MAX(awarded_at) <= DATE_SUB(NOW(), INTERVAL " . (int)$days . " DAY)"
+		$where = $days > 0
+			? " AND (u.last_login IS NULL
+			         OR u.last_login <= DATE_SUB(NOW(), INTERVAL " . (int)$days . " DAY))"
 			: "";
-		$sql = "SELECT user_id FROM dhc_trait_drops
-		         WHERE user_id <> '" . $ex . "'
-		         GROUP BY user_id " . $having . "
+		$sql = "SELECT d.user_id FROM dhc_trait_drops d
+		         INNER JOIN users u ON u.id = d.user_id
+		         WHERE d.user_id <> '" . $ex . "'" . $where . "
+		         GROUP BY d.user_id
 		         ORDER BY RAND() LIMIT 1";
 		$r = @$conn->query($sql);
 		if ($r && ($row = $r->fetch_assoc())) return (int) $row['user_id'];
