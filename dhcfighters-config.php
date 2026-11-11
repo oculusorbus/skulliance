@@ -1561,6 +1561,29 @@ function dhcf_band_label($key, $value = 0, $placement = null) {
 }
 
 /**
+ * THE RARITY PALETTE, in one place at last.
+ *
+ * These five colours were already on the platform twice -- the TIER map
+ * in dhc-dropmodal.php and the .t-* classes in dhcgallery.php -- and
+ * they agree with each other, which is lucky rather than enforced. The
+ * Portal was about to be a third copy and got them wrong: epic,
+ * legendary and mythic came out rotated, because they were taken from
+ * the launchpad's section accents by eye instead of looked up.
+ *
+ * Legendary is the orange one and mythic is the pink one. Reported by
+ * the owner from memory, and he was right.
+ */
+function dhcf_tier_colours() {
+	return array(
+		'common'    => '#7a9eb0',
+		'uncommon'  => '#00c8a0',
+		'epic'      => '#8b7bd8',
+		'legendary' => '#f5a623',
+		'mythic'    => '#ff4f8b',
+	);
+}
+
+/**
  * What each table is called in front of a player.
  *
  * LIFTED OUT OF dhcf_band_label() when the Portal needed the same four

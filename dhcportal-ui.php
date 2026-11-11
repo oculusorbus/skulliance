@@ -13,9 +13,15 @@
  */
 ?>
 <style>
+<?php /* THE PALETTE COMES FROM dhcf_tier_colours(), not from this file.
+         The first version picked these by eye off the launchpad's section
+         accents and came out with epic, legendary and mythic rotated --
+         legendary is the orange one and mythic is the pink one, which the
+         drop modal and the gallery have both known all along. */ ?>
 .dhcp { --dhcp-ink:#e8eaed; --dhcp-dim:#7a9eb0; --dhcp-line:#1b3346;
-  --dhcp-common:#5a7888; --dhcp-uncommon:#00c8a0; --dhcp-epic:#e6a449;
-  --dhcp-legendary:#e6498a; --dhcp-mythic:#8a49e6;
+<?php foreach (dhcf_tier_colours() as $dhcp_t => $dhcp_c): ?>
+  --dhcp-<?php echo $dhcp_t; ?>:<?php echo $dhcp_c; ?>;
+<?php endforeach; ?>
   color: var(--dhcp-ink); }
 .dhcp-head h2 { margin: 0 0 6px; text-align: left; }
 .dhcp-head p { margin: 0 0 18px; max-width: 70ch; color: var(--dhcp-dim);
@@ -100,11 +106,21 @@
 
 /* The pieces float over the cells, sized in cell-widths. */
 .dhcp-pieces { position: absolute; inset: 16px 16px 14px; z-index: 2; pointer-events: none; }
+/*
+ * NO FILL BEHIND A TRAIT. The art is a robot in pieces being worked on,
+ * and trait PNGs are transparent character parts -- so a solid panel
+ * behind each one covers the thing that makes the board look like a
+ * workbench. The rarity ring is what says "this is placed"; the tile
+ * itself is just the part.
+ *
+ * contain, not cover: a part floating in its cell reads as a component.
+ * cover crops it to a texture.
+ */
 .dhcp-piece { position: absolute; pointer-events: auto; cursor: pointer;
-  border-radius: 3px; overflow: hidden; padding: 0; border: 0;
-  background: #0d1e30; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1);
+  border-radius: 3px; padding: 0; border: 0; background: transparent;
   transition: transform .26s cubic-bezier(.2,.85,.3,1), opacity .2s linear; }
-.dhcp-piece img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dhcp-piece img { width: 100%; height: 100%; object-fit: contain; display: block;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.75)); }
 .dhcp-piece::after { content: ""; position: absolute; inset: 0; pointer-events: none;
   box-shadow: inset 0 0 0 2px var(--c, var(--dhcp-common)); border-radius: 3px; }
 .dhcp-piece:hover { transform: scale(1.04); z-index: 3; }
@@ -174,9 +190,9 @@
   gap: 6px; max-height: 420px; overflow-y: auto; padding-right: 4px; }
 .dhcp-empty { margin: 8px 0 0; font-size: .78rem; color: var(--dhcp-dim); text-align: left; }
 .dhcp-chip { position: relative; aspect-ratio: 1; cursor: pointer; padding: 0; border: 0;
-  border-radius: 3px; overflow: hidden; background: #0d1e30;
+  border-radius: 3px; background: rgba(255,255,255,.03);
   transition: transform .14s ease, opacity .2s linear; }
-.dhcp-chip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dhcp-chip img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .dhcp-chip::after { content: ""; position: absolute; inset: 0;
   box-shadow: inset 0 0 0 2px var(--c, var(--dhcp-common)); border-radius: 3px; }
 .dhcp-chip:hover { transform: translateY(-2px); }

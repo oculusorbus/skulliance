@@ -128,8 +128,15 @@ echo "\nnothing you fed can come back\n";
  * a player and the single most enraging outcome it could produce.
  */
 $lib = (string) file_get_contents(__DIR__ . '/lib/dhcportal-lib.php');
-ok(preg_match('~function dhcp_roll.*?\$fed\[\(string\)\$h\[\x27slug\x27\]\] = true;.*?if \(!isset\(\$fed\[\$d\[1\]\]\)\) return \$d;~s', $lib) === 1,
+ok(preg_match('~function dhcp_roll.*?if \(!isset\(\$fed\[\$d\[1\]\]\)\) return \$d;~s', $lib) === 1,
    'dhcp_roll does not exclude what was fed, so a player can be handed back the trait they just threw away');
+/*
+ * AND BOTH HALVES OF A PAIR. Excluding only the slug a piece is handled
+ * by would let the Portal return the strap of the weapon it has just
+ * swallowed -- which is not the same trait, but is just as galling.
+ */
+ok(substr_count($lib, "isset(\$h['slugs']) ? \$h['slugs'] : array(\$h['slug'])") >= 2,
+   'the roll and the pre-flight do not exclude both halves of a tethered pair');
 /* BOUNDED, AND IT GIVES UP. Rejection sampling with no ceiling is an
    infinite loop the day somebody suspends enough traits; the caller
    refuses the jettison rather than being handed a fed trait. Checked
@@ -144,6 +151,65 @@ ok(substr_count($rollFn, 'return null;') >= 1 && preg_match('~return null;[^;]*\
    'dhcp_roll has no give-up path, so an exhausted pool returns a fed trait');
 ok(strpos($lib, 'function dhcp_pool_remains') !== false,
    'there is no pre-flight, so a board with nothing left to win fires anyway');
+
+echo "\na tethered pair is one piece\n";
+/*
+ * Seven weapons on the platform are two rows that mean one thing: a
+ * weapon and the sash or strap it hangs from. The ASSEMBLER REFUSES TO
+ * SAVE a Fighter holding one without the other, so letting a player
+ * jettison half quietly bricks the half they keep -- unusable,
+ * uncompletable, and not obviously broken until they try.
+ */
+ok(count(DHCF_TETHERED) > 0, 'there are no tethered pairs, so this whole section is checking nothing');
+foreach (DHCF_TETHERED as $a => $b) {
+	ok(dhcf_tethered_partner($a) === $b, $a . ' does not point back at ' . $b);
+	ok(dhcf_tethered_partner($b) === $a, 'the tether is one-way: ' . $b . ' does not point at ' . $a);
+}
+/* Collapsing: two rows in, ONE piece out, carrying both ids. */
+$pair = array_keys(DHCF_TETHERED)[0];
+$mate = DHCF_TETHERED[$pair];
+$rows = array(
+	array('drop_id' => 11, 'category' => 'weapon', 'slug' => $pair, 'tier' => 'epic'),
+	array('drop_id' => 12, 'category' => 'weapon', 'slug' => $mate, 'tier' => 'epic'),
+);
+$made = dhcp_pieces($rows);
+ok(count($made) === 1, 'a tethered pair came out as ' . count($made) . ' pieces, not one');
+ok(count($made[0]['drop_ids']) === 2, 'the piece does not carry both rows, so one would be left behind');
+ok((int) $made[0]['paired'] === 1, 'the piece is not marked as a pair');
+/*
+ * ONE PIECE COSTS ONE TRAIT'S SLOTS, not two. One draw produced both
+ * rows -- which is why dhcf_award() marks the second with
+ * DHCF_PAIRED_MARK and excludes it from the daily cap.
+ */
+ok(dhcp_slots($made) === dhcp_size('epic'),
+   'a pair takes ' . dhcp_slots($made) . ' slots; it should cost one trait\'s worth, '
+ . dhcp_size('epic'));
+/* And that is because dhcp_slots() reads the TIER, never how many rows
+   a piece happens to carry. A pair is two rows and one trait. */
+ok(preg_match('~function dhcp_slots.*?dhcp_size\(isset\(\$h\[\x27tier\x27\]\)~s', $lib) === 1,
+   'dhcp_slots does not size by tier, so a two-row pair can be charged twice');
+/* An unmatched half stays visible: a player can hold one already, and
+   hiding it would leave a trait they can neither use nor get rid of. */
+$lone = dhcp_pieces(array(array('drop_id' => 9, 'category' => 'weapon', 'slug' => $pair, 'tier' => 'epic')));
+ok(count($lone) === 1 && count($lone[0]['drop_ids']) === 1 && (int) $lone[0]['paired'] === 0,
+   'a lone half is hidden or mis-paired, so it can never be cleared out');
+/* Three copies, two of which pair: nothing may be used twice. */
+$three = dhcp_pieces(array(
+	array('drop_id' => 1, 'category' => 'weapon', 'slug' => $pair, 'tier' => 'epic'),
+	array('drop_id' => 2, 'category' => 'weapon', 'slug' => $pair, 'tier' => 'epic'),
+	array('drop_id' => 3, 'category' => 'weapon', 'slug' => $mate, 'tier' => 'epic'),
+));
+$ids = array();
+foreach ($three as $pc) foreach ($pc['drop_ids'] as $i) $ids[] = $i;
+sort($ids);
+ok($ids === array(1, 2, 3), 'a row was dropped or paired twice: ' . implode(',', $ids));
+ok(count($three) === 2, 'three rows with one pair came out as ' . count($three) . ' pieces, not two');
+/* And they travel together out the other side. */
+$end0 = (string) file_get_contents(__DIR__ . '/ajax/dhcportal-jettison.php');
+ok(preg_match('~\$to = dhcp_pick_recipient.*?foreach \(\$slugs as~s', $end0) === 1,
+   'the recipient is picked per slug rather than per piece, so a pair is split between two players');
+ok(strpos($end0, 'DHCF_PAIRED_MARK') !== false,
+   'the second half of a gifted pair is not marked, so it counts as a drop of its own');
 
 echo "\nthe jettison cannot half-happen\n";
 $end = (string) file_get_contents(__DIR__ . '/ajax/dhcportal-jettison.php');
@@ -218,6 +284,39 @@ ok(strpos($lib, 'dhcf_available($conn, $uid)') !== false,
 ok(strpos($lib, 'SELECT id, category, slug FROM dhc_trait_drops') !== false
    && strpos($lib, "WHERE user_id = '" . '$uid' . "' AND id IN") !== false,
    'the board does not resolve its ids against what the player owns, so a forged id reaches the jettison');
+
+echo "\nthe rarity colours are the platform's, not invented\n";
+/*
+ * THE FIRST VERSION PICKED THESE BY EYE off the launchpad's section
+ * accents and came out with epic, legendary and mythic rotated. The
+ * owner spotted it from memory: legendary is the orange one, mythic is
+ * the pink one.
+ *
+ * CHECKED AGAINST dhc-dropmodal.php RATHER THAN AGAINST A LITERAL. Two
+ * surfaces already carried this palette and agreed with each other by
+ * luck; pinning the Portal to a copy of the numbers would make three
+ * copies. Reading the drop modal's own TIER map means they cannot
+ * drift apart without this failing.
+ */
+$dropsrc = (string) file_get_contents(__DIR__ . '/dhc-dropmodal.php');
+$mine = dhcf_tier_colours();
+ok(count($mine) === 5, 'the palette does not cover all five tiers');
+foreach ($mine as $tier => $hex) {
+	$found = preg_match('~' . $tier . ':\s*\{color:\x27(#[0-9a-f]{6})\x27~i', $dropsrc, $dm)
+	       ? strtolower($dm[1]) : '';
+	ok($found !== '', 'dhc-dropmodal.php has no colour for ' . $tier . ' to check against');
+	ok($found === strtolower($hex),
+	   $tier . ' is ' . $hex . ' here and ' . $found . ' in the drop modal — the same trait '
+	 . 'would be two colours on two screens');
+}
+/* The Portal must consume that function rather than keep its own list.
+   Read here rather than relying on $ui and $rev, which are loaded forty
+   lines further down -- the first version of this checked two variables
+   that did not exist yet and failed on correct code. */
+foreach (array('dhcportal-ui.php', 'dhcportal-reveal.php') as $pf) {
+	ok(strpos((string) file_get_contents(__DIR__ . '/' . $pf), 'dhcf_tier_colours()') !== false,
+	   $pf . ' hardcodes the rarity palette instead of reading the one source');
+}
 
 echo "\nboth ends announce, and neither is capped\n";
 /*

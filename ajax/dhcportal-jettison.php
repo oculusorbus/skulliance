@@ -77,8 +77,12 @@ if (!$won) {
 /* ---- from here the traits move ------------------------------------- */
 
 $conn->begin_transaction();
+/* EVERY ROW OF EVERY PIECE. A tethered pair is one piece and two rows;
+   taking only the handle would leave the strap behind and brick it. */
 $ids = array();
-foreach ($pieces as $p) $ids[] = (int) $p['drop_id'];
+foreach ($pieces as $p) {
+	foreach (isset($p['drop_ids']) ? $p['drop_ids'] : array($p['drop_id']) as $i) $ids[] = (int) $i;
+}
 
 /*
  * TAKEN, WITH THE OWNER NAMED IN THE DELETE. Two players firing at once
@@ -127,10 +131,23 @@ $rarity = dhcf_rarity();
 foreach ($pieces as $p) {
 	$to = dhcp_pick_recipient($conn, $uid);
 	if ($to <= 0) { error_log('dhcportal: no recipient for ' . $p['slug']); continue; }
-	$info = isset($rarity[$p['category']][$p['slug']]) ? $rarity[$p['category']][$p['slug']] : null;
-	if (!$info) continue;
-	if (dhcf_commit_drop($conn, $to, $p['category'], $p['slug'], $info, 'portalgift',
-	                     'jettisoned by another player')) $sent++;
+	/*
+	 * BOTH HALVES TO THE SAME PERSON. A tethered weapon and its strap
+	 * have to arrive together, or the cascade hands two lapsed players
+	 * half a weapon each and recreates the exact bug the pairing exists
+	 * to prevent -- on somebody who did nothing to deserve it.
+	 */
+	$slugs = isset($p['slugs']) ? $p['slugs'] : array($p['slug']);
+	foreach ($slugs as $i => $sl) {
+		$info = isset($rarity[$p['category']][$sl]) ? $rarity[$p['category']][$sl] : null;
+		if (!$info) continue;
+		/* The second row carries the same mark dhcf_award() uses, so a
+		   paired half is never counted as a drop in its own right. */
+		$detail = $i === 0 ? 'jettisoned by another player'
+		                   : DHCF_PAIRED_MARK . 'jettisoned by another player';
+		if (dhcf_commit_drop($conn, $to, $p['category'], $sl, $info, 'portalgift', $detail)
+		    && $i === 0) $sent++;
+	}
 }
 
 dhcp_out(true, array(

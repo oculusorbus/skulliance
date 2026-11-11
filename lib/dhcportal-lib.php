@@ -131,6 +131,83 @@ function dhcp_fit($hopper, $incoming) {
 	return array(array_values($kept), $returned);
 }
 
+/*
+ * ===== TETHERED PAIRS ====================================================
+ *
+ * Seven weapons on the platform are two rows that mean one thing: a
+ * weapon and the sash or strap it hangs from. DHCF_TETHERED maps each
+ * half to the other, and the assembler REFUSES TO SAVE a Fighter
+ * holding one without the other -- dhcf_shortfall() reports it missing.
+ *
+ * So letting a player jettison half a pair quietly bricks the half they
+ * keep: it cannot be built with, cannot be completed, and is not even
+ * obviously broken until they try. The Portal treats a pair as ONE
+ * PIECE throughout.
+ *
+ * ONE PIECE COSTS ONE TRAIT'S SLOTS, not two. One draw produced both
+ * rows -- that is why dhcf_award() marks the second with
+ * DHCF_PAIRED_MARK and excludes it from the daily cap, on exactly this
+ * reasoning: "one draw that happens to be two pieces must not cost two
+ * of the three traits a day a source is allowed to give." A pair is one
+ * trait's worth of value and takes one trait's worth of board.
+ *
+ * AND THEY TRAVEL TOGETHER. Both rows go to the SAME recipient, or the
+ * cascade would hand two different lapsed players half a weapon each
+ * and recreate the bug it was meant to prevent.
+ */
+
+/** Both halves of a pair, or just the one slug when it stands alone. */
+function dhcp_pair_slugs($slug) {
+	$other = dhcf_tethered_partner($slug);
+	return $other === '' ? array($slug) : array($slug, $other);
+}
+
+/**
+ * Collapse a flat list of owned copies into pieces, pairing the tethered.
+ *
+ * A piece carries drop_ids (plural) because a pair is two rows, and
+ * every path that consumes a piece has to take all of them.
+ *
+ * UNMATCHED HALVES STAY VISIBLE. A player can hold one half already --
+ * the Bio Weapon shipped without its strap for a while and
+ * dhc-trait-migrate.php only granted it to existing holders. Hiding a
+ * lone half would leave a trait they can neither use nor get rid of.
+ *
+ * @param array $rows list of array('drop_id','category','slug','tier')
+ */
+function dhcp_pieces($rows) {
+	$byslug = array();
+	foreach ($rows as $r) $byslug[$r['slug']][] = $r;
+
+	$out = array(); $used = array();
+	foreach ($rows as $r) {
+		if (isset($used[$r['drop_id']])) continue;
+		$other = dhcf_tethered_partner($r['slug']);
+		$mate = null;
+		if ($other !== '' && !empty($byslug[$other])) {
+			foreach ($byslug[$other] as $cand) {
+				if (!isset($used[$cand['drop_id']])) { $mate = $cand; break; }
+			}
+		}
+		$used[$r['drop_id']] = true;
+		$ids = array((int) $r['drop_id']);
+		$slugs = array($r['slug']);
+		if ($mate) { $used[$mate['drop_id']] = true; $ids[] = (int) $mate['drop_id'];
+		             $slugs[] = $mate['slug']; }
+		$out[] = array(
+			'drop_id'  => (int) $r['drop_id'],   /* the handle the client uses */
+			'drop_ids' => $ids,
+			'category' => $r['category'],
+			'slug'     => $r['slug'],
+			'slugs'    => $slugs,
+			'tier'     => $r['tier'],
+			'size'     => dhcp_size($r['tier']),
+			'paired'   => $mate ? 1 : 0,
+		);
+	}
+	return $out;
+}
+
 /**
  * Roll a trait for a board, excluding everything the board holds.
  *
@@ -147,8 +224,12 @@ function dhcp_fit($hopper, $incoming) {
  * @return array|null array($category, $slug, $info)
  */
 function dhcp_roll($hopper, $tiers, $attempts = 60) {
+	/* BOTH HALVES of anything fed, or the Portal can hand back the strap
+	   of the weapon it has just swallowed. */
 	$fed = array();
-	foreach ($hopper as $h) $fed[(string)$h['slug']] = true;
+	foreach ($hopper as $h) {
+		foreach (isset($h['slugs']) ? $h['slugs'] : array($h['slug']) as $sl) $fed[(string)$sl] = true;
+	}
 	for ($i = 0; $i < $attempts; $i++) {
 		$d = dhcf_draw('wildcard', $tiers);
 		if (!$d) return null;
@@ -166,7 +247,9 @@ function dhcp_roll($hopper, $tiers, $attempts = 60) {
  */
 function dhcp_pool_remains($hopper) {
 	$fed = array();
-	foreach ($hopper as $h) $fed[(string)$h['slug']] = true;
+	foreach ($hopper as $h) {
+		foreach (isset($h['slugs']) ? $h['slugs'] : array($h['slug']) as $sl) $fed[(string)$sl] = true;
+	}
 	foreach (dhcf_rarity() as $cat => $traits) {
 		foreach ($traits as $slug => $info) {
 			if (DHCF_SUSPENDED && in_array($slug, DHCF_SUSPENDED, true)) continue;
@@ -320,15 +403,19 @@ function dhcp_board($conn, $user_id) {
 		if ($seen[$k] > $have) { $dropped++; continue; }     /* went onto a Fighter */
 		$tier = isset($rarity[$cat][$slug][0]) ? $rarity[$cat][$slug][0] : 'common';
 		$keep[] = array('drop_id' => $did, 'category' => $cat, 'slug' => $slug,
-		                'tier' => $tier, 'size' => dhcp_size($tier));
+		                'tier' => $tier);
 	}
+	/* PAIRS COLLAPSE HERE, after the self-heal: a half whose partner has
+	   gone onto a Fighter should pair with nothing, not with a row that
+	   is no longer free. */
+	$pieces = dhcp_pieces($keep);
 	if ($dropped > 0) {
 		$ok = array();
-		foreach ($keep as $p) $ok[] = $p['drop_id'];
+		foreach ($pieces as $p) foreach ($p['drop_ids'] as $i) $ok[] = $i;
 		dhcp_put($uid, $ok);
 	}
-	$out['pieces']  = $keep;
-	$out['slots']   = dhcp_slots($keep);
+	$out['pieces']  = $pieces;
+	$out['slots']   = dhcp_slots($pieces);
 	$out['dropped'] = $dropped;
 	return $out;
 }
@@ -368,17 +455,44 @@ function dhcp_stage($conn, $user_id, $drop_id) {
 	$rarity = dhcf_rarity();
 	$tier = isset($rarity[$row['category']][$row['slug']][0])
 	      ? $rarity[$row['category']][$row['slug']][0] : 'common';
-	$incoming = array('drop_id' => $did, 'category' => $row['category'],
-	                  'slug' => $row['slug'], 'tier' => $tier, 'size' => dhcp_size($tier));
+
+	/*
+	 * THE PARTNER COMES WITH IT. A tethered weapon and its strap are one
+	 * object: the assembler refuses to build with half a pair, so
+	 * letting one go alone bricks the other.
+	 */
+	$ids_in = array($did);
+	$slugs  = array($row['slug']);
+	$other  = dhcf_tethered_partner($row['slug']);
+	if ($other !== '') {
+		$staged_ids = dhcp_raw($uid);
+		$q = @$conn->query("SELECT id FROM dhc_trait_drops
+		                     WHERE user_id = '$uid' AND slug = '" . $conn->real_escape_string($other) . "'
+		                     ORDER BY id ASC");
+		if ($q) while ($x = $q->fetch_assoc()) {
+			$cand = (int) $x['id'];
+			if (in_array($cand, $staged_ids, true)) continue;
+			$ids_in[] = $cand; $slugs[] = $other; break;
+		}
+	}
+
+	$incoming = array('drop_id' => $did, 'drop_ids' => $ids_in,
+	                  'category' => $row['category'], 'slug' => $row['slug'],
+	                  'slugs' => $slugs, 'tier' => $tier, 'size' => dhcp_size($tier),
+	                  'paired' => count($ids_in) > 1 ? 1 : 0);
 
 	/* THE EJECT RULE, applied before anything is stored. */
 	list($kept, $returned) = dhcp_fit($board['pieces'], $incoming);
 	$ids = array();
-	foreach ($kept as $p) $ids[] = $p['drop_id'];
+	foreach ($kept as $p) {
+		foreach (isset($p['drop_ids']) ? $p['drop_ids'] : array($p['drop_id']) as $i) $ids[] = $i;
+	}
 	dhcp_put($uid, $ids);
 
 	$back = array();
-	foreach ($returned as $t) $back[] = (int) $t['drop_id'];
+	foreach ($returned as $t) {
+		foreach (isset($t['drop_ids']) ? $t['drop_ids'] : array($t['drop_id']) as $i) $back[] = (int) $i;
+	}
 	return array(true, '', $back);
 }
 
@@ -386,12 +500,19 @@ function dhcp_stage($conn, $user_id, $drop_id) {
 function dhcp_unstage($conn, $user_id, $drop_id) {
 	$uid = (int) $user_id; $did = (int) $drop_id;
 	if ($uid <= 0 || $did <= 0) return false;
-	$ids = dhcp_raw($uid);
+	/* THE WHOLE PIECE, both halves of a pair. Taking one off and leaving
+	   the strap behind would put half a weapon on the board, which is
+	   the bug this all exists to avoid, from the other direction. */
+	$board = dhcp_board($conn, $uid);
+	$drop = array();
+	foreach ($board['pieces'] as $p) {
+		if (in_array($did, $p['drop_ids'], true)) { $drop = $p['drop_ids']; break; }
+	}
+	if (!$drop) return false;
 	$out = array();
-	$found = false;
-	foreach ($ids as $i) { if ($i === $did) { $found = true; continue; } $out[] = $i; }
+	foreach (dhcp_raw($uid) as $i) if (!in_array($i, $drop, true)) $out[] = $i;
 	dhcp_put($uid, $out);
-	return $found;
+	return true;
 }
 
 /** Clear it. */

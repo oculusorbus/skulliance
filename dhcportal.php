@@ -59,8 +59,12 @@ if ($dhcp_uid > 0) {
 		if ($seen[$k] > $free) continue;
 		$tier = isset($dhcp_rarity[$cat][$slug][0]) ? $dhcp_rarity[$cat][$slug][0] : 'common';
 		$dhcp_tray[] = array('drop_id' => (int) $x['id'], 'category' => $cat,
-		                     'slug' => $slug, 'tier' => $tier, 'size' => dhcp_size($tier));
+		                     'slug' => $slug, 'tier' => $tier);
 	}
+	/* PAIRS ARE ONE CHIP. A tethered weapon and its strap are one object
+	   and the assembler refuses to build with half of one, so the tray
+	   must not offer them separately either. */
+	$dhcp_tray = dhcp_pieces($dhcp_tray);
 	$order = array('common' => 0, 'uncommon' => 1, 'epic' => 2, 'legendary' => 3, 'mythic' => 4);
 	usort($dhcp_tray, function ($a, $b) use ($order) {
 		$d = $order[$a['tier']] - $order[$b['tier']];

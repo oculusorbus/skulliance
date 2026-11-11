@@ -87,8 +87,9 @@
 	var calm = window.matchMedia
 	        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-	var TIERCOL = { common:'#5a7888', uncommon:'#00c8a0', epic:'#e6a449',
-	                legendary:'#e6498a', mythic:'#8a49e6' };
+	/* From dhcf_tier_colours(), the one place these live. Hand-picked
+	   here once and they came out rotated. */
+	var TIERCOL = <?php echo json_encode(dhcf_tier_colours()); ?>;
 	var TIERNAME = { common:'Common', uncommon:'Uncommon', epic:'Epic',
 	                 legendary:'Legendary', mythic:'Mythic' };
 
