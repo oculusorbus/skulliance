@@ -170,53 +170,32 @@ foreach (DHCF_TETHERED as $x => $y) {
 	$k = $x < $y ? "$x|$y" : "$y|$x";
 	$pairs[$k] = true;
 }
+/*
+ * THE DETECTION AND THE REPAIR BOTH LIVE IN dhcfighters-lib.php NOW, as
+ * dhcf_tether_orphans() and dhcf_tether_repair(). They were here, and then
+ * the owner hit an orphan on a phone and this file was no use to him --
+ * admin-tethers.php does the same job from a browser. Two copies of a
+ * repair that writes ledger rows is one too many, so this calls the same
+ * pair the page does.
+ */
+$orphans = dhcf_tether_orphans($conn);
 $grandTotal = 0; $people = array();
-foreach (array_keys($pairs) as $k) {
-	list($x, $y) = explode('|', $k);
-	if (!isset($catOf[$x], $catOf[$y])) {
-		fwrite(STDERR, "  no rarity row for $x or $y -- run dhc/gen-rarity.py first\n");
-		exit(1);
-	}
-	$cat = $catOf[$x];
-	$res = $conn->query(sprintf(
-		"SELECT user_id, SUM(slug = '%s') AS a, SUM(slug = '%s') AS b
-		   FROM dhc_trait_drops
-		  WHERE category = '%s' AND slug IN ('%s', '%s')
-		  GROUP BY user_id",
-		$conn->real_escape_string($x), $conn->real_escape_string($y),
-		$conn->real_escape_string($cat),
-		$conn->real_escape_string($x), $conn->real_escape_string($y)));
-	$owed = array();
-	while ($res && ($row = $res->fetch_assoc())) {
-		$d = (int)$row['a'] - (int)$row['b'];
-		if ($d === 0) continue;
-		$owed[(int)$row['user_id']] = $d > 0 ? array($y, $d) : array($x, -$d);
-	}
-	if (!$owed) { printf("  %-24s / %-24s nothing outstanding\n", $x, $y); continue; }
-	$n = 0;
-	foreach ($owed as $uid => $g) $n += $g[1];
-	printf("  %-24s / %-24s %d piece(s) for %d player(s)\n", $x, $y, $n, count($owed));
-	foreach ($owed as $uid => $g) {
-		list($slug, $cnt) = $g;
-		$nm = '';
-		$ur = $conn->query('SELECT username FROM users WHERE id = ' . (int)$uid);
-		if ($ur && ($ux = $ur->fetch_assoc())) $nm = (string)$ux['username'];
-		printf("      user %-6d %-22s %d x %s\n", $uid, substr($nm, 0, 22), $cnt, $slug);
-		$people[$uid] = true;
-		$grandTotal += $cnt;
-		if (!$run) continue;
-		$info = dhcf_trait_info($cat, $slug);
-		if (!$info) { fwrite(STDERR, "  no rarity row for $cat/$slug\n"); exit(1); }
-		for ($i = 0; $i < $cnt; $i++) {
-			/* The same call the draw makes for a tethered partner, so the row
-			   is shaped identically -- except that it does not announce. A
-			   backfill is not news, and one post per piece for art the player
-			   has effectively been holding all along is noise. */
-			dhcf_commit_drop($conn, (int)$uid, $cat, $slug, $info,
-				'backfill', DHCF_PAIRED_MARK . dhcf_tethered_partner($slug), false);
-		}
+foreach ($orphans as $o) { $grandTotal += (int)$o['owed']; $people[(int)$o['user_id']] = true; }
+
+$byPair = array();
+foreach ($orphans as $o) $byPair[$o['pair']][] = $o;
+foreach ($byPair as $pair => $rows) {
+	$n = 0; foreach ($rows as $o) $n += (int)$o['owed'];
+	printf("  %-50s %d piece(s) for %d player(s)\n", $pair, $n, count($rows));
+	foreach ($rows as $o) {
+		printf("      user %-6d %-22s %d x %s\n", $o['user_id'],
+			substr($o['username'], 0, 22), $o['owed'], $o['slug']);
 	}
 }
+if (!$orphans) echo "  nothing outstanding\n";
+
+if ($run && $orphans) dhcf_tether_repair($conn, $orphans);
+
 printf("\n  %d piece(s) for %d player(s)%s\n",
 	$grandTotal, count($people), $run ? ' awarded' : ' would be awarded');
 

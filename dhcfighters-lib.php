@@ -469,6 +469,101 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
 }
 
 /**
+ * WHO IS HOLDING HALF A TETHERED WEAPON. Reads; writes nothing.
+ *
+ * A tethered weapon is one weapon in two art files and the assembler will
+ * not save a Fighter wearing one without the other. Worse, the picker only
+ * offers what a player OWNS while the coupling places a partner whatever
+ * they own -- so an orphaned half looks like a weapon that attaches
+ * correctly and then cannot be saved, with nothing in the grid to explain
+ * it. Reported exactly that way: "the attachment is working but the
+ * individual strap isn't available."
+ *
+ * Orphans exist because a pair is only paid as a pair from the moment it
+ * is TETHERED. Every weapon tethered after it started dropping leaves
+ * everybody who drew it beforehand short, which is why this is the third
+ * repair of its kind.
+ *
+ * COUNTS, NOT PRESENCE: two guns and one strap is owed a second strap, or
+ * they can build one Fighter and not the other.
+ *
+ * Extracted from dhc-trait-migrate.php so the admin page and the CLI ask
+ * the same question. The CLI is no use to somebody holding a phone.
+ *
+ * @return array list of array('pair','slug','partner','category','user_id','username','owed')
+ */
+function dhcf_tether_orphans($conn) {
+	$rar = dhcf_rarity();
+	$catOf = array();
+	foreach ($rar as $cat => $rows) foreach ($rows as $slug => $_) $catOf[$slug] = $cat;
+
+	/* Keyed both ways, so fold to one entry per pair. */
+	$pairs = array();
+	foreach (DHCF_TETHERED as $x => $y) {
+		$k = $x < $y ? "$x|$y" : "$y|$x";
+		$pairs[$k] = true;
+	}
+
+	$out = array();
+	foreach (array_keys($pairs) as $k) {
+		list($x, $y) = explode('|', $k);
+		/* The category is read off the rarity table rather than assumed to
+		   be 'weapon' -- nothing about a tether says it must be. */
+		if (!isset($catOf[$x], $catOf[$y])) continue;
+		$cat = $catOf[$x];
+		$res = @$conn->query(sprintf(
+			"SELECT d.user_id, u.username,
+			        SUM(d.slug = '%s') AS a, SUM(d.slug = '%s') AS b
+			   FROM dhc_trait_drops d
+			   LEFT JOIN users u ON u.id = d.user_id
+			  WHERE d.category = '%s' AND d.slug IN ('%s', '%s')
+			  GROUP BY d.user_id, u.username",
+			$conn->real_escape_string($x), $conn->real_escape_string($y),
+			$conn->real_escape_string($cat),
+			$conn->real_escape_string($x), $conn->real_escape_string($y)));
+		while ($res && ($row = $res->fetch_assoc())) {
+			$d = (int)$row['a'] - (int)$row['b'];
+			if ($d === 0) continue;
+			$out[] = array(
+				'pair'     => $x . ' / ' . $y,
+				'slug'     => $d > 0 ? $y : $x,       /* the half they are SHORT of */
+				'partner'  => $d > 0 ? $x : $y,
+				'category' => $cat,
+				'user_id'  => (int)$row['user_id'],
+				'username' => (string)$row['username'],
+				'owed'     => abs($d),
+			);
+		}
+	}
+	return $out;
+}
+
+/**
+ * Hand out the missing halves dhcf_tether_orphans() found. Writes.
+ *
+ * SILENT BY DESIGN. It goes through dhcf_commit_drop() so each row is
+ * shaped exactly like the one the draw writes for a tethered partner, but
+ * with announcing OFF: a backfill is not news, and one Discord post per
+ * piece for art the player has effectively been holding all along is noise.
+ *
+ * @return array array($pieces, $players)
+ */
+function dhcf_tether_repair($conn, $orphans) {
+	$pieces = 0; $players = array();
+	foreach ($orphans as $o) {
+		$info = dhcf_trait_info($o['category'], $o['slug']);
+		if (!$info) continue;
+		for ($i = 0; $i < (int)$o['owed']; $i++) {
+			dhcf_commit_drop($conn, (int)$o['user_id'], $o['category'], $o['slug'],
+				$info, 'backfill', DHCF_PAIRED_MARK . $o['partner'], false);
+			$pieces++;
+		}
+		$players[(int)$o['user_id']] = true;
+	}
+	return array($pieces, count($players));
+}
+
+/**
  * Write one ledger row and deliver its moment: park the reveal for the player
  * who earned it, and announce it.
  *

@@ -934,6 +934,11 @@ function admin_tabs() {
 		   php here is a different build from the one serving the site, so
 		   the web SAPI's capabilities can only be read from the web. */
 		'defer'    => array('admin-defer.php', 'Deferred Posts'),
+		/* Who is holding half a tethered weapon. The assembler refuses to
+		   save a Fighter wearing one half without the other, and the picker
+		   only offers what a player owns, so an orphan reads as a weapon
+		   that attaches and then will not save. */
+		'tethers'  => array('admin-tethers.php', 'Tethers'),
 		/* The boss crew resurrection cue. A playbackRate curve is a feel
 		   decision and cannot be read off a page, so it plays the real
 		   file through the Arena's own path. Plays audio, writes nothing. */
