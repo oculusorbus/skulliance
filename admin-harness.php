@@ -1085,5 +1085,61 @@ ok(preg_match('/\.adm-art img,\.adm-art video\{[^}]*max-width:\s*\d+px/', $css) 
 ok(preg_match('/\.adm-art img,\.adm-art video\{[^}]*max-height:\s*\d+px/', $css) === 1,
    'the preview has no height cap, so a tall image pushes the description field off screen');
 
+/*
+ * ===== INLINE SCRIPTS MUST NOT REACH FOR ELEMENTS THAT ARE NOT THERE ====
+ *
+ * SHIPPED, AND THE WHOLE PAGE DIED. admin-bossrez.php lost a <select>
+ * when the layer stack replaced it, and two references to it survived --
+ * getElementById returned null, the listener threw at parse-and-run time,
+ * and every control on the page went inert. php -l cannot see it, the
+ * page still returns 200, and nothing in the markup looks wrong.
+ *
+ * So: every getElementById('x') in an admin page's inline script must
+ * have an id="x" somewhere in that same page. Cheap, and it catches the
+ * exact shape of the thing that shipped.
+ */
+echo "\ninline scripts only reach for elements that exist\n";
+foreach (glob(__DIR__ . '/admin-*.php') as $ajf) {
+	$ajs = (string) file_get_contents($ajf);
+	if (strpos($ajs, 'getElementById') === false) continue;
+	$aname = basename($ajf);
+
+	/* document.getElementById only. A page that reaches INTO an iframe
+	   does so on another document and is asking about another page's
+	   markup, which this check has no business judging. */
+	preg_match_all("~document\\.getElementById\\('([A-Za-z0-9_-]+)'\\)~", $ajs, $m_want);
+	if (!count($m_want[1])) continue;
+
+	/*
+	 * THE IDS A PAGE CAN SEE INCLUDE THE ONES ITS PARTIALS BRING. Both
+	 * of the first two findings here were this: admin-chest.php includes
+	 * the REAL missions-chest.php rather than copying its markup, and
+	 * admin-viewport.php reaches for the back-to-top button that
+	 * header.php draws. Exempting those pages would have been the lazy
+	 * fix and would have blinded the check on exactly the pages that
+	 * compose partials, which is most of them.
+	 */
+	$sources = array($ajs);
+	preg_match_all("~(?:include|require)(?:_once)?\\s*(?:__DIR__\\s*\\.\\s*)?'/?([A-Za-z0-9_./-]+\\.php)'~",
+	               $ajs, $m_inc);
+	foreach (array_unique($m_inc[1]) as $incf) {
+		$ipath = __DIR__ . '/' . ltrim($incf, '/');
+		if (is_file($ipath)) $sources[] = (string) file_get_contents($ipath);
+	}
+	$all = implode("\n", $sources);
+
+	preg_match_all('~id="([A-Za-z0-9_-]+)"~', $all, $m_have);
+	/* Ids the page builds at runtime rather than writing in the markup --
+	   a template string assigned to .id counts as present. */
+	preg_match_all("~\\.id\\s*=\\s*'([A-Za-z0-9_-]+)'~", $all, $m_set);
+	preg_match_all("~id='([A-Za-z0-9_-]+)'~", $all, $m_have2);
+
+	$have = array_merge($m_have[1], $m_set[1], $m_have2[1]);
+	$missing = array_values(array_unique(array_diff($m_want[1], $have)));
+	ok(count($m_want[1]) === 0 || count($missing) === 0,
+	   $aname . " reaches for #" . implode(', #', $missing)
+	   . " and nothing on the page has that id, so the script throws and every control goes inert");
+}
+
 echo "\n" . ($fail ? "FAILED ($fail)\n" : "all admin-lib checks passed\n");
 exit($fail ? 1 : 0);

@@ -194,6 +194,9 @@ admin_chrome('bossrez');
                 win:   'sounds/voice_levelcomplete.ogg' };
   Object.keys(LIB).forEach(function (path) { FILES[path] = path; });
   var actx = null, buf = {}, rbuf = {}, live = [], note = document.getElementById('abrNote');
+  /* Declared up here because src() reads it and src() is called from the
+     wave buttons, which are built before the layer rig further down. */
+  var rows = [];
 
   /* Reversed once per file, not per play: copying two channels of a three
      second buffer on every button press is wasted work, and the reversed
@@ -239,12 +242,12 @@ admin_chrome('bossrez');
       .catch(function () { note.textContent = 'Could not decode ' + FILES[key] + '.'; });
   }
 
-  function play(key, rate, gain, when, rev) {
+  function play(key, rate, gain, when, rev, stackPlay) {
     if (actx && buf[key]) {
       if (actx.state === 'suspended') actx.resume();
       var s = actx.createBufferSource();
       s.buffer = rev ? reversed(key) : buf[key];
-      s.__whole = (key.indexOf('/') >= 0);   /* a library path means a layer */
+      s.__whole = !!stackPlay;   /* only the stack aligns whole swells */
       s.playbackRate.value = rate;
       var g = actx.createGain(); g.gain.value = gain;
       s.connect(g); g.connect(actx.destination);
@@ -289,7 +292,14 @@ admin_chrome('bossrez');
 
   function val(id) { return parseFloat(document.getElementById(id).value); }
   function rev() { return document.getElementById('abrRev').checked; }
-  function src() { return document.getElementById('abrSrc').value; }
+  /* The wave buttons and the ladder audition whatever is on top of the
+     layer stack. There used to be a dropdown of its own here; the stack
+     replaced it, and this reads from the stack rather than from an
+     element that no longer exists. */
+  function src() {
+    if (rows.length) { var v = readRow(rows[0]); if (v.path) return v.path; }
+    return 'sounds/skullcoinlose.ogg';
+  }
   function rateFor(w) {
     return Math.max(val('abrFloor'), val('abrBase') - val('abrStep') * (w - 1));
   }
@@ -318,7 +328,6 @@ admin_chrome('bossrez');
     document.getElementById(id).addEventListener('input', draw);
   });
   document.getElementById('abrRev').addEventListener('change', draw);
-  document.getElementById('abrSrc').addEventListener('change', draw);
   draw();
 
   /*
@@ -333,7 +342,6 @@ admin_chrome('bossrez');
    */
   var layersEl = document.getElementById('abrLayers');
   var dump = document.getElementById('abrDump');
-  var rows = [];
 
   function addRow(path, rate, gain, off) {
     var i = rows.length;
@@ -390,7 +398,7 @@ admin_chrome('bossrez');
         var longest = Math.max.apply(null, durs);
         specs.forEach(function (v, i) {
           var lead = rev() ? (longest - durs[i]) : 0;
-          play(v.path, v.rate, v.gain, Math.max(0, lead + v.off), rev());
+          play(v.path, v.rate, v.gain, Math.max(0, lead + v.off), rev(), true);
         });
       });
   });
