@@ -21,6 +21,54 @@ require_once __DIR__ . '/admin-lib.php';
 require_once __DIR__ . '/dhcbosses-lib.php';
 admin_require();
 
+/*
+ * EVERY SOUND THE PLATFORM ACTUALLY SERVES, and the two halves are not
+ * stored the same way. The Arena's fifteen .ogg files live at
+ * /staking/sounds/ and are NOT in the repo -- they deploy like images.
+ * The twenty-one .mp3 files under audio/sounds/ ARE committed. Both were
+ * curl-verified 200 before being listed here; a dozen other sounds/*.mp3
+ * paths appear in the source but belong to dropship/sounds/, which is
+ * gitignored and 404s from this host.
+ */
+$abr_lib = array(
+	'sounds/badgeawarded.ogg' => 'arena: badgeawarded',
+	'sounds/badmove.ogg' => 'arena: badmove',
+	'sounds/bomb_explode.ogg' => 'arena: bomb_explode',
+	'sounds/gem_shatters.ogg' => 'arena: gem_shatters',
+	'sounds/hypercube_create.ogg' => 'arena: hypercube_create',
+	'sounds/hyperspace_gem_land_1.ogg' => 'arena: hyperspace_gem_land_1',
+	'sounds/hyperspace_gem_land_2.ogg' => 'arena: hyperspace_gem_land_2',
+	'sounds/powergem_created.ogg' => 'arena: powergem_created',
+	'sounds/select.ogg' => 'arena: select',
+	'sounds/skullcoinlose.ogg' => 'arena: skullcoinlose',
+	'sounds/speedmatch1.ogg' => 'arena: speedmatch1',
+	'sounds/voice_excellent.ogg' => 'arena: voice_excellent',
+	'sounds/voice_gameover.ogg' => 'arena: voice_gameover',
+	'sounds/voice_go.ogg' => 'arena: voice_go',
+	'sounds/voice_levelcomplete.ogg' => 'arena: voice_levelcomplete',
+	'audio/sounds/artillery.mp3' => 'drop ship: artillery',
+	'audio/sounds/card.mp3' => 'drop ship: card',
+	'audio/sounds/death.mp3' => 'drop ship: death',
+	'audio/sounds/demolition.mp3' => 'drop ship: demolition',
+	'audio/sounds/equip.mp3' => 'drop ship: equip',
+	'audio/sounds/exactmatch.mp3' => 'drop ship: exactmatch',
+	'audio/sounds/fist.mp3' => 'drop ship: fist',
+	'audio/sounds/flamethrower.mp3' => 'drop ship: flamethrower',
+	'audio/sounds/flee.mp3' => 'drop ship: flee',
+	'audio/sounds/grenade.mp3' => 'drop ship: grenade',
+	'audio/sounds/heal.mp3' => 'drop ship: heal',
+	'audio/sounds/joker.mp3' => 'drop ship: joker',
+	'audio/sounds/kill.mp3' => 'drop ship: kill',
+	'audio/sounds/laststand.mp3' => 'drop ship: laststand',
+	'audio/sounds/machinegun.mp3' => 'drop ship: machinegun',
+	'audio/sounds/melee.mp3' => 'drop ship: melee',
+	'audio/sounds/pistol.mp3' => 'drop ship: pistol',
+	'audio/sounds/rocketlauncher.mp3' => 'drop ship: rocketlauncher',
+	'audio/sounds/sniperrifle.mp3' => 'drop ship: sniperrifle',
+	'audio/sounds/tacticalkatana.mp3' => 'drop ship: tacticalkatana',
+	'audio/sounds/victory.mp3' => 'drop ship: victory',
+);
+
 /* The real escalation, so the ladder can sit beside what it is describing. */
 $abr_pow = array();
 for ($w = 1; $w <= 10; $w++) $abr_pow[$w] = dhcb_wave_pow($w);
@@ -53,15 +101,8 @@ admin_chrome('bossrez');
 			<input type="range" id="abrLead" min="0.4" max="3" step="0.1" value="1.30"></label>
 	</div>
 	<p>
-		<label style="font-size:.82rem;color:#c3d2dd;margin-right:18px">
-			Rise sound
-			<select id="abrSrc" style="margin-left:6px">
-				<option value="ko" selected>skullcoinlose (the KO sound)</option>
-				<option value="hyper">hypercube_create</option>
-			</select>
-		</label>
 		<label style="font-size:.82rem;color:#c3d2dd">
-			<input type="checkbox" id="abrRev" checked> Reverse it
+			<input type="checkbox" id="abrRev" checked> Reverse the layers
 		</label>
 		<small style="display:block;margin-top:6px;color:#8fa7bb">
 			Reversed, the sound swells and cuts instead of hitting and decaying, so it
@@ -77,6 +118,20 @@ admin_chrome('bossrez');
 	</p>
 
 	<div class="abr-grid" id="abrGrid"></div>
+
+	<h4>Layers</h4>
+	<p><small>
+		Stack as many as you like. Reversed layers are END-ALIGNED: they all cut on
+		the same instant, which is the one the crew lands on, so a longer swell
+		simply starts earlier. Offset nudges a layer off that shared landing.
+	</small></p>
+	<div id="abrLayers"></div>
+	<p>
+		<button type="button" class="button abr-go" id="abrAdd" style="width:auto">+ Add layer</button>
+		<button type="button" class="button abr-go" id="abrPlay" style="width:auto">▶ Play the stack (wave 4)</button>
+	</p>
+	<pre id="abrDump" style="white-space:pre-wrap;background:#080f18;padding:10px;
+	     border-radius:3px;color:#8fa7bb;font-size:.72rem"></pre>
 
 	<h4>The two-beat cue</h4>
 	<p><small>
@@ -113,6 +168,14 @@ admin_chrome('bossrez');
   font-variant-numeric: tabular-nums; }
 .abr-w .p { display: block; font-size: .64rem; color: #7a9eb0; }
 .abr-go { margin-right: 8px; }
+.abr-layer { display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  padding: 8px; margin-bottom: 6px; border: 1px solid #1b3346; border-radius: 3px;
+  background: #0a1929; }
+.abr-layer select { max-width: 230px; }
+.abr-layer label { font-size: .72rem; color: #8fa7bb; }
+.abr-layer input { width: 76px; margin-left: 4px; }
+.abr-layer button { font-size: .7rem; padding: 4px 8px; cursor: pointer;
+  color: #c3d2dd; background: #122a3e; border: 1px solid #1b3346; border-radius: 2px; }
 </style>
 
 <script>
@@ -125,9 +188,11 @@ admin_chrome('bossrez');
    * the sound of something powerful being assembled, which is thematically
    * close but is not the same sound the player just heard three times.
    */
+  var LIB = <?php echo json_encode($abr_lib); ?>;
   var FILES = { hyper: 'sounds/hypercube_create.ogg',
                 ko:    'sounds/skullcoinlose.ogg',
                 win:   'sounds/voice_levelcomplete.ogg' };
+  Object.keys(LIB).forEach(function (path) { FILES[path] = path; });
   var actx = null, buf = {}, rbuf = {}, live = [], note = document.getElementById('abrNote');
 
   /* Reversed once per file, not per play: copying two channels of a three
@@ -152,7 +217,10 @@ admin_chrome('bossrez');
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) { note.textContent = 'No Web Audio here, falling back to <audio>.'; return Promise.resolve(); }
     actx = new AC();
-    return Promise.all(Object.keys(FILES).map(function (k) {
+    /* Only the three the fixed controls use. Thirty-six decodes on page
+       open is a megabyte of audio nobody asked for; a layer fetches its
+       own file the first time it is played. */
+    return Promise.all(['hyper', 'ko', 'win'].map(function (k) {
       return fetch(FILES[k]).then(function (r) { return r.arrayBuffer(); })
         .then(function (b) { return new Promise(function (res, rej) { actx.decodeAudioData(b, res, rej); }); })
         .then(function (d) { buf[k] = d; })
@@ -162,11 +230,21 @@ admin_chrome('bossrez');
     }));
   }
 
+  /* A layer's file, fetched and decoded once, on first use. */
+  function need(key) {
+    if (buf[key]) return Promise.resolve();
+    return fetch(FILES[key]).then(function (r) { return r.arrayBuffer(); })
+      .then(function (b) { return new Promise(function (res, rej) { actx.decodeAudioData(b, res, rej); }); })
+      .then(function (d) { buf[key] = d; })
+      .catch(function () { note.textContent = 'Could not decode ' + FILES[key] + '.'; });
+  }
+
   function play(key, rate, gain, when, rev) {
     if (actx && buf[key]) {
       if (actx.state === 'suspended') actx.resume();
       var s = actx.createBufferSource();
       s.buffer = rev ? reversed(key) : buf[key];
+      s.__whole = (key.indexOf('/') >= 0);   /* a library path means a layer */
       s.playbackRate.value = rate;
       var g = actx.createGain(); g.gain.value = gain;
       s.connect(g); g.connect(actx.destination);
@@ -177,13 +255,18 @@ admin_chrome('bossrez');
        * lead-in seconds are played, which keeps the moment the swell
        * cuts a fixed distance from the start whatever the pitch.
        */
-      if (rev) {
-        var lead = parseFloat(document.getElementById('abrLead').value);
-        var full = s.buffer.duration / rate;
-        var off  = Math.max(0, (full - lead)) * rate;
-        s.start(actx.currentTime + (when || 0), off);
-        live.push(s);
-        return;
+      if (rev && key !== 'win') {
+        /* The single-sound buttons trim to a fixed lead-in. The layer
+           stack does not: it aligns whole swells against each other, and
+           trimming each one first would undo that. */
+        if (!s.__whole) {
+          var lead = parseFloat(document.getElementById('abrLead').value);
+          var full = s.buffer.duration / rate;
+          var off  = Math.max(0, (full - lead)) * rate;
+          s.start(actx.currentTime + (when || 0), off);
+          live.push(s);
+          return;
+        }
       }
       s.start(actx.currentTime + (when || 0));
       live.push(s);
@@ -237,6 +320,82 @@ admin_chrome('bossrez');
   document.getElementById('abrRev').addEventListener('change', draw);
   document.getElementById('abrSrc').addEventListener('change', draw);
   draw();
+
+  /*
+   * THE LAYER STACK.
+   *
+   * END-ALIGNED BY DEFAULT, which is the whole trick with reversed
+   * sounds: each one is a swell that CUTS, and the cut is the instant
+   * the crew lands. Two swells of different lengths must therefore
+   * start at different times and finish together -- aligning their
+   * starts, which is the obvious thing to do, puts two landings in the
+   * cue and reads as a mistake.
+   */
+  var layersEl = document.getElementById('abrLayers');
+  var dump = document.getElementById('abrDump');
+  var rows = [];
+
+  function addRow(path, rate, gain, off) {
+    var i = rows.length;
+    var d = document.createElement('div');
+    d.className = 'abr-layer';
+    var opts = Object.keys(LIB).map(function (p) {
+      return '<option value="' + p + '"' + (p === path ? ' selected' : '') + '>' + LIB[p] + '</option>';
+    }).join('');
+    d.innerHTML =
+      '<select data-f="path">' + opts + '</select>'
+      + '<label>rate <input type="number" data-f="rate" min="0.2" max="2" step="0.005" value="' + rate + '"></label>'
+      + '<label>gain <input type="number" data-f="gain" min="0" max="1.5" step="0.05" value="' + gain + '"></label>'
+      + '<label>offset <input type="number" data-f="off" min="-2" max="2" step="0.05" value="' + off + '"></label>'
+      + '<button type="button" data-f="del">remove</button>';
+    d.querySelector('[data-f=del]').addEventListener('click', function () {
+      rows.splice(rows.indexOf(rec), 1); d.remove(); writeDump();
+    });
+    Array.prototype.forEach.call(d.querySelectorAll('select,input'), function (el) {
+      el.addEventListener('input', writeDump);
+    });
+    layersEl.appendChild(d);
+    var rec = { el: d };
+    rows.push(rec);
+    writeDump();
+    return rec;
+  }
+  function readRow(r) {
+    var q = function (f) { return r.el.querySelector('[data-f=' + f + ']'); };
+    return { path: q('path').value, rate: parseFloat(q('rate').value),
+             gain: parseFloat(q('gain').value), off: parseFloat(q('off').value) };
+  }
+  function writeDump() {
+    dump.textContent = rows.length
+      ? rows.map(function (r, i) { var v = readRow(r);
+          return (i + 1) + '. ' + v.path + '  rate ' + v.rate + '  gain ' + v.gain
+               + '  offset ' + v.off + 's' + (rev() ? '  (reversed, end-aligned)' : ''); }).join('\n')
+      : 'No layers.';
+  }
+  document.getElementById('abrAdd').addEventListener('click', function () {
+    addRow('sounds/skullcoinlose.ogg', 0.675, 1, 0);
+  });
+  document.getElementById('abrPlay').addEventListener('click', function () {
+    if (!rows.length) return;
+    var specs = rows.map(readRow);
+    init()
+      .then(function () { return Promise.all(specs.map(function (v) { return need(v.path); })); })
+      .then(function () {
+        stopAll();
+        /* The longest layer sets the landing; every other one is pushed
+           back by the difference so all the cuts coincide. */
+        var durs = specs.map(function (v) {
+          return buf[v.path] ? buf[v.path].duration / v.rate : 0;
+        });
+        var longest = Math.max.apply(null, durs);
+        specs.forEach(function (v, i) {
+          var lead = rev() ? (longest - durs[i]) : 0;
+          play(v.path, v.rate, v.gain, Math.max(0, lead + v.off), rev());
+        });
+      });
+  });
+  addRow('sounds/skullcoinlose.ogg', 0.675, 1, 0);
+  addRow('sounds/hypercube_create.ogg', 0.675, 0.55, 0);
 
   document.getElementById('abrLadder').addEventListener('click', function () {
     init().then(function () {
