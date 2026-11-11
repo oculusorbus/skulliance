@@ -2429,8 +2429,35 @@ foreach ($byWave as $wv2 => $list2) {
 $one = array_map(function ($l) { return $l[0]; }, $byWave);
 ok(count(array_unique($one)) === count($one),
    'two waves share a rotation, so they are the same crew to look at: ' . json_encode($one));
-ok(preg_match('~data-wave="<\?php echo min\(5, \$wv\); \?>"~', $ARE) === 1,
-   'the panel never emits the wave, so the grade has nothing to hang on');
+/*
+ * THE PANEL EMITS A CYCLED WAVE, NOT A CAPPED ONE, and this check used to
+ * pin the capped expression by name.
+ *
+ * It read `min(5, $wv)`, which pins wave 6 and every wave after it at
+ * 288deg -- while dhcb_wave_hue() is (($w - 1) % 5) * 72 and cycles back
+ * to 0. Nobody noticed because no week had reached wave 6, and the two
+ * checks above only compare waves 1..5 where capping and cycling agree.
+ * Crew resurrection can cross into wave 6 inside a single run, and the
+ * client's own handler cycles, so the disagreement became reachable.
+ *
+ * Pinned by EVALUATING the expression the panel emits rather than by
+ * matching its text, so the next rewrite of it has to stay correct
+ * instead of merely staying recognisable.
+ */
+preg_match('~data-wave="<\?php echo ([^;]+); \?>"~', $ARE, $m_dw);
+ok(count($m_dw) === 2, 'the panel never emits the wave, so the grade has nothing to hang on');
+if (count($m_dw) === 2) {
+	$expr = $m_dw[1];
+	ok(strpos($expr, '$wv') !== false, 'the panel emits a constant wave rather than the live one');
+	for ($wv = 1; $wv <= 11; $wv++) {
+		$got = @eval('return ' . str_replace('$wv', (string)$wv, $expr) . ';');
+		$want = (dhcb_wave_hue($wv) / 72) + 1;
+		ok((int)$got === (int)$want,
+		   'at wave ' . $wv . ' the panel emits data-wave=' . var_export($got, true)
+		 . ' which is ' . (((int)$got - 1) * 72) . 'deg, and dhcb_wave_hue() says '
+		 . dhcb_wave_hue($wv) . 'deg');
+	}
+}
 ok(strpos($ARE, 'teamcol.foes[data-wave="2"] img[data-s="boss"]') !== false,
    'the board does not grade the crew, so it is scorched on the panel and ordinary in the fight');
 ok(strpos($ARE, 'function bossWave(res)') !== false && substr_count($ARE, 'bossWave(') >= 4,

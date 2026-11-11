@@ -841,6 +841,26 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 @keyframes blastPop2{0%{transform:scale(1) rotate(0);filter:brightness(1)}30%{transform:scale(1.5) rotate(8deg);filter:brightness(4)}100%{transform:scale(.15) rotate(-6deg);opacity:0}}
 .arena-wrap .boardwrap.shake{animation:bshake .38s}
 @keyframes bshake{0%,100%{transform:translate(0,0)}20%{transform:translate(-5px,3px)}45%{transform:translate(4px,-3px)}70%{transform:translate(-3px,-2px)}}
+/* THE RESURRECTION BUILD. Same shake, four times harder and twice as
+   long, for the two beats before the crew lands. Only transform, like
+   everything else here. */
+.arena-wrap .boardwrap.shake-hard{animation:bshakeHard .5s}
+@keyframes bshakeHard{0%,100%{transform:translate(0,0)}
+  12%{transform:translate(-14px,8px)}28%{transform:translate(12px,-10px)}
+  44%{transform:translate(-11px,-7px)}60%{transform:translate(9px,9px)}
+  78%{transform:translate(-6px,-4px)}}
+/* THE LANDING. One flash on arrival rather than a pulse that keeps
+   going, because the thing that just happened is an arrival. */
+.arena-wrap .boardwrap.rez-land{animation:bRezLand .9s ease-out}
+@keyframes bRezLand{0%{filter:brightness(2.6) saturate(.4)}100%{filter:none}}
+/* The colour TURNS rather than snapping, so the new crew is visibly a
+   different crew rather than a repaint nobody notices. */
+.arena-wrap .a-bosses .a-boss img{transition:filter .55s ease-out}
+@media (prefers-reduced-motion: reduce){
+  .arena-wrap .boardwrap.shake-hard,
+  .arena-wrap .boardwrap.rez-land{animation:none}
+  .arena-wrap .a-bosses .a-boss img{transition:none}
+}
 /* THE DIAMOND PULSES TOO, it just has to carry its own rotation while it does.
    This was animation:none, because @keyframes bmb animates `transform` and a
    diamond IS a transform -- rotate(45deg) scale(.82) -- so the shared pulse
@@ -2354,7 +2374,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         </details>
         <?php endif; ?>
 
-        <div class="a-bosses" data-wave="<?php echo min(5, $wv); ?>">
+        <?php /* CYCLED, NOT CAPPED. dhcb_wave_hue() is (($w - 1) % 5) * 72,
+                 so wave 6 is wave 1's colour -- min(5, $wv) pinned it at
+                 288deg from wave 5 onward instead, and the resurrection
+                 handler on the client cycles, so the two would have
+                 disagreed the moment a run crossed into wave 6. */ ?>
+        <div class="a-bosses" data-wave="<?php echo ((max(1, (int)$wv) - 1) % 5) + 1; ?>">
           <?php foreach ($dhcb_on as $bz):
             $pct = $bz['max_health'] > 0 ? max(0, min(100, round(100 * $bz['health'] / $bz['max_health']))) : 0; ?>
           <div class="a-boss<?php echo $bz['dead'] ? ' dead' : ''; ?>">
@@ -3158,8 +3183,28 @@ var SFX = {
   ko:['sounds/skullcoinlose.ogg',.55], armX:['sounds/powergem_created.ogg',.70],
   armB:['sounds/hypercube_create.ogg',.80], boom:['sounds/bomb_explode.ogg',.75],
   start:['sounds/voice_go.ogg',.55], win:['sounds/voice_levelcomplete.ogg',.75],
-  lose:['sounds/voice_gameover.ogg',.75]
+  lose:['sounds/voice_gameover.ogg',.75],
+  /*
+   * THE RESURRECTION CUE, five layers played REVERSED and END-ALIGNED.
+   *
+   * The rise is skullcoinlose, which is the sound anything makes when it
+   * is knocked out -- the player hears it three times as the boss crew
+   * falls, and then hears it again, undone. The thing that went down is
+   * the thing that comes back.
+   *
+   * Reversed, a sound swells and CUTS, and the cut is the instant the new
+   * crew lands. So these do not start together: the longest sets the
+   * landing and every other one starts later, so they all finish on the
+   * same frame. Starting them together puts five landings in one cue and
+   * reads as a mistake rather than as a chord.
+   */
+  rez1:['sounds/skullcoinlose.ogg',1.0],  rez2:['sounds/hypercube_create.ogg',.55],
+  rez3:['sounds/bomb_explode.ogg',1.0],   rez4:['sounds/voice_gameover.ogg',1.0],
+  rez5:['audio/sounds/death.mp3',1.0]
 };
+var REZ_LAYERS = ['rez1','rez2','rez3','rez4','rez5'];
+var REZ_RATE   = 0.675;   /* chosen by ear in admin-bossrez.php */
+var REZ_LEN    = 4.0;     /* seconds of cue; trimmed from the FRONT */
 var actx = null, sfxBuf = {}, sfxEl = {}, sfxCur = {};
 function sfxInit(){
   if (actx) return;
@@ -3173,6 +3218,53 @@ function sfxInit(){
     } catch (e) {}
   });
 }
+/* Reversed once per sound, not per play. */
+var sfxRev = {};
+function sfxReversed(name){
+  if (sfxRev[name] || !sfxBuf[name]) return sfxRev[name];
+  var src = sfxBuf[name];
+  var out = actx.createBuffer(src.numberOfChannels, src.length, src.sampleRate);
+  for (var c = 0; c < src.numberOfChannels; c++){
+    var i = src.getChannelData(c), o = out.getChannelData(c), n = src.length;
+    for (var k = 0; k < n; k++) o[k] = i[n - 1 - k];
+  }
+  sfxRev[name] = out;
+  return out;
+}
+
+/*
+ * THE CUE, END-ALIGNED AND TRIMMED FROM THE FRONT.
+ *
+ * Every layer's cut lands on the same instant, REZ_LEN seconds from now,
+ * which is the frame the new crew arrives on. A layer longer than the cue
+ * starts part-way in; one shorter starts late. Trimming the BACK instead
+ * would throw away the landing, which is the only part that has to be
+ * exact.
+ *
+ * Silent and harmless if Web Audio is unavailable: the reversal needs a
+ * buffer, and there is no sensible <audio> fallback for a five-layer
+ * aligned mix. The animation carries it alone.
+ */
+function sfxRez(){
+  if (!sfxOn || !actx) return;
+  try { if (actx.state === 'suspended') actx.resume(); } catch (e) {}
+  REZ_LAYERS.forEach(function(name){
+    var def = SFX[name]; if (!def || !sfxBuf[name]) return;
+    var rb = sfxReversed(name); if (!rb) return;
+    var full = rb.duration / REZ_RATE;
+    var lead = REZ_LEN - full;              // negative means start inside it
+    var when = lead > 0 ? lead : 0;
+    var skip = lead < 0 ? (-lead) * REZ_RATE : 0;
+    try {
+      var src = actx.createBufferSource(); src.buffer = rb;
+      src.playbackRate.value = REZ_RATE;
+      var g = actx.createGain(); g.gain.value = def[1];
+      src.connect(g); g.connect(actx.destination);
+      src.start(actx.currentTime + when, skip);
+    } catch (e) {}
+  });
+}
+
 function sfx(name){
   if (!sfxOn) return;
   var def = SFX[name]; if (!def) return;
@@ -3625,6 +3717,19 @@ function shakeBoard(){
    of the same exchange are quicker -- by then you know who is acting. */
 var FOE_LEAD = 1000, FOE_LEAD_AGAIN = 700;
 
+/*
+ * EXPOSED FOR THE ADMIN PREVIEW, and for nothing else.
+ *
+ * admin-bossrez-preview.php plays a real 'rez' event through this, so the
+ * resurrection can be looked at twice without waiting for a wave to fall
+ * in a live week. It is the player itself rather than a copy, which is
+ * the whole point: a preview of a reimplementation previews nothing.
+ *
+ * Harmless in a player's browser -- it animates and returns, touching no
+ * state the server has not already sent.
+ */
+window.DHCA_PLAY_FX = function (fx) { playTimeline(fx || [], null, function () {}); };
+
 function playTimeline(fx, state, done){
   var i = 0, hold = 190;      // how long the current clear sits before it falls
   /* Reset per exchange, not per event: the announcement belongs to the first
@@ -3744,6 +3849,67 @@ function playTimeline(fx, state, done){
       if (f) { f.surge = 0; paintCharge(e.side); }   // spent, and the meter says so
       return 0;
     }
+    /*
+     * THE CREW FALLS AND THE NEXT WAVE RISES IN ITS PLACE.
+     *
+     * THE TIMING IS NOT INVENTED. The audio cue is five reversed swells
+     * that all CUT on the same instant, so that instant is the landing
+     * and everything before it is build. The shake ramps across the
+     * build, the bars fill on the landing, and the hue turns with them.
+     *
+     * Returned hold is the whole cue, because the timeline player is
+     * what paces the rest of the exchange -- anything shorter and the
+     * next event lands on top of the moment.
+     */
+    case 'rez': {
+      sfxRez();
+      banner('☠ WAVE ' + e.wave + ' RISES', 9);
+
+      var bw = document.querySelector('.boardwrap');
+      var rezFoes = (e.foes || []);
+      /* THE BUILD. Four shakes over REZ_LEN, each harder than the last,
+         so the board is already moving before anything appears. Driven
+         off the same constant as the audio: the last one lands with the
+         cut, not after it. */
+      var steps = 4, span = REZ_LEN * 1000;
+      for (var rs = 0; rs < steps; rs++) {
+        (function(rs){
+          setTimeout(function(){
+            if (!bw) return;
+            bw.classList.remove('shake', 'shake-hard');
+            void bw.offsetWidth;
+            bw.classList.add(rs >= steps - 2 ? 'shake-hard' : 'shake');
+          }, Math.round(span * (rs + 1) / (steps + 1)));
+        })(rs);
+      }
+
+      /* THE LANDING. Bars full, hue turned, board still. Everything the
+         server sent, applied in one frame so it reads as arrival rather
+         than as a sequence of repaints. */
+      setTimeout(function(){
+        if (bw) { bw.classList.remove('shake', 'shake-hard'); bw.classList.add('rez-land'); }
+        /* THE HUE LIVES ON data-wave, not on a variable: the five
+           filter:hue-rotate() rules are already there and are already
+           checked against dhcb_wave_hue() by dhc-arena-card-harness.php.
+           Cycled to 1..5 the same way that function cycles its degrees,
+           so wave 6 is wave 1's colour rather than no colour at all. */
+        var bosses = document.querySelector('.a-bosses');
+        if (bosses) bosses.setAttribute('data-wave', ((e.wave - 1) % 5) + 1);
+        rezFoes.forEach(function(nf, i){
+          var t = fighterAt('foes', i); if (!t) return;
+          t.ko = false; t.shield = 0;
+          t.hp = nf.hp; t.maxHp = nf.maxHp;
+          if (nf.name) t.name = nf.name;
+          paintTok(t);
+        });
+        paintCharge('foes');
+        shakeBoard();
+        setTimeout(function(){ if (bw) bw.classList.remove('rez-land'); }, 900);
+      }, span);
+
+      return span + 420;
+    }
+
     case 'ko': {
       sfx('ko');
       var kf = fighterAt(e.side, e.i);

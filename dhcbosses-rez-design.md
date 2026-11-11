@@ -1,7 +1,23 @@
 # DHC Bosses: crew resurrection
 
-**Status: designed, not built.** Lives here and not in `skullpaper/` because
-that is public and this does not exist yet. Move it when it ships.
+**Status: built 2026-11-11.** `dhcb_rez()` in `dhcbosses-lib.php`, the `'rez'`
+timeline event in `dhcarena.php`, pinned by `dhcbosses-rez-harness.php` (15
+mutations). Preview at **Admin > Boss Rez**; the cue tuner is **Admin > Boss Rez
+Sound**.
+
+**ONE MIGRATION, RUN IT BY HAND:**
+
+```sql
+ALTER TABLE dhc_boss_runs ADD COLUMN waves_cleared TINYINT NOT NULL DEFAULT 0;
+```
+
+Optional at runtime -- the settle retries without the column if it is missing,
+because losing a wave count is far better than losing a settle, which would
+leave the run open, the Crew unbenched and the damage unreported. Until it is
+run, resurrections work and go uncounted.
+
+Still in `skullpaper/`'s sibling rather than in it: move this page there once
+the Skull Paper entry for DHC Bosses is updated.
 
 ## The report
 

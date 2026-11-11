@@ -1212,6 +1212,142 @@ function dhcb_commit($conn, &$b, $dealtNow) {
 	}
 }
 
+/*
+ * ===== CREW RESURRECTION ================================================
+ *
+ * WHEN THE WHOLE CREW FALLS, THE NEXT WAVE STANDS UP IN ITS PLACE and the
+ * run carries on. See dhcbosses-rez-design.md for why this rather than a
+ * ladder exclusion or a kill bounty: both of those pay a player to
+ * tolerate a truncation, and this removes the truncation.
+ *
+ * THE CREW, NOT THE BOSS. Resurrecting one boss while its crewmates live
+ * would break wave-as-a-unit, which the (day, wave, boss_key) key,
+ * dhcb_spawn()'s `rows >= $n` check and MAX(wave) are all built on.
+ *
+ * IT ALSO CATCHES THE TRUNCATION NOBODY NAMED. A run already ended when
+ * ANOTHER crew finished the wave mid-battle -- the board syncs their kill
+ * onto this one and logs "fell to another Crew", and then it is over
+ * through no act of this player. That lands here identically.
+ */
+if (!defined('DHCB_REZ_MAX')) define('DHCB_REZ_MAX', 2);
+
+/**
+ * Stand the next wave up inside this run, if there is one and it is owed.
+ *
+ * @return bool whether the board was repopulated
+ */
+function dhcb_rez($conn, &$b) {
+	if (empty($b['meta']['run_id'])) return false;
+	/* The crew went down with them: that is a loss, and a loss is the one
+	   honest end to a run. */
+	if ($b['over'] === 'foes') return false;
+	$standing = false;
+	foreach ($b['mine'] as $f) if (empty($f['ko'])) { $standing = true; break; }
+	if (!$standing) return false;
+
+	/* Every boss on this board has to be down. A board that still has one
+	   up is not a cleared wave, whoever took the others. */
+	foreach ($b['foes'] as $f) {
+		if (empty($f['bossKey'])) continue;
+		if (max(0, (int)$f['hp']) > 0) return false;
+	}
+
+	/*
+	 * CAPPED, AND THE CAP IS FOR EQUITY NOT BALANCE. Power compounds
+	 * DHCB_WAVE_POW per wave against flat crew output, so a chain
+	 * self-limits long before it runs away. What it does not self-limit
+	 * is the rest of the platform: this player's resurrection is
+	 * everyone else's wave skip, and a strong crew chaining deep pushes
+	 * the server into bosses that weaker crews contribute less against,
+	 * on a ladder that measures damage per Fighter.
+	 */
+	$done = isset($b['meta']['rez']) ? (int)$b['meta']['rez'] : 0;
+	if ($done >= DHCB_REZ_MAX) return false;
+
+	$day  = isset($b['meta']['day']) ? $b['meta']['day'] : dhcb_week($conn);
+	$was  = isset($b['meta']['wave']) ? max(1, (int)$b['meta']['wave']) : 1;
+
+	/* The memo is already cleared by dhcb_commit() on a kill; cleared
+	   again here because the wave may have fallen to somebody else, whose
+	   commit was a different request. */
+	dhcb_spawn_memo(null, true);
+	dhcb_spawn($conn);
+
+	$esc  = $conn->real_escape_string($day);
+	$next = $was + 1;
+	$rows = array();
+	$r = @$conn->query("SELECT boss_key, health, max_health FROM dhc_boss_day
+	                     WHERE day = '$esc' AND wave = $next");
+	if ($r) while ($x = $r->fetch_assoc()) $rows[$x['boss_key']] = $x;
+	/* Nothing stood up -- the week is out of waves, or the insert lost a
+	   race it is designed to lose. The run ends the way it used to. */
+	if (count($rows) < count(dhcb_bosses())) return false;
+	$alive = false;
+	foreach ($rows as $x) if ((int)$x['health'] > 0) { $alive = true; break; }
+	if (!$alive) return false;
+
+	/*
+	 * THE LEDGER IS BANKED, NOT CARRIED. meta.sent is keyed by boss_key,
+	 * and boss_key repeats every wave -- so the new wave's ledger would
+	 * land on top of the old one's and dhcb_commit()'s heal cap would
+	 * read the wrong number. Banked once, reset once, summed at finish.
+	 */
+	$banked = isset($b['meta']['banked']) ? (int)$b['meta']['banked'] : 0;
+	if (!empty($b['meta']['sent']) && is_array($b['meta']['sent'])) {
+		foreach ($b['meta']['sent'] as $v) $banked += max(0, (int)$v);
+	}
+	$b['meta']['banked'] = $banked;
+	$b['meta']['sent']   = array();
+	$b['meta']['wave']   = $next;
+	$b['meta']['rez']    = $done + 1;
+	$b['meta']['waves']  = isset($b['meta']['waves']) ? (int)$b['meta']['waves'] + 1 : 1;
+
+	$kits = dhca_kits();
+	$wpow = dhcb_wave_pow($next);
+	$i    = 0;
+	foreach (dhcb_bosses() as $bz) {
+		$k  = $bz['key'];
+		if (!isset($rows[$k])) { $i++; continue; }
+		$hp = max(0, (int)$rows[$k]['health']);
+		/* Everything the battle knows about a foe is rewritten, exactly as
+		   dhcb_start() writes it, so a resurrected board is indistinguishable
+		   from one that began on this wave. */
+		$b['foes'][$i]['bossKey'] = $k;
+		$b['foes'][$i]['name']    = $bz['name'];
+		$b['foes'][$i]['art']     = dhcb_art($k);
+		$b['foes'][$i]['maxHp']   = max(1, (int)$rows[$k]['max_health']);
+		$b['foes'][$i]['hp']      = $hp;
+		$b['foes'][$i]['hp0']     = $hp;
+		$b['foes'][$i]['ko']      = ($hp <= 0);
+		$b['foes'][$i]['shield']  = 0;
+		$b['foes'][$i]['surge']   = 0;
+		$b['foes'][$i]['power']   = (int)round(DHCA_POWER_BASE * DHCB_POW_MULT * $bz['pow'] * $wpow);
+		$b['foes'][$i]['kit']     = $kits[$bz['kit'] % count($kits)];
+		$i++;
+	}
+
+	/* The exchange may have called the battle the instant the last bar
+	   emptied. It is not over; it just changed. */
+	$b['over'] = null;
+	$b['turn'] = 'mine';
+
+	/*
+	 * THE EVENT THE CLIENT ANIMATES. Carries the wave it is rising to, so
+	 * the hue and the escalation are read off one number rather than
+	 * counted on the client, and the per-boss hp so the bars can be drawn
+	 * full before the player's next move.
+	 */
+	$b['fx'][] = array('k' => 'rez', 'wave' => $next, 'hue' => dhcb_wave_hue($next),
+	                   'pow' => round($wpow, 3),
+	                   'foes' => array_map(function ($f) {
+	                       return array('name' => isset($f['name']) ? $f['name'] : '',
+	                                    'hp'   => isset($f['hp']) ? (int)$f['hp'] : 0,
+	                                    'maxHp'=> isset($f['maxHp']) ? (int)$f['maxHp'] : 1);
+	                   }, $b['foes']));
+	$b['log'][] = '☠ The crew falls... and wave ' . $next . ' rises in its place.';
+	return true;
+}
+
 /**
  * One move. The exchange itself is dhca_turn() -- the Arena's, not a copy.
  */
@@ -1254,6 +1390,13 @@ function dhcb_move($conn, $user_id, $run_id, $a, $z) {
 	 * from that read already dead, and if it was the last one standing the
 	 * run is over -- with every point this Crew landed already banked.
 	 */
+	/*
+	 * RESURRECT BEFORE ASKING WHETHER IT IS OVER. dhca_turn() may already
+	 * have called the battle the moment the last bar emptied, so this runs
+	 * ahead of the check and clears that verdict rather than racing it.
+	 */
+	dhcb_rez($conn, $b);
+
 	if ($b['over'] === null) {
 		dhca_check_over($b);
 		if ($b['over'] !== null) dhca_final_hurrah($b);
@@ -1318,6 +1461,11 @@ function dhcb_finish($conn, &$b) {
 	$killed  = isset($m['killed']) && is_array($m['killed']) ? $m['killed'] : array();
 	$total   = 0;
 	foreach ($applied as $v) $total += max(0, (int)$v);
+	/* EVERY SEGMENT, NOT THE LAST ONE. A run that crossed waves banked the
+	   earlier ledgers in dhcb_rez(), because meta.sent is keyed by boss_key
+	   and boss_key repeats. Without this a chained run reports only what it
+	   dealt to the wave it died on. */
+	$total  += isset($m['banked']) ? max(0, (int)$m['banked']) : 0;
 
 	/* The Crew rests from BOSSES only. Nothing here touches dhc_arena_fighters. */
 	foreach ($m['mineIds'] as $i => $fid) {
@@ -1340,12 +1488,24 @@ function dhcb_finish($conn, &$b) {
 	if ($rows) @$conn->query('INSERT IGNORE INTO dhc_boss_run_fighters
 	                          (run_id, fighter_id, `rank`, fell, dealt) VALUES ' . implode(',', $rows));
 
-	@$conn->query(sprintf(
-		"UPDATE dhc_boss_runs
-		    SET outcome=%d, dealt=%d, killed=%d, rounds=%d, moves='%s', ended_at=NOW()
-		  WHERE id=%d AND outcome=0",
+	/*
+	 * waves_cleared IS OPTIONAL AT RUNTIME, the same way the Arena's `ko`
+	 * and Drop Ship's `active_at` are. Naming a column that does not exist
+	 * fails the whole statement rather than degrading it, and losing the
+	 * wave count is a great deal better than losing the settle -- which
+	 * would leave the run open, the Crew unbenched and the damage
+	 * unreported. Add it with:
+	 *   ALTER TABLE dhc_boss_runs ADD COLUMN waves_cleared TINYINT NOT NULL DEFAULT 0;
+	 */
+	$cleared_waves = isset($m['waves']) ? max(0, (int)$m['waves']) : 0;
+	$set_tail = sprintf("outcome=%d, dealt=%d, killed=%d, rounds=%d, moves='%s', ended_at=NOW()",
 		$outcome, $total, (count($killed) ? 1 : 0), (int)$b['round'],
-		$conn->real_escape_string(json_encode($m['moves'])), $rid));
+		$conn->real_escape_string(json_encode($m['moves'])));
+	$done_upd = @$conn->query("UPDATE dhc_boss_runs SET $set_tail, waves_cleared=$cleared_waves
+	                            WHERE id=$rid AND outcome=0");
+	if (!$done_upd) {
+		@$conn->query("UPDATE dhc_boss_runs SET $set_tail WHERE id=$rid AND outcome=0");
+	}
 
 	@$conn->query("DELETE FROM dhc_boss_state WHERE run_id = $rid");
 

@@ -8,8 +8,10 @@ Your damage lands the moment you deal it. The bar everyone is looking at is curr
 the last move anybody made, so nothing you land can be taken back by somebody else
 finishing first, and the bosses on your own board are the shared crew: if another Crew
 takes one down while you are out there, it goes down in front of you and the log says
-so. If they take the last one down, your run ends there and everything you landed
-counts in full.
+so. And if the last one falls while you are still standing -- whether you took it
+down or somebody else did -- **your run does not end. The next wave rises in its
+place and you keep fighting.** Everything you landed on the crew that fell counts
+in full, and everything you land on the one that replaced it counts on top.
 
 It has **its own page**, the Bosses tab in the DHC strip, with its own Crew picker and
 its own ladder. It is the same engine as [[games-dhc-arena]] underneath, which is why the
@@ -56,6 +58,12 @@ hand.
 So a downed crew **stands back up the same week**, one wave higher, in a
 different colourway, hitting harder. The week's question is not "can we drop
 them", it is **how many times**.
+
+If they fall while you are out there, you see it happen: the board goes still,
+then shakes, then the new crew rises into it in a different colour. You can ride
+**up to two** of those in one run before it ends. After that, or when your Crew
+falls, the run is over -- and a run only ever ends because your Crew ran out,
+never because the bosses did.
 
 Two things are true from the moment the first crew falls:
 
