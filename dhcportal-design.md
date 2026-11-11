@@ -284,12 +284,23 @@ for the part you touch, canvas for the part that is spectacle.
 
 ---
 
+## Settled, listed because they were argued over
+
+* **Row four reaches `placement_1`.** Fill the board, get the rarest table on the
+  platform. Not open — see *The full board gets the best table*. The note under *The
+  dial* is a post-launch tuning line, not an undecided question.
+* **One full row is the minimum to fire.** Same rule as the tier, not a second one.
+
 ## Open
 
-* Which table row four reaches, if full boards prove more common than expected. The
-  board is settled; that reference is the dial.
-* Minimum hopper size, if any.
-* Whether portal provenance is surfaced to players or stays an internal `source`.
+* **Does a staged board survive leaving the page?** A player who assembles sixteen
+  pieces and gets interrupted should probably not lose the arrangement, but a
+  persisted board is state that can go stale.
+* **What happens if a staged trait stops being free?** The board holds uncommitted
+  traits, and nothing stops a player assembling a Fighter in another tab with one of
+  them. The board has to notice rather than discovering it at the jettison.
+* **Is portal provenance surfaced to players, or does `source = 'portal'` stay
+  internal?**
 
 ## Art
 
