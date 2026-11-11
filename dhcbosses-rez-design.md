@@ -2,8 +2,17 @@
 
 **Status: built 2026-11-11.** `dhcb_rez()` in `dhcbosses-lib.php`, the `'rez'`
 timeline event in `dhcarena.php`, pinned by `dhcbosses-rez-harness.php` (15
-mutations). Preview at **Admin > Boss Rez**; the cue tuner is **Admin > Boss Rez
-Sound**.
+mutations). Preview is an admin-only **preview rez** button under the Enemy Crew on the
+Bosses board itself; the cue tuner is **Admin > Boss Rez Sound**.
+
+The preview was first built as a separate admin page that iframed
+`dhcarena.php` and fired the event into it. That is the Arena *landing* page --
+a Crew picker with no board on it -- so it previewed a Crew picker. The lesson
+is one `admin-chest.php` already records: a reveal that only happens inside a
+live board has to be previewed inside a live board. It needs nothing stood up,
+because when you are in a run the board is already there. It commits nothing:
+the payload is built on the client from the next wave's numbers and played
+through the same timeline player the server's event reaches.
 
 **ONE MIGRATION, RUN IT BY HAND:**
 

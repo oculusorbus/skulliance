@@ -938,10 +938,6 @@ function admin_tabs() {
 		   decision and cannot be read off a page, so it plays the real
 		   file through the Arena's own path. Plays audio, writes nothing. */
 		'bossrez'  => array('admin-bossrez.php', 'Boss Rez Sound'),
-		/* The crew resurrection itself, fired into a real Arena board. It
-		   needs a boss crew taken to zero inside a live week, which happens
-		   a handful of times in seven days and never on demand. */
-		'bossrez-preview' => array('admin-bossrez-preview.php', 'Boss Rez'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }

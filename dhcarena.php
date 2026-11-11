@@ -844,6 +844,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 /* THE RESURRECTION BUILD. Same shake, four times harder and twice as
    long, for the two beats before the crew lands. Only transform, like
    everything else here. */
+/* Admin only, and deliberately plain: it is a tool sitting in a game, so
+   it should read as one rather than as something a player missed. */
+.arena-wrap .rez-prev{display:block;width:100%;margin-top:8px;padding:5px 6px;
+  font:inherit;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  color:#7a9eb0;background:#0a1929;border:1px dashed #1b3346;border-radius:2px;cursor:pointer}
+.arena-wrap .rez-prev:hover{color:#00c8a0;border-color:#00c8a0}
 .arena-wrap .boardwrap.shake-hard{animation:bshakeHard .5s}
 @keyframes bshakeHard{0%,100%{transform:translate(0,0)}
   12%{transform:translate(-14px,8px)}28%{transform:translate(12px,-10px)}
@@ -2988,7 +2994,29 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       </div>
       <div class="teamwrap foes"><div class="coltag foe"><span>Enemy Crew</span>
         <span class="chg" id="chgFoes"></span></div>
-        <div class="teamcol foes" id="foeTeam"></div></div>
+        <div class="teamcol foes" id="foeTeam"></div>
+<?php
+/*
+ * PREVIEW THE RESURRECTION, IN THE GAME, ON THE REAL BOARD.
+ *
+ * The first attempt at this was a separate admin page that iframed
+ * dhcarena.php and fired the event into it. That page is the Arena
+ * LANDING page -- a Crew picker with no board on it -- so there was
+ * nothing to animate and the preview showed a crew picker. The lesson is
+ * the one admin-chest.php already records: a reveal that only happens
+ * inside a live board has to be previewed inside a live board.
+ *
+ * So it lives here instead, next to the crew it resurrects, and it needs
+ * nothing standing up because the board is already standing. Boss mode
+ * only, admin only, and it COMMITS NOTHING: the payload is built on the
+ * client from the next wave's own numbers and played through the same
+ * timeline player the server's event goes through. The shared bars, the
+ * run and the ledger are all untouched -- what changes is pixels.
+ */
+if ($IS_BOSS && function_exists('adminIsSuper') && adminIsSuper()): ?>
+        <button type="button" id="rezPrev" class="rez-prev">▶ preview rez</button>
+<?php endif; ?>
+      </div>
     </div>
     <div class="reach mobonly" id="reachM"></div>
     <div class="legend mobonly" id="legendM"></div>
@@ -3729,6 +3757,28 @@ var FOE_LEAD = 1000, FOE_LEAD_AGAIN = 700;
  * state the server has not already sent.
  */
 window.DHCA_PLAY_FX = function (fx) { playTimeline(fx || [], null, function () {}); };
+
+/*
+ * The admin preview button, wired to the same player the server's event
+ * reaches. It reads the wave off the board it is standing on and shows
+ * the NEXT one, with the bars full, so what plays is what a real
+ * resurrection into that wave would look like.
+ */
+(function(){
+  var pv = document.getElementById('rezPrev'); if (!pv) return;
+  pv.addEventListener('click', function(){
+    var host = document.querySelector('.a-bosses');
+    var now  = host ? (parseInt(host.getAttribute('data-wave'), 10) || 1) : 1;
+    var next = now + 1;
+    var foes = (S && S.foes ? S.foes : []).map(function(f){
+      var hp = Math.max(1, f.maxHp || 9000);
+      return { name: f.name, hp: hp, maxHp: hp };
+    });
+    if (!foes.length) return;
+    window.DHCA_PLAY_FX([{ k:'rez', wave: next, hue: ((next - 1) % 5) * 72,
+                           pow: Math.pow(1.18, next - 1), foes: foes }]);
+  });
+})();
 
 function playTimeline(fx, state, done){
   var i = 0, hold = 190;      // how long the current clear sits before it falls

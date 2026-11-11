@@ -158,9 +158,29 @@ ok(strpos($ui, '((e.wave - 1) % 5) + 1') !== false,
    'the client caps the wave hue instead of cycling it');
 ok(strpos($ui, '((max(1, (int)$wv) - 1) % 5) + 1') !== false,
    'the page caps the wave hue instead of cycling it, so it disagrees with the client');
-/* The preview plays the real player, not a copy. */
+/*
+ * THE PREVIEW LIVES ON THE BOARD IT ANIMATES.
+ *
+ * The first one was a separate admin page that iframed dhcarena.php --
+ * which is the Arena LANDING page, a Crew picker with no board on it, so
+ * it previewed a crew picker. Same lesson admin-chest.php already
+ * records: a reveal that only happens inside a live board has to be
+ * previewed inside one.
+ */
 ok(strpos($ui, 'window.DHCA_PLAY_FX') !== false,
-   'the timeline player is not exposed, so the admin preview can only mock the animation');
+   'the timeline player is not exposed, so the preview can only mock the animation');
+ok(strpos($ui, "id=\"rezPrev\"") !== false,
+   'the in-game rez preview button is gone, so there is no way to see it on demand');
+ok(strpos($ui, '$IS_BOSS && function_exists(\'adminIsSuper\') && adminIsSuper()') !== false,
+   'the rez preview is not gated on boss mode AND admin, so players can see a tool');
+ok(!is_file(__DIR__ . '/admin-bossrez-preview.php'),
+   'admin-bossrez-preview.php is back; it iframed the Arena landing page, which has no board');
+/* It must not reach the server: a preview that commits is not a preview. */
+preg_match('~var pv = document\.getElementById\(.rezPrev.\);(.*?)\n\}\)\(\);~s', $ui, $m_pv);
+$pv = count($m_pv) === 2 ? $m_pv[1] : '';
+ok($pv !== '', 'the rez preview handler could not be lifted');
+ok($pv !== '' && strpos($pv, 'fetch(') === false && strpos($pv, 'XMLHttpRequest') === false,
+   'the rez preview calls the server, so looking at the animation can change the week');
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);
