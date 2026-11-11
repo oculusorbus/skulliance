@@ -68,131 +68,121 @@ not a currency sink, and CARBON-to-DIAMOND pressure has to come from elsewhere.
 
 ---
 
-## The meter
+## The board
 
-Volume drives it. Rarity gets you there **faster, not higher** — a shortcut to the
-same prize, never a better one.
+**A 4x4 inventory grid. Traits take up space. Rows filled is the tier.**
 
-### The grid IS the meter
+That one sentence is the whole mechanic and there are no numbers in it. The board is
+not a meter beside the hopper, it *is* the hopper and it *is* the meter, and a player
+can read their own odds by looking at how full it is.
 
-**Twenty-five slots, five by five. Twenty-five points to max. A common is one point.**
+### Pieces
 
-So a full grid of commons tops the meter exactly, and rarity fills the *meter* faster
-than it fills the *grid* — which is "faster, not higher" in the most literal form
-available. One mythic takes one slot and sixteen points. The bar and the board are the
-same object, and nobody has to be taught how to read it.
-
-| rarity | points | slots to max |
+| rarity | shape | takes |
 |---|---|---|
-| common | 1 | 25 |
-| uncommon | 2 | 13 |
-| epic | 4 | 7 |
-| legendary | 8 | 4 |
-| mythic | 16 | 2 |
+| common | 1x1 | a quarter row |
+| uncommon | 2x1 | half a row |
+| epic | 4x1 | **one row** |
+| legendary | 4x2 | **two rows** |
+| mythic | 4x4 | **the whole board** |
 
-### Why these numbers are chosen and not derived
+Every piece is row-aligned, which is the property that makes the rest work. Four
+commons make a row, two uncommons make a row, an epic is a row. Nothing can leave an
+awkward notch, nothing needs auto-packing, there is no Tetris. You stack.
 
-The honest version: inverse frequency against the `run` table is the only *derived*
-scale, and it puts a mythic at **110 commons** — unusable when the hopper is
-twenty-five slots. Any scale that fits a grid is therefore a choice, and it should be
-made deliberately rather than dressed up as arithmetic.
+**An earlier draft drew epic as a 2x2 block** and then spent a page solving the
+packing problem that created — a piece that straddles two rows and fills neither.
+The shapes have to follow the rows. Four slots is a row, so a four-slot piece is a
+row, and the problem disappears.
 
-A clean doubling was picked against three requirements:
+### Rows are tiers
 
-1. **Monotonic.** Rarer is always worth more.
-2. **Rares are deliberately undervalued.** A legendary is worth 8 commons here against
-   roughly 16 by true scarcity, so feeding one is a *poor trade* for the player. That
-   is the point: it discourages dumping rares, which is what protects the collection,
-   and it means the meter gets filled with commons, which is what the feature is for.
-3. **Readable.** 1, 2, 4, 8, 16 is memorable, and a player can work out their own
-   hopper without a calculator.
+Four rows, and `DHCF_TIERS` already has exactly four tables. One to one, nothing
+invented.
 
-### Thresholds
-
-The meter selects which of the four existing `DHCF_TIERS` tables the roll happens on.
-Nothing new is invented: every table already has every tier reachable and none
-guaranteed, which is exactly the shape wanted.
-
-| meter | table | mythic | legendary |
+| rows filled | table | mythic | legendary |
 |---|---|---|---|
-| 0 | `run` | 0.5% | 3.5% |
-| 5 | `placement_10` | 2% | 9% |
-| 12 | `placement_3` | 3% | 15% |
-| 25 (max) | `placement_1` | 8% | 22% |
+| 1 | `run` | 0.5% | 3.5% |
+| 2 | `placement_10` | 2% | 9% |
+| 3 | `placement_3` | 3% | 15% |
+| 4 | `placement_1` | 8% | 22% |
 
-### Is it deflationary?
+**One full row minimum to jettison.** That also settles what the minimum hopper size
+should be, with the same rule rather than a second one.
 
-25 commons is roughly 45 drops' worth of play, which at `run` rates would itself have
-produced about 0.23 mythics and 1.6 legendaries. The Portal pays 0.08 and 0.22 for the
-same material, so converting is **2.8x worse than playing** for a mythic and 7.2x
-worse for a legendary. Supply still strictly falls.
+### The full board gets the best table
 
-This went 120 to 60 to 25 across two passes, and the size kept being decided by the
-wrong thing. The first two were set by the deflation margin alone, which is how you end
-up with a hopper of sixty tiles that is unreadable as a grid and soup as an animation.
-**The grid size is a UI constraint first; the margin only has to clear a bar, not be
-maximised.**
+Settled deliberately, because the instinct to nerf it later will be strong and the
+reasons need to be on the page.
 
-| slots | grid | vs playing, mythic |
-|---|---|---|
-| 16 | 4x4 | 1.8x worse |
-| 20 | 4x5 | 2.3x worse |
-| **25** | **5x5** | **2.8x worse** |
-| 30 | 5x6 | 3.4x worse |
-| 36 | 6x6 | 4.1x worse |
+* **A full board is the maximum commitment the system accepts.** If the maximum
+  commitment does not buy the maximum prize, filling the board is anticlimactic and
+  the top row is decoration.
+* **It is what keeps the Portal a destination rather than a bin.** The owner's reason,
+  and the best one: *"If there's a chance they get something worth a damn out of it,
+  they'll continue using the feature beyond just taking out the trash."*
+* **A mythic fills the board, so the top must be the best table or feeding one is
+  incoherent** — and even at 8% it is a dreadful trade, swapping a certainty for a
+  one-in-twelve shot at the same thing. Nobody should ever do it, and a mythic
+  swallowing all sixteen slots says so more plainly than any warning.
 
-Every row is still deflationary — even 4x4 — so the whole range was available and the
-choice could be made on how it looks and plays. 5x5 is the largest grid that stays
-legible on a phone and about the most objects you can throw into a vortex before it
-reads as a smear.
+**The objection, and why it resolves.** `placement_1` is what taking *first place*
+pays, so handing it to a board of commons looks like cheapening first place. But the
+leaderboard gives that table as a **gift** — you win, you roll, you keep everything.
+The Portal charges **sixteen traits** for the same odds and destroys fifteen of them.
+Same table, completely different price.
 
-**The margin is thinner here and that is fine.** 2.8x is a smaller reduction than 6.8x,
-not an inflation. And the material being fed is residue that would otherwise sit in a
-pile doing nothing, so "worse than playing" was never the player's real alternative.
+### What this costs in rare supply, honestly
 
-### What still needs calibrating
+Earlier drafts of this page reassured with "converting is worse than playing". That
+is true and it is the **wrong comparison**, and it was leaned on three times before
+being caught.
 
-Nothing above is derived any more — the one derivable scale did not fit a grid, so
-the points and the thresholds are both choices, and they should be read as a starting
-position rather than an answer.
+The traits being fed are residue from play that **already paid out its rares**.
+Without the Portal they produce nothing, ever. So the real counterfactual is zero,
+and **every rare the Portal emits is additional supply.**
 
-The unknown behind all of them is the same: whether twenty-five points is a month's
-accumulated junk or a year's depends on what players actually hold, which is not
-knowable from the code. Ship it, watch it, move it. The owner's position is that
-adjustment after launch is expected, and the grid size is the part that should stay
-put while the numbers inside it move.
+The honest shape of the feature: **a strong sink for total traits, a weak faucet for
+rare ones.** A full board destroys fifteen traits to emit one. It compresses the
+collection upward, which is what a re-roll mechanic does by nature.
 
----
+That is a deliberate trade and not a discovery. It is also small next to the rest of
+the design: a full board emits **one** trait on an 8% roll while sending **sixteen**
+out to lapsed players at full rarity. The Portal moves far more rarity than it
+creates.
+
+### The dial, if it ever needs one
+
+Which table row four reaches. It is a single reference, the easiest change in the
+whole design, and it is the only lever on how much rare supply the Portal adds. If
+full boards turn out to be far more common than expected, that is the number to pull
+— with real data rather than a guess made before launch.
 
 ## The staging area
 
-A grid laid over the operator art. Slot traits in, watch the meter climb, pull them
-back out to tune it. Managing the hopper is the game before the gamble.
+The 4x4 board laid over the operator art, with the player's free traits beside it as
+pieces to place. Stack them in, pull them back out, watch the rows fill. Assembling
+the board is the game before the gamble, and it is the part a player will actually
+spend time on.
 
-### Overshoot is the trap, and the fix is automatic
+### Overshoot, which is now physical
 
-Twenty-four commons puts the meter at 24 of 25. Dropping a mythic on top takes it to
-40 — fifteen points of fuel thrown away, most of another run's worth, with nothing to
-warn you.
+Fifteen slots used, one left, and the player drops in a legendary that needs two
+rows. Without a rule that is eleven slots of fuel thrown away — most of another run —
+with nothing to warn them.
 
-**Rule: the hopper never holds more leverage than the meter can spend.** When a trait
-would overshoot, the staging area returns the **cheapest** traits already in it until
-the overshoot is gone. Twenty-four commons plus a mythic becomes nine commons plus the
-mythic, exactly at max, and fifteen commons drop back into the pile.
+**Rule: the board never holds more than it can spend.** A piece that does not fit
+pushes the **cheapest** pieces already on the board back out until it does. Fifteen
+commons plus a legendary becomes eight commons plus the legendary, a full board, and
+seven commons drop back into the pile.
 
-* Cheapest-first preserves the dense item the player just deliberately chose, and
-  returns the ones most reusable next time. Ejecting the mythic instead would be the
-  system overruling the player's last action.
-* **Edge:** nothing is now worth more than the whole meter — a mythic is 16 against a
-  max of 25 — so the auto-return can always make room, and the pathological case the
-  earlier 110-point mythic created is gone. The rule stays anyway, because the point
-  values are the first thing anyone will reach for when tuning.
-* **Edge:** accepting is gated on the meter being *below* max, not on whether the
-  addition would exceed it. Otherwise an empty hopper could refuse its own first
-  trait.
-
-This turns the trap into an assistant: rarity is meant to get you there faster, and
-the auto-return is the system saying *you do not need these any more, have them back*.
+* Cheapest-first preserves the dense piece the player just deliberately chose and
+  returns the ones most reusable next time. Ejecting the legendary instead would be
+  the system overruling their last action.
+* Nothing is worth more than the whole board — a mythic is exactly sixteen — so there
+  is always room to make.
+* The arithmetic version of this rule needed edge cases about traits larger than the
+  meter. The physical version does not: things either fit or they push.
 
 ### Pre-flight
 
@@ -269,9 +259,8 @@ outward. **Do not write a second one.**
 
 ### The one technical decision
 
-A hopper holds twenty-five traits. Twenty-five elements flying into a vortex is
-twenty-five animated DOM nodes, which is where a reveal starts becoming a slideshow on
-a phone.
+A board holds sixteen pieces. Sixteen elements flying into a vortex is sixteen
+animated DOM nodes, which is where a reveal starts becoming a slideshow on a phone.
 
 **The hopper is DOM until it commits, then it becomes particles.** You interact with
 elements — slot them, pull them back, read their rarity — and the moment the jettison
@@ -297,8 +286,8 @@ for the part you touch, canvas for the part that is spectacle.
 
 ## Open
 
-* The point values and thresholds, pending real holdings. The grid size is settled at
-  5x5; everything inside it is the tuning dial.
+* Which table row four reaches, if full boards prove more common than expected. The
+  board is settled; that reference is the dial.
 * Minimum hopper size, if any.
 * Whether portal provenance is surfaced to players or stays an internal `source`.
 
