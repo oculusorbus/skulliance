@@ -859,30 +859,51 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    going, because the thing that just happened is an arrival. */
 .arena-wrap .boardwrap.rez-land{animation:bRezLand .9s ease-out}
 /*
- * EACH BOSS RISES ON ITS OWN BEAT.
+ * THE CREW QUAKES WITH THE BOARD, THEN COMES BACK.
  *
- * The board shook and the bars refilled in one frame, which read as a
- * repaint rather than as three things getting up. Reported exactly that
- * way -- the quake and the cue landed, the crew did not.
+ * The first version had them rise from under the floor AFTER the board
+ * finished shaking, which read as the characters reloading rather than
+ * as the thing that was shaking the board. They shake WITH it now: the
+ * same beats, escalating the same way, so the board and the crew on it
+ * are one event.
  *
- * It is the death animation run backwards in spirit: deathShake is a
- * stagger on the spot, so this hauls the token up from under its own
- * floor and overshoots once before settling. transform and opacity only,
- * like everything else on this board.
+ * They start grey, because they are dead -- .tok.ko has done that since
+ * long before this feature. Taking the class off at the landing
+ * transitions them back to colour over half a second on its own, and
+ * the flash is what says the moment has arrived rather than merely
+ * passed.
  *
- * The stagger is the audio's: the three arena swells in the cue land
- * about a second apart, so each token leaves on the one that belongs to
- * it rather than all three at once.
+ * transform and filter only. No layout property is touched on any frame.
  */
-.arena-wrap .tok.rezzing{animation:tokRez .62s cubic-bezier(.17,.89,.32,1.28) both}
-@keyframes tokRez{
-  0%{transform:translateY(26%) scale(.88);opacity:0;filter:brightness(2.4) saturate(.3)}
-  45%{opacity:1}
-  70%{transform:translateY(-5%) scale(1.04);filter:brightness(1.5)}
-  100%{transform:translateY(0) scale(1);opacity:1;filter:none}
+.arena-wrap .tok.quaking{animation:tokQuake .42s}
+@keyframes tokQuake{
+  0%,100%{transform:translate(0,0)}
+  18%{transform:translate(-3%,2%) rotate(-1deg)}
+  42%{transform:translate(2.5%,-2%) rotate(.9deg)}
+  66%{transform:translate(-2%,-1.5%) rotate(-.6deg)}
+  86%{transform:translate(1.5%,1.5%)}
+}
+.arena-wrap .tok.quaking.hard{animation:tokQuakeHard .5s}
+@keyframes tokQuakeHard{
+  0%,100%{transform:translate(0,0)}
+  12%{transform:translate(-8%,5%) rotate(-2.6deg)}
+  30%{transform:translate(7%,-6%) rotate(2.2deg)}
+  50%{transform:translate(-6%,-4%) rotate(-1.8deg)}
+  70%{transform:translate(5%,4%) rotate(1.2deg)}
+  88%{transform:translate(-3%,-2%)}
+}
+/* THE MOMENT IT LANDS. Blown out and colourless for a frame, then the
+   art as it really is -- which is the same shape as coming back. */
+.arena-wrap .tok.rez-flash{animation:tokRezFlash .85s ease-out}
+@keyframes tokRezFlash{
+  0%{filter:brightness(3.4) saturate(.15)}
+  30%{filter:brightness(1.9) saturate(.8)}
+  100%{filter:none}
 }
 @media (prefers-reduced-motion: reduce){
-  .arena-wrap .tok.rezzing{animation:none}
+  .arena-wrap .tok.quaking,
+  .arena-wrap .tok.quaking.hard,
+  .arena-wrap .tok.rez-flash{animation:none}
 }
 @keyframes bRezLand{0%{filter:brightness(2.6) saturate(.4)}100%{filter:none}}
 /* The colour TURNS rather than snapping, so the new crew is visibly a
@@ -3717,6 +3738,22 @@ var DEATH_ANCHORED = <?php echo json_encode(array_values(DHCF_DEATH_ANCHORED)); 
 
 function killAnim(f){
   var e = elFor(f); if (!e) return;
+  /*
+   * A BOSS DOES NOT COME APART, IT FADES OUT.
+   *
+   * Everything below this takes a Fighter to pieces trait by trait --
+   * head, then headgear, then arms -- which is the right death for art
+   * that was assembled from those layers. A boss is ONE collection
+   * picture, carried as `art` (empty for every real Fighter), so the
+   * same routine slides a single rectangle off at an angle and leaves
+   * its jagged edge hanging. Reported exactly that way.
+   *
+   * There is nothing to replace it with, because .tok.ko already fades
+   * to grayscale over half a second and `.dying` was the thing
+   * overriding it with filter:none while the pieces fell. Skip the
+   * collapse and the grey arrives on its own.
+   */
+  if (f && f.art) { flashTok(f, 'big'); return; }
   e.classList.add('dying'); flashTok(f,'big');
   function anchored(img){
     return !!img && DEATH_ANCHORED.indexOf(img.getAttribute('data-s')) !== -1;
@@ -3972,6 +4009,20 @@ function playTimeline(fx, state, done){
 
       var bw = document.querySelector('.boardwrap');
       var rezFoes = (e.foes || []);
+      /*
+       * START FROM THE DEAD STATE, which is what a real resurrection is
+       * already in and what the preview has to put itself into. .tok.ko
+       * is the grey, and it has been since long before this feature --
+       * so this is the state, not a costume for it.
+       */
+      var rezToks = rezFoes.map(function (nf, i) { return fighterAt('foes', i); });
+      rezToks.forEach(function (rt) {
+        if (!rt) return;
+        var re = elFor(rt);
+        if (re) re.classList.remove('rez-flash', 'quaking', 'hard', 'dying');
+        rt.ko = true;
+        paintTok(rt);
+      });
       /* THE BUILD. Four shakes over REZ_LEN, each harder than the last,
          so the board is already moving before anything appears. Driven
          off the same constant as the audio: the last one lands with the
@@ -3980,10 +4031,23 @@ function playTimeline(fx, state, done){
       for (var rs = 0; rs < steps; rs++) {
         (function(rs){
           setTimeout(function(){
-            if (!bw) return;
-            bw.classList.remove('shake', 'shake-hard');
-            void bw.offsetWidth;
-            bw.classList.add(rs >= steps - 2 ? 'shake-hard' : 'shake');
+            var hard = rs >= steps - 2;
+            if (bw) {
+              bw.classList.remove('shake', 'shake-hard');
+              void bw.offsetWidth;
+              bw.classList.add(hard ? 'shake-hard' : 'shake');
+            }
+            /* THE CREW SHAKES WITH IT, on the same beat and escalating
+               the same way -- they are what is shaking the board, so
+               they cannot be still while it moves. */
+            rezToks.forEach(function (rt) {
+              var re = rt ? elFor(rt) : null;
+              if (!re) return;
+              re.classList.remove('quaking', 'hard');
+              void re.offsetWidth;        /* or the class never restarts */
+              re.classList.add('quaking');
+              if (hard) re.classList.add('hard');
+            });
           }, Math.round(span * (rs + 1) / (steps + 1)));
         })(rs);
       }
@@ -4001,26 +4065,27 @@ function playTimeline(fx, state, done){
          * the cue, which land about a second apart -- so the stagger is
          * the audio's rather than a number picked to look right.
          */
-        rezFoes.forEach(function(nf, i){
-          var rt = fighterAt('foes', i), re = rt ? elFor(rt) : null;
+        /*
+         * AND THEY COME BACK. Dropping .ko is what returns the colour --
+         * it transitions over half a second on its own -- and the flash
+         * is what says the moment has ARRIVED rather than merely passed.
+         *
+         * Staggered by animation-delay rather than a timer, because the
+         * bars are repainted for all three in this frame: a timer would
+         * leave the second and third already lit and then flash them.
+         * The beat is the audio's, the three arena swells in the cue.
+         */
+        rezToks.forEach(function (rt, i) {
+          var re = rt ? elFor(rt) : null;
           if (!re) return;
-          re.classList.remove('dying', 'rezzing');
-          void re.offsetWidth;            /* or the class never restarts */
-          /*
-           * DELAYED BY THE ANIMATION, NOT BY A TIMER. The bars are
-           * repainted for all three in this frame, so a timer would
-           * leave the second and third standing there full and healthy
-           * until their turn and then animate them -- they would look
-           * like they were already up. `both` fill holds each one at
-           * the first keyframe, under the floor and invisible, until
-           * its own beat arrives.
-           */
+          re.classList.remove('quaking', 'hard');
+          void re.offsetWidth;
           re.style.animationDelay = (i * 0.34) + 's';
-          re.classList.add('rezzing');
+          re.classList.add('rez-flash');
           setTimeout(function(){
-            re.classList.remove('rezzing');
+            re.classList.remove('rez-flash');
             re.style.animationDelay = '';
-          }, 700 + i * 340);
+          }, 900 + i * 340);
         });
         /* THE HUE LIVES ON data-wave, not on a variable: the five
            filter:hue-rotate() rules are already there and are already

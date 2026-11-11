@@ -275,3 +275,34 @@ they deploy like images. The 21 `.mp3` under `audio/sounds/` **are** committed.
 A dozen other `sounds/*.mp3` paths appear in the source but belong to
 `dropship/sounds/`, which is gitignored and 404s from this host; they were
 curl-verified and excluded from the tuner for that reason.
+
+
+## The crew's half of the animation (2026-11-11)
+
+Three corrections from watching it, all from the owner.
+
+**A boss does not come apart.** `killAnim()` takes a Fighter to pieces trait by
+trait -- head, then headgear, then arms -- which is the right death for art that
+was assembled from those layers. A boss is ONE collection picture, so the same
+routine slid a single rectangle off at an angle and left its jagged edge
+hanging. It is skipped for anything carrying `art`, which is non-empty only for
+a boss and which the client already short-circuits on elsewhere. Nothing
+replaces it: `.tok.ko` has faded to grayscale over half a second since long
+before this feature, and `.dying` was the thing overriding it with
+`filter: none` while the pieces fell.
+
+**The crew quakes WITH the board.** The first version had them rise from under
+the floor after the board finished shaking, which reads as the characters
+reloading rather than as the thing that is shaking the board. They now shake on
+the same beats, escalating the same way, inside the same timer -- asserted, so
+the two cannot drift apart.
+
+**And it starts dead.** A real resurrection is already in that state; the
+preview had to put itself into it, or there was nothing to come back from. The
+landing drops `.ko`, which returns the colour over half a second on its own,
+and adds a flash -- which is what says the moment has *arrived* rather than
+merely passed.
+
+The stagger is still `animation-delay` rather than a timer, for the same reason
+as before: the bars are repainted for all three in one frame, so a timer would
+leave the second and third already lit and then flash them.

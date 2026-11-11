@@ -154,42 +154,55 @@ ok(strpos($ui, 'REZ_LAYERS') !== false && strpos($ui, 'sfxReversed') !== false,
 ok(strpos($ui, 'var lead = REZ_LEN - full') !== false,
    'the cue layers are no longer end-aligned, so each one lands at its own time');
 /*
- * EACH BOSS RISES ON ITS OWN BEAT, which is the half that was missing.
- * The board quake and the cue landed and the crew did not -- the bars
- * were repainted in one frame, which reads as a repaint rather than as
- * three things getting up.
+ * THE CREW QUAKES WITH THE BOARD, AND IT STARTS DEAD.
+ *
+ * Two reports, both about the same thing: the bars repainted after the
+ * board animation finished, so the characters read as reloading rather
+ * than as the thing shaking the board; and the preview began from a live
+ * crew, so there was no death to come back from.
  */
-/* The rule must NAME the keyframes: a bare `.tok.rezzing{` also appears
-   inside the reduced-motion block, where it sets animation:none -- so
-   searching for the selector alone passed with the real rule deleted. */
-ok(preg_match('~\.arena-wrap \.tok\.rezzing\{animation:tokRez ~', $ui) === 1,
-   'there is no per-boss rise animation, so the crew just repaints');
-ok(strpos($ui, '@keyframes tokRez{') !== false, 'the rise keyframes are gone');
-/* transform and opacity only, like everything else on this board. */
-preg_match('~@keyframes tokRez\{(.*?)\n\}~s', $ui, $m_kf);
-$kf = count($m_kf) === 2 ? $m_kf[1] : '';
-ok($kf !== '', 'the rise keyframes could not be lifted');
-foreach (array('left:', 'top:', 'width:', 'height:', 'margin') as $thrash) {
-	ok($kf !== '' && strpos($kf, $thrash) === false,
-	   'the rise animates ' . $thrash . ' which is a layout thrash on every frame');
+ok(strpos($ui, "re.classList.add('quaking')") !== false,
+   'the crew does not quake with the board, so it reads as reloading after the shake');
+ok(preg_match('~\.arena-wrap \.tok\.quaking\{animation:tokQuake ~', $ui) === 1,
+   'the token quake keyframes are gone');
+ok(preg_match('~\.arena-wrap \.tok\.quaking\.hard\{animation:tokQuakeHard ~', $ui) === 1,
+   'the quake does not escalate, so the crew shakes evenly while the board builds');
+/* On the SAME beat as the board, inside the same timer. */
+preg_match('~bw\.classList\.add\(hard \? .shake-hard. : .shake.\);(.*?)\}, Math\.round~s', $ui, $m_beat);
+ok(count($m_beat) === 2 && strpos($m_beat[1], "re.classList.add('quaking')") !== false,
+   'the crew quake is not on the same beat as the board shake, so the two drift apart');
+
+/* IT STARTS FROM THE DEAD STATE. .tok.ko is the grey and has been since
+   long before this feature -- the preview has to put itself into it. */
+ok(strpos($ui, 'rt.ko = true;') !== false,
+   'the resurrection does not begin from the dead state, so there is nothing to come back from');
+ok(strpos($ui, "re.classList.add('rez-flash')") !== false,
+   'nothing flashes at the landing, so the moment passes rather than arrives');
+ok(preg_match('~@keyframes tokRezFlash\{~', $ui) === 1, 'the flash keyframes are gone');
+
+/* A BOSS DOES NOT COME APART. The collapse takes a Fighter to pieces
+   trait by trait, which on one flat picture slides a rectangle off at an
+   angle and leaves its jagged edge hanging. `art` is non-empty only for
+   a boss -- the client already short-circuits on it elsewhere. */
+ok(strpos($ui, "if (f && f.art) { flashTok(f, 'big'); return; }") !== false,
+   'a boss still runs the trait-by-trait collapse, which looks wrong on a single image');
+preg_match('~function killAnim\(f\)\{(.*?)\n\}~s', $ui, $m_ka);
+$ka = count($m_ka) === 2 ? $m_ka[1] : '';
+ok($ka !== '' && strpos($ka, 'f.art') < strpos($ka, "e.classList.add('dying')"),
+   'the boss check comes after the collapse starts, so it runs anyway');
+
+/* transform and filter only; no layout property on any frame. */
+foreach (array('tokQuake', 'tokQuakeHard', 'tokRezFlash') as $kf_name) {
+	preg_match('~@keyframes ' . $kf_name . '\{(.*?)\n\}~s', $ui, $m_k);
+	$kf = count($m_k) === 2 ? $m_k[1] : '';
+	ok($kf !== '', $kf_name . ' could not be lifted');
+	foreach (array('left:', 'top:', 'width:', 'height:', 'margin') as $thrash) {
+		ok($kf !== '' && strpos($kf, $thrash) === false,
+		   $kf_name . ' animates ' . $thrash . ', which is a layout thrash on every frame');
+	}
 }
-/*
- * STAGGERED BY animation-delay, NOT BY A TIMER. The bars are repainted
- * for all three in one frame, so a timer would leave the second and
- * third standing full and healthy until their turn and then animate
- * them -- they would look like they were already up. `both` fill holds
- * each at the first keyframe until its own beat.
- */
-ok(strpos($ui, "re.style.animationDelay = (i * 0.34) + 's'") !== false,
-   'the rise is not staggered by animation-delay, so the later bosses stand up before their beat');
-ok(preg_match('~\.arena-wrap \.tok\.rezzing\{animation:tokRez [^}]*both\}~', $ui) === 1,
-   'the rise has no `both` fill, so a delayed token is visible and upright before it animates');
-/* The class has to be restarted or a second resurrection does nothing. */
-ok(strpos($ui, 'void re.offsetWidth;') !== false,
-   'nothing forces a reflow before re-adding the class, so a second resurrection does not animate');
-/* And it must honour reduced motion, like the rest of the board. */
-ok(preg_match('~prefers-reduced-motion: reduce\)\{\s*\.arena-wrap \.tok\.rezzing\{animation:none\}~s', $ui) === 1,
-   'the rise ignores prefers-reduced-motion');
+ok(preg_match('~prefers-reduced-motion: reduce\)\{\s*\.arena-wrap \.tok\.quaking,~s', $ui) === 1,
+   'the crew quake ignores prefers-reduced-motion');
 
 /*
  * THE HUE HOLDS AT THE LAST STEP past wave 5, and all three places that
