@@ -2332,6 +2332,32 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
     <div class="a-panel" id="aBossPanel">
       <h2>Bosses Crew</h2>
       <div class="body">
+<?php
+/*
+ * A BOARD ON DEMAND, FOR ADMINS, SO THE RESURRECTION CAN BE LOOKED AT.
+ *
+ * The rez preview needs a live board, and a live board needs a run --
+ * and runs are DHCB_DAILY_RUNS a day, so the one person who needs to
+ * review the animation is also the person most likely to be out of
+ * them. ("I can't start a boss run because I burnt all my attempts.")
+ *
+ * Practice is the answer and it already exists: ajax/dhcarena-practice.php
+ * touches no table, pays nothing, ranks nobody and needs neither a
+ * database nor a signed-in player -- the board is rebuilt each move from
+ * a spec the client holds. So it costs no run, no Crew, no allowance,
+ * and it cannot touch the shared bars.
+ *
+ * The .a-bosses panel this sits in is rendered whenever boss mode is on,
+ * run or no run, so the hue has somewhere to land.
+ */
+if (function_exists('adminIsSuper') && adminIsSuper()): ?>
+        <p style="margin:0 0 10px">
+          <button class="btn" id="bossPrac" style="font-size:.72rem;padding:6px 10px">
+            Practice board (admin)</button>
+          <span class="a-sub" style="margin-left:8px">Costs no run. Open it, then use
+            <b>preview rez</b> under the Enemy Crew.</span>
+        </p>
+<?php endif; ?>
         <details class="a-note"><summary>How it works</summary>
         <p class="a-sub" style="margin:0 0 10px">Three bosses, one health bar each, shared by
            everybody, standing all week. <b>Every point of damage counts</b> — the traits
@@ -5260,6 +5286,20 @@ function startPractice(onFail){
     onFail && onFail('The Arena did not answer.');
   }, PRACTICE_URL);
 }
+
+/* The boss page has no Arena setup panel and therefore no #aPractice and
+   no #aMsg, so this binds its own button and reports failure to the
+   console rather than to an element that is not there. */
+var bossPracBtn = $('bossPrac');
+if (bossPracBtn) bossPracBtn.addEventListener('click', function(){
+  if (busy || battle.classList.contains('on')) return;
+  bossPracBtn.disabled = true;
+  startPractice(function(msg){
+    bossPracBtn.disabled = false;
+    if (window.console) console.warn('practice:', msg);
+  });
+  setTimeout(function(){ bossPracBtn.disabled = false; }, 600);
+});
 
 var practiceBtn = $('aPractice');
 if (practiceBtn) practiceBtn.addEventListener('click', function(){

@@ -175,6 +175,27 @@ ok(strpos($ui, '$IS_BOSS && function_exists(\'adminIsSuper\') && adminIsSuper()'
    'the rez preview is not gated on boss mode AND admin, so players can see a tool');
 ok(!is_file(__DIR__ . '/admin-bossrez-preview.php'),
    'admin-bossrez-preview.php is back; it iframed the Arena landing page, which has no board');
+
+/*
+ * AND A BOARD TO PREVIEW IT ON. The rez preview needs a live board, a
+ * live board needs a run, and runs are rationed -- so the one person who
+ * has to review the animation is the one most likely to be out of them.
+ * Practice costs no run and touches no table, so the boss page carries
+ * an admin-only button that opens one.
+ */
+ok(strpos($ui, "id=\"bossPrac\"") !== false,
+   'the boss page has no admin practice board, so the rez preview needs a run nobody may have');
+ok(strpos($ui, "\$bossPracBtn = \$('bossPrac')") !== false
+   || strpos($ui, "var bossPracBtn = $('bossPrac')") !== false,
+   'the admin practice button is not wired to anything');
+/* It must be practice, not a run: a run spends an allowance and lands
+   real damage on the shared bars. */
+preg_match("~var bossPracBtn = \\\$\\('bossPrac'\\);(.*?)\n\\}\\);~s", $ui, $m_bp);
+$bp = count($m_bp) === 2 ? $m_bp[1] : '';
+ok($bp !== '' && strpos($bp, 'startPractice(') !== false,
+   'the admin board button does not start a PRACTICE battle, so looking at the animation costs a run');
+ok($bp !== '' && strpos($bp, 'BOSS_URL') === false && strpos($bp, 'startBossRun') === false,
+   'the admin board button starts a real boss run, which spends an allowance and hits the shared bars');
 /* It must not reach the server: a preview that commits is not a preview. */
 preg_match('~var pv = document\.getElementById\(.rezPrev.\);(.*?)\n\}\)\(\);~s', $ui, $m_pv);
 $pv = count($m_pv) === 2 ? $m_pv[1] : '';
