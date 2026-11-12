@@ -186,6 +186,31 @@ $db = new RezNoDb(); $b = rezb(array('oneUp' => 1)); $was = $b;
 dhcb_rez($db, $b);
 ok($b === $was, 'a refused resurrection still mutated the battle');
 
+echo "\nthe ledger can be asked what actually happened\n";
+/*
+ * THE HARNESS PROVES THE RULES; ONLY THE LEDGER SAYS WHAT HAPPENED. A
+ * run that chained has waves_cleared above zero and rounds spanning both
+ * segments; one that ended at the kill has zero, which means dhcb_rez()
+ * refused for one of its three reasons.
+ */
+$ab_src = (string) file_get_contents(__DIR__ . '/admin-dhcbosses.php');
+ok(strpos($ab_src, 'FROM dhc_boss_runs r') !== false,
+   'the Bosses admin page cannot show settled runs, so a chaining question has no evidence');
+ok(strpos($ab_src, 'r.waves_cleared') !== false,
+   'the runs panel does not read waves_cleared, which is the only column that says a run chained');
+/*
+ * AND IT SAYS SO WHEN THE COLUMN IS MISSING. The settle retries without
+ * it, so an un-run migration costs the count and nothing else -- a panel
+ * that quietly printed 0 for every row would look like an answer and be
+ * the absence of one.
+ */
+ok(strpos($ab_src, "SHOW COLUMNS FROM dhc_boss_runs LIKE 'waves_cleared'") !== false,
+   'the panel does not check the column exists, so a missing one reads as every run failing to chain');
+ok(strpos($ab_src, 'ALTER TABLE dhc_boss_runs ADD COLUMN waves_cleared') !== false,
+   'the panel reports the missing column without saying how to add it');
+ok(strpos($ab_src, "'0 AS waves_cleared'") !== false,
+   'the query names the column unconditionally, so the whole panel fails where it is absent');
+
 echo "\nthe cap is a cap\n";
 ok(DHCB_REZ_MAX >= 1, 'the chain cap is below one, so the feature can never fire');
 ok(DHCB_REZ_MAX <= 3,

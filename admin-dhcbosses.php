@@ -278,6 +278,69 @@ for ($w = 2; $w <= 64; $w++) {
 }
 $ab_now_wave  = $ab_prog ? max(1, (int)$ab_prog['wave']) : 1;
 ?>
+<?php
+/*
+ * THE LAST RUNS, AS THE LEDGER HAS THEM.
+ *
+ * Asked after a week of live play: is a run that takes the crew down
+ * mid battle credited for both waves? The harness proves the rules do
+ * the right thing, but only this says what actually happened -- a run
+ * that chained has waves_cleared above zero and its rounds span both
+ * segments, and one that did not simply ended.
+ *
+ * waves_cleared IS OPTIONAL. The settle retries without it, so a column
+ * that was never added costs the count and nothing else -- which is
+ * exactly the case this panel has to be able to report, rather than
+ * showing zeroes that look like an answer.
+ */
+$ab_haswc = false;
+$ab_cq = @$conn->query("SHOW COLUMNS FROM dhc_boss_runs LIKE 'waves_cleared'");
+if ($ab_cq && $ab_cq->num_rows) $ab_haswc = true;
+
+$ab_runs = array();
+$ab_sel = $ab_haswc ? 'r.waves_cleared' : '0 AS waves_cleared';
+$ab_rq = @$conn->query(
+	"SELECT r.id, r.user_id, u.username, r.day, r.wave, $ab_sel,
+	        r.dealt, r.rounds, r.killed, r.outcome, r.crew_size, r.ended_at
+	   FROM dhc_boss_runs r LEFT JOIN users u ON u.id = r.user_id
+	  WHERE r.outcome <> 0
+	  ORDER BY r.ended_at DESC LIMIT 25");
+if ($ab_rq) while ($ab_rr = $ab_rq->fetch_assoc()) $ab_runs[] = $ab_rr;
+?>
+<details class="ab-hues">
+  <summary>Last 25 settled runs &mdash; did any of them chain?</summary>
+  <?php if (!$ab_haswc): ?>
+  <p class="ab-note flag"><b>waves_cleared is not on dhc_boss_runs.</b>
+     The settle retries without it, so resurrection still works and the runs below
+     are otherwise accurate &mdash; but the chain count reads 0 for every row and
+     cannot be used to answer anything. Add it with:
+     <code>ALTER TABLE dhc_boss_runs ADD COLUMN waves_cleared TINYINT NOT NULL DEFAULT 0;</code></p>
+  <?php endif; ?>
+  <div style="overflow-x:auto">
+  <table class="adm-t">
+    <tr><th>when</th><th>player</th><th>started on</th><th>waves cleared</th>
+        <th>rounds</th><th>damage</th><th>crew</th><th>outcome</th></tr>
+  <?php foreach ($ab_runs as $ab_r): ?>
+    <tr<?php echo (int)$ab_r['waves_cleared'] > 0 ? ' style="color:#00c8a0"' : ''; ?>>
+      <td><?php echo htmlspecialchars((string)$ab_r['ended_at']); ?></td>
+      <td><?php echo htmlspecialchars($ab_r['username'] !== null ? $ab_r['username'] : ('#' . $ab_r['user_id'])); ?></td>
+      <td>wave <?php echo (int)$ab_r['wave']; ?></td>
+      <td><b><?php echo (int)$ab_r['waves_cleared']; ?></b></td>
+      <td><?php echo (int)$ab_r['rounds']; ?></td>
+      <td><?php echo number_format((int)$ab_r['dealt']); ?></td>
+      <td><?php echo (int)$ab_r['crew_size']; ?></td>
+      <td><?php echo (int)$ab_r['outcome'] === 1 ? 'crew cleared' : 'crew fell'; ?></td>
+    </tr>
+  <?php endforeach; ?>
+  </table>
+  </div>
+  <p class="ab-note">A run that resurrected shows <b>waves cleared</b> above zero, and its
+     rounds and damage span every wave it crossed &mdash; the counter is never reset and the
+     earlier ledgers are banked. A run that ended at the kill shows zero, which means
+     dhcb_rez() refused: the Crew was down too, the chain cap
+     (<?php echo DHCB_REZ_MAX; ?>) was spent, or no next wave stood up.</p>
+</details>
+
 <details class="ab-hues">
   <summary>Wave colourways &mdash; all <?php echo $ab_hue_waves; ?>, as the renderer draws them</summary>
   <?php for ($w = 1; $w <= $ab_hue_waves; $w++):
