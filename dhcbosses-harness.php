@@ -580,7 +580,15 @@ echo "\nthe later waves pay in quantity, because they cannot pay in rarity\n";
  * guaranteeing mythics on a clearable boss would mint more in a fortnight
  * than exist.
  */
-ok(dhcf_table_rank('placement_1') === 3,
+/*
+ * ASSERTS THE PROPERTY, NOT A LITERAL. This was `=== 3`, which was the rank
+ * of placement_1 when DHCF_TIERS held four tables. Infiltration added six
+ * rungs between them and placement_1 became 9 -- the premise this guards
+ * (nothing outranks the best table) was still true, and the assertion failed
+ * anyway. A number stood in for the property and the number moved.
+ */
+$ranks_all = array_map('dhcf_table_rank', array_keys(DHCF_TIERS));
+ok(dhcf_table_rank('placement_1') === max($ranks_all),
    'placement_1 is no longer the top table, so the premise of the whole wave multiplier '
  . 'is wrong and rarity could escalate instead');
 $ranks = array();

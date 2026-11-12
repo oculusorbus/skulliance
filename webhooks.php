@@ -425,6 +425,25 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 			// Expected in credentials/webhooks_credentials.php as:
 			//   function getTestimonialsWebhook(){ return "https://discord.com/api/webhooks/..."; }
 			$webhook = function_exists('getTestimonialsWebhook') ? getTestimonialsWebhook() : "";
+		}else if($channel == "infiltrations"){
+			// Infiltration: one post per verified infiltration, doing two jobs.
+			// Members see who is infiltrating and what rung they are on; the
+			// owner reads the same channel as his worklist and reacts with an
+			// emoji to whatever he has answered, which is why nothing on our
+			// side tracks that.
+			//
+			// THE EMBED URL IS THE MEMBER'S COMMENT, not the target post --
+			// an author reply is weighted 75 by X's ranker against a plain
+			// reply's 13.5, so making that one tap is the highest-value thing
+			// in the feature.
+			//
+			// Same function_exists guard as its neighbours: until the
+			// credential is added this skips the post rather than fataling
+			// the infiltration that triggered it, which is already paid by
+			// the time this runs.
+			// Expected in credentials/webhooks_credentials.php as:
+			//   function getInfiltrationsWebhook(){ return "https://discord.com/api/webhooks/..."; }
+			$webhook = function_exists('getInfiltrationsWebhook') ? getInfiltrationsWebhook() : "";
 		}else if($channel == "obscura"){
 			// Same guard as the two below: if the credential has not been added
 			// yet -- or was added under a different name -- this skips the post

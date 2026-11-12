@@ -1313,6 +1313,36 @@ $GLOBALS['DHCF_GAMES'] = array(
 	 * drops from this source since CURDATE(), so it is one per day, and
 	 * the claim it hangs off is already once per day.
 	 */
+	/*
+	 * INFILTRATION. A reply to one of our X posts, verified, pays a trait.
+	 *
+	 * unlisted, and that is not cosmetic: this feature must not appear in the
+	 * Skull Paper, on any public page, or in any announcement -- the X posts
+	 * it runs on have to stay ordinary posts. See infiltration-design.md.
+	 *
+	 * ONE BAND PER RUNG, so dhcf_table_for('infiltration', $tier) resolves
+	 * the table straight from the member's meter with nothing in between.
+	 * Rung 0 is the base, rung 9 is placement_1 and there is nothing above
+	 * it. The bands are the ladder from dhcf_ladder() minus its first entry,
+	 * written out rather than generated because DHCF_GAMES is a constant.
+	 *
+	 * cap 0 -- NOT the daily three. A target is the ration here: one
+	 * submission per member per target, enforced in infil_submissions by a
+	 * unique key, and the owner decides how many targets exist. A daily cap
+	 * on top of that would silently refuse the third infiltration on a busy
+	 * day, which is the day we most want them replying.
+	 */
+	'infiltration'   => array('label' => 'Infiltration', 'earned_from' => 'an infiltration',
+	                          'url' => 'infiltration.php', 'category' => 'wildcard',
+	                          'trigger' => 'infiltrate a target', 'base' => 'run',
+	                          'bands' => array(
+	                              1 => 'infil_1', 2 => 'infil_2', 3 => 'placement_10',
+	                              4 => 'infil_4', 5 => 'placement_3', 6 => 'infil_6',
+	                              7 => 'infil_7', 8 => 'infil_8', 9 => 'placement_1',
+	                          ),
+	                          'cap' => 0, 'limit_note' => 'one per target; promptness climbs the ladder',
+	                          'unlisted' => true),
+
 	'dailystreak'    => array('label' => 'Daily Reward', 'earned_from' => 'a daily reward claim',
 	                          'url' => 'missions.php#ms-sec-daily', 'category' => 'wildcard',
 	                          'trigger' => 'claim your daily reward', 'base' => 'run',
@@ -1503,11 +1533,73 @@ define('DHCF_TIERS', array(
 	'placement_10'=> array('common' => 38, 'uncommon' => 30, 'epic' => 21, 'legendary' => 9,   'mythic' => 2),
 	'placement_3' => array('common' => 25, 'uncommon' => 30, 'epic' => 27, 'legendary' => 15,  'mythic' => 3),
 	'placement_1' => array('common' => 15, 'uncommon' => 25, 'epic' => 30, 'legendary' => 22,  'mythic' => 8),
+
+	/*
+	 * SIX RUNGS BETWEEN THE FOUR, ADDED FOR INFILTRATION.
+	 *
+	 * The four above are unchanged to the decimal and every existing game
+	 * still names one of them, so nothing else on the platform moves.
+	 *
+	 * WHY THEY EXIST. Infiltration climbs a tier per prompt reply, and with
+	 * only four tables that ladder is finished in two posts -- the
+	 * consistency it is meant to reward never gets tested. Ten rungs make
+	 * every single reply change the odds, which is also the difference
+	 * between a meter worth watching and a bar that moves three times.
+	 *
+	 * INTERPOLATED, NOT HAND WRITTEN, between run / placement_10 /
+	 * placement_3 / placement_1 at ladder positions 0, 3, 5 and 9. Every row
+	 * sums to 100. common falls and epic, legendary and mythic rise all the
+	 * way up; uncommon HUMPS in the middle and is meant to, because at the
+	 * top table the weight moves into epic and legendary -- the original four
+	 * already do that (28, 30, 30, 25), so a monotonic check on that column
+	 * is the wrong check.
+	 *
+	 * THERE IS NOTHING ABOVE placement_1 AND THERE MUST NOT BE. See the
+	 * guard in dhcbosses-harness.php: a tier above it would silently demote
+	 * every existing top prize -- winning the Arena, downing a boss crew,
+	 * filling the Portal board -- without touching a line of their code.
+	 * daily-reward-harness.php asserts placement_1 outranks every key here.
+	 */
+	'infil_1'     => array('common' => 49.3, 'uncommon' => 28.7, 'epic' => 15.7, 'legendary' => 5.3,  'mythic' => 1),
+	'infil_2'     => array('common' => 43.7, 'uncommon' => 29.3, 'epic' => 18.3, 'legendary' => 7.2,  'mythic' => 1.5),
+	'infil_4'     => array('common' => 31.5, 'uncommon' => 30,   'epic' => 24,   'legendary' => 12,   'mythic' => 2.5),
+	'infil_6'     => array('common' => 22.4, 'uncommon' => 28.8, 'epic' => 27.8, 'legendary' => 16.8, 'mythic' => 4.2),
+	'infil_7'     => array('common' => 20,   'uncommon' => 27.5, 'epic' => 28.5, 'legendary' => 18.5, 'mythic' => 5.5),
+	'infil_8'     => array('common' => 17.6, 'uncommon' => 26.2, 'epic' => 29.2, 'legendary' => 20.2, 'mythic' => 6.8),
 ));
 
-/** Rank the tables so "whichever is better" is a comparison, not a guess. */
+/**
+ * THE LADDER, IN ORDER. Rung 0 to rung 9.
+ *
+ * One list, so the rank map, the Infiltration bands and anything that wants
+ * to draw the ladder cannot disagree about its shape. placement_1 is last
+ * and nothing may be appended after it.
+ */
+function dhcf_ladder() {
+	return array('run', 'infil_1', 'infil_2', 'placement_10', 'infil_4',
+	             'placement_3', 'infil_6', 'infil_7', 'infil_8', 'placement_1');
+}
+
+/**
+ * Rank the tables so "whichever is better" is a comparison, not a guess.
+ *
+ * BUILT FROM dhcf_ladder(), not hand numbered. It was a literal map of four,
+ * and an unknown name returns 0 -- so the six rungs added for Infiltration
+ * would have ranked as the WORST table and lost every best-of comparison in
+ * dhcf_table_for(). A player on rung 8 would have rolled 'run'.
+ *
+ * The ranks of the original four therefore CHANGED: placement_10 is 3 now,
+ * placement_3 is 5, placement_1 is 9. Only their ORDER is load-bearing and
+ * that is unchanged. One assertion depended on the literal -- see
+ * dhcbosses-harness.php, which now asserts placement_1 is the maximum rather
+ * than that it equals 3.
+ */
 function dhcf_table_rank($name) {
-	$order = array('run' => 0, 'placement_10' => 1, 'placement_3' => 2, 'placement_1' => 3);
+	static $order = null;
+	if ($order === null) {
+		$order = array();
+		foreach (dhcf_ladder() as $i => $t) $order[$t] = $i;
+	}
 	return isset($order[$name]) ? $order[$name] : 0;
 }
 
@@ -1595,7 +1687,13 @@ function dhcf_tier_colours() {
  */
 function dhcf_table_labels() {
 	return array('run' => 'standard odds', 'placement_10' => 'improved odds',
-	             'placement_3' => 'strong odds', 'placement_1' => 'best odds');
+	             'placement_3' => 'strong odds', 'placement_1' => 'best odds',
+	             /* The six Infiltration rungs sit BETWEEN those four, so they
+	                borrow the label of the named table below them rather than
+	                inventing four more adjectives nobody can rank by eye. */
+	             'infil_1' => 'standard odds', 'infil_2' => 'standard odds',
+	             'infil_4' => 'improved odds', 'infil_6' => 'strong odds',
+	             'infil_7' => 'strong odds',   'infil_8' => 'strong odds');
 }
 
 /* ------------------------------------------------------------------ *
