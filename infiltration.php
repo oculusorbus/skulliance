@@ -75,14 +75,10 @@ if ($inf_ready && $inf_uid > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
 	exit;
 }
 
-foreach (array('inf_flash' => 'inf_flash', 'inf_bad' => 'inf_bad', 'inf_drop' => 'inf_drop') as $k => $v) {
-	if (isset($_SESSION[$k])) {
-		if ($k === 'inf_drop') $inf_drop = $_SESSION[$k];
-		else if ($k === 'inf_flash') $inf_flash = (string) $_SESSION[$k];
-		else $inf_bad = (string) $_SESSION[$k];
-		unset($_SESSION[$k]);
-	}
-}
+/* Read once and clear, so a refresh does not repeat the message. */
+if (isset($_SESSION['inf_flash'])) { $inf_flash = (string) $_SESSION['inf_flash']; unset($_SESSION['inf_flash']); }
+if (isset($_SESSION['inf_bad']))   { $inf_bad   = (string) $_SESSION['inf_bad'];   unset($_SESSION['inf_bad']); }
+if (isset($_SESSION['inf_drop']))  { $inf_drop  = $_SESSION['inf_drop'];           unset($_SESSION['inf_drop']); }
 
 $inf_handle = $inf_ready ? infil_handle($conn, $inf_uid) : '';
 $inf_linked = $inf_ready && infil_uid($conn, $inf_uid) !== '';

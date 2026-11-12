@@ -16379,9 +16379,12 @@ function checkInfiltrationLeaderboard($conn, $monthly = false, $rewards = false)
 		$avatar_url = (isset($row['discord_id'], $row['avatar']) && $row['avatar'] !== '')
 		            ? "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".png"
 		            : "icons/skull.png";
-		$stats = (int) $row['month_tiers'] . " rungs climbed, now on rung "
-		       . (int) $row['tier'] . " of " . INFIL_MAX_TIER;
-		if ((int) $row['bank'] > 0) $stats .= ", " . (int) $row['bank'] . " banked";
+		/* AN ARRAY, label => value. renderLeaderboardList() does
+		   `foreach($row['stats'] as $label => $value)`, so a string here
+		   renders no stats at all and warns on every row. */
+		$stats = ['Rungs this month' => (int) $row['month_tiers'],
+		          'Rung'             => (int) $row['tier'] . ' of ' . INFIL_MAX_TIER];
+		if ((int) $row['bank'] > 0) $stats['Banked'] = (int) $row['bank'];
 
 		$lb_rows[] = ['rank' => $rank, 'trophy' => '', 'avatar_url' => $avatar_url,
 		              'name' => htmlspecialchars($row['username']), 'highlight' => false,
@@ -16392,8 +16395,11 @@ function checkInfiltrationLeaderboard($conn, $monthly = false, $rewards = false)
 			updateBalance($conn, $row['user_id'], 15, $pay);
 			logCredit($conn, $row['user_id'], $pay, 15);
 			if ($rank <= 45) {
+				$line = (int) $row['month_tiers'] . ' rungs climbed, now on rung '
+				      . (int) $row['tier'] . ' of ' . INFIL_MAX_TIER
+				      . ((int) $row['bank'] > 0 ? ', ' . (int) $row['bank'] . ' banked' : '');
 				$description .= "- " . (($rank < 10) ? "0" : "") . $rank
-				              . " <@" . $row['discord_id'] . "> " . $stats . "\r\n";
+				              . " <@" . $row['discord_id'] . "> " . $line . "\r\n";
 				$description .= "        " . number_format($pay) . " CARBON\r\n";
 			}
 		}
