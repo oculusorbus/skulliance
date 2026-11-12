@@ -694,7 +694,18 @@ echo "\nthe chest rattles before it opens, on one clock\n";
  */
 $shakeCss = preg_match('~\.mcm-chest\.is-shaking \{ animation: mcmShake ([0-9.]+)s~', $modal, $sm)
           ? (float)$sm[1] * 1000 : -1;
-$shakeJs  = preg_match('~MCM_SHAKE\s*=\s*MCM_CALM \? 0 : (\d+);~', $modal, $sj) ? (int)$sj[1] : -1;
+/*
+ * DERIVED, NOT TYPED, so this reads whatever the script actually works
+ * out. MCM_SHAKE used to be the literal 660; it is now computed from the
+ * wreath's measured peak, because the rattle builds to the sound rather
+ * than to a number somebody liked. A check that still looked for a
+ * literal reported -1 and failed on correct code.
+ */
+$sfxHit1 = preg_match('~MCM_SFX_HIT1\s*=\s*(\d+);~', $modal, $h1) ? (int)$h1[1] : -1;
+$sfxHit2 = preg_match('~MCM_SFX_HIT2\s*=\s*(\d+);~', $modal, $h2) ? (int)$h2[1] : -1;
+$shakeJs  = preg_match('~MCM_SHAKE\s*=\s*MCM_CALM \? 0 : \(MCM_SFX_HIT1 - MCM_SHAKE_AT - 40\);~', $modal)
+          ? ($sfxHit1 - (preg_match('~MCM_SHAKE_AT\s*=\s*(\d+);~', $modal, $sa0) ? (int)$sa0[1] : 0) - 40)
+          : (preg_match('~MCM_SHAKE\s*=\s*MCM_CALM \? 0 : (\d+);~', $modal, $sj) ? (int)$sj[1] : -1);
 ok($shakeCss > 0, 'the rattle has no CSS animation, so the chest just waits and then opens');
 ok($shakeJs > 0,  'the script has no rattle duration, so nothing drives the delay');
 ok((int)$shakeCss === $shakeJs,
@@ -860,6 +871,73 @@ ok($sfxb !== '' && strpos($sfxb, 'try {') !== false && strpos($sfxb, 'catch') !=
    'a sound that will not play can throw into the claim reveal');
 ok($sfxb !== '' && strpos($sfxb, 'pr.catch') !== false,
    'the play() promise is unhandled, so a blocked autoplay logs an unhandled rejection every claim');
+
+/*
+ * THE PICTURES ARE CUT TO THE SOUND.
+ *
+ * quest_award_wreath.ogg is not a hit, it is a two-second swell that
+ * lands and then a second smaller hit just after. Measured off the file
+ * at 10ms resolution: the swell starts at 0.30s, peaks at 2.34s -- the
+ * loudest frame in the whole file -- and hits again at 2.93s.
+ *
+ * So the rattle builds across the swell, the lid goes on the peak with
+ * the diamonds layered on it, and the icons land on the second hit.
+ * These are measurements, not preferences, and the arithmetic below is
+ * what keeps them true when any one of them is edited.
+ */
+ok($sfxHit1 > 0 && $sfxHit2 > $sfxHit1,
+   'the measured hits are missing or out of order, so nothing below is checking a sync');
+
+/*
+ * THE MEASUREMENT ITSELF, PINNED TO A BAND.
+ *
+ * Everything below derives from these two numbers, so arithmetic alone
+ * cannot catch them being wrong -- MCM_KIDS_AT is HIT2 minus HIT1, which
+ * makes "the icons land on the second hit" true by construction whatever
+ * the hits say. Only the file can contradict them.
+ *
+ * Read from quest_award_wreath.ogg at 10ms resolution (mono, 8kHz, RMS
+ * per frame, onsets by positive rise over a 60ms window): the swell
+ * begins at 0.30s, the loudest frame in the file is 2.34s, and the
+ * second onset is 2.93s at 43% of peak. The bands are +/- 40ms, which is
+ * tighter than a frame at 24fps and looser than the measurement's own
+ * resolution.
+ *
+ * IF THE SOUND IS REPLACED, RE-MEASURE -- do not widen these.
+ */
+ok($sfxHit1 >= 2300 && $sfxHit1 <= 2380,
+   'MCM_SFX_HIT1 is ' . $sfxHit1 . 'ms; the wreath peaks at 2340ms, so the lid lands off the hit');
+ok($sfxHit2 >= 2890 && $sfxHit2 <= 2970,
+   'MCM_SFX_HIT2 is ' . $sfxHit2 . 'ms; the wreath hits again at 2930ms, so the icons land off it');
+ok($sfxHit2 - $sfxHit1 >= 550 && $sfxHit2 - $sfxHit1 <= 630,
+   'the gap between the two hits is ' . ($sfxHit2 - $sfxHit1) . 'ms, not the measured 590ms');
+
+/* THE LID LANDS ON THE FIRST HIT. MCM_OPEN is built from the rattle, so
+   this is the whole chain: start + length + the held beat == the peak. */
+ok($shakeAt + $shakeJs + 40 === $sfxHit1,
+   'the lid opens at ' . ($shakeAt + $shakeJs + 40) . 'ms and the wreath peaks at '
+ . $sfxHit1 . 'ms, so the chest opens into silence or after it');
+
+/* AND THE ICONS LAND ON THE SECOND. Expressed as a distance from the
+   lid, because everything after the open already is. */
+$kidsAt = preg_match('~MCM_KIDS_AT\s*=\s*MCM_CALM \? 190 : \(MCM_SFX_HIT2 - MCM_SFX_HIT1\);~', $modal)
+        ? ($sfxHit2 - $sfxHit1) : -1;
+ok($kidsAt > 0, 'the icon landing is not derived from the two hits, so it cannot stay in sync');
+ok($sfxHit1 + $kidsAt === $sfxHit2,
+   'the icons land at ' . ($sfxHit1 + $kidsAt) . 'ms and the second hit is at '
+ . $sfxHit2 . 'ms');
+ok(strpos($modal, 'at(MCM_OPEN + MCM_KIDS_AT,') !== false,
+   'the icons fly on a hardcoded offset again rather than on the measured hit');
+
+/*
+ * REDUCED MOTION KEEPS THE OLD SHAPE, which is the right answer rather
+ * than a convenient one: the sound does not play at all for those
+ * players, so there is nothing to synchronise to, and making them wait
+ * 2.3 seconds for a chest to open would be the opposite of what they
+ * asked for.
+ */
+ok(strpos($modal, 'MCM_KIDS_AT  = MCM_CALM ? 190') !== false,
+   'reduced motion inherits the sound-synced timing, so it waits on an animation it is not getting');
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

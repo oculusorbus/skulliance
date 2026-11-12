@@ -377,7 +377,11 @@ foreach ($ms_daily['days'] as $mcm_d) {
  * MCM_SHAKE in the script below is this duration. The two have to agree
  * or the chest either opens mid-rattle or sits still waiting for it.
  */
-.mcm-chest.is-shaking { animation: mcmShake .66s ease-in both; }
+/* 2s, NOT .66s, AND THE NUMBER IS MEASURED. The rattle now builds across
+   the wreath's swell to land the lid on its first hit -- see MCM_SHAKE in
+   the script, which must agree with this and which the harness compares.
+   The keyframes are percentages, so the escalation simply stretches. */
+.mcm-chest.is-shaking { animation: mcmShake 2s ease-in both; }
 @keyframes mcmShake {
   0%   { transform: none; }
   9%   { transform: translate3d(-1px, 0, 0) rotate(-.5deg); }
@@ -572,9 +576,35 @@ foreach ($ms_daily['days'] as $mcm_d) {
 	 */
 	var MCM_CALM     = window.matchMedia
 	                 && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-	var MCM_SHAKE    = MCM_CALM ? 0 : 660;
-	var MCM_SHAKE_AT = 200;
+
+	/*
+	 * THE PICTURES ARE CUT TO THE SOUND, AND THESE THREE NUMBERS ARE
+	 * MEASURED OFF IT RATHER THAN CHOSEN.
+	 *
+	 * quest_award_wreath.ogg is not a hit: it is a two-second swell that
+	 * lands, and then a second smaller hit just after. Read off the file
+	 * at 10ms resolution -- the swell begins at 0.30s, peaks hard at
+	 * 2.34s (the loudest frame in the whole file), and the second hit is
+	 * at 2.93s.
+	 *
+	 * So the rattle starts when the swell does and runs until the lid,
+	 * the lid goes on the peak, and the icons land on the second hit.
+	 * Nothing here is a feel number any more; if the sound is ever
+	 * replaced these have to be re-measured.
+	 */
+	var MCM_SFX_HIT1 = 2340;   /* the wreath's peak -- measured */
+	var MCM_SFX_HIT2 = 2930;   /* its second hit -- measured */
+
+	var MCM_SHAKE_AT = 300;    /* where the swell becomes audible */
+	/* 40ms of stillness before the lid, which is what makes the pop land
+	   -- so the rattle has to stop that much before the peak. */
+	var MCM_SHAKE    = MCM_CALM ? 0 : (MCM_SFX_HIT1 - MCM_SHAKE_AT - 40);
 	var MCM_OPEN     = MCM_SHAKE ? MCM_SHAKE_AT + MCM_SHAKE + 40 : 240;
+	/* The icons fly on the second hit. Expressed as a distance from the
+	   lid, because everything after the open already is -- and under
+	   reduced motion, where there is no sound to hit, it keeps the
+	   original 190ms. */
+	var MCM_KIDS_AT  = MCM_CALM ? 190 : (MCM_SFX_HIT2 - MCM_SFX_HIT1);
 
 	/*
 	 * TWO SOUNDS, ON THE TWO BEATS THE ANIMATION ALREADY HAS.
@@ -726,7 +756,7 @@ foreach ($ms_daily['days'] as $mcm_d) {
 			k.style.setProperty('--mcmdx', (mx - (r.left + r.width / 2)).toFixed(1) + 'px');
 			k.style.setProperty('--mcmdy', (my - (r.top + r.height / 2)).toFixed(1) + 'px');
 			k.style.transitionDelay = (i * 0.11) + 's, 0s';
-			at(MCM_OPEN + 190, function () { k.classList.add('in'); });
+			at(MCM_OPEN + MCM_KIDS_AT, function () { k.classList.add('in'); });
 		});
 	};
 
