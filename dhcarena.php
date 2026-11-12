@@ -4377,15 +4377,34 @@ function shareLink(won, standing){
    * on the other side and whoever did it -- so the post named no opponent,
    * no Fighter, and gave a reader nothing to be curious about.
    *
-   * NAMED IN WORDS, NEVER @-TAGGED. S.meta.defenderName is a Discord
-   * username; the platform stores no X handle for anybody, so an @ would
-   * tag whichever stranger holds that name over there. dhc-fighter-modal.php
-   * credits a Fighter's builder the same way and for the same reason.
+   * NAMED IN WORDS, AND @-TAGGED WHEN WE ACTUALLY KNOW THE ACCOUNT.
+   *
+   * This said "never @-tagged", because the platform stored no X handle for
+   * anybody and an @ would have tagged whichever stranger held that name
+   * over there. Connecting an X account changed that: a handle reaching
+   * here has been proved to belong to that member by a comment posted from
+   * it, so the @ points at the person the post is about.
+   *
+   * WORTH DOING because a tagged opponent is notified and often answers,
+   * and a reply the author engages with is the highest weighted signal in
+   * X's ranker by a long way -- far more than the post itself earns.
+   *
+   * THE DISCORD NAME STAYS IN FRONT OF IT. Most of the audience reads this
+   * from Discord, where an @handle names nobody they recognise; and a
+   * handle can be renamed, so the name is the half that always means
+   * something. "oculusorbus (@oculusorbus)" is one word longer than either
+   * alone and is the only version that works on both sides.
    */
   /* S.defenderName, not S.meta.defenderName: dhca_public() does not send
      meta -- it holds the Fighter ids and the move list -- so reading it
      there found nothing every time and every post said "a real opponent". */
   var foe = (S && S.defenderName) ? String(S.defenderName) : '';
+  /* Re-validated in the browser too. It is three lines and this string goes
+     into a public post as an @mention. */
+  var foeX = (S && S.defenderX && /^[A-Za-z0-9_]{1,15}$/.test(String(S.defenderX)))
+           ? String(S.defenderX) : '';
+  if (foe && foeX) foe = foe + ' (@' + foeX + ')';
+  else if (!foe && foeX) foe = '@' + foeX;
   /*
    * PRACTICE HAS NO OPPONENT, so it must not claim one. A practice battle is
    * built from a generated spec with no meta at all -- the board is never

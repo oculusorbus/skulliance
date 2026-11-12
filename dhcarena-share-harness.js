@@ -53,7 +53,7 @@ const src = page.slice(a, b + 3);
 function post(over) {
 	const o = Object.assign({
 		won: false, standing: 1, practice: false, battleId: 7,
-		defenderName: 'michael_6658', defenderTag: '', best: 1,
+		defenderName: 'michael_6658', defenderTag: '', defenderX: '', best: 1,
 		mine: ['Kat Skratch', 'OrbiTall', 'Grim'],
 		foes: ['Bonecage', 'Sledge', 'Vex'],
 	}, over || {});
@@ -66,6 +66,7 @@ function post(over) {
 		battleId: o.battleId,
 		S: {
 			defenderName: o.defenderName, defenderTag: o.defenderTag,
+			defenderX: o.defenderX,
 			stats: { best: o.best },
 			/* ko flags only matter to the win branch's hero list; the
 			   count the post uses is the `standing` argument, exactly as
@@ -132,6 +133,33 @@ console.log('the opponent is named in words, and only the asides that point at t
 	ok(/a practice Crew/.test(post({ practice: true }).text)
 	   && post({ practice: true }).text.indexOf('michael') === -1,
 	   'a practice battle claims a real opponent');
+}
+
+console.log('and @-tagged once the opponent has connected an X account');
+{
+	/* A handle only reaches the client through a verified account link, so
+	   an @ here points at the person the post is about rather than at
+	   whichever stranger holds that Discord name on X. A tagged opponent is
+	   notified and often replies, and a reply the author engages with is
+	   the highest weighted signal in X's ranker. */
+	const tagged = post({ defenderX: 'michael_x' }).text;
+	ok(tagged.indexOf('@michael_x') !== -1,
+	   'a connected opponent is not tagged, so they are never notified');
+	ok(tagged.indexOf('michael_6658') !== -1,
+	   'the Discord name was dropped for the handle, which names nobody to '
+	 + 'the Discord half of the audience -- and a handle can be renamed');
+
+	/* The value becomes an @mention in a public post, so anything that is
+	   not shaped like a handle must not get there. */
+	['bad handle', 'a'.repeat(16), 'x;drop', '@already', ''].forEach((junk) => {
+		const t = post({ defenderX: junk }).text;
+		ok(t.indexOf('(@') === -1,
+		   'a malformed handle was @-tagged anyway: "' + junk + '"');
+	});
+
+	/* Still true, and the reason the guard above exists at all. */
+	ok(post({}).text.indexOf('@michael_6658') === -1,
+	   'with no connected account the Discord name is tagged after all');
 }
 
 console.log('the budget holds, and the parts that must survive it are in front');

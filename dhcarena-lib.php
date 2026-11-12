@@ -667,14 +667,38 @@ function dhca_start($conn, $user_id, $defender_id, $fighter_ids) {
 	 * The client knows the rival it clicked, but not after a resume, so the
 	 * name belongs in the battle rather than in the page that started it.
 	 *
-	 * The USERNAME, which is a Discord username. The platform stores no X
-	 * handle for anybody, so this is named in words and never @-tagged --
-	 * an @ in front of it would tag whichever stranger holds that name on
-	 * X. Same rule dhc-fighter-modal.php follows for a Fighter's builder.
+	 * The USERNAME, which is a Discord username, PLUS the X handle when
+	 * there is one.
+	 *
+	 * This used to read "the platform stores no X handle for anybody, so
+	 * this is named in words and never @-tagged -- an @ in front of it
+	 * would tag whichever stranger holds that name on X". That was true
+	 * and is not any more: users.x_username is written ONLY by a verified
+	 * account link, so a handle present here has been proved to belong to
+	 * that member by a comment they posted from it.
+	 *
+	 * BOTH ARE SENT, and the share picks. The @ is worth having because a
+	 * tagged opponent gets a notification and often replies, and a reply
+	 * the author engages with is the single highest-weighted signal in X's
+	 * ranker -- but a post that drops the Discord name entirely is unreadable
+	 * to everyone in Discord, which is most of the audience.
+	 *
+	 * STALE HANDLES ARE THE ONE RISK. X lets a handle be renamed and the
+	 * old one re-registered by somebody else, so a stored handle can come
+	 * to point at a stranger. x_id is the identity and never moves;
+	 * x_username is display text, and infil_submit() refreshes it on every
+	 * verified infiltration, which keeps it current for anybody active.
 	 */
-	$dname = '';
-	$dq = $conn->query("SELECT username FROM users WHERE id = " . (int)$defender_id . " LIMIT 1");
-	if ($dq && ($drow = $dq->fetch_assoc())) $dname = (string)$drow['username'];
+	$dname = ''; $dx = '';
+	$dq = $conn->query("SELECT username, x_username FROM users WHERE id = "
+	                 . (int)$defender_id . " LIMIT 1");
+	if ($dq && ($drow = $dq->fetch_assoc())) {
+		$dname = (string)$drow['username'];
+		$dx    = isset($drow['x_username']) ? (string)$drow['x_username'] : '';
+		/* Belt and braces: only ever emit something that IS an X handle.
+		   A junk value here becomes an @mention in a public post. */
+		if (!preg_match('/^[A-Za-z0-9_]{1,15}$/', $dx)) $dx = '';
+	}
 
 	/*
 	 * WHAT THIS OPPONENT IS TO THE ATTACKER, for the share text.
@@ -707,6 +731,7 @@ function dhca_start($conn, $user_id, $defender_id, $fighter_ids) {
 	$b['meta'] = array(
 		'attacker'=>$user_id, 'defender'=>$defender_id,
 		'defenderName'=>$dname,
+		'defenderX'=>$dx,
 		'defenderTag'=>$dtag,
 		'mineIds'=>array_map(function($f){ return (int)$f['id']; }, $mine),
 		'foeIds' =>array_map(function($f){ return (int)$f['id']; }, $foes),

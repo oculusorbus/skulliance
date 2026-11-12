@@ -1037,6 +1037,20 @@ function dhca_public(&$b) {
 		 */
 		'defenderName'=>isset($b['meta']['defenderName']) ? (string)$b['meta']['defenderName'] : '',
 		/*
+		 * THEIR X HANDLE, when they have connected one. Verified: it is
+		 * written only by an account link, which proves ownership through a
+		 * comment posted from that account. The share @-tags it so the
+		 * opponent is notified and can answer; the Discord name still
+		 * carries the post for everybody reading from Discord.
+		 *
+		 * Re-validated here as well as at the source. This value ends up as
+		 * an @mention in a public post, and the two places that can put it
+		 * there should not both be trusting the other to have checked.
+		 */
+		'defenderX'=>(isset($b['meta']['defenderX'])
+		              && preg_match('/^[A-Za-z0-9_]{1,15}$/', (string)$b['meta']['defenderX']))
+		             ? (string)$b['meta']['defenderX'] : '',
+		/*
 		 * AND WHAT THEY ARE TO YOU, for the share text.
 		 *
 		 * A player hand-edited his own post to read "Swept (my tormentor)

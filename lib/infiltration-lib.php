@@ -1044,6 +1044,27 @@ function infil_submit($conn, $user_id, $target_id, $comment_url, $fetcher = null
 	$table  = infil_table($before['tier']);
 	$tname  = infil_table_name($before['tier']);
 
+	/*
+	 * REFRESH THE STORED HANDLE WHILE WE HAVE A FRESH ONE.
+	 *
+	 * x_id is the identity and never moves; x_username is display text and
+	 * X lets it be renamed, with the old name free for somebody else to
+	 * register. That matters now the Arena share @-tags an opponent's
+	 * handle: a stale one tags a stranger in a public post.
+	 *
+	 * This call already cost us the round trip, and user.screen_name on the
+	 * payload is current by definition, so anybody who infiltrates keeps
+	 * their handle correct for free. Only matched on x_id, so it cannot
+	 * move a handle onto the wrong row.
+	 */
+	if ($d['handle'] !== '' && $d['handle'] !== infil_handle($conn, $user_id)
+	    && preg_match('/^[A-Za-z0-9_]{1,15}$/', $d['handle'])) {
+		@$conn->query("UPDATE users SET x_username = '"
+		            . $conn->real_escape_string($d['handle']) . "'
+		              WHERE id = $user_id AND x_id = '"
+		            . $conn->real_escape_string($d['uid']) . "'");
+	}
+
 	$sub_id = infil_record($conn, $user_id, (int) $target['id'], $sid, $d, $norm, $speed, $gain);
 	if ($sub_id <= 0) {
 		return $fail(INFIL_PENDING, 'could not save that just now. Try again in a minute.');
