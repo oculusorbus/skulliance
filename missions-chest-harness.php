@@ -341,11 +341,17 @@ ok($clHandler !== '', 'the Collect button has no click handler at all');
 ok($clHandler !== '' && preg_match('~(^\s*close\s*$|close\(\))~', $clHandler) === 1,
    'the Collect button does not close the reveal');
 /* AND IT ANSWERS THE PRESS. A button that closes in silence is the one
-   control in this reveal with no feedback at all. */
-ok($clHandler !== '' && strpos($clHandler, "mcmSfx('tick')") !== false,
+   control in this reveal with no feedback at all. Its own sound, not one
+   of the reveal's -- the tick moved onto the lid. */
+ok($clHandler !== '' && strpos($clHandler, "mcmSfx('done')") !== false,
    'the Collect button makes no sound, so the press goes unanswered');
-ok(strpos($modal, "'sounds/tick.ogg'") !== false,
-   'the tick is gone from the sound table, so Collect plays nothing');
+ok(strpos($modal, "'sounds/pokerscore.ogg'") !== false,
+   'the Collect sound is gone from the table, so the button plays nothing');
+/* It must not borrow a layer off the lid: that one is still playing. */
+ok($clHandler !== '' && strpos($clHandler, "mcmSfx('lid')") === false
+   && strpos($clHandler, "mcmSfx('open')") === false,
+   'Collect replays one of the reveal layers, which is still sounding when it is pressed');
+
 
 /*
  * THE RATTLE KEEPS THE ORIGINAL'S PACE. Stretching .66s to 2s slowed the
@@ -899,6 +905,16 @@ $lid = count($m_lid) === 2 ? $m_lid[1] : '';
 ok($lid !== '', 'the lid beat could not be lifted');
 ok($lid !== '' && strpos($lid, "mcmSfx('lid')") !== false,
    'the second sound is not fired on the lid beat, so it can drift away from the lid');
+
+/*
+ * THREE LAYERS ON THE LID, not two. The wreath peaks, the diamonds hit
+ * and the tick snaps on top -- all on the same instant, which is the
+ * measured MCM_SFX_HIT1 and is also when the chest opens.
+ */
+ok($lid !== '' && strpos($lid, "mcmSfx('tick')") !== false,
+   'the tick does not land on the lid with the other two');
+ok(strpos($modal, "'sounds/tick.ogg'") !== false,
+   'the tick is gone from the sound table entirely');
 /* ON the beat, not a delay from it. Being inside the block is not
    enough -- a setTimeout in there is a second hardcoded timestamp of
    exactly the kind this file already refuses for the visuals, and it

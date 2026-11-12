@@ -665,10 +665,15 @@ foreach ($ms_daily['days'] as $mcm_d) {
 	var MCM_SFX = {
 		open: ['sounds/quest_award_wreath.ogg', 0.55],
 		lid:  ['sounds/diamond_mine_treasurefind_diamonds.ogg', 0.75],
+		/* THE THIRD LAYER ON THE LID, under the other two. All three
+		   land on the wreath's peak -- the swell arrives, the diamonds
+		   hit and the tick snaps on top. Quieter than both, because a
+		   third voice at full volume is a pile rather than a chord. */
+		tick: ['sounds/tick.ogg', 0.45],
 		/* Collect. A press wants an answer, and this one closes the
 		   modal -- so it is the last thing heard rather than something
 		   layered over the reveal. */
-		tick: ['sounds/tick.ogg', 0.6]
+		done: ['sounds/pokerscore.ogg', 0.6]
 	};
 	var mcmAudio = {};
 	function mcmSfx(key) {
@@ -773,8 +778,10 @@ foreach ($ms_daily['days'] as $mcm_d) {
 		at(MCM_OPEN, function () {
 			chest.classList.remove('is-shaking');
 			chest.classList.add('is-open', 'is-bursting');
-			/* On the lid, over the wreath rather than after it. */
+			/* All three on the lid, over the wreath rather than after
+			   it: the peak, the diamonds and the tick together. */
 			mcmSfx('lid');
+			mcmSfx('tick');
 		});
 		at(MCM_OPEN + 1300, function () {
 			chest.classList.remove('is-bursting');
@@ -825,7 +832,7 @@ foreach ($ms_daily['days'] as $mcm_d) {
 	window.SK_CLAIM_CLOSE = close;
 
 	document.getElementById('mcm-close').addEventListener('click', function () {
-		mcmSfx('tick');
+		mcmSfx('done');
 		close();
 	});
 	veil.addEventListener('click', function (e) { if (e.target === veil) close(); });
