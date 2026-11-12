@@ -102,12 +102,18 @@ include 'header.php';
    Re-cropping in an editor would mean a new upload every time a ratio
    changes. The colour under it is not decoration -- it is what shows if the
    file is not on the server yet, so the page never renders as a white gap. */
-/* 1600/820 AND 10% DOWN, both measured against the real art rather than
-   guessed: at the 1600/520 this started as, the band cut the X through the
-   middle and left the skeletons as a row of skulls along the bottom edge.
-   820 rows at 10% shows the whole structure with the crowd rushing it. */
+/* 90% IS THE OWNER'S OWN FIGURE, found against the real art in a browser,
+   the same way the -180px on .lp-stage-art was. It puts the band low: the
+   foot of the structure and the front rank of skeletons rather than the
+   sky. My 10% framed the whole X and was the wrong call -- the army is the
+   subject, and the X reads from its base.
+
+   A PERCENTAGE, NOT A PIXEL OFFSET, so the crop holds at every width: the
+   box is a ratio of the viewport, so its height tracks its width, and a
+   fixed offset would walk down the picture as the window narrows. That is
+   the mistake .lp-stage-art records having made. */
 .inf-hero { position:relative; width:100%; aspect-ratio: 1600/820; min-height:190px;
-  background:#0a0a14 url(images/infiltration/hero.webp) 50% 10% / cover no-repeat;
+  background:#0a0a14 url(images/infiltration/hero.webp) 50% 90% / cover no-repeat;
   border:1px solid rgba(110,74,168,.4); display:flex; align-items:flex-end; }
 /* The scrim starts at 62%, not 38%. It exists so the title reads, and at
    this height the earlier value darkened the entire crowd to get there --
