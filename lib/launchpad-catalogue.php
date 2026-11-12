@@ -192,7 +192,7 @@ $lp_sections = array(
 			 * (logged out it redirects to error.php), so a tile here is safe
 			 * where a nav entry there would not be.
 			 */
-			array('infiltration.php',    '🎯', 'Infiltration',    'Reply on X, climb the rarity ladder'),
+			array('infiltration.php',    '🎯', 'Infiltration',    'Target, infiltrate, climb the rarity ladder'),
 		),
 	),
 	'Collect' => array(
