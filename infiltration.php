@@ -102,11 +102,24 @@ include 'header.php';
    Re-cropping in an editor would mean a new upload every time a ratio
    changes. The colour under it is not decoration -- it is what shows if the
    file is not on the server yet, so the page never renders as a white gap. */
-.inf-hero { position:relative; width:100%; aspect-ratio: 1600/520; min-height:190px;
-  background:#0a0a14 url(images/infiltration/hero.webp) 50% 34% / cover no-repeat;
+/* 1600/820 AND 10% DOWN, both measured against the real art rather than
+   guessed: at the 1600/520 this started as, the band cut the X through the
+   middle and left the skeletons as a row of skulls along the bottom edge.
+   820 rows at 10% shows the whole structure with the crowd rushing it. */
+.inf-hero { position:relative; width:100%; aspect-ratio: 1600/820; min-height:190px;
+  background:#0a0a14 url(images/infiltration/hero.webp) 50% 10% / cover no-repeat;
   border:1px solid rgba(110,74,168,.4); display:flex; align-items:flex-end; }
+/* The scrim starts at 62%, not 38%. It exists so the title reads, and at
+   this height the earlier value darkened the entire crowd to get there --
+   covering the half of the picture that is the reason for using it. */
 .inf-hero::after { content:''; position:absolute; inset:0;
-  background:linear-gradient(180deg, rgba(8,6,16,0) 38%, rgba(8,6,16,.86) 100%); }
+  background:linear-gradient(180deg, rgba(8,6,16,0) 62%, rgba(8,6,16,.9) 100%); }
+/* A 1600px file on a 400px screen is four times the pixels anyone sees.
+   900px is the breakpoint because below it the band is never wider than
+   that, so the 800px file is still over-sampled rather than soft. */
+@media (max-width:900px){
+  .inf-hero { background-image:url(images/infiltration/hero-800.webp); }
+}
 .inf-hero-in { position:relative; z-index:1; padding:20px 24px; width:100%; }
 .inf-hero h2 { font-size:1.6rem; letter-spacing:.14em; text-transform:uppercase;
   color:#e8e2f8; text-shadow:0 2px 14px rgba(0,0,0,.9); }
