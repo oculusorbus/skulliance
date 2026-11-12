@@ -365,6 +365,49 @@ function activity_mention_names($conn, $rows) {
 	return $out;
 }
 
+/**
+ * One Discord timestamp, as text a web page can show.
+ *
+ * Styles are Discord's: t short time, T long time, d short date, D long
+ * date, f date and time, F full, R relative. Anything else falls to f,
+ * which is what Discord does with a bare <t:unix>.
+ *
+ * Wrapped in <time> with the machine readable instant on it, so the markup
+ * says what the words mean even where nothing reads it back.
+ */
+function activity_timestamp($unix, $style = 'f') {
+	$unix = (int) $unix;
+	if ($unix <= 0) return '';
+
+	if ($style === 'R') {
+		$d    = $unix - time();
+		$ago  = $d < 0;
+		$n    = abs($d);
+		$step = array(array(31536000, 'year'), array(2592000, 'month'), array(86400, 'day'),
+		              array(3600, 'hour'), array(60, 'minute'));
+		$txt  = 'just now';
+		foreach ($step as $u) {
+			if ($n >= $u[0]) {
+				$v   = (int) floor($n / $u[0]);
+				$txt = $v . ' ' . $u[1] . ($v === 1 ? '' : 's');
+				$txt = $ago ? $txt . ' ago' : 'in ' . $txt;
+				break;
+			}
+		}
+		if ($txt === 'just now' && !$ago && $n >= 5) $txt = 'in a moment';
+	} else {
+		/* The zone is named on anything absolute. A reader three timezones
+		   away cannot do anything with "4:30 PM" on its own. */
+		$fmt = array('t' => 'g:i A T', 'T' => 'g:i:s A T', 'd' => 'j/n/Y',
+		             'D' => 'j F Y',   'f' => 'j F Y, g:i A T',
+		             'F' => 'l, j F Y, g:i A T');
+		$txt = date(isset($fmt[$style]) ? $fmt[$style] : $fmt['f'], $unix);
+	}
+
+	return '<time datetime="' . htmlspecialchars(date('c', $unix), ENT_QUOTES, 'UTF-8') . '">'
+	     . htmlspecialchars($txt, ENT_QUOTES, 'UTF-8') . '</time>';
+}
+
 /*
  * Discord markdown -> HTML, for the card body.
  *
@@ -395,6 +438,26 @@ function activity_format($text, $names = array()) {
 	/* <#123> channel and <:name:123> emoji refs, same reasoning. */
 	$s = preg_replace('/&lt;#\d+&gt;/', '', $s);
 	$s = preg_replace('/&lt;a?:(\w+):\d+&gt;/', ':$1:', $s);
+
+	/*
+	 * <t:1794508433:R> -- a Discord timestamp, which only Discord renders.
+	 *
+	 * Reported from the live feed: an Infiltration target announcement came
+	 * through reading "+2 rungs until <t:1794508433:t> (<t:1794508433:R>)".
+	 * Discord turns those into a local wall clock and a live countdown; the
+	 * web feed is not Discord and printed the markup.
+	 *
+	 * Handled HERE rather than by sending the feed a different string,
+	 * because every description on this platform is written for Discord and
+	 * the next one to use a timestamp should not have to remember this.
+	 *
+	 * Rendered on the server, at request time, which is exactly right for a
+	 * relative form -- the page is built fresh on every load, so "in 5
+	 * hours" is true when it is printed. The absolute forms carry the zone,
+	 * because a bare wall clock means nothing to a reader somewhere else.
+	 */
+	$s = preg_replace_callback('/&lt;t:(\d{1,15})(?::([tTdDfFR]))?&gt;/',
+		function ($m) { return activity_timestamp((int) $m[1], isset($m[2]) ? $m[2] : 'f'); }, $s);
 
 	/* [text](url) -- only http(s), and the href is re-escaped. */
 	$s = preg_replace_callback(

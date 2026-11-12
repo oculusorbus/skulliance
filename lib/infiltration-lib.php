@@ -49,6 +49,16 @@ if (!defined('INFIL_LINK_STATUS')) define('INFIL_LINK_STATUS', '2120916830747602
  */
 if (!defined('INFIL_SKULLIANCE_UID')) define('INFIL_SKULLIANCE_UID', '1494210394541412352');
 
+/*
+ * The banner, absolute, for Discord and the on-site feed.
+ *
+ * ABSOLUTE BECAUSE DISCORD FETCHES IT. A relative path on an embed resolves
+ * against discord.com and renders nothing, with no error anywhere.
+ */
+if (!defined('INFIL_BANNER')) {
+	define('INFIL_BANNER', 'https://skulliance.io/staking/images/infiltration/hero.webp');
+}
+
 /* ------------------------------------------------------------------ *
  * THE WINDOWS
  *
@@ -1375,10 +1385,17 @@ function infil_announce_target($conn, $target) {
 	$body .= '**+1 rung** until <t:' . $main  . ':t> (<t:' . $main  . ':R>)' . "\n";
 	$body .= 'After that it still pays a trait, but it will not climb.';
 
+	/*
+	 * THE BANNER ART ON THE ANNOUNCEMENT. Discord fetches this itself, so it
+	 * has to be absolute -- a relative path resolves against discord.com and
+	 * silently renders nothing. Same file the Infiltration page uses, which
+	 * is also why a target post and the page it sends people to look like
+	 * the same thing.
+	 */
 	skl_discordmsg(
 		'New target',
 		$body,
-		'',               /* no image: the embed url carries the post preview */
+		INFIL_BANNER,
 		$url,
 		'infiltrations',  /* -> getInfiltrationsWebhook() */
 		'', '6E4AA8'
@@ -1422,6 +1439,43 @@ function infil_announce($conn, $res) {
 	$tier  = isset($res['meter']['tier']) ? (int) $res['meter']['tier'] : 0;
 	$bank  = isset($res['meter']['bank']) ? (int) $res['meter']['bank'] : 0;
 
+	/*
+	 * THE TRAIT'S OWN ART, and its tier colour on the stripe.
+	 *
+	 * The post named the trait in words and showed a picture of nothing,
+	 * which is the half of a drop announcement anybody actually looks at --
+	 * dhcfighters-notify.php has shown the art on every other source since
+	 * it was written, and this was the one that did not.
+	 *
+	 * 250px, same size that file uses: big enough to read in a feed, small
+	 * enough that Discord fetches it instantly.
+	 */
+	/*
+	 * LOADED HERE, NOT ASSUMED. dhcf_art_base() and dhcf_tier_color() live
+	 * in dhcfighters-notify.php, which dhcfighters-lib.php only requires
+	 * from inside the functions that announce a drop. It is USUALLY loaded
+	 * by the time we get here, because dhcf_award() ran first -- and
+	 * "usually" plus a function_exists guard is precisely how the webhook
+	 * include failed silently for a day. Required outright instead.
+	 *
+	 * Lazily rather than at the top of this file, so the library still
+	 * loads standalone for the harness.
+	 */
+	if (!function_exists('dhcf_art_base') && is_file(__DIR__ . '/../dhcfighters-notify.php')) {
+		require_once __DIR__ . '/../dhcfighters-notify.php';
+	}
+
+	$art   = '';
+	$color = '6E4AA8';
+	if (is_array($res['trait']) && isset($res['trait']['slug'], $res['trait']['category'])
+	    && function_exists('dhcf_art_base')) {
+		$art = dhcf_art_base() . '/250/' . $res['trait']['category']
+		     . '/' . $res['trait']['slug'] . '.png';
+		if (function_exists('dhcf_tier_color')) {
+			$color = dhcf_tier_color((string) $res['trait']['tier']);
+		}
+	}
+
 	$body  = '**@' . $res['handle'] . "**\n> " . trim((string) $res['own']) . "\n\n";
 	if (is_array($res['trait']) && isset($res['trait']['name'])) {
 		$body .= 'Pulled **' . $res['trait']['name'] . '** ('
@@ -1434,9 +1488,9 @@ function infil_announce($conn, $res) {
 	skl_discordmsg(
 		'Infiltration' . ($name !== '' ? ' by ' . $name : ''),
 		$body,
-		'',             /* no image -- the embed's url is the whole point */
+		$art,
 		$link,
 		'infiltrations',                      /* -> getInfiltrationsWebhook() */
-		'', '6E4AA8', null, null, '', $uid
+		'', $color, null, null, '', $uid
 	);
 }

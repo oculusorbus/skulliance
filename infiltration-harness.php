@@ -244,8 +244,8 @@ $SENT = null;
 if (!function_exists('skl_discordmsg')) {
 	function skl_discordmsg($title, $desc, $img = '', $url = '', $chan = '',
 	                        $thumb = '', $color = '000000') {
-		$GLOBALS['SENT'] = array('title' => $title, 'body' => $desc,
-		                         'url' => $url, 'chan' => $chan);
+		$GLOBALS['SENT'] = array('title' => $title, 'body' => $desc, 'img' => $img,
+		                         'url' => $url, 'chan' => $chan, 'color' => $color);
 	}
 }
 $posted_at = '2026-11-12 10:00:00';
@@ -261,6 +261,13 @@ ok($sent['chan'] === 'infiltrations',
 ok(strpos($sent['url'], '2120916830747602945') !== false,
    'the embed does not link the target post');
 ok(strpos($sent['body'], 'Portal announcement') !== false, 'the label was dropped');
+/* The banner, and ABSOLUTE: Discord fetches an embed image itself, so a
+   relative path resolves against discord.com and renders nothing at all,
+   silently. */
+ok(isset($sent['img']) && $sent['img'] === INFIL_BANNER,
+   'the target announcement carries no banner art');
+ok(strpos(INFIL_BANNER, 'https://') === 0,
+   'the banner path is relative, so Discord will resolve it against itself');
 
 /* MINUTES, NOT SECONDS. The windows are stored in minutes and Discord wants
    a unix instant, so the x60 is the one place this can go wrong by a factor
@@ -302,6 +309,27 @@ ok($GLOBALS['SENT'] === null, 'an empty target was announced anyway');
    still contains the string -- so the mutation run passed and the
    assertion was decoration. */
 require_once __DIR__ . '/harness-strip.php';
+head('an infiltration announcement carries the trait it paid');
+require_once __DIR__ . '/dhcfighters-lib.php';
+@require_once __DIR__ . '/dhcfighters-notify.php';
+$GLOBALS['SENT'] = null;
+infil_announce(null, array(
+	'state' => INFIL_OK, 'handle' => 'anzaisrekt', 'own' => 'a real comment here',
+	'speed' => 'early', 'user_id' => 0, 'comment_status' => '2120566235893293205',
+	'meter' => array('tier' => 2, 'bank' => 0),
+	'trait' => array('name' => 'U.E. Mutant #01', 'tier' => 'uncommon',
+	                 'slug' => 'ue-mutant-01', 'category' => 'head'),
+));
+$inf = $GLOBALS['SENT'];
+ok(is_array($inf), 'the infiltration announced nothing');
+ok(strpos($inf['body'], 'U.E. Mutant #01') !== false, 'the trait is not named');
+ok(strpos((string) $inf['img'], 'ue-mutant-01.png') !== false,
+   'the post shows no picture of the trait, which is the half anybody looks at');
+ok(strpos((string) $inf['img'], 'https://') === 0,
+   'the trait art path is relative, so Discord renders nothing');
+ok($inf['color'] === dhcf_tier_color('uncommon'),
+   'the stripe is not the tier colour, so every drop looks the same rarity');
+
 head('the pages that announce can actually reach Discord');
 foreach (array('infiltration.php', 'admin-infiltration.php') as $pg) {
 	$src = @file_get_contents(__DIR__ . '/' . $pg);
