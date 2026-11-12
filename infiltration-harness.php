@@ -333,6 +333,37 @@ ok(strpos($dm, 'd.share_from') !== false,
    'the drop modal still builds its share text from d.from, so quiet_share '
  . 'changes nothing about what gets posted');
 
+/* ------------------------------------------------------------------ *
+ * THE LIKE / REPOST GATE
+ * ------------------------------------------------------------------ */
+head('the page asks for a like and a repost before the comment');
+$pg = harness_strip_comments(@file_get_contents(__DIR__ . '/infiltration.php'));
+ok(strpos($pg, 'data-step="like"') !== false,   'nothing asks the member to like the post');
+ok(strpos($pg, 'data-step="repost"') !== false, 'nothing asks the member to repost it');
+/* THE FORM, not the selector. The first version of this looked for
+   "data-gated" anywhere in the file, which the script's own
+   querySelector('[data-gated]') satisfies -- so removing the attribute from
+   the form left the assertion green and the gate gone. */
+ok(preg_match('~<form[^>]*class="inf-form"[^>]*data-gated~', $pg) === 1,
+   'the comment form does not carry data-gated, so the two steps are a '
+ . 'suggestion nobody has to pass');
+
+head('and does not claim to be checking them');
+/* A fake check is one curious person away from casting doubt on the comment
+   verification, which is real. The copy has to stay honest about which half
+   is which. */
+ok(stripos($pg, 'We cannot check these two') !== false,
+   'the page no longer says the like and repost are untracked');
+foreach (array('verified your like', 'we track', 'confirmed your repost') as $claim) {
+	ok(stripos($pg, $claim) === false, 'the page claims to verify a like or repost: "' . $claim . '"');
+}
+
+head('the gate is applied by script, so it cannot lock anybody out');
+ok(strpos($pg, 'class="inf-form locked"') === false,
+   'the form ships locked in the markup, so a member with scripting off can never submit');
+ok(strpos($pg, "classList.toggle('locked'") !== false,
+   'nothing ever applies the lock, so the gate does nothing');
+
 echo "\n" . ($fail ? "$fail FAILED of $ran\n" : "all $ran assertions pass\n");
 
 /* ================================================================== *

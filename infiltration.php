@@ -195,6 +195,19 @@ include 'header.php';
 .inf-said { font-size:.86rem; color:#8aa0b4; margin:8px 0 0;
   border-left:2px solid rgba(0,200,160,.4); padding-left:10px; }
 
+/* The two steps we cannot verify. Quiet until pressed, so the one control
+   that matters on this card is still the Infiltrate button. */
+.inf-steps-gate { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:4px; }
+.inf button.inf-step { background:transparent; border:1px solid rgba(110,74,168,.5);
+  color:#b9aed6; font-weight:normal; font-size:.82rem; padding:8px 14px; }
+.inf button.inf-step:hover { border-color:#8a63d2; color:#e8e2f8; }
+.inf button.inf-step.on { background:rgba(0,200,160,.14); border-color:#00c8a0; color:#00e0b4; }
+.inf button.inf-step.on::before { content:'\2713\00a0'; }
+.inf-trust { font-size:.7rem; letter-spacing:.04em; color:#5a7888; }
+/* Only ever applied by script. With JS off the form is untouched and
+   submits normally -- a gate nobody can open is worse than no gate. */
+.inf-form.locked { opacity:.45; }
+
 /* ---- messages ------------------------------------------------------- */
 .inf-msg { margin:14px 0; padding:11px 14px; border-left:3px solid; font-size:.9rem; }
 .inf-msg.good { border-color:#00c8a0; background:rgba(0,200,160,.1); color:#00c8a0; }
@@ -360,7 +373,34 @@ include 'header.php';
            wrong with your comment.</p>
       <?php elseif (!$shut): ?>
         <a class="inf-go" href="<?php echo htmlspecialchars($url); ?>" target="_blank" rel="noopener">Open the post</a>
-        <form method="post" class="inf-form">
+
+        <?php /*
+         * THE RUN ORDER, AND IT IS A CHECKLIST RATHER THAN A CHECK.
+         *
+         * Like, repost, then comment. The first two cannot be verified from
+         * any free surface -- the syndication endpoint reports a post's
+         * TOTAL likes, never who gave them -- so these two are the member's
+         * word and the copy says so.
+         *
+         * SAYING SO IS THE POINT, not a concession. The comment check is
+         * real and rigorous, and the whole feature rests on members
+         * believing that; a fake check here is one curious person away from
+         * casting doubt on the one that matters. "We are trusting you" also
+         * asks more of somebody than a box they think is watched, because
+         * skipping it is a breach rather than a system beaten.
+         *
+         * The gate is the reminder. Both have to be pressed before the
+         * comment box opens, which is what puts the two actions in front of
+         * somebody at the moment they are about to do the third.
+         */ ?>
+        <div class="inf-steps-gate" data-gate>
+          <p class="inf-sub" style="margin:10px 0 6px">Do these first</p>
+          <button type="button" class="inf-step" data-step="like">I liked it</button>
+          <button type="button" class="inf-step" data-step="repost">I reposted it</button>
+          <span class="inf-trust">We cannot check these two. We are trusting you.</span>
+        </div>
+
+        <form method="post" class="inf-form" data-gated>
           <input type="hidden" name="target" value="<?php echo (int) $tg['id']; ?>">
           <input type="text" name="comment" placeholder="Paste the link to your reply" autocomplete="off" required>
           <button type="submit" name="infiltrate" value="1">Infiltrate<?php
@@ -435,6 +475,66 @@ include 'header.php';
       selectIt();
       say('press and hold to copy');
     }
+  });
+}());
+</script>
+
+<script>
+/*
+ * LIKE, REPOST, THEN COMMENT -- enforced as an order, not as a check.
+ *
+ * The first two cannot be verified from anything free, so this is a
+ * checklist. Its job is to put both actions in front of somebody at the
+ * moment they are about to do the third, because a line of instructions
+ * nobody has to acknowledge is a line nobody reads.
+ *
+ * LOCKED BY SCRIPT ONLY. The form ships enabled and JS disables it, so with
+ * scripting off the page still works -- a gate that cannot be opened is
+ * worse than no gate at all.
+ *
+ * Remembered per target for the session: a refused submission reloads the
+ * page, and making somebody re-press both buttons to fix a typo would teach
+ * them to resent the checklist.
+ */
+(function () {
+  function load(id) {
+    try { return JSON.parse(sessionStorage.getItem('inf-gate-' + id) || '{}'); }
+    catch (e) { return {}; }
+  }
+  function save(id, v) {
+    try { sessionStorage.setItem('inf-gate-' + id, JSON.stringify(v)); } catch (e) {}
+  }
+  var gates = document.querySelectorAll('[data-gate]');
+  Array.prototype.forEach.call(gates, function (gate) {
+    var form = gate.parentNode.querySelector('[data-gated]');
+    if (!form) return;
+    var hid  = form.querySelector('input[name="target"]');
+    var id   = hid ? hid.value : '0';
+    var go   = form.querySelector('button[type="submit"]');
+    var done = load(id);
+
+    function sync() {
+      var all = true;
+      Array.prototype.forEach.call(gate.querySelectorAll('[data-step]'), function (b) {
+        var on = !!done[b.getAttribute('data-step')];
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        if (!on) all = false;
+      });
+      form.classList.toggle('locked', !all);
+      if (go) go.disabled = !all;
+      return all;
+    }
+
+    Array.prototype.forEach.call(gate.querySelectorAll('[data-step]'), function (b) {
+      b.addEventListener('click', function () {
+        var k = b.getAttribute('data-step');
+        done[k] = !done[k];
+        save(id, done);
+        sync();
+      });
+    });
+    sync();
   });
 }());
 </script>
