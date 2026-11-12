@@ -17,7 +17,19 @@
 # Checked before adding: no live page or endpoint serves a .txt or .log to a
 # browser. The only .txt paths in the tree are harness temp files, and
 # skullpaper/*.md is read off disk by skullpaper.php rather than fetched.
-<FilesMatch "\.(log|txt)$">
+#
+# .md JOINED THE LIST ON 2026-11-12, and the note above is why it is safe:
+# skullpaper.php does file_get_contents(__DIR__ . '/skullpaper/...') rather
+# than an HTTP fetch, so the published Skull Paper is untouched by this.
+#
+# What it stops is everything else. The whole repo is served from /staking/,
+# so EVERY .md in the tree was readable by anyone who guessed the name --
+# skullpaper/MAINTENANCE.md, which names code paths, caps, and the exploits
+# this platform has had; and the design records at the root, which exist
+# precisely because the Skull Paper is public and unbuilt work should not be.
+# Both returned 200. Found while checking where a feature's notes could live
+# without being published.
+<FilesMatch "\.(log|txt|md)$">
 	<IfModule mod_authz_core.c>
 		Require all denied
 	</IfModule>
