@@ -94,14 +94,18 @@ admin_chrome('dhcbosses');
 /* The colourway reference. Folded by default and that is load-bearing: a
    browser does not fetch images inside a display:none subtree, so fifteen
    500px renders cost nothing until somebody actually opens it. */
-.ab-hues { margin:26px 0 0; border-top:1px solid rgba(255,255,255,.08); padding-top:14px; }
-.ab-hues > summary { cursor:pointer; list-style:none; display:inline-flex; align-items:center;
+.ab-hues, .ab-runs { margin:26px 0 0; border-top:1px solid rgba(255,255,255,.08); padding-top:14px; }
+.ab-hues > summary, .ab-runs > summary { cursor:pointer; list-style:none; display:inline-flex; align-items:center;
   gap:8px; font-size:.78rem; letter-spacing:.09em; text-transform:uppercase; color:#8fa8b8; }
-.ab-hues > summary::-webkit-details-marker { display:none; }
-.ab-hues > summary:before { content:'+'; font-size:1rem; line-height:1; width:12px;
+.ab-hues > summary::-webkit-details-marker,
+.ab-runs > summary::-webkit-details-marker { display:none; }
+.ab-hues > summary:before,
+.ab-runs > summary:before { content:'+'; font-size:1rem; line-height:1; width:12px;
   text-align:center; opacity:.8; }
-.ab-hues[open] > summary:before { content:'\2212'; }
-.ab-hues > summary:hover { color:#00c8a0; }
+.ab-hues[open] > summary:before,
+.ab-runs[open] > summary:before { content:'\2212'; }
+.ab-hues > summary:hover,
+.ab-runs > summary:hover { color:#00c8a0; }
 .ab-hw { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 16px; margin:18px 0 8px;
   padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,.07); }
 .ab-hw h4 { margin:0; font-size:.8rem; color:#e8eaed; font-weight:600; }
@@ -307,7 +311,7 @@ $ab_rq = @$conn->query(
 	  ORDER BY r.ended_at DESC LIMIT 25");
 if ($ab_rq) while ($ab_rr = $ab_rq->fetch_assoc()) $ab_runs[] = $ab_rr;
 ?>
-<details class="ab-hues">
+<details class="ab-runs">
   <summary>Last 25 settled runs &mdash; did any of them chain?</summary>
   <?php if (!$ab_haswc): ?>
   <p class="ab-note flag"><b>waves_cleared is not on dhc_boss_runs.</b>

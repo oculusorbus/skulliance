@@ -2762,6 +2762,18 @@ ok(strpos($ADM, 'src="https://') === false && strpos($ADM, "src='https://") === 
  * Crews feed's "Show all" relies on. Opened by default, this page stops
  * being the fast operational report it is for.
  */
+/*
+ * EXACTLY ONE, because everything below reads the FIRST one and treats
+ * it as the colourway reference. A second <details class="ab-hues"> was
+ * added above it for the settled-runs panel and six checks silently
+ * started measuring that instead -- they failed, which is the good
+ * outcome, but only because the runs panel happens not to mention
+ * dhcb_wave_hue(). A panel that did would have passed them on the wrong
+ * block. The runs panel carries its own class now.
+ */
+ok(substr_count($ADM, '<details class="ab-hues">') === 1,
+   'there are ' . substr_count($ADM, '<details class="ab-hues">')
+ . ' ab-hues blocks; the checks below read the first and assume it is the colourway reference');
 $hueAt = strpos($ADM, '<details class="ab-hues">');
 $imgAt = strpos($ADM, 'src="dhc-boss-art.php?boss=');
 ok($hueAt !== false && $imgAt !== false && $hueAt < $imgAt,
