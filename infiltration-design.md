@@ -124,42 +124,114 @@ one is sometimes right, and should be a knowing choice.
 
 ## 4. The ladder
 
-One meter, ten notches, four tables. The tables are the platform's existing
-`DHCF_TIERS` (`dhcfighters-config.php:1501`) and the band mechanism is the
-one the daily streak already uses, so this is config rather than new code.
+One rung per tier, ten tiers. **This expands `DHCF_TIERS`**
+(`dhcfighters-config.php:1501`) from four tables to ten: the existing four
+keep their exact values and nothing else on the platform changes behaviour.
 
 ```
-notch   0   1   2   3   4   5   6   7   8   9      bank
-table  [--- run ---][ place_10 ][ place_3 ][p_1]   [][][]
-                    ^3          ^6         ^9
+rung   0    1    2    3     4    5    6    7    8    9     bank
+      run  i1   i2  p_10   i4  p_3   i6   i7   i8  p_1   [][][][]...
+     0.5%  1%  1.5%  2%  2.5%  3%  4.2% 5.5% 6.8%  8%     uncapped
+                          (mythic chance)
 ```
+
+| # | table | common | uncommon | epic | legendary | mythic |
+|---|---|---|---|---|---|---|
+| 0 | `run` | 55 | 28 | 13 | 3.5 | 0.5 |
+| 1 | `infil_1` | 49.3 | 28.7 | 15.7 | 5.3 | 1 |
+| 2 | `infil_2` | 43.7 | 29.3 | 18.3 | 7.2 | 1.5 |
+| 3 | `placement_10` | 38 | 30 | 21 | 9 | 2 |
+| 4 | `infil_4` | 31.5 | 30 | 24 | 12 | 2.5 |
+| 5 | `placement_3` | 25 | 30 | 27 | 15 | 3 |
+| 6 | `infil_6` | 22.4 | 28.8 | 27.8 | 16.8 | 4.2 |
+| 7 | `infil_7` | 20 | 27.5 | 28.5 | 18.5 | 5.5 |
+| 8 | `infil_8` | 17.6 | 26.2 | 29.2 | 20.2 | 6.8 |
+| 9 | `placement_1` | 15 | 25 | 30 | 22 | 8 |
+
+Interpolated between the four anchors rather than hand-written; every row
+sums to 100. `common` falls, `epic`, `legendary` and `mythic` rise.
+`uncommon` HUMPS in the middle and is meant to -- at the top table the
+weight moves into epic and legendary, and the existing four already do this
+(28, 30, 30, 25). A monotonicity check on that column is the wrong check.
 
 ```php
 'infiltration' => array(
     'unlisted' => true,
     'base'     => 'run',
-    'bands'    => array(3 => 'placement_10', 6 => 'placement_3', 9 => 'placement_1'),
+    'bands'    => array(
+        1 => 'infil_1', 2 => 'infil_2', 3 => 'placement_10',
+        4 => 'infil_4', 5 => 'placement_3', 6 => 'infil_6',
+        7 => 'infil_7', 8 => 'infil_8', 9 => 'placement_1',
+    ),
 ),
 ```
 
+One band per rung, so `dhcf_table_for('infiltration', $tier)` resolves the
+table from the meter with no new lookup. Same mechanism the daily streak
+uses.
+
 Per target, four outcomes:
 
-| Outcome | Notches | Why |
+| Outcome | Tiers | Why |
 |---|---|---|
 | Replied inside the early window | **+2** | speed is the only thing that climbs fast |
 | Replied inside the main window | **+1** | the ordinary good outcome |
 | Replied late | **0** | pays a trait, cancels the miss, does not climb |
 | Never replied | **-1** | lands when the main window closes |
 
-Five fast infiltrations to the top table, or nine merely-prompt ones. Both
-are a real climb.
+Five fast infiltrations to the top table, or nine merely-prompt ones.
 
-**Why notches and not tiers.** There are only four tables. A tier per
-infiltration would take a new member from the bottom to the top in two
-posts, and the consistency the ladder exists to reward would never be
-tested. Three notches to a tier means being fast genuinely moves you up
-twice as quickly, which is the owner's instinct, without ending the ladder
-in a week.
+**Why ten tiers and not four.** An earlier draft of this file put ten
+NOTCHES against the existing four tables, banded 3/6/9. It worked, but two
+out of every three prompt infiltrations moved a bar and changed no odds at
+all -- dead feedback on the one dial the member is staring at. With a tier
+per rung, every infiltration changes the odds, and speed buys tiers
+directly, which was the owner's instinct before the four-table limit forced
+the indirection.
+
+**Rung 9 is `placement_1`, NOT a tier above it.** The owner's call, and the
+codebase had already written down why: the guard at
+`dhcbosses-harness.php:573` exists because "a tier above placement_1 would
+break a ceiling eight games share". A new top table would silently demote
+every existing top prize -- winning the Arena, downing a boss crew, filling
+the Portal board -- without touching a line of their code. Those are what
+the platform is for. Matching the best table is already a strong reward for
+commenting on a post.
+
+**Why late is zero and not half.** An earlier draft gave late infiltrations
+half credit so nobody in the wrong timezone could be locked out of the top.
+The owner's call is that promptness is what progresses, and the 24h main
+window is what keeps that fair -- anybody who opens the site once a day
+qualifies. Late still pays a trait and still cancels the penalty, so the
+backlog is damage control and a returning member has something to do.
+
+### What the expansion touches
+
+Checked, not assumed. Every consumer of `DHCF_TIERS` names its tables
+explicitly, so adding rows changes no existing behaviour:
+
+- `dhcp_tables()` (`lib/dhcportal-lib.php:55`) returns a hardcoded four and
+  its own comment already anticipates this. The Portal is unaffected.
+- `dhcb_tier_table()` (`dhcbosses-lib.php:1714`) returns names by threshold.
+- `dropship-traitdrop.php:299`, `dhcfighters-lib.php:391`,
+  `admin-dhcbosses.php:359` all index by name.
+
+Two edits are required:
+
+1. **`dhcf_table_rank()`** (`dhcfighters-config.php:1509`) is a hardcoded
+   order map that returns 0 for an unknown name. Without the six new names
+   in it they would rank as the WORST table and lose the "whichever is
+   better" comparisons at lines 1538-1560.
+2. **`dhcbosses-harness.php:583`** asserts `dhcf_table_rank('placement_1')
+   === 3`. The literal breaks when placement_1 becomes rank 9; the INTENT
+   ("placement_1 is the platform ceiling") still holds. Change it to assert
+   it is the maximum rank across `DHCF_TIERS`, which is what
+   `daily-reward-harness.php:239` already does and is the stronger claim.
+
+`daily-reward-harness.php:239-240` needs no change and is worth knowing
+about: it already walks every key of `DHCF_TIERS` and asserts `placement_1`
+outranks all of them. That assertion IS the enforcement of the decision
+above, and it stays green.
 
 **Why late is zero and not half.** Earlier draft gave late infiltrations
 half credit so that nobody in the wrong timezone could be locked out of the
@@ -170,35 +242,40 @@ backlog is damage control and a returning member has something to do.
 
 ### The overshoot bank
 
-Notches fill the meter first; **overflow goes to the bank**, capped at **3**.
-A penalty burns a banked notch before it touches the meter.
+Tiers fill the meter first; **overflow goes to the bank**, and the bank is
+**uncapped**. A penalty burns a banked pip before it touches the meter, so a
+member at rung 9 with pips in hand does not descend.
 
 So a member pinned at the ceiling who keeps being prompt is not wasting the
 effort -- they are building insurance. One missed target burns a pip. Only
 once the bank is empty do they start descending.
 
-Capped at 3 deliberately, which is the width of one band: it reads as
-exactly one tier of insurance, and covers roughly a two week absence at the
-owner's posting rate.
+**UNCAPPED, AND AN EARLIER DRAFT OF THIS FILE WAS WRONG ABOUT WHY IT SHOULD
+NOT BE.** The owner's call: if somebody is that consistent, let them run it
+up and enjoy watching the number climb.
 
-The cap is NOT about trait volume. A bank pays nothing on its own -- nobody
-rolls anything without infiltrating a target -- so overshoot buys gaps
-without consequence, not a stream of rare traits. The owner's framing, and
-it is the reason the bank is worth having: the diligent player's surplus
-effort turns into forgiveness instead of being discarded.
+A bank pays nothing on its own -- nobody rolls anything without infiltrating
+a target -- so overshoot buys gaps without consequence rather than a stream
+of rare traits, and a dormant member with sixty pips still rolls exactly one
+trait when they come back. There is no exploit to cap.
 
-The cap is about what the meter MEANS. Uncapped, somebody prompt for six
-months could infiltrate once a quarter and still be at the ceiling, and the
-meter would stop reading "is current" and start reading "was once diligent".
-Three pips covers an absence. It does not replace staying current.
+The one thing a cap protected was the meter reading "is current" rather than
+"was once diligent", and that signal belongs on the leaderboard instead: it
+ranks **tiers earned in the month**, not tier held. So the bank runs up
+forever as a flex stat and a shield, and the board still shows who is
+actually turning up.
 
-Draws as three pips above a full bar, burning off one at a time before the
-bar moves.
+Draws as pips above a full bar, burning off one at a time before the bar
+moves. Uncapped means the row has to wrap or count once it is long, which is
+a UI problem rather than a rule: past some number it reads better as a
+figure than as pips.
 
 ### Carryover
 
 The meter and the bank **both carry across months.** Only the leaderboard
-rankings reset. The leaderboard is monthly, ranked on notches held.
+resets, and it ranks **tiers earned that month** rather than tier held --
+which is what keeps a large bank from parking somebody at the top of the
+board while dormant.
 
 ---
 
@@ -269,7 +346,15 @@ is the member's own modal; nothing posts to Discord naming the mechanic.
 
 - Minimum own-words length, and the near-duplicate threshold.
 - Whether the early window default of 3h is right, or shorter.
-- Whether the leaderboard shows the meter publicly or only a rank.
+- Whether the leaderboard shows the meter itself or only a rank.
+- Names for the six new tables. `infil_*` is honest while only Infiltration
+  uses them; if other games ever want the finer bands they want neutral
+  names. Cosmetic, and cheap to change before anything ships.
+
+Settled, for the record: no cadence, no expiry, windows per target, ten
+tiers topping out AT `placement_1`, +2/+1/0/-1, an uncapped bank, a monthly
+leaderboard ranked on tiers earned that month, and verification through the
+syndication endpoint with a pending state rather than a rejection.
 
 ## 10. Schema sketch
 
