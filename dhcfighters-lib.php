@@ -378,6 +378,19 @@ function dhcf_drop_payload($conn, $user_id, $cat, $slug, $info = null, $source =
 		 */
 		'source'   => (string)$source,
 		'from'     => $source !== '' ? dhcf_earned_from($source) : '',
+		/*
+		 * THE SAME THING, EXCEPT WHERE IT MAY NOT BE SAID IN PUBLIC.
+		 *
+		 * 'from' is what the modal shows, behind the login. 'share_from' is
+		 * what the Share on X post is allowed to name, and a game marked
+		 * 'quiet_share' empties it -- Infiltration must not have its own
+		 * mechanic posted to X beside the posts it runs on.
+		 *
+		 * A separate key rather than a condition in the modal, because the
+		 * decision belongs next to the game it is about, in DHCF_GAMES.
+		 */
+		'share_from' => ($source !== '' && !dhcf_game_quiet_share($source))
+		                ? dhcf_earned_from($source) : '',
 		/* The game's own X account, for the post only -- the reveal shows the
 		   plain name. Empty for everything Skulliance makes itself, whose
 		   post already tags @skulliance in its tail. */

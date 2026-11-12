@@ -408,6 +408,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				              $filterby != "guardians" && $filterby != "monthly-guardians" &&
 				              $filterby != "dhcfighters" && $filterby != "monthly-dhcfighters" &&
 				              $filterby != "dhcarena" && $filterby != "monthly-dhcarena" &&
+				              $filterby != "infiltration" && $filterby != "monthly-infiltration" &&
 				              $filterby != "dhcbosses" && $filterby != "dhcbosses-all" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
@@ -555,6 +556,14 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				    case ($filterby == "dhcarena"):
 				        $title = "All DHC Arena Battles";
 				        $filterby = "dhcarena";
+				        break;
+				    case ($filterby == "infiltration"):
+				        $title = "All Infiltration";
+				        $filterby = "infiltration";
+				        break;
+				    case ($filterby == "monthly-infiltration"):
+				        $title = date("F") . " Infiltration";
+				        $filterby = "monthly-infiltration";
 				        break;
 				    case ($filterby == "monthly-dhcarena"):
 				        $title = date("F") . " DHC Arena Ladder";
@@ -737,6 +746,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				              $filterby != "guardians" && $filterby != "monthly-guardians" &&
 				              $filterby != "dhcfighters" && $filterby != "monthly-dhcfighters" &&
 				              $filterby != "dhcarena" && $filterby != "monthly-dhcarena" &&
+				              $filterby != "infiltration" && $filterby != "monthly-infiltration" &&
 				              $filterby != "dhcbosses" && $filterby != "dhcbosses-all" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
@@ -836,6 +846,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				            break;
 				        case ($filterby == "monthly-dhcarena"):
 				            checkDHCArenaLeaderboard($conn, true);
+				            break;
+				        case ($filterby == "infiltration"):
+				            checkInfiltrationLeaderboard($conn, false);
+				            break;
+				        case ($filterby == "monthly-infiltration"):
+				            checkInfiltrationLeaderboard($conn, true);
 				            break;
 				        case ($filterby == "dhcbosses"):
 				            /* Weekly, like the crew it ranks. The week turns

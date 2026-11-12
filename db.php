@@ -7437,6 +7437,16 @@ $SKULLIANCE_BOARDS = array(
 	'dhcarena'          => array('label'=>'DHC Arena',         'icon'=>'🏟️', 'group'=>'Games',
 		'blurb'=>'Crew battles won',
 		'periods'=>array('All-Time'=>'dhcarena','Monthly'=>'monthly-dhcarena')),
+	// INFILTRATION. Monthly is the race and the only thing CARBON is paid
+	// against; All-Time is the record, ranked on every rung ever climbed
+	// rather than on where somebody stands now.
+	//
+	// Listed here, which is a members-only page -- leaderboards.php
+	// redirects to error.php when logged out. The feature stays out of the
+	// Skull Paper and off every public page; this is not one.
+	'infiltration'      => array('label'=>'Infiltration',     'icon'=>'🎯', 'group'=>'Games',
+		'blurb'=>'Rungs climbed on the rarity ladder',
+		'periods'=>array('All-Time'=>'infiltration','Monthly'=>'monthly-infiltration')),
 	// WEEKLY IS THE SEASON, and it is what the 50,000 CARBON is paid
 	// against. This was weekly ONLY, for a reason that was correct at the
 	// time: the board ranks damage per Fighter, so across every week ever a
@@ -7563,6 +7573,9 @@ function refreshLeaderboardSnapshots($conn) {
 		'obscura'           => function($c) { checkObscuraLeaderboard($c); },
 		'guardians'         => function($c) { checkGuardiansLeaderboard($c); },
 		'dhcfighters'       => function($c) { checkDHCFightersLeaderboard($c); },
+		// All-time, like every other entry here: the hub card names the
+		// record holder, not this month's leader.
+		'infiltration'      => function($c) { checkInfiltrationLeaderboard($c); },
 		'dhcarena'          => function($c) { checkDHCArenaLeaderboard($c); },
 		/* The WEEK in progress. The hub card shows the live race, not the
 		   record -- an all-time card would name the same face for months
@@ -16360,13 +16373,16 @@ function checkInfiltrationLeaderboard($conn, $monthly = false, $rewards = false)
 	   Computed from PHP's clock to match infil_month(), which is what wrote
 	   the key -- asking MySQL here would disagree with the stored value on
 	   this host, where the two clocks are hours apart. */
-	$month = $rewards ? date('Y-m', strtotime('first day of last month')) : date('Y-m');
+	/* '' is all time, which pays nothing and is the record rather than the
+	   race. A reward run always settles a real month. */
+	$month = $rewards ? date('Y-m', strtotime('first day of last month'))
+	       : (($monthly) ? date('Y-m') : '');
 
 	$carbon = 50000;
 	$rows   = infil_leaderboard($conn, 100, $month);
 
 	if (!$rows) {
-		$scope = $rewards ? 'last month' : 'this month';
+		$scope = $rewards ? 'last month' : ($monthly ? 'this month' : 'yet');
 		echo "<p>Nobody has infiltrated $scope.</p>";
 		return;
 	}
@@ -16382,7 +16398,10 @@ function checkInfiltrationLeaderboard($conn, $monthly = false, $rewards = false)
 		/* AN ARRAY, label => value. renderLeaderboardList() does
 		   `foreach($row['stats'] as $label => $value)`, so a string here
 		   renders no stats at all and warns on every row. */
-		$stats = ['Rungs this month' => (int) $row['month_tiers'],
+		$stats = ($month === '')
+		       ? ['Rungs climbed' => (int) $row['total_tiers'],
+		          'Rung'          => (int) $row['tier'] . ' of ' . INFIL_MAX_TIER]
+		       : ['Rungs this month' => (int) $row['month_tiers'],
 		          'Rung'             => (int) $row['tier'] . ' of ' . INFIL_MAX_TIER];
 		if ((int) $row['bank'] > 0) $stats['Banked'] = (int) $row['bank'];
 

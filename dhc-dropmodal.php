@@ -295,8 +295,19 @@ define('DHC_DROPMODAL_LOADED', true);
      * drew the TRAIT. The modal shows the plain name without any of this: a
      * handle means nothing outside X.
      */
-    var from = d.from
-      ? ' Dropped from ' + d.from + (d.tag ? ' (' + d.tag + ')' : '') + '.'
+    /*
+     * share_from, NOT from. They are the same string for every game but one:
+     * Infiltration marks itself 'quiet_share' in DHCF_GAMES, because naming
+     * its own mechanic in a post ON X, beside the posts it runs on, is the
+     * single thing that feature must never do. The modal still shows d.from
+     * -- that is behind the login.
+     *
+     * Falls back to d.from when the key is absent, so a payload built by
+     * anything that predates this reads exactly as it did.
+     */
+    var src = (d.share_from !== undefined) ? d.share_from : d.from;
+    var from = src
+      ? ' Dropped from ' + src + (d.tag ? ' (' + d.tag + ')' : '') + '.'
       : '';
     /*
      * X counts ANY url as 23 characters however long it really is, and cuts

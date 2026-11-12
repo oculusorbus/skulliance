@@ -1256,18 +1256,34 @@ function infil_board($conn, $user_id, $now = null) {
 	return $out;
 }
 
-/** This month's board: who has climbed the most tiers since the 1st. */
+/**
+ * The board. Monthly by default; pass $month = '' for all time.
+ *
+ * MONTHLY RANKS ON TIERS EARNED, not on tier held, because the overshoot
+ * bank is uncapped -- standing alone would park a member who was diligent
+ * last spring at the top of a month they sat out.
+ *
+ * ALL TIME RANKS ON total_tiers, which only ever counts gains, so it is a
+ * record of everything ever climbed rather than of where somebody is now.
+ * It pays nothing: the CARBON is monthly.
+ */
 function infil_leaderboard($conn, $limit = 25, $month = null) {
-	$month = $month === null ? infil_month() : (string) $month;
-	$e_m   = $conn->real_escape_string($month);
 	$limit = max(1, (int) $limit);
+	$all   = ($month === '');
+	$month = ($month === null) ? infil_month() : (string) $month;
+	$e_m   = $conn->real_escape_string($month);
+
+	$where = $all ? 'm.total_tiers > 0'
+	              : "m.month_key = '$e_m' AND m.month_tiers > 0";
+	$order = $all ? 'm.total_tiers DESC, m.tier DESC, m.bank DESC'
+	              : 'm.month_tiers DESC, m.tier DESC, m.total_tiers DESC';
 
 	$sql = "SELECT m.user_id, m.tier, m.bank, m.month_tiers, m.total_tiers,
 	               u.username, u.discord_id, u.avatar, u.visibility, u.x_username
 	        FROM infil_meter m
 	        INNER JOIN users u ON u.id = m.user_id
-	        WHERE m.month_key = '$e_m' AND m.month_tiers > 0
-	        ORDER BY m.month_tiers DESC, m.tier DESC, m.total_tiers DESC
+	        WHERE $where
+	        ORDER BY $order
 	        LIMIT $limit";
 	$out = array();
 	$r = @$conn->query($sql);

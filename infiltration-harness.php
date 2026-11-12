@@ -316,6 +316,23 @@ foreach (array('infiltration.php', 'admin-infiltration.php') as $pg) {
 	 . 'the moment anything else loads it first');
 }
 
+/* ------------------------------------------------------------------ *
+ * THE SHARE POST MUST NOT NAME THE MECHANIC
+ * ------------------------------------------------------------------ */
+head('sharing an infiltration trait on X does not say where it came from');
+ok(dhcf_game_quiet_share('infiltration') === true,
+   'infiltration is not marked quiet_share, so a member sharing a trait would '
+ . 'post "Dropped from an infiltration" ON X, beside the posts it runs on');
+ok(dhcf_game_quiet_share('cryptcrawl') === false,
+   'an ordinary game got its source suppressed, which costs it the credit');
+ok(dhcf_earned_from('infiltration') !== '',
+   'the MODAL lost its source too; only the public half should be stripped');
+
+$dm = harness_strip_comments(@file_get_contents(__DIR__ . '/dhc-dropmodal.php'));
+ok(strpos($dm, 'd.share_from') !== false,
+   'the drop modal still builds its share text from d.from, so quiet_share '
+ . 'changes nothing about what gets posted');
+
 echo "\n" . ($fail ? "$fail FAILED of $ran\n" : "all $ran assertions pass\n");
 
 /* ================================================================== *

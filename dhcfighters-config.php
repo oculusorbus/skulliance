@@ -1341,7 +1341,25 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                              7 => 'infil_7', 8 => 'infil_8', 9 => 'placement_1',
 	                          ),
 	                          'cap' => 0, 'limit_note' => 'one per target; promptness climbs the ladder',
-	                          'unlisted' => true),
+	                          'unlisted' => true,
+	                          /*
+	                           * AND THE SHARE POST MUST NOT NAME IT.
+	                           *
+	                           * dhc-dropmodal.php appends "Dropped from <x>."
+	                           * to the Share on X text, so without this a
+	                           * member sharing an infiltration trait would
+	                           * publish "Dropped from an infiltration" ON X,
+	                           * beside the very posts they are replying to.
+	                           * That is the one broadcast this whole feature
+	                           * is built to avoid.
+	                           *
+	                           * The MODAL still says it -- that is behind the
+	                           * login and is how the player knows what paid.
+	                           * Only the public half is stripped, and the
+	                           * share itself stays: a member posting a trait
+	                           * and tagging @skulliance is reach we want.
+	                           */
+	                          'quiet_share' => true),
 
 	'dailystreak'    => array('label' => 'Daily Reward', 'earned_from' => 'a daily reward claim',
 	                          'url' => 'missions.php#ms-sec-daily', 'category' => 'wildcard',
@@ -1635,6 +1653,17 @@ function dhcf_table_for($key, $value = 0, $placement = null) {
 	if (dhcf_table_rank($p) > dhcf_table_rank($name)) $name = $p;
 
 	return DHCF_TIERS[$name];
+}
+
+/**
+ * May a public post name where this trait came from?
+ *
+ * False for anything marked 'quiet_share' in DHCF_GAMES. See the note on
+ * the infiltration entry: the modal says it, the X post does not.
+ */
+function dhcf_game_quiet_share($key) {
+	$g = dhcf_game($key);
+	return (bool) ($g && !empty($g['quiet_share']));
 }
 
 /** The band a value has reached, for telling the player what they rolled on. */
