@@ -108,7 +108,12 @@ include 'header.php';
 ?>
 <style>
 /* Scoped under .inf so nothing here can reach the rest of the platform. */
-.inf { color:#c8d8e8; font:400 15px/1.6 Arial,Helvetica,sans-serif; text-align:left; }
+/* min-width:0 BECAUSE THE COLUMN IS A FLEX ITEM. A flex item defaults to
+   min-width:auto and will not shrink below its content's min-content width,
+   so one wide child drags the whole column past the viewport and the PAGE
+   scrolls sideways. Measured at 601px against a 485px viewport. */
+.inf { color:#c8d8e8; font:400 15px/1.6 Arial,Helvetica,sans-serif; text-align:left;
+  min-width:0; max-width:100%; }
 .inf h2,.inf h3,.inf h4 { text-align:left; margin:0; }
 
 /* ---- the banner ----------------------------------------------------- */
@@ -131,9 +136,22 @@ include 'header.php';
    box is a ratio of the viewport, so its height tracks its width, and a
    fixed offset would walk down the picture as the window narrows. That is
    the mistake .lp-stage-art records having made. */
-.inf-hero { position:relative; width:100%; aspect-ratio: 1600/520; min-height:190px;
+/*
+ * NO min-height, AND THAT IS THE WHOLE MOBILE BUG.
+ *
+ * This carried min-height:190px. On a box with aspect-ratio 1600/520 the
+ * ratio runs BOTH ways, so a 190px floor on the height is a 585px floor on
+ * the WIDTH (190 x 1600/520) -- which the flex column above then refused to
+ * shrink below, and the entire page scrolled sideways on every phone.
+ * Measured, not guessed: .inf-hero demanded 585px of min-content.
+ *
+ * .lp-stage-art records making exactly this mistake in the other direction.
+ * The ratio is the only thing that should size this box.
+ */
+.inf-hero { position:relative; width:100%; aspect-ratio: 1600/520;
   background:#0a0a14 url(images/infiltration/hero.webp) 50% 90% / cover no-repeat;
-  border:1px solid rgba(110,74,168,.4); display:flex; align-items:flex-end; }
+  border:1px solid rgba(110,74,168,.4); display:flex; align-items:flex-end;
+  min-width:0; }
 /* The scrim exists so the title reads over whatever is behind it. Starting
    at 62% rather than the usual 38% keeps it off the foreground skeletons,
    which at 90% are most of the band. If the title turns out to be hard to
@@ -231,7 +249,10 @@ include 'header.php';
 .inf-steps li { margin:0 0 7px; }
 
 /* ---- the board ------------------------------------------------------ */
-.inf-tablewrap { overflow-x:auto; }
+/* The scroller, and min-width:0 so IT scrolls rather than the page: the
+   table inside declares 420px and without this that becomes the column's
+   floor. */
+.inf-tablewrap { overflow-x:auto; min-width:0; max-width:100%; }
 .inf-table { border-collapse:collapse; width:100%; min-width:420px; font-size:.88rem; }
 .inf-table th { text-align:left; padding:9px 10px; color:#5a7888; font-size:.66rem;
   letter-spacing:.12em; text-transform:uppercase; font-weight:normal;
@@ -239,7 +260,39 @@ include 'header.php';
 .inf-table td { padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.05); }
 .inf-table .n { font-variant-numeric:tabular-nums; text-align:right; }
 .inf-table tr.me td { background:rgba(110,74,168,.16); }
-@media (max-width:620px){ .inf-scale span { font-size:.5rem; } }
+.inf-table .narrow { display:none; }
+@media (max-width:700px){
+  /* A 3:1 band is 127px tall on a 390px phone, which is a stripe rather
+     than a picture. Squarer here so the art still reads, and the ratio is
+     still the only thing setting the height. */
+  .inf-hero { aspect-ratio: 16/11; }
+  .inf-hero-in { padding:14px 16px; }
+  .inf-hero h2 { font-size:1.25rem; letter-spacing:.1em; }
+  .inf-hero p  { font-size:.82rem; }
+  .inf-scale span { font-size:.5rem; }
+  .inf-standing { gap:12px; }
+  /* margin-left:auto strands the handle on its own wrapped line. */
+  .inf-standing > div[style] { margin-left:0 !important; }
+  .inf-big { font-size:1.7rem; }
+  .inf-meter, .inf-target { padding:14px 15px; }
+  .inf-form input[type=text] { flex:1 1 100%; }
+  .inf a.inf-go, .inf button { width:100%; text-align:center; }
+  .inf button.inf-step { width:auto; flex:1 1 44%; }
+  .inf-trow { gap:6px; }
+  /*
+   * THE TABLE'S OWN FLOOR HAS TO GO, not just the page's.
+   *
+   * min-width:420px inside an overflow-x:auto wrapper looked safe and was
+   * not: the wrapper is an auto-width block inside an auto-width column, so
+   * the 420 propagated all the way up and the PAGE scrolled instead of the
+   * table. Measured by removing each section in turn -- dropping this one
+   * took body.scrollWidth from 436 straight to the viewport.
+   */
+  .inf-table { min-width:0; font-size:.8rem; }
+  .inf-table th, .inf-table td { padding:7px 6px; }
+  .inf-table .wide   { display:none; }
+  .inf-table .narrow { display:inline; }
+}
 </style>
 
 <div class="container"><div class="row"><div class="col1of3" style="margin:0 auto;flex:1 1 100%;max-width:none;">
@@ -421,7 +474,15 @@ include 'header.php';
   <?php else: ?>
   <div class="inf-tablewrap">
   <table class="inf-table">
-    <tr><th>#</th><th>Member</th><th class="n">Rungs this month</th><th class="n">Rung</th><th class="n">Banked</th></tr>
+    <?php /* Two labels per heading, one shown at a time. A five column table
+             whose longest heading is "Rungs this month" cannot fit a 320px
+             phone at any font size, and the alternative to shortening the
+             words is hiding a column -- which loses the number rather than
+             the sentence around it. */ ?>
+    <tr><th>#</th><th>Member</th>
+        <th class="n"><span class="wide">Rungs this month</span><span class="narrow">Rungs</span></th>
+        <th class="n">Rung</th>
+        <th class="n"><span class="wide">Banked</span><span class="narrow">Bank</span></th></tr>
     <?php foreach ($inf_top as $i => $row): ?>
     <tr<?php echo (int) $row['user_id'] === $inf_uid ? ' class="me"' : ''; ?>>
       <td class="n"><?php echo $i + 1; ?></td>

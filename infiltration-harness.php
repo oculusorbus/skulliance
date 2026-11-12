@@ -392,6 +392,32 @@ ok(strpos($pg, 'class="inf-form locked"') === false,
 ok(strpos($pg, "classList.toggle('locked'") !== false,
    'nothing ever applies the lock, so the gate does nothing');
 
+/* ------------------------------------------------------------------ *
+ * THE PAGE FITS A PHONE
+ *
+ * Reported from a phone: the whole page scrolled sideways. Two causes,
+ * both measured in headless Chrome rather than reasoned about, and both
+ * the kind that look harmless in the source.
+ * ------------------------------------------------------------------ */
+head('nothing on the page declares a width a phone cannot hold');
+
+/* min-height on an aspect-ratio box is a MINIMUM WIDTH. 190px tall at
+   1600/520 is 585px wide, which the column then refused to shrink below. */
+ok(preg_match('~\.inf-hero\s*\{[^}]*min-height~', $pg) === 0,
+   'the hero has a min-height again: on an aspect-ratio box that is a '
+ . 'minimum WIDTH, and it is what made the page scroll sideways');
+ok(preg_match('~\.inf-hero\s*\{[^}]*aspect-ratio~', $pg) === 1,
+   'the hero lost its aspect-ratio, so nothing sizes it at all');
+
+/* A min-width inside an overflow-x:auto wrapper is not contained: the
+   wrapper is an auto-width block in an auto-width column, so it propagates
+   up and the PAGE scrolls instead of the table. */
+ok(preg_match('~@media\s*\(max-width:\s*700px\)[^@]*\.inf-table\s*\{[^}]*min-width:\s*0~', $pg) === 1,
+   'the leaderboard table keeps its 420px floor on a phone, which the '
+ . 'overflow-x wrapper does NOT contain');
+ok(strpos($pg, 'class="narrow"') !== false,
+   'the table has no short headings, so five columns cannot fit 320px');
+
 echo "\n" . ($fail ? "$fail FAILED of $ran\n" : "all $ran assertions pass\n");
 
 /* ================================================================== *
