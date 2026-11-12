@@ -377,21 +377,53 @@ foreach ($ms_daily['days'] as $mcm_d) {
  * MCM_SHAKE in the script below is this duration. The two have to agree
  * or the chest either opens mid-rattle or sits still waiting for it.
  */
-/* 2s, NOT .66s, AND THE NUMBER IS MEASURED. The rattle now builds across
-   the wreath's swell to land the lid on its first hit -- see MCM_SHAKE in
-   the script, which must agree with this and which the harness compares.
-   The keyframes are percentages, so the escalation simply stretches. */
-.mcm-chest.is-shaking { animation: mcmShake 2s ease-in both; }
+/*
+ * 2s, NOT .66s, AND THE NUMBER IS MEASURED -- the rattle builds across
+ * the wreath's swell to land the lid on its first hit. See MCM_SHAKE in
+ * the script, which must agree with this and which the harness compares.
+ *
+ * THE BEAT IS THE ORIGINAL'S; ONLY THE LENGTH AND THE FORCE CHANGED.
+ * Keyframes are percentages, so simply stretching .66s to 2s slowed the
+ * oscillation threefold and the chest went from rattling to swaying.
+ * The original is eight half-swings in 660ms -- a 73ms beat -- so this
+ * is twenty-seven of them across 2s, which is the same pace held three
+ * times as long.
+ *
+ * The escalation moved into the amplitudes, growing on p^1.7 so most of
+ * it arrives late: one pixel and half a degree at the start, six pixels
+ * and over three degrees by the end. linear, not ease-in, because the
+ * build is in how hard it shakes rather than in how fast.
+ */
+.mcm-chest.is-shaking { animation: mcmShake 2s linear both; }
 @keyframes mcmShake {
   0%   { transform: none; }
-  9%   { transform: translate3d(-1px, 0, 0) rotate(-.5deg); }
-  18%  { transform: translate3d( 1px, 0, 0) rotate( .5deg); }
-  28%  { transform: translate3d(-2px, 0, 0) rotate(-.9deg); }
-  38%  { transform: translate3d( 2px, -1px, 0) rotate( .9deg); }
-  50%  { transform: translate3d(-3px, -1px, 0) rotate(-1.4deg); }
-  62%  { transform: translate3d( 3px, -2px, 0) rotate( 1.4deg); }
-  74%  { transform: translate3d(-4px, -2px, 0) rotate(-2deg); }
-  86%  { transform: translate3d( 4px, -3px, 0) rotate( 2deg); }
+  3.6% { transform: translate3d( -1.0px, -0.4px, 0) rotate(-0.51deg); }
+  7.1% { transform: translate3d(  1.1px, -0.4px, 0) rotate( 0.53deg); }
+  10.7%{ transform: translate3d( -1.1px, -0.5px, 0) rotate(-0.57deg); }
+  14.3%{ transform: translate3d(  1.2px, -0.5px, 0) rotate( 0.61deg); }
+  17.9%{ transform: translate3d( -1.3px, -0.6px, 0) rotate(-0.66deg); }
+  21.4%{ transform: translate3d(  1.4px, -0.6px, 0) rotate( 0.72deg); }
+  25.0%{ transform: translate3d( -1.5px, -0.7px, 0) rotate(-0.79deg); }
+  28.6%{ transform: translate3d(  1.6px, -0.8px, 0) rotate( 0.87deg); }
+  32.1%{ transform: translate3d( -1.8px, -0.9px, 0) rotate(-0.95deg); }
+  35.7%{ transform: translate3d(  1.9px, -1.0px, 0) rotate( 1.04deg); }
+  39.3%{ transform: translate3d( -2.1px, -1.1px, 0) rotate(-1.13deg); }
+  42.9%{ transform: translate3d(  2.3px, -1.2px, 0) rotate( 1.23deg); }
+  46.4%{ transform: translate3d( -2.4px, -1.3px, 0) rotate(-1.34deg); }
+  50.0%{ transform: translate3d(  2.6px, -1.4px, 0) rotate( 1.45deg); }
+  53.6%{ transform: translate3d( -2.8px, -1.5px, 0) rotate(-1.57deg); }
+  57.1%{ transform: translate3d(  3.1px, -1.7px, 0) rotate( 1.69deg); }
+  60.7%{ transform: translate3d( -3.3px, -1.8px, 0) rotate(-1.82deg); }
+  64.3%{ transform: translate3d(  3.5px, -2.0px, 0) rotate( 1.96deg); }
+  67.9%{ transform: translate3d( -3.8px, -2.1px, 0) rotate(-2.10deg); }
+  71.4%{ transform: translate3d(  4.0px, -2.3px, 0) rotate( 2.24deg); }
+  75.0%{ transform: translate3d( -4.3px, -2.4px, 0) rotate(-2.39deg); }
+  78.6%{ transform: translate3d(  4.5px, -2.6px, 0) rotate( 2.55deg); }
+  82.1%{ transform: translate3d( -4.8px, -2.8px, 0) rotate(-2.71deg); }
+  85.7%{ transform: translate3d(  5.1px, -2.9px, 0) rotate( 2.87deg); }
+  89.3%{ transform: translate3d( -5.4px, -3.1px, 0) rotate(-3.04deg); }
+  92.9%{ transform: translate3d(  5.7px, -3.3px, 0) rotate( 3.22deg); }
+  96.4%{ transform: translate3d( -6.0px, -3.5px, 0) rotate(-3.40deg); }
   100% { transform: none; }
 }
 
@@ -632,7 +664,11 @@ foreach ($ms_daily['days'] as $mcm_d) {
 	 */
 	var MCM_SFX = {
 		open: ['sounds/quest_award_wreath.ogg', 0.55],
-		lid:  ['sounds/diamond_mine_treasurefind_diamonds.ogg', 0.75]
+		lid:  ['sounds/diamond_mine_treasurefind_diamonds.ogg', 0.75],
+		/* Collect. A press wants an answer, and this one closes the
+		   modal -- so it is the last thing heard rather than something
+		   layered over the reveal. */
+		tick: ['sounds/tick.ogg', 0.6]
 	};
 	var mcmAudio = {};
 	function mcmSfx(key) {
@@ -788,7 +824,10 @@ foreach ($ms_daily['days'] as $mcm_d) {
 	}
 	window.SK_CLAIM_CLOSE = close;
 
-	document.getElementById('mcm-close').addEventListener('click', close);
+	document.getElementById('mcm-close').addEventListener('click', function () {
+		mcmSfx('tick');
+		close();
+	});
 	veil.addEventListener('click', function (e) { if (e.target === veil) close(); });
 	document.addEventListener('keydown', function (e) {
 		if (e.key === 'Escape' && veil.classList.contains('on')) close();

@@ -315,8 +315,59 @@ echo "\nit closes, and nothing leaks between claims\n";
 ok(strpos($modalCode, "e.key === 'Escape'") !== false, 'Escape does not close the reveal');
 ok(strpos($modalCode, 'if (e.target === veil) close()') !== false,
    'clicking the veil does not close the reveal');
-ok(strpos($modalCode, "getElementById('mcm-close').addEventListener('click', close)") !== false,
+/* THE HANDLER MAY DO MORE THAN CLOSE -- it plays a tick now -- so this
+   asserts that it CLOSES rather than that it is close itself. The old
+   form named the exact listener and failed the moment a sound was added
+   in front of it, which is a check on the spelling and not the
+   behaviour. */
+/* A WINDOW, NOT A LAZY GROUP. `(.*?)\);` stops at the FIRST `);` in
+   the handler, which is now the tick -- so the first version of this
+   read `function () { mcmSfx('tick'` and reported that Collect does
+   not close. The handler is short; take enough of it and look inside. */
+$clAt = strpos($modalCode, "getElementById('mcm-close').addEventListener('click',");
+/* BOUNDED BY THE HANDLER'S OWN BRACES. A fixed 220-char window ran past
+   the end of it into the veil's listener, which also calls close() -- so
+   deleting close() from Collect passed. */
+$clHandler = '';
+if ($clAt !== false) {
+	$b = strpos($modalCode, '{', $clAt); $d = 0; $e = $b;
+	for (; $e !== false && $e < strlen($modalCode); $e++) {
+		if ($modalCode[$e] === '{') $d++;
+		elseif ($modalCode[$e] === '}') { $d--; if ($d === 0) break; }
+	}
+	$clHandler = substr($modalCode, $clAt, $e - $clAt + 1);
+}
+ok($clHandler !== '', 'the Collect button has no click handler at all');
+ok($clHandler !== '' && preg_match('~(^\s*close\s*$|close\(\))~', $clHandler) === 1,
    'the Collect button does not close the reveal');
+/* AND IT ANSWERS THE PRESS. A button that closes in silence is the one
+   control in this reveal with no feedback at all. */
+ok($clHandler !== '' && strpos($clHandler, "mcmSfx('tick')") !== false,
+   'the Collect button makes no sound, so the press goes unanswered');
+ok(strpos($modal, "'sounds/tick.ogg'") !== false,
+   'the tick is gone from the sound table, so Collect plays nothing');
+
+/*
+ * THE RATTLE KEEPS THE ORIGINAL'S PACE. Stretching .66s to 2s slowed the
+ * oscillation threefold and the chest went from rattling to swaying --
+ * reported as too gentle. The beat is held by having three times as many
+ * half-swings rather than by running the same eight more slowly, and
+ * linear keeps them evenly spaced: ease-in would drag the start out
+ * again on top of the stretch, which is the thing being fixed.
+ */
+ok(preg_match('~\.mcm-chest\.is-shaking \{ animation: mcmShake [0-9.]+s linear~', $modal) === 1,
+   'the rattle is not linear, so its pace is uneven and the start drags');
+preg_match('~@keyframes mcmShake \{(.*?)\n\}~s', $modal, $m_kf);
+$kfBody = count($m_kf) === 2 ? $m_kf[1] : '';
+$swings = preg_match_all('~rotate\(~', $kfBody);
+ok($kfBody !== '' && $swings >= 24,
+   'the rattle has ' . $swings . ' half-swings across ' . $shakeCss
+ . 's, which is slower than the 8-in-0.66s it is supposed to match');
+/* And it has to get harder, or a long rattle is just a long rattle. */
+preg_match_all('~rotate\(\s*-?([0-9.]+)deg~', $kfBody, $m_deg);
+$degs = array_map('floatval', $m_deg[1]);
+ok(count($degs) > 4 && end($degs) > $degs[0] * 2.5,
+   'the rattle does not escalate, so it never builds toward the lid');
 /* reset() exists because the admin preview plays it repeatedly, and a
    second play with the first one's timers still pending opens a chest
    that is already open and leaves the old items in the row. */
