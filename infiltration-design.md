@@ -81,8 +81,45 @@ deliberately disabled, because the one call that identifies a signed-in user
 enrolment. The owner's position is firm: nothing that costs money.
 
 So: the platform shows the member a code unique to their Discord account.
-They post it as a reply to any Skulliance post and submit the link. The same
-syndication call returns `user.id_str`, which is written to `users.x_id`.
+They post it as a reply to **one designated post** and submit the link. The
+same syndication call returns `user.id_str`, which is written to
+`users.x_id`.
+
+```php
+/* The pinned post every account link is verified against. */
+define('INFIL_LINK_STATUS',  '2120916830747602945');
+/* @skulliance. Matched on the id, never the handle -- a handle can be
+   renamed and re-registered by somebody else. */
+define('INFIL_SKULLIANCE_UID', '1494210394541412352');
+```
+
+Verified against the live endpoint 2026-11-12: authored by `@skulliance`
+(`user.id_str` = the constant above), **top level and not itself a reply**,
+text `💀🆔 https://t.co/lWPZJnbe14`. The cryptic copy is deliberate -- the
+instructions live on the platform behind the login, not on X, which is the
+same reason a target post carries no "comment to earn" wording.
+
+A link submission must satisfy BOTH:
+
+- `in_reply_to_status_id_str === INFIL_LINK_STATUS`
+- `in_reply_to_user_id_str === INFIL_SKULLIANCE_UID`
+
+**THAT POST MUST NEVER BE DELETED OR REPLACED.** Links already made survive,
+because `x_id` is written once and kept, but every future link breaks the
+moment the id stops resolving. Pinned and left alone.
+
+**A NESTED REPLY WILL FAIL, AND THE ERROR HAS TO SAY WHY.** Replying to
+somebody else's comment under the post carries THAT comment as the parent,
+not the post, so the check correctly refuses it. Worded as a mismatch it
+reads as a broken feature; it needs to say "that is a reply to another
+comment, not to the post".
+
+Codes are single use, invalidated the moment a link succeeds, and
+regenerable on demand. They are publicly visible under the post, which
+costs nothing: a stolen code links the THIEF's x_id to the victim's
+Skulliance account, so it hands over their own X identity and collects
+nothing -- the traits go to the Skulliance user. Griefing at worst, and
+undone by the disconnect `wallets.php` already has.
 
 The columns already exist -- `x_id`, `x_username`, `x_linked_at`, with a
 UNIQUE index on `x_id` -- because `process-x-oauth.php` was built to fill
