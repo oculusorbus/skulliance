@@ -907,12 +907,31 @@ ok($lid !== '' && strpos($lid, "mcmSfx('lid')") !== false,
    'the second sound is not fired on the lid beat, so it can drift away from the lid');
 
 /*
- * THREE LAYERS ON THE LID, not two. The wreath peaks, the diamonds hit
- * and the tick snaps on top -- all on the same instant, which is the
- * measured MCM_SFX_HIT1 and is also when the chest opens.
+ * THE LOCK GIVES JUST BEFORE THE LID.
+ *
+ * The tick was ON the peak with the diamonds, which put three things on
+ * one instant and read as one louder thing. Ahead of it they are a
+ * sequence: the rattle still going, the lock, then the lid.
+ *
+ * It must be OFF the lid beat and offset from MCM_OPEN -- not a timer of
+ * its own, which would drift the moment the rattle length changes, the
+ * same rule every other beat in this file follows.
  */
-ok($lid !== '' && strpos($lid, "mcmSfx('tick')") !== false,
-   'the tick does not land on the lid with the other two');
+ok($lid !== '' && strpos($lid, "mcmSfx('tick')") === false,
+   'the tick is back on the lid, so the unlock and the opening are one sound again');
+ok(strpos($modalCode, 'at(MCM_OPEN - MCM_UNLOCK, function () { mcmSfx(\'tick\'); });') !== false,
+   'the unlock is not fired at a fixed distance before the lid');
+$unlock = preg_match('~MCM_UNLOCK\s*=\s*(\d+);~', $modal, $mu) ? (int)$mu[1] : -1;
+/* Far enough to hear as separate, close enough to be the same event --
+   and inside the rattle, because that is where a lock would give. */
+ok($unlock >= 60 && $unlock <= 200,
+   'the unlock is ' . $unlock . 'ms before the lid, which is either inaudible as a separate '
+ . 'beat or a pause rather than a hair');
+ok($unlock > 40,
+   'the unlock lands inside the held beat before the lid, which is supposed to be silence');
+/* Reduced motion has no sound at all, so it must not schedule one. */
+ok(strpos($modalCode, "if (!MCM_CALM) at(MCM_OPEN - MCM_UNLOCK") !== false,
+   'the unlock is scheduled under reduced motion, where MCM_OPEN is 240ms and nothing else plays');
 ok(strpos($modal, "'sounds/tick.ogg'") !== false,
    'the tick is gone from the sound table entirely');
 /* ON the beat, not a delay from it. Being inside the block is not

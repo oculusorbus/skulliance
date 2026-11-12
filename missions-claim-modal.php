@@ -639,6 +639,23 @@ foreach ($ms_daily['days'] as $mcm_d) {
 	var MCM_KIDS_AT  = MCM_CALM ? 190 : (MCM_SFX_HIT2 - MCM_SFX_HIT1);
 
 	/*
+	 * THE LOCK GIVES JUST BEFORE THE LID.
+	 *
+	 * The tick used to land ON the peak with the diamonds, which made
+	 * three things happen on one instant and read as one louder thing.
+	 * Ahead of it they become a sequence: the rattle is still going, the
+	 * lock snaps, and the lid follows.
+	 *
+	 * 110ms, and this is the ONE number in the sequence that is a
+	 * preference rather than a measurement -- everything else is read off
+	 * the audio file. It is roughly one and a half of the rattle's own
+	 * half-swings (the beat is 71ms), so the click lands while the chest
+	 * is still moving, which is where a lock would actually give. Far
+	 * enough to be heard as separate, close enough to be the same event.
+	 */
+	var MCM_UNLOCK   = 110;
+
+	/*
 	 * TWO SOUNDS, ON THE TWO BEATS THE ANIMATION ALREADY HAS.
 	 *
 	 * The wreath lands as the modal opens -- the reward is announced
@@ -775,13 +792,15 @@ foreach ($ms_daily['days'] as $mcm_d) {
 		 */
 		mcmSfx('open');
 		at(MCM_SHAKE_AT, function () { chest.classList.add('is-shaking'); });
+		/* The lock, a hair before the lid. Offset from MCM_OPEN like
+		   everything else here, so it stays put when the rattle moves. */
+		if (!MCM_CALM) at(MCM_OPEN - MCM_UNLOCK, function () { mcmSfx('tick'); });
 		at(MCM_OPEN, function () {
 			chest.classList.remove('is-shaking');
 			chest.classList.add('is-open', 'is-bursting');
-			/* All three on the lid, over the wreath rather than after
-			   it: the peak, the diamonds and the tick together. */
+			/* The diamonds on the lid, over the wreath rather than
+			   after it. The tick has already gone -- see MCM_UNLOCK. */
 			mcmSfx('lid');
-			mcmSfx('tick');
 		});
 		at(MCM_OPEN + 1300, function () {
 			chest.classList.remove('is-bursting');
