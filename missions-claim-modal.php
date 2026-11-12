@@ -576,6 +576,48 @@ foreach ($ms_daily['days'] as $mcm_d) {
 	var MCM_SHAKE_AT = 200;
 	var MCM_OPEN     = MCM_SHAKE ? MCM_SHAKE_AT + MCM_SHAKE + 40 : 240;
 
+	/*
+	 * TWO SOUNDS, ON THE TWO BEATS THE ANIMATION ALREADY HAS.
+	 *
+	 * The wreath lands as the modal opens -- the reward is announced
+	 * before the chest does anything -- and the diamonds land ON TOP of
+	 * it when the lid goes, which is why they are layered rather than
+	 * sequenced. The second does not wait for the first to finish.
+	 *
+	 * OFF THE SAME CLOCK AS THE PICTURES. MCM_OPEN is the lid, and it
+	 * moves whenever the rattle does; a hardcoded delay here would drift
+	 * away from the thing it is supposed to be hitting.
+	 *
+	 * PLAIN <audio>, NOT THE ARENA'S MIXER. That one decodes into an
+	 * AudioContext so it can reverse and pitch-shift a stack of layers.
+	 * Two files played once at a fixed volume need none of it, and the
+	 * mixer would be two hundred lines on a partial that header.php
+	 * includes on every page.
+	 *
+	 * ALLOWED TO FAIL, EVERY TIME. Autoplay policy, a missing file, a
+	 * codec a browser will not take: none of those may stop a claim
+	 * being shown. The chest is the reveal; the sound is a bonus on top
+	 * of it. (This one is safe in practice -- the modal only opens from
+	 * a tap on Claim, which is the user gesture autoplay asks for.)
+	 */
+	var MCM_SFX = {
+		open: ['sounds/quest_award_wreath.ogg', 0.55],
+		lid:  ['sounds/diamond_mine_treasurefind_diamonds.ogg', 0.75]
+	};
+	var mcmAudio = {};
+	function mcmSfx(key) {
+		if (MCM_CALM) return;          /* reduced motion takes the noise with it */
+		var def = MCM_SFX[key];
+		if (!def) return;
+		try {
+			var a = mcmAudio[key];
+			if (!a) { a = mcmAudio[key] = new Audio(def[0]); a.volume = def[1]; }
+			a.currentTime = 0;
+			var pr = a.play();
+			if (pr && pr.catch) pr.catch(function () {});
+		} catch (e) {}
+	}
+
 	function esc(s) {
 		return String(s).replace(/[&<>"]/g, function (c) {
 			return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
@@ -660,10 +702,13 @@ foreach ($ms_daily['days'] as $mcm_d) {
 		 * The 40ms between the rattle finishing and the lid going is not
 		 * slack: it is the beat of stillness that makes the pop land.
 		 */
+		mcmSfx('open');
 		at(MCM_SHAKE_AT, function () { chest.classList.add('is-shaking'); });
 		at(MCM_OPEN, function () {
 			chest.classList.remove('is-shaking');
 			chest.classList.add('is-open', 'is-bursting');
+			/* On the lid, over the wreath rather than after it. */
+			mcmSfx('lid');
 		});
 		at(MCM_OPEN + 1300, function () {
 			chest.classList.remove('is-bursting');

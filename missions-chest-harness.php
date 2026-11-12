@@ -814,5 +814,52 @@ $tabs = (string) file_get_contents(__DIR__ . '/admin-lib.php');
 ok(strpos($tabs, "'chest' => array('admin-chest.php'") !== false,
    'there is no admin tab, so the preview cannot be reached');
 
+echo "\nthe claim has two sounds, on the two beats it already had\n";
+/*
+ * The wreath lands as the modal opens -- the reward is announced before
+ * the chest does anything -- and the diamonds land ON TOP of it when the
+ * lid goes. Layered, not sequenced.
+ */
+ok(strpos($modal, "'sounds/quest_award_wreath.ogg'") !== false,
+   'the modal has no sound as it opens');
+ok(strpos($modal, "'sounds/diamond_mine_treasurefind_diamonds.ogg'") !== false,
+   'the lid opens in silence');
+ok(strpos($modal, "mcmSfx('open');") !== false, 'the opening sound is never played');
+
+/*
+ * ON THE SAME CLOCK AS THE PICTURES. MCM_OPEN is the lid and it moves
+ * whenever the rattle does -- a hardcoded delay for the second sound
+ * would drift away from the thing it is meant to be hitting. The same
+ * rule the rest of this file already enforces for the visuals.
+ */
+preg_match('~at\(MCM_OPEN, function \(\) \{(.*?)\n\t\t\}\);~s', $modal, $m_lid);
+$lid = count($m_lid) === 2 ? $m_lid[1] : '';
+ok($lid !== '', 'the lid beat could not be lifted');
+ok($lid !== '' && strpos($lid, "mcmSfx('lid')") !== false,
+   'the second sound is not fired on the lid beat, so it can drift away from the lid');
+/* ON the beat, not a delay from it. Being inside the block is not
+   enough -- a setTimeout in there is a second hardcoded timestamp of
+   exactly the kind this file already refuses for the visuals, and it
+   would drift the moment the rattle length changes. */
+ok($lid !== '' && strpos($lid, 'setTimeout') === false,
+   'the lid beat defers its sound, which is a hardcoded timestamp that drifts when the rattle moves');
+
+/* REDUCED MOTION TAKES THE NOISE WITH IT. Somebody who asked for less of
+   this did not ask for a quieter version of all of it. */
+preg_match('~function mcmSfx\(key\) \{(.*?)\n\t\}~s', $modal, $m_sfx);
+$sfxb = count($m_sfx) === 2 ? $m_sfx[1] : '';
+ok($sfxb !== '', 'mcmSfx() could not be lifted');
+ok($sfxb !== '' && strpos($sfxb, 'if (MCM_CALM) return;') !== false,
+   'the sounds play under prefers-reduced-motion');
+/*
+ * AND IT IS ALLOWED TO FAIL. Autoplay policy, a missing file, a codec a
+ * browser will not take -- none of those may stop a claim being shown.
+ * The chest is the reveal; the sound is a bonus on top of it.
+ */
+ok($sfxb !== '' && strpos($sfxb, 'try {') !== false && strpos($sfxb, 'catch') !== false,
+   'a sound that will not play can throw into the claim reveal');
+ok($sfxb !== '' && strpos($sfxb, 'pr.catch') !== false,
+   'the play() promise is unhandled, so a blocked autoplay logs an unhandled rejection every claim');
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);
