@@ -83,6 +83,104 @@ foreach ($cases as $why => $opt) {
 	ok(empty($b['fx']), "dhcb_rez() emitted a rez event when $why");
 }
 
+echo "\nboth waves are credited, damage and rounds\n";
+/*
+ * THE QUESTION THIS ANSWERS, asked after a week of real runs: "Are
+ * players getting credited for rounds on both waves when taking the boss
+ * crew down mid battle?"
+ *
+ * Executed rather than read. A connection that answers the three queries
+ * dhcb_rez() makes on its way through lets the SUCCESS path run, and the
+ * battle it leaves behind is inspected directly.
+ */
+class RezDb {
+	public $asked = array();
+	public function query($sql) {
+		$this->asked[] = $sql;
+		/* dhcb_week() */
+		if (strpos($sql, ' AS w') !== false)  return new RezRows(array(array('w' => '2026-11-09')));
+		if (strpos($sql, ' AS d') !== false)  return new RezRows(array(array('d' => '2')));
+		/* dhcb_spawn()'s "is a wave standing" probe -- say yes, so it
+		   stands nothing up and returns without writing. */
+		if (strpos($sql, 'GROUP BY wave') !== false) {
+			return new RezRows(array(array('wave' => '2', 'n' => '3', 'hp' => '9000')));
+		}
+		/* The next wave's bars. */
+		if (strpos($sql, 'SELECT boss_key, health, max_health') !== false) {
+			$out = array();
+			foreach (dhcb_bosses() as $bz) {
+				$out[] = array('boss_key' => $bz['key'], 'health' => '3000', 'max_health' => '3000');
+			}
+			return new RezRows($out);
+		}
+		return false;
+	}
+	public function real_escape_string($v) { return $v; }
+}
+class RezRows {
+	private $r; private $i = 0;
+	public function __construct($r) { $this->r = $r; }
+	public function fetch_assoc() { return isset($this->r[$this->i]) ? $this->r[$this->i++] : null; }
+	public $num_rows = 1;
+}
+
+$rb = rezb();                       /* every boss at 0, a Fighter standing */
+$rb['mine'][0]['ko'] = false;
+$rb['meta']['sent'] = array('a' => 400, 'b' => 100);
+$rb['meta']['banked'] = 250;        /* an earlier segment, already banked */
+$rb['round'] = 6;                   /* six rounds fought so far */
+$rb['over'] = 'mine';               /* dhca_turn() called it the moment the bars emptied */
+
+$rdb = new RezDb();
+$went = dhcb_rez($rdb, $rb);
+ok($went === true, 'the success path refused with every condition met');
+
+/*
+ * ROUNDS CARRY. They are counted in dhca_play() and nothing in the
+ * resurrection touches them, so the figure the settle writes is the
+ * whole run across every wave it crossed. Asserted because the question
+ * was asked about a live week, not because it looked wrong.
+ */
+ok($rb['round'] === 6,
+   'the round counter moved during the resurrection (' . $rb['round'] . '), so rounds are not the whole run');
+
+/*
+ * AND SO DOES DAMAGE, but only because it is BANKED. meta.sent is keyed
+ * by boss_key and boss_key repeats every wave, so the new wave's ledger
+ * would land on the old one's -- a chained run would report only the
+ * segment it died on.
+ */
+ok((int) $rb['meta']['banked'] === 750,
+   'the earlier segments bank to ' . $rb['meta']['banked'] . ', not 250 + 400 + 100 = 750');
+ok($rb['meta']['sent'] === array(),
+   'the ledger is not reset for the new wave, so the heal cap reads the previous one');
+ok((int) $rb['meta']['wave'] === 2, 'the run did not advance to the next wave');
+ok((int) $rb['meta']['rez'] === 1, 'the resurrection was not counted against the chain cap');
+ok((int) $rb['meta']['waves'] === 1, 'waves_cleared was not incremented');
+
+/* The verdict dhca_turn() reached is cleared, or the run ends anyway. */
+ok($rb['over'] === null, 'the battle is still over, so the run ends on the frame the wave fell');
+ok($rb['turn'] === 'mine', 'it is not the player\'s turn after the crew rises');
+
+/* The board is the NEW wave, at full health and not knocked out. */
+$rb_live = 0;
+foreach ($rb['foes'] as $f) {
+	if ((int) $f['hp'] === 3000 && (int) $f['hp0'] === 3000 && empty($f['ko'])) $rb_live++;
+}
+ok($rb_live === count(dhcb_bosses()),
+   'only ' . $rb_live . ' of ' . count(dhcb_bosses()) . ' bosses came back standing at full health');
+/* hp0 is what dhcb_finish() subtracts from, so a stale one would credit
+   this run with damage the last wave took. */
+ok((int) $rb['foes'][0]['hp0'] === 3000,
+   'hp0 still points at the fallen wave, so the next segment measures from the wrong baseline');
+
+/* And the client is told, with the wave it is rising to. */
+$rb_fx = array();
+foreach ($rb['fx'] as $fx) if (isset($fx['k']) && $fx['k'] === 'rez') $rb_fx[] = $fx;
+ok(count($rb_fx) === 1, 'the resurrection emitted ' . count($rb_fx) . ' rez events, not 1');
+ok(count($rb_fx) === 1 && (int) $rb_fx[0]['wave'] === 2,
+   'the rez event names the wrong wave, so the hue and the bars disagree with the server');
+
 echo "\na refusal leaves the battle exactly as it found it\n";
 $db = new RezNoDb(); $b = rezb(array('oneUp' => 1)); $was = $b;
 dhcb_rez($db, $b);
