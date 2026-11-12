@@ -947,6 +947,10 @@ function admin_tabs() {
 		   whether a comment can be verified at all, and the free surfaces
 		   that might carry them are undocumented, so they get asked rather
 		   than assumed. Fetches, stores nothing. */
+		/* Targets, and the pending count. Next to the probe because they are
+		   the same job in two halves: the probe says what X will tell us, and
+		   this says whether it still is. */
+		'infiltration' => array('admin-infiltration.php', 'Infiltration'),
 		'xprobe'   => array('admin-xprobe.php',   'X Probe'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);

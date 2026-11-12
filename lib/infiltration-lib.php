@@ -518,6 +518,10 @@ function infil_schema() {
 			state       ENUM('verified','pending','rejected') NOT NULL DEFAULT 'pending',
 			why         VARCHAR(255) NOT NULL DEFAULT '',
 			tries       INT UNSIGNED NOT NULL DEFAULT 0,
+			trait_slug  VARCHAR(64)  NOT NULL DEFAULT '',
+			trait_name  VARCHAR(96)  NOT NULL DEFAULT '',
+			trait_tier  VARCHAR(16)  NOT NULL DEFAULT '',
+			table_name  VARCHAR(24)  NOT NULL DEFAULT '',
 			replied_at  DATETIME     NULL,
 			verified_at DATETIME     NULL,
 			created_at  DATETIME     NOT NULL,
@@ -1049,17 +1053,27 @@ function infil_submit($conn, $user_id, $target_id, $comment_url, $fetcher = null
 
 	$trait = null;
 	if (function_exists('dhcf_award')) {
-		/*
-		 * $announce = false is not available as a parameter -- dhcf_award()
-		 * posts through the game's own registration, and 'infiltration' is
-		 * marked unlisted in DHCF_GAMES so it has no public page to point at.
-		 * The reveal the member sees is their own modal.
-		 */
+		/* 'wildcard' is this game's registered category: all eight slot
+		   categories are spoken for by the games, and a wildcard suits a
+		   prize that is not tied to one kind of trait. */
 		$trait = dhcf_award($conn, $user_id, 'wildcard', 'infiltration',
 		                    'target:' . (int) $target['id'], $table);
-		if (is_array($trait) && isset($trait['drop_id'])) {
-			@$conn->query("UPDATE infil_submissions SET drop_id = " . (int) $trait['drop_id']
-			            . " WHERE id = $sub_id");
+
+		/*
+		 * WHAT WAS WON, not which row it is. dhcf_award() returns
+		 * dhcf_drop_payload(), which carries no drop_id -- an earlier draft
+		 * wrote $trait['drop_id'] into a column and silently stored nothing
+		 * every time, because the key has never existed. The slug and tier
+		 * ARE on the payload and are what the channel post and the admin
+		 * table actually want to show.
+		 */
+		if (is_array($trait)) {
+			@$conn->query("UPDATE infil_submissions SET
+			        trait_slug = '" . $conn->real_escape_string((string) $trait['slug']) . "',
+			        trait_name = '" . $conn->real_escape_string((string) $trait['name']) . "',
+			        trait_tier = '" . $conn->real_escape_string((string) $trait['tier']) . "',
+			        table_name = '" . $conn->real_escape_string($tname) . "'
+			        WHERE id = $sub_id");
 		}
 	}
 
@@ -1087,6 +1101,9 @@ function infil_park($conn, $user_id, $target_id, $status_id, $why) {
 	        (user_id, target_id, status_id, state, why, tries, created_at)
 	        VALUES ($user_id, $target_id, '$e_sid', 'pending', '$e_why', 1, NOW())
 	        ON DUPLICATE KEY UPDATE
+	          /* Same two-unique-key reason as infil_record(): a retry with a
+	             different comment conflicts on one_per_target. */
+	          status_id = '$e_sid',
 	          state = IF(state = 'verified', 'verified', 'pending'),
 	          why   = '$e_why',
 	          tries = tries + 1");
@@ -1116,6 +1133,14 @@ function infil_record($conn, $user_id, $target_id, $status_id, $d, $norm, $speed
 	                '$e_norm', '$e_hash', '$e_speed', $tiers, 'verified', '', 1,
 	                $e_when, NOW(), NOW())
 	        ON DUPLICATE KEY UPDATE
+	          /* status_id IS IN THIS LIST FOR A REASON. There are two unique
+	             keys -- one_comment (status_id) and one_per_target (user_id,
+	             target_id) -- and a member whose first attempt parked can
+	             come back with a DIFFERENT comment on the same target. That
+	             conflicts on one_per_target, not on status_id, so without
+	             this the row would take the new comment's text while still
+	             pointing at the old comment's id. */
+	          status_id = '$e_sid',
 	          target_id = $target_id, x_uid = '$e_uid', x_handle = '$e_handle',
 	          raw_text = '$e_raw', own_text = '$e_own', norm_text = '$e_norm',
 	          text_hash = '$e_hash', speed = '$e_speed', tiers = $tiers,
@@ -1318,6 +1343,10 @@ function infil_announce($conn, $res) {
 	$bank  = isset($res['meter']['bank']) ? (int) $res['meter']['bank'] : 0;
 
 	$body  = '**@' . $res['handle'] . "**\n> " . trim((string) $res['own']) . "\n\n";
+	if (is_array($res['trait']) && isset($res['trait']['name'])) {
+		$body .= 'Pulled **' . $res['trait']['name'] . '** ('
+		       . (string) $res['trait']['tier'] . ")\n";
+	}
 	$body .= 'Replied ' . $speed . '. Rung **' . $tier . '** of ' . INFIL_MAX_TIER;
 	if ($bank > 0) $body .= ' with **' . $bank . '** banked';
 	$body .= '.';

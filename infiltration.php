@@ -1,0 +1,364 @@
+<?php
+/*
+ * infiltration.php -- reply to our posts on X, climb a rarity ladder.
+ *
+ * NOT PUBLIC. Behind the Discord login like every other member page, and
+ * deliberately absent from the Skull Paper, from every marketing page and
+ * from dhc-nav.php -- that strip is included on the PUBLIC Arena page, so a
+ * link there would put this in front of anonymous visitors. See
+ * infiltration-design.md.
+ *
+ * THE MEMBER NEVER SEES A NUMBER THEY CANNOT ACT ON. The meter is the whole
+ * interface: ten rungs, where they stand, what the next reply is worth. The
+ * odds table behind each rung is the platform's own, so the ladder means the
+ * same thing here as it does everywhere else traits drop.
+ */
+include_once 'db.php';
+include 'message.php';
+include 'skulliance.php';
+require_once __DIR__ . '/dhcfighters-config.php';
+require_once __DIR__ . '/dhcfighters-lib.php';
+require_once __DIR__ . '/lib/infiltration-lib.php';
+
+$inf_uid = (int) ($_SESSION['userData']['user_id'] ?? 0);
+
+/* Tables first: everything below reads them, and the owner installs from
+   the admin page. Nothing here creates anything. */
+$inf_ready = $inf_uid > 0 ? (count(infil_tables_missing($conn)) === 0) : false;
+
+/*
+ * MISSES ARE SETTLED ON PAGE LOAD because nothing in this repo can schedule
+ * anything (see rewards.php, which is fifteen crontab lines in a trench
+ * coat). One indexed lookup that returns no rows on almost every call, and
+ * idempotent -- `settled` is claimed with a conditional UPDATE so two
+ * concurrent loads cannot dock the same member twice.
+ */
+if ($inf_ready) infil_settle_due($conn);
+
+$inf_flash = '';
+$inf_bad   = '';
+$inf_drop  = null;
+
+/* Redirect after POST, so a refresh cannot re-submit a comment. */
+if ($inf_ready && $inf_uid > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+
+	if (isset($_POST['link_x'])) {
+		$r = infil_link($conn, $inf_uid, (string) $_POST['comment']);
+		if ($r['state'] === INFIL_OK) {
+			$_SESSION['inf_flash'] = 'Connected as @' . $r['handle'] . '.';
+		} else {
+			$_SESSION['inf_bad'] = $r['why'];
+		}
+
+	} else if (isset($_POST['new_code'])) {
+		infil_code($conn, $inf_uid, true);
+		$_SESSION['inf_flash'] = 'New code issued.';
+
+	} else if (isset($_POST['infiltrate'])) {
+		$res = infil_submit($conn, $inf_uid, (int) $_POST['target'], (string) $_POST['comment']);
+		if ($res['state'] === INFIL_OK) {
+			/* The announce is deferred inside skl_discordmsg(), so the member
+			   is not waiting on Discord to see their own trait. */
+			infil_announce($conn, $res);
+			$_SESSION['inf_flash'] = 'Infiltration confirmed.'
+			  . ($res['tiers'] > 0 ? ' Up ' . (int) $res['tiers'] . ' rung'
+			                       . ($res['tiers'] === 1 ? '' : 's') . '.' : '');
+			if (is_array($res['trait'])) $_SESSION['inf_drop'] = $res['trait'];
+		} else if ($res['state'] === INFIL_PENDING) {
+			/* NOT AN ERROR, and it must not read as one. */
+			$_SESSION['inf_flash'] = $res['why'];
+		} else {
+			$_SESSION['inf_bad'] = $res['why'];
+		}
+	}
+	header('Location: infiltration.php');
+	exit;
+}
+
+foreach (array('inf_flash' => 'inf_flash', 'inf_bad' => 'inf_bad', 'inf_drop' => 'inf_drop') as $k => $v) {
+	if (isset($_SESSION[$k])) {
+		if ($k === 'inf_drop') $inf_drop = $_SESSION[$k];
+		else if ($k === 'inf_flash') $inf_flash = (string) $_SESSION[$k];
+		else $inf_bad = (string) $_SESSION[$k];
+		unset($_SESSION[$k]);
+	}
+}
+
+$inf_handle = $inf_ready ? infil_handle($conn, $inf_uid) : '';
+$inf_linked = $inf_ready && infil_uid($conn, $inf_uid) !== '';
+$inf_meter  = $inf_ready ? infil_meter($conn, $inf_uid) : array('tier' => 0, 'bank' => 0, 'month_tiers' => 0);
+$inf_board  = ($inf_ready && $inf_linked) ? infil_board($conn, $inf_uid) : array();
+$inf_top    = $inf_ready ? infil_leaderboard($conn, 15) : array();
+$inf_code   = ($inf_ready && !$inf_linked) ? infil_code($conn, $inf_uid) : '';
+$inf_labels = dhcf_table_labels();
+
+include 'header.php';
+?>
+<style>
+/* Scoped under .inf so nothing here can reach the rest of the platform. */
+.inf { color:#c8d8e8; font:400 15px/1.6 Arial,Helvetica,sans-serif; text-align:left; }
+.inf h2,.inf h3,.inf h4 { text-align:left; margin:0; }
+
+/* ---- the banner ----------------------------------------------------- */
+/* ONE FILE, CROPPED BY CSS, the same way .lp-stage-art handles the
+   launchpad hero: the art is 4:3 and every context wants a different slice
+   of it, so the box sets the shape and background-position picks the crop.
+   Re-cropping in an editor would mean a new upload every time a ratio
+   changes. The colour under it is not decoration -- it is what shows if the
+   file is not on the server yet, so the page never renders as a white gap. */
+.inf-hero { position:relative; width:100%; aspect-ratio: 1600/520; min-height:190px;
+  background:#0a0a14 url(images/infiltration/hero.webp) 50% 34% / cover no-repeat;
+  border:1px solid rgba(110,74,168,.4); display:flex; align-items:flex-end; }
+.inf-hero::after { content:''; position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(8,6,16,0) 38%, rgba(8,6,16,.86) 100%); }
+.inf-hero-in { position:relative; z-index:1; padding:20px 24px; width:100%; }
+.inf-hero h2 { font-size:1.6rem; letter-spacing:.14em; text-transform:uppercase;
+  color:#e8e2f8; text-shadow:0 2px 14px rgba(0,0,0,.9); }
+.inf-hero p { margin:6px 0 0; color:#b9aed6; font-size:.92rem; max-width:none;
+  text-shadow:0 1px 8px rgba(0,0,0,.9); }
+
+/* ---- the meter ------------------------------------------------------ */
+.inf-meter { background:#0a1929; border:1px solid rgba(110,74,168,.3);
+  padding:18px 20px; margin:18px 0; }
+.inf-rungs { display:flex; gap:4px; margin:12px 0 0; }
+.inf-rung { flex:1 1 0; min-width:0; height:16px; background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.08); }
+.inf-rung.on { background:linear-gradient(180deg,#8a63d2,#5b3a9e); border-color:#9d78e0; }
+.inf-rung.top { background:linear-gradient(180deg,#00e0b4,#00a07e); border-color:#00e0b4; }
+.inf-scale { display:flex; gap:4px; margin-top:5px; }
+.inf-scale span { flex:1 1 0; min-width:0; text-align:center; font-size:.6rem;
+  letter-spacing:.04em; color:#5a7888; font-variant-numeric:tabular-nums; }
+.inf-pips { display:flex; flex-wrap:wrap; gap:4px; align-items:center; margin-top:12px; }
+.inf-pip { width:11px; height:11px; border-radius:50%; background:#00c8a0;
+  box-shadow:0 0 7px rgba(0,200,160,.55); }
+.inf-standing { display:flex; flex-wrap:wrap; gap:18px; align-items:baseline; }
+.inf-big { font-size:2.1rem; font-weight:bold; color:#e8e2f8; line-height:1;
+  font-variant-numeric:tabular-nums; }
+.inf-sub { font-size:.72rem; letter-spacing:.13em; text-transform:uppercase; color:#5a7888; }
+
+/* ---- targets -------------------------------------------------------- */
+.inf-target { background:#0a1929; border:1px solid rgba(110,74,168,.26);
+  padding:16px 18px; margin:0 0 12px; }
+.inf-target.done { border-color:rgba(0,200,160,.3); }
+.inf-target.shut { opacity:.55; }
+.inf-trow { display:flex; flex-wrap:wrap; gap:12px; align-items:baseline;
+  justify-content:space-between; }
+.inf-win { font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; }
+.inf-win.early { color:#00e0b4; } .inf-win.main { color:#e8b24a; }
+.inf-win.late  { color:#7a8ea0; }
+.inf-form { display:flex; flex-wrap:wrap; gap:9px; margin-top:12px; }
+.inf-form input[type=text] { flex:1 1 320px; min-width:0; background:#07111d;
+  border:1px solid rgba(110,74,168,.4); color:#c8d8e8; padding:10px 11px;
+  font:400 14px/1.4 Arial,sans-serif; }
+.inf-form input[type=text]:focus { outline:2px solid #8a63d2; outline-offset:1px; }
+.inf a.inf-go, .inf button { background:#6e4aa8; color:#fff; border:0; padding:10px 18px;
+  font-weight:bold; font-size:.85rem; cursor:pointer; text-decoration:none;
+  display:inline-block; }
+.inf a.inf-go:hover, .inf button:hover { background:#8a63d2; }
+.inf button.inf-quiet { background:transparent; border:1px solid rgba(110,74,168,.5);
+  color:#b9aed6; font-weight:normal; }
+.inf-said { font-size:.86rem; color:#8aa0b4; margin:8px 0 0;
+  border-left:2px solid rgba(0,200,160,.4); padding-left:10px; }
+
+/* ---- messages ------------------------------------------------------- */
+.inf-msg { margin:14px 0; padding:11px 14px; border-left:3px solid; font-size:.9rem; }
+.inf-msg.good { border-color:#00c8a0; background:rgba(0,200,160,.1); color:#00c8a0; }
+.inf-msg.bad  { border-color:#e0705f; background:rgba(224,112,95,.1); color:#e0705f; }
+
+/* ---- the code ------------------------------------------------------- */
+.inf-code { font:700 1.5rem/1 ui-monospace,Menlo,monospace; letter-spacing:.16em;
+  color:#00e0b4; background:#07111d; border:1px dashed rgba(0,200,160,.45);
+  padding:14px 18px; display:inline-block; margin:4px 0 0; }
+.inf-steps { margin:12px 0 0; padding-left:20px; font-size:.92rem; }
+.inf-steps li { margin:0 0 7px; }
+
+/* ---- the board ------------------------------------------------------ */
+.inf-tablewrap { overflow-x:auto; }
+.inf-table { border-collapse:collapse; width:100%; min-width:420px; font-size:.88rem; }
+.inf-table th { text-align:left; padding:9px 10px; color:#5a7888; font-size:.66rem;
+  letter-spacing:.12em; text-transform:uppercase; font-weight:normal;
+  border-bottom:1px solid rgba(110,74,168,.24); }
+.inf-table td { padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.05); }
+.inf-table .n { font-variant-numeric:tabular-nums; text-align:right; }
+.inf-table tr.me td { background:rgba(110,74,168,.16); }
+@media (max-width:620px){ .inf-scale span { font-size:.5rem; } }
+</style>
+
+<div class="container"><div class="row"><div class="col1of3" style="margin:0 auto;flex:1 1 100%;max-width:none;">
+<div class="inf">
+
+  <div class="inf-hero">
+    <div class="inf-hero-in">
+      <h2>Infiltration</h2>
+      <p>Reply to our posts on X in your own words. Every verified infiltration pays a trait,
+         and replying promptly climbs the ladder that decides how good it is.</p>
+    </div>
+  </div>
+
+<?php if ($inf_uid <= 0): ?>
+  <p class="inf-msg bad">Sign in to infiltrate.</p>
+
+<?php elseif (!$inf_ready): ?>
+  <p class="inf-msg bad">Infiltration is not switched on yet.</p>
+
+<?php else: ?>
+
+  <?php if ($inf_flash !== ''): ?><p class="inf-msg good"><?php echo htmlspecialchars($inf_flash); ?></p><?php endif; ?>
+  <?php if ($inf_bad   !== ''): ?><p class="inf-msg bad"><?php echo htmlspecialchars($inf_bad); ?></p><?php endif; ?>
+
+  <?php if (!$inf_linked): ?>
+    <?php /* ---- connect an X account ------------------------------------ */ ?>
+    <div class="inf-meter">
+      <h3>Connect your X account</h3>
+      <p>One time. We need to know which account is yours before a reply can count.</p>
+      <div class="inf-code"><?php echo htmlspecialchars($inf_code); ?></div>
+      <ol class="inf-steps">
+        <li>Reply to <a class="inf-go" style="padding:2px 8px;font-size:.78rem"
+            href="https://x.com/skulliance/status/<?php echo htmlspecialchars(INFIL_LINK_STATUS); ?>"
+            target="_blank" rel="noopener">this post</a> with the code above in it.
+            Reply to the post itself, not to somebody else's comment.</li>
+        <li>Copy the link to your reply.</li>
+        <li>Paste it here.</li>
+      </ol>
+      <form method="post" class="inf-form">
+        <input type="text" name="comment" placeholder="https://x.com/you/status/..." autocomplete="off" required>
+        <button type="submit" name="link_x" value="1">Connect</button>
+      </form>
+      <form method="post" style="margin-top:8px">
+        <button type="submit" name="new_code" value="1" class="inf-quiet">Issue a new code</button>
+      </form>
+    </div>
+
+  <?php else: ?>
+    <?php /* ---- the meter --------------------------------------------- */
+      $t = (int) $inf_meter['tier']; $b = (int) $inf_meter['bank'];
+      $tbl = infil_table_name($t);
+      $odds = infil_table($t);
+    ?>
+    <div class="inf-meter">
+      <div class="inf-standing">
+        <div><span class="inf-big"><?php echo $t; ?></span><span class="inf-sub"> / <?php echo INFIL_MAX_TIER; ?> rungs</span></div>
+        <div><span class="inf-sub">Rolling on</span><br><b><?php
+          echo htmlspecialchars(isset($inf_labels[$tbl]) ? $inf_labels[$tbl] : $tbl); ?></b>
+          &middot; <?php echo (float) $odds['mythic']; ?>% mythic</div>
+        <div><span class="inf-sub">This month</span><br><b><?php echo (int) $inf_meter['month_tiers']; ?></b> rungs climbed</div>
+        <div style="margin-left:auto"><span class="inf-sub">as @<?php echo htmlspecialchars($inf_handle); ?></span></div>
+      </div>
+
+      <div class="inf-rungs" aria-label="Your rung">
+        <?php for ($i = 1; $i <= INFIL_MAX_TIER; $i++): ?>
+          <i class="inf-rung<?php echo $i <= $t ? ($i === INFIL_MAX_TIER ? ' on top' : ' on') : ''; ?>"></i>
+        <?php endfor; ?>
+      </div>
+      <div class="inf-scale">
+        <?php for ($i = 1; $i <= INFIL_MAX_TIER; $i++): ?>
+          <span><?php echo (float) DHCF_TIERS[infil_table_name($i)]['mythic']; ?></span>
+        <?php endfor; ?>
+      </div>
+      <p class="inf-sub" style="margin-top:4px">mythic chance at each rung</p>
+
+      <?php if ($b > 0): ?>
+      <div class="inf-pips" aria-label="Banked">
+        <span class="inf-sub">Banked</span>
+        <?php for ($i = 0; $i < min($b, 24); $i++): ?><i class="inf-pip"></i><?php endfor; ?>
+        <b style="color:#00c8a0"><?php echo $b; ?></b>
+        <span class="inf-sub">&mdash; each one absorbs a missed target before your rung drops</span>
+      </div>
+      <?php elseif ($t >= INFIL_MAX_TIER): ?>
+        <p class="inf-sub" style="margin-top:10px">At the top. Every prompt reply from here banks a pip.</p>
+      <?php endif; ?>
+    </div>
+
+    <?php /* ---- the targets --------------------------------------------- */ ?>
+    <h3 style="margin:22px 0 10px">Targets</h3>
+    <?php if (!$inf_board): ?>
+      <p class="inf-sub">No targets yet. They appear here as they are posted.</p>
+    <?php endif; ?>
+
+    <?php foreach ($inf_board as $tg):
+      $done   = ($tg['sub_state'] === INFIL_OK);
+      $wait   = ($tg['sub_state'] === INFIL_PENDING);
+      $shut   = ((int) $tg['retired'] === 1);
+      $url    = 'https://x.com/skulliance/status/' . $tg['status_id'];
+      $worth  = infil_gain($tg['window']);
+    ?>
+    <div class="inf-target<?php echo $done ? ' done' : ''; ?><?php echo $shut ? ' shut' : ''; ?>">
+      <div class="inf-trow">
+        <div>
+          <b><?php echo htmlspecialchars($tg['label'] !== '' ? $tg['label'] : 'Target'); ?></b>
+          <span class="inf-sub">&middot; <?php echo (int) $tg['crowd']; ?> infiltrated</span>
+        </div>
+        <div class="inf-win <?php echo htmlspecialchars($tg['window']); ?>">
+          <?php if ($shut): ?>closed
+          <?php elseif ($tg['window'] === 'early'): ?>first window &middot; worth +2
+          <?php elseif ($tg['window'] === 'main'): ?>open &middot; worth +1
+          <?php else: ?>late &middot; pays a trait, no climb<?php endif; ?>
+        </div>
+      </div>
+
+      <?php if ($done): ?>
+        <p class="inf-said">Infiltrated
+          <?php echo $tg['sub_speed'] === 'early' ? 'in the first window'
+                   : ($tg['sub_speed'] === 'main' ? 'in the window' : 'late'); ?>.
+          <?php echo (int) $tg['sub_tiers'] > 0
+                ? '+' . (int) $tg['sub_tiers'] . ' rung' . ((int) $tg['sub_tiers'] === 1 ? '' : 's')
+                : 'No climb.'; ?></p>
+      <?php elseif ($wait): ?>
+        <p class="inf-said">Waiting on X. This is saved and will be checked again -- nothing is
+           wrong with your comment.</p>
+      <?php elseif (!$shut): ?>
+        <a class="inf-go" href="<?php echo htmlspecialchars($url); ?>" target="_blank" rel="noopener">Open the post</a>
+        <form method="post" class="inf-form">
+          <input type="hidden" name="target" value="<?php echo (int) $tg['id']; ?>">
+          <input type="text" name="comment" placeholder="Paste the link to your reply" autocomplete="off" required>
+          <button type="submit" name="infiltrate" value="1">Infiltrate<?php
+            echo $worth > 0 ? ' (+' . $worth . ')' : ''; ?></button>
+        </form>
+        <p class="inf-sub" style="margin-top:7px">At least <?php echo INFIL_MIN_CHARS; ?> characters
+          in your own words, and not something you have said before.</p>
+      <?php endif; ?>
+    </div>
+    <?php endforeach; ?>
+
+  <?php endif; ?>
+
+  <?php /* ---- the board ------------------------------------------------- */ ?>
+  <h3 style="margin:26px 0 10px">This month</h3>
+  <?php if (!$inf_top): ?>
+    <p class="inf-sub">Nobody has climbed a rung this month yet.</p>
+  <?php else: ?>
+  <div class="inf-tablewrap">
+  <table class="inf-table">
+    <tr><th>#</th><th>Member</th><th class="n">Rungs this month</th><th class="n">Rung</th><th class="n">Banked</th></tr>
+    <?php foreach ($inf_top as $i => $row): ?>
+    <tr<?php echo (int) $row['user_id'] === $inf_uid ? ' class="me"' : ''; ?>>
+      <td class="n"><?php echo $i + 1; ?></td>
+      <td><?php echo htmlspecialchars($row['username']); ?></td>
+      <td class="n"><?php echo (int) $row['month_tiers']; ?></td>
+      <td class="n"><?php echo (int) $row['tier']; ?></td>
+      <td class="n"><?php echo (int) $row['bank']; ?></td>
+    </tr>
+    <?php endforeach; ?>
+  </table>
+  </div>
+  <?php endif; ?>
+
+<?php endif; ?>
+</div>
+</div></div></div>
+
+<?php if (is_array($inf_drop)): ?>
+<script>
+/* The platform's own reveal, included by header.php on every page. Same
+   handoff missions-claim-modal.php uses, on a short delay so the modal
+   opens onto a drawn page rather than over a half-painted one. */
+(function () {
+  var d = <?php echo json_encode($inf_drop); ?>;
+  function go() { if (window.DHC_SHOW_DROP) window.DHC_SHOW_DROP(d); }
+  if (document.readyState === 'complete') setTimeout(go, 300);
+  else window.addEventListener('load', function () { setTimeout(go, 300); });
+}());
+</script>
+<?php endif; ?>
+<?php $conn->close(); ?>
+</html>

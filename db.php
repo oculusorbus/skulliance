@@ -16324,6 +16324,96 @@ function checkDHCFightersLeaderboard($conn, $monthly = false, $rewards = false) 
 }
 
 /*
+ * INFILTRATION -- the monthly board and its payout.
+ *
+ * 50,000 CARBON down the board by rank, on the same harmonic split every
+ * other board uses: rank 1 takes the pool, rank 2 half, and so on. Half of
+ * what DHC Fighters pays, because the effort is a sentence rather than a
+ * built character -- and the trait the infiltration already paid is the main
+ * reward here, not this.
+ *
+ * RANKED ON TIERS EARNED IN THE MONTH, never on tier held. The overshoot
+ * bank is uncapped on purpose, so a member who was diligent for a long time
+ * can sit at the ceiling through a quiet patch -- which is the point of the
+ * bank, and would also park them at the top of a board ranked on standing
+ * while they did nothing. month_tiers only ever counts gains.
+ *
+ * SAFE LATE, NOT SAFE TWICE. infil_meter.month_key partitions the table by
+ * month so running it on the 5th still settles the right month, but there is
+ * no rewarded flag to close, so a second run pays everybody again. Once, on
+ * the 1st, via rewards.php?infiltration=1.
+ *
+ * NO DISCORD POST when there is nobody on the board: a monthly "nobody
+ * infiltrated" announcement in a channel members read is a worse silence
+ * than silence.
+ */
+function checkInfiltrationLeaderboard($conn, $monthly = false, $rewards = false) {
+	if (!function_exists('infil_leaderboard')) {
+		if (is_file(__DIR__ . '/lib/infiltration-lib.php')) {
+			require_once __DIR__ . '/dhcfighters-config.php';
+			require_once __DIR__ . '/lib/infiltration-lib.php';
+		}
+	}
+	if (!function_exists('infil_leaderboard')) { echo "Infiltration not installed."; return; }
+
+	/* The month that just CLOSED on a reward run, the current one otherwise.
+	   Computed from PHP's clock to match infil_month(), which is what wrote
+	   the key -- asking MySQL here would disagree with the stored value on
+	   this host, where the two clocks are hours apart. */
+	$month = $rewards ? date('Y-m', strtotime('first day of last month')) : date('Y-m');
+
+	$carbon = 50000;
+	$rows   = infil_leaderboard($conn, 100, $month);
+
+	if (!$rows) {
+		$scope = $rewards ? 'last month' : 'this month';
+		echo "<p>Nobody has infiltrated $scope.</p>";
+		return;
+	}
+
+	$lb_rows = []; $description = ""; $rank = 0;
+	foreach ($rows as $row) {
+		$rank++;
+		$pay = (int) round($carbon / $rank);
+
+		$avatar_url = (isset($row['discord_id'], $row['avatar']) && $row['avatar'] !== '')
+		            ? "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".png"
+		            : "icons/skull.png";
+		$stats = (int) $row['month_tiers'] . " rungs climbed, now on rung "
+		       . (int) $row['tier'] . " of " . INFIL_MAX_TIER;
+		if ((int) $row['bank'] > 0) $stats .= ", " . (int) $row['bank'] . " banked";
+
+		$lb_rows[] = ['rank' => $rank, 'trophy' => '', 'avatar_url' => $avatar_url,
+		              'name' => htmlspecialchars($row['username']), 'highlight' => false,
+		              'stats' => $stats,
+		              'reward' => ($monthly || $rewards) ? number_format($pay) . " CARBON" : ''];
+
+		if ($rewards) {
+			updateBalance($conn, $row['user_id'], 15, $pay);
+			logCredit($conn, $row['user_id'], $pay, 15);
+			if ($rank <= 45) {
+				$description .= "- " . (($rank < 10) ? "0" : "") . $rank
+				              . " <@" . $row['discord_id'] . "> " . $stats . "\r\n";
+				$description .= "        " . number_format($pay) . " CARBON\r\n";
+			}
+		}
+	}
+
+	if ($rewards && $description !== '') {
+		/*
+		 * TO THE INFILTRATIONS CHANNEL, not the general feed. The results
+		 * name who has been replying to our posts, which is the one thing
+		 * this feature does not broadcast anywhere it does not have to.
+		 */
+		$last_month = date('F', strtotime('first day of last month'));
+		discordmsg("\u{1F5A4} " . $last_month . " Infiltration Results", $description, "",
+		           "https://skulliance.io/staking/infiltration.php", "infiltrations");
+	}
+
+	renderLeaderboardList($lb_rows);
+}
+
+/*
  * DHC ARENA -- the monthly ladder and its payout.
  *
  * Derived from the battle ledger, never stored: dhc_arena_battles is

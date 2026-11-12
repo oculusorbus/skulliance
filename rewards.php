@@ -158,6 +158,18 @@ $reward_jobs = array(
 	// so equally safe late and equally unsafe twice.
 	'dhcarena'      => array('monthly', function ($conn) { checkDHCArenaLeaderboard($conn, false, true); }),
 
+	// 50,000 CARBON down the board by rank -- half of DHC Fighters, because
+	// the effort is a sentence rather than a built character, and the trait
+	// each infiltration already paid is the real reward.
+	//
+	// Ranked on tiers EARNED in the month, not tier held: the overshoot bank
+	// is uncapped, so standing alone would park a diligent member at the top
+	// of the board through a month in which they did nothing.
+	//
+	// Partitioned by infil_meter.month_key, so safe LATE and unsafe TWICE,
+	// like its neighbours -- there is no rewarded flag to close.
+	'infiltration'  => array('monthly', function ($conn) { checkInfiltrationLeaderboard($conn, false, true); }),
+
 );
 
 /*
