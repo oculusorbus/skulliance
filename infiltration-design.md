@@ -420,38 +420,50 @@ We cannot reply from our side at any price we are willing to pay: writes
 need `tweet.write` on the v2 API. So the job is getting him to the right
 place fast, not automating it.
 
-**A Discord ping per verified infiltration, DOWN ITS OWN PRIVATE WEBHOOK.**
+**THE PING IS A DM, AND THE CHANNEL IS FOR THE COMMUNITY.** The owner's
+call, and it is the better split: he gets the worklist wherever he is, and
+the channel stays free to show members what each other are doing, which is
+the point of gamifying it at all.
 
-An earlier draft of this file said to use `alertAdmin()` (`webhooks.php:615`)
-because it "pings him in a channel members cannot read". **That was wrong
-and it would have broadcast the feature.** `alertAdmin()` passes
-`$channel = ""`, which falls through to `getWebhook()` (`webhooks.php:491`)
--- the default, members-visible channel. Its `ops` flag only suppresses the
-mirror into the on-site Activity feed; it does not change the Discord
-destination.
+`sendDM($discord_id, $message, $image_url)` (`message.php:83`) already does
+it: it opens a DM channel against `/users/@me/channels` and posts as the
+bot. No new webhook, no new credential, no channel to configure.
 
-So the ping needs a channel of its own:
+Two drafts of this file got the destination wrong before landing here. The
+first said to use `alertAdmin()` (`webhooks.php:615`) because it "pings him
+in a channel members cannot read" -- **it does not.** `alertAdmin()` passes
+`$channel = ""`, which falls through to `getWebhook()` (`webhooks.php:491`),
+the default members-visible channel; its `ops` flag only suppresses the
+mirror into the on-site Activity feed. Followed as written, the thing built
+to save the owner from watching X would have announced the mechanic to the
+whole server. The second draft fixed that with a private webhook, which
+works but was more machinery than a DM needs.
 
-1. A Discord channel only the owner or an admin role can see.
-2. A webhook on it, added to `credentials/webhooks_credentials.php` (that
-   directory is gitignored and exists only on the server) as
-   `function getInfiltrationWebhook(){ return "https://discord.com/api/webhooks/..."; }`
-3. An `'infiltration'` case in `skl_discordmsg()`'s channel switch, with the
-   same `function_exists` guard its neighbours carry (see the `testimonials`
-   case at `webhooks.php:417`), so an unadded credential skips the post
-   rather than fataling the submission that triggered it.
+Two things to get right:
 
-Webhooks cannot DM, so it has to be a channel -- which is better anyway:
-searchable history, and it can be muted.
+1. **IT MUST NOT BLOCK THE SUBMISSION.** `sendDM()` goes through
+   `MakeRequest()`, which is a separate path from `skl_discordmsg()` and so
+   sits OUTSIDE the deferral queue -- two round trips to Discord with the
+   player waiting on both, which is the exact problem the deferral work
+   existed to remove. It has to fire after the response is released.
+2. **A failed DM must never fail the infiltration.** Privacy settings can
+   refuse a bot DM, and by then the trait is already paid.
 
-What IS reusable from `alertAdmin()` is the `<@id>` mention, because a
-mention only notifies from the top-level `$content` field. Not its routing,
-and not its 900 second cooldown, which would swallow the second comment on
-the same target.
+The DM carries the member's own words inline plus a link to the comment and
+a composer aimed at it, which beats X's notification tab because it is only
+infiltrations and the text is already there.
 
-The ping carries the member's own words inline plus a link to the comment
-and a composer aimed at it, which beats X's notification tab because it is
-only infiltrations and the text is already there.
+### The showcase channel
+
+Members-visible, in Discord, which is consistent with the owner's position
+on the leaderboard: in-platform and behind a Discord login is not "public".
+
+**It should LINK each infiltration rather than quote it.** The comment is
+already public on X, so a link leaks nothing new -- and every member who
+clicks lands on the target thread, inside its decay window, from exactly the
+people most likely to add a reply of their own. That makes the showcase a
+second reach engine instead of a trophy case. Quoting inline gets the social
+proof without the click, which is the weaker half.
 
 The composer link is `https://x.com/intent/post?in_reply_to=<status_id>` --
 the same free Web Intent family `lib/share-x.php:66` already uses. No API,
