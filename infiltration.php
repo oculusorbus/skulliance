@@ -16,6 +16,22 @@
 include_once 'db.php';
 include 'message.php';
 include 'skulliance.php';
+/*
+ * WEBHOOKS, EXPLICITLY, AND NOTHING ELSE LOADS IT.
+ *
+ * db.php does not include it and neither does skulliance.php, so without
+ * this line skl_discordmsg() simply does not exist -- and every announce
+ * in lib/infiltration-lib.php is guarded by function_exists(), which is
+ * correct (a missing Discord post must never break an award) and is also
+ * why the failure is SILENT. Targets were added and infiltrations were
+ * paid with nothing ever reaching the channel, and the admin Health card
+ * reported "no webhook" because getInfiltrationsWebhook() lives in the
+ * credentials file that webhooks.php pulls in.
+ *
+ * include_once, not include: the file declares its functions at top level
+ * and a second include is a fatal redeclare.
+ */
+include_once 'webhooks.php';
 require_once __DIR__ . '/dhcfighters-config.php';
 require_once __DIR__ . '/dhcfighters-lib.php';
 require_once __DIR__ . '/lib/infiltration-lib.php';

@@ -284,6 +284,38 @@ $GLOBALS['SENT'] = null;
 infil_announce_target(null, array());
 ok($GLOBALS['SENT'] === null, 'an empty target was announced anyway');
 
+/* ------------------------------------------------------------------ *
+ * THE PAGES CAN ACTUALLY REACH DISCORD
+ *
+ * Every announce in the library is guarded by function_exists(), which is
+ * right -- a missing Discord post must never break an award that has
+ * already been paid. It also means a page that forgets to include
+ * webhooks.php posts NOTHING, FOREVER, and says nothing about it.
+ *
+ * That is exactly what shipped: db.php does not include webhooks.php and
+ * neither does skulliance.php, so targets were added and infiltrations
+ * were paid with the channel silent, and the admin Health card reported
+ * "no webhook" because the credentials file comes in with it.
+ * ------------------------------------------------------------------ */
+/* STRIPPED FIRST. The first version of this check matched the commented
+   out line it was supposed to catch -- "// include_once 'webhooks.php';"
+   still contains the string -- so the mutation run passed and the
+   assertion was decoration. */
+require_once __DIR__ . '/harness-strip.php';
+head('the pages that announce can actually reach Discord');
+foreach (array('infiltration.php', 'admin-infiltration.php') as $pg) {
+	$src = @file_get_contents(__DIR__ . '/' . $pg);
+	ok($src !== false, "$pg is missing");
+	if ($src === false) continue;
+	$src = harness_strip_comments($src);
+	ok(preg_match('~include_once\s+[\'"]webhooks\.php[\'"]~', $src) === 1,
+	   "$pg calls an announce but never includes webhooks.php, so skl_discordmsg() "
+	 . 'does not exist there and every post is silently skipped');
+	ok(preg_match('~\binclude\s+[\'"]webhooks\.php[\'"]~', $src) === 0,
+	   "$pg includes webhooks.php without _once, which is a fatal redeclare "
+	 . 'the moment anything else loads it first');
+}
+
 echo "\n" . ($fail ? "$fail FAILED of $ran\n" : "all $ran assertions pass\n");
 
 /* ================================================================== *
