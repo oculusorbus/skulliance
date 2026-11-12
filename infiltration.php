@@ -102,22 +102,26 @@ include 'header.php';
    Re-cropping in an editor would mean a new upload every time a ratio
    changes. The colour under it is not decoration -- it is what shows if the
    file is not on the server yet, so the page never renders as a white gap. */
-/* 90% IS THE OWNER'S OWN FIGURE, found against the real art in a browser,
-   the same way the -180px on .lp-stage-art was. It puts the band low: the
-   foot of the structure and the front rank of skeletons rather than the
-   sky. My 10% framed the whole X and was the wrong call -- the army is the
-   subject, and the X reads from its base.
+/* THE HEIGHT IS 1600/520 AND IT STAYS THERE. It was briefly 820, because
+   the framing I had chosen at the time cut the structure in half and a
+   taller band fixed it -- which was solving my own bad crop by moving
+   something the owner had already set. 90% frames it properly at this
+   height, so there is nothing left for the ratio to fix.
+
+   90% IS THE OWNER'S OWN FIGURE, found against the real art in a browser,
+   the same way the -180px on .lp-stage-art was.
 
    A PERCENTAGE, NOT A PIXEL OFFSET, so the crop holds at every width: the
    box is a ratio of the viewport, so its height tracks its width, and a
    fixed offset would walk down the picture as the window narrows. That is
    the mistake .lp-stage-art records having made. */
-.inf-hero { position:relative; width:100%; aspect-ratio: 1600/820; min-height:190px;
+.inf-hero { position:relative; width:100%; aspect-ratio: 1600/520; min-height:190px;
   background:#0a0a14 url(images/infiltration/hero.webp) 50% 90% / cover no-repeat;
   border:1px solid rgba(110,74,168,.4); display:flex; align-items:flex-end; }
-/* The scrim starts at 62%, not 38%. It exists so the title reads, and at
-   this height the earlier value darkened the entire crowd to get there --
-   covering the half of the picture that is the reason for using it. */
+/* The scrim exists so the title reads over whatever is behind it. Starting
+   at 62% rather than the usual 38% keeps it off the foreground skeletons,
+   which at 90% are most of the band. If the title turns out to be hard to
+   read against them, this percentage is the dial -- not the height. */
 .inf-hero::after { content:''; position:absolute; inset:0;
   background:linear-gradient(180deg, rgba(8,6,16,0) 62%, rgba(8,6,16,.9) 100%); }
 /* A 1600px file on a 400px screen is four times the pixels anyone sees.
