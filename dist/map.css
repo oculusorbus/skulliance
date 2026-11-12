@@ -104,6 +104,28 @@
 }
 
 /* ── Popup ── */
+/*
+ * THE OVERLAY IS THE SCROLLER, AND THAT IS THE WHOLE FIX.
+ *
+ * Reported from a phone: the panel is taller than the screen, nothing
+ * scrolls, the close button is off the top of the frame, and dragging
+ * the modal reloads the page.
+ *
+ * All four are the same omission. Nothing here had a max-height or an
+ * overflow, so the content simply ran past the viewport; with no
+ * scrollable ancestor under the finger, the drag reached the document
+ * and a downward drag at scroll-top is pull-to-refresh.
+ *
+ * align-items: center was the other half. A flex child taller than its
+ * centring container overflows BOTH ways, and the top -- where the close
+ * button lives -- is the half you cannot scroll back to. flex-start with
+ * auto margins centres a short panel and lets a tall one start at the
+ * top.
+ *
+ * overscroll-behavior: contain stops a scroll that reaches this box's
+ * end from chaining to the document, which is what the browser turns
+ * into a refresh.
+ */
 .popup-overlay {
     display: none;
     position: fixed;
@@ -114,7 +136,14 @@
     background: rgba(0,0,0,0.75);
     z-index: 1000;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    /* Clear of the notch and the home indicator; the close button sits
+       in the top corner and a phone will happily put a status bar on it. */
+    padding: max(16px, env(safe-area-inset-top, 0px)) 12px
+             max(16px, env(safe-area-inset-bottom, 0px));
 }
 .popup-content {
     position: relative;
@@ -124,6 +153,9 @@
     text-align: center;
     max-width: 800px;
     width: 90%;
+    /* Centred when it fits, top-aligned when it does not. The overlay is
+       flex-start, so this is what keeps a short panel in the middle. */
+    margin: auto;
     box-shadow: 0 4px 24px rgba(0,0,0,0.6);
     border: 1px solid rgba(0,200,160,0.15);
 }
@@ -418,4 +450,39 @@
 @media (max-width: 700px) {
     .rm-join { margin: 16px 14px 0; align-items: stretch; }
     .rm-go { width: 100%; }
+}
+
+/*
+ * THE MAP POPUP ON A PHONE.
+ *
+ * Reported: too big for the screen, nothing scrolls, dragging it reloads
+ * the page, and the close button is out of frame. The overlay above now
+ * scrolls and contains its overscroll, which fixes the first three. This
+ * is the fourth.
+ *
+ * FIXED, NOT ABSOLUTE. The button was positioned 12px outside the top
+ * corner of the panel, so on a panel taller than the screen it sat above
+ * the viewport entirely -- unreachable, with nothing else to tap and the
+ * drag that might have revealed it reloading the page instead. Fixed to
+ * the viewport inside an already-fixed overlay, it is in the same place
+ * whatever the panel does, and clear of the status bar.
+ *
+ * BIGGER, TOO: 28px is under the 44px a finger is reliably given, and
+ * this is the one control that gets somebody out.
+ */
+@media (max-width: 768px) {
+    .popup-close {
+        position: fixed;
+        top: calc(env(safe-area-inset-top, 0px) + 10px);
+        right: 12px;
+        width: 44px;
+        height: 44px;
+        font-size: 17px;
+        z-index: 1001;
+    }
+    /* The art is the least important thing in a panel you opened to read
+       numbers, and at 520px it was most of a phone screen before the
+       first of them. */
+    .popup-image { max-height: 34vh; }
+    .popup-content { width: 100%; padding: 16px 14px; }
 }

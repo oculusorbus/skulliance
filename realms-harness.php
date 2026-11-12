@@ -1692,5 +1692,85 @@ ok(strpos($hsrc, "parse_url(\$_SERVER['REQUEST_URI'], PHP_URL_PATH)") !== false,
 ok(strpos($hsrc, 'dist/realms-onboarding.css') !== false,
    'the onboarding stylesheet is never linked');
 
+/*
+ * ===== THE MAP POPUP ON A PHONE ==========================================
+ *
+ * Reported from a phone: the panel is taller than the screen, nothing
+ * scrolls, dragging it reloads the page, and the close button is off the
+ * top of the frame with no way to reach it.
+ *
+ * Four symptoms, one omission: nothing had a max-height or an overflow,
+ * so the content ran past the viewport -- and with no scrollable
+ * ancestor under the finger the drag reached the document, where a
+ * downward drag at scroll-top is pull-to-refresh.
+ */
+echo "\nthe map popup fits a phone, scrolls, and can be closed\n";
+$mapCss2 = (string) file_get_contents(__DIR__ . '/dist/map.css');
+ok($mapCss2 !== '', 'dist/map.css could not be read');
+
+preg_match('~\.popup-overlay \{([^}]*)\}~s', $mapCss2, $m_ov);
+$ov = count($m_ov) === 2 ? $m_ov[1] : '';
+ok($ov !== '', 'the popup overlay rule could not be found');
+/* THE OVERLAY IS THE SCROLLER. Without this there is nothing under the
+   finger to scroll and the drag reaches the document. */
+ok($ov !== '' && preg_match('~overflow-y:\s*auto~', $ov) === 1,
+   'the popup overlay does not scroll, so a panel taller than the phone cannot be read');
+/* AND IT DOES NOT CHAIN. A scroll that reaches this box's end must not
+   continue into the document, which is what the browser turns into a
+   refresh. */
+ok($ov !== '' && preg_match('~overscroll-behavior:\s*contain~', $ov) === 1,
+   'the overlay chains its overscroll to the page, so dragging the modal reloads it');
+/*
+ * align-items: center WAS THE OTHER HALF. A flex child taller than its
+ * centring container overflows BOTH ways, and the top -- where the close
+ * button lives -- is the half that cannot be scrolled back to.
+ */
+ok($ov !== '' && preg_match('~align-items:\s*center~', $ov) !== 1,
+   'the overlay centres its child, so a tall panel overflows off the top where nothing can reach it');
+ok($ov !== '' && preg_match('~align-items:\s*flex-start~', $ov) === 1,
+   'the overlay does not top-align, so a tall panel has no reachable top');
+/* Short panels must still be centred, which is what the auto margin does
+   once the overlay stops centring them. */
+preg_match('~\.popup-content \{([^}]*)\}~s', $mapCss2, $m_pc);
+$pc = count($m_pc) === 2 ? $m_pc[1] : '';
+ok($pc !== '' && preg_match('~margin:\s*auto~', $pc) === 1,
+   'a popup shorter than the screen is no longer centred');
+
+/*
+ * THE CLOSE BUTTON IS THE ONE CONTROL THAT GETS SOMEBODY OUT, and it was
+ * absolutely positioned 12px outside the panel's top corner -- so on a
+ * panel taller than the screen it sat above the viewport entirely.
+ */
+/*
+ * BRACE-MATCHED, AND EVERY 768px BLOCK, not the first one a lazy regex
+ * stops at. There are two of them in this file, and `(.*?)\n\}` ends at
+ * the first nested rule's closing brace rather than the block's -- so
+ * the first version of these four checks read a couple of lines of the
+ * WRONG block and reported correct CSS as missing.
+ */
+$ph = ''; $ph_at = 0;
+while (($ph_at = strpos($mapCss2, '@media (max-width: 768px) {', $ph_at)) !== false) {
+	$i = strpos($mapCss2, '{', $ph_at); $d = 0; $end = $i;
+	for (; $end < strlen($mapCss2); $end++) {
+		if ($mapCss2[$end] === '{') $d++;
+		elseif ($mapCss2[$end] === '}') { $d--; if ($d === 0) break; }
+	}
+	$ph .= substr($mapCss2, $i + 1, $end - $i - 1) . "\n";
+	$ph_at = $end + 1;
+}
+ok($ph !== '' && substr_count($mapCss2, '@media (max-width: 768px) {') >= 1,
+   'there is no 768px block in map.css at all, so these checks are reading nothing');
+ok($ph !== '' && strpos($ph, '.popup-close') !== false,
+   'the phone block does not touch the close button, so it is still positioned off the panel');
+ok($ph !== '' && preg_match('~\.popup-close \{[^}]*position:\s*fixed~s', $ph) === 1,
+   'the close button is not fixed on a phone, so it scrolls out of the frame with the panel');
+ok($ph !== '' && preg_match('~\.popup-close \{[^}]*env\(safe-area-inset-top~s', $ph) === 1,
+   'the close button ignores the safe-area inset, so a notch can sit on top of it');
+/* 44px is the size a finger is reliably given, and this is the control
+   that matters most. */
+ok($ph !== '' && preg_match('~\.popup-close \{[^}]*width:\s*(\d+)px~s', $ph, $m_w) === 1
+   && (int) $m_w[1] >= 44,
+   'the close button is under 44px on a phone, which is smaller than a fingertip');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);
