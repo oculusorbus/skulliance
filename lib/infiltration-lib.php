@@ -1306,6 +1306,49 @@ function infil_comment_url($handle, $status_id) {
 }
 
 /**
+ * Announce a NEW TARGET to the Infiltrations channel.
+ *
+ * THIS IS THE ONE POST THAT HAS TO BE FAST. Everything else here reports
+ * something that already happened; this one is a starting gun. X's ranker
+ * weights early replies far above late ones -- Earlybird decays engagement
+ * on roughly a six hour half-life -- so the minutes between the owner
+ * pasting a link and members seeing it are the minutes worth the most.
+ *
+ * THE WINDOWS ARE DISCORD TIMESTAMPS, not text. <t:unix:R> renders as a
+ * live relative countdown in every viewer's own locale and timezone, which
+ * is the whole problem with writing "closes in 60 minutes" into a message
+ * that people read an hour later. <t:unix:t> gives them the wall clock
+ * beside it.
+ */
+function infil_announce_target($conn, $target) {
+	if (!function_exists('skl_discordmsg')) return;
+	if (!is_array($target) || empty($target['status_id'])) return;
+
+	$posted = strtotime($target['posted_at']);
+	if (!$posted) $posted = time();
+	$early  = $posted + ((int) $target['early_mins'] * 60);
+	$main   = $posted + ((int) $target['main_mins']  * 60);
+
+	$label = trim((string) $target['label']);
+	$url   = 'https://x.com/skulliance/status/' . (string) $target['status_id'];
+
+	$body  = $label !== '' ? '**' . $label . "**\n\n" : '';
+	$body .= "Reply in your own words, then paste the link on the Infiltration page.\n\n";
+	$body .= '**+2 rungs** until <t:' . $early . ':t> (<t:' . $early . ':R>)' . "\n";
+	$body .= '**+1 rung** until <t:' . $main  . ':t> (<t:' . $main  . ':R>)' . "\n";
+	$body .= 'After that it still pays a trait, but it will not climb.';
+
+	skl_discordmsg(
+		'New target',
+		$body,
+		'',               /* no image: the embed url carries the post preview */
+		$url,
+		'infiltrations',  /* -> getInfiltrationsWebhook() */
+		'', '6E4AA8'
+	);
+}
+
+/**
  * Announce a verified infiltration to the Infiltrations channel.
  *
  * ONE POST DOING TWO JOBS, which is the owner's design: members see who is

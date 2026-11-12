@@ -38,12 +38,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	} else if (isset($_POST['add'])) {
 		$r = infil_target_add($conn, (string) $_POST['url'], (string) $_POST['label'],
 		                      (int) $_POST['early'], (int) $_POST['main']);
-		$_SESSION[$r['id'] > 0 ? 'ai_ok' : 'ai_err'] =
-			$r['id'] > 0 ? 'Target added.' : $r['why'];
+		if ($r['id'] > 0) {
+			/* The starting gun, and it only fires on a target that actually
+			   saved -- announcing one that failed verification would send
+			   members to a post they cannot infiltrate. Deferred inside
+			   skl_discordmsg(), so the redirect does not wait on Discord. */
+			infil_announce_target($conn, infil_target($conn, $r['id']));
+			$_SESSION['ai_ok'] = function_exists('getInfiltrationsWebhook')
+				? 'Target added and announced.'
+				: 'Target added. No webhook configured, so nothing was announced.';
+		} else {
+			$_SESSION['ai_err'] = $r['why'];
+		}
 
 	} else if (isset($_POST['retire'])) {
 		infil_target_retire($conn, (int) $_POST['target'], (int) $_POST['retire'] === 1);
 		$_SESSION['ai_ok'] = ((int) $_POST['retire'] === 1) ? 'Target retired.' : 'Target reopened.';
+
+	} else if (isset($_POST['announce'])) {
+		/* FOR A TARGET THAT MISSED ITS OWN ANNOUNCEMENT -- added before the
+		   webhook existed, or before this code did. Re-adding is not an
+		   option: status_id is unique, so the insert would just be refused. */
+		$t = infil_target($conn, (int) $_POST['target']);
+		if ($t) {
+			infil_announce_target($conn, $t);
+			$_SESSION['ai_ok'] = function_exists('getInfiltrationsWebhook')
+				? 'Announced.' : 'No webhook configured, so nothing was sent.';
+		}
 
 	} else if (isset($_POST['windows'])) {
 		infil_target_windows($conn, (int) $_POST['target'], (int) $_POST['early'], (int) $_POST['main']);
@@ -189,13 +210,25 @@ admin_chrome('infiltration');
         <input type="number" name="main" value="<?php echo (int) $t['main_mins']; ?>" min="1" style="width:84px"></label>
       <button type="submit" name="windows" value="1">Save windows</button>
     </form>
-    <form method="post" style="margin-top:6px">
-      <input type="hidden" name="target" value="<?php echo (int) $t['id']; ?>">
-      <input type="hidden" name="retire" value="<?php echo (int) $t['retired'] ? 0 : 1; ?>">
-      <button type="submit" name="retire" value="1" style="background:transparent;border:1px solid rgba(0,200,160,.2);color:#5a7888;font-weight:normal">
-        <?php echo (int) $t['retired'] ? 'Reopen' : 'Retire'; ?>
-      </button>
-    </form>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+      <form method="post">
+        <input type="hidden" name="target" value="<?php echo (int) $t['id']; ?>">
+        <input type="hidden" name="retire" value="<?php echo (int) $t['retired'] ? 0 : 1; ?>">
+        <button type="submit" name="retire" value="1" style="background:transparent;border:1px solid rgba(0,200,160,.2);color:#5a7888;font-weight:normal">
+          <?php echo (int) $t['retired'] ? 'Reopen' : 'Retire'; ?>
+        </button>
+      </form>
+      <form method="post">
+        <input type="hidden" name="target" value="<?php echo (int) $t['id']; ?>">
+        <?php /* Posts the same embed the add would have. Sends every time it
+                 is pressed -- there is no "already announced" flag, because
+                 the reason to press it twice is that the first one did not
+                 land. */ ?>
+        <button type="submit" name="announce" value="1" style="background:transparent;border:1px solid rgba(110,74,168,.5);color:#b9aed6;font-weight:normal">
+          Announce to Discord
+        </button>
+      </form>
+    </div>
   </div>
   <?php endforeach; ?>
 

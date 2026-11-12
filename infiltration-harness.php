@@ -232,6 +232,58 @@ foreach (array('SKL-ABC01I', 'SKL-ABCDEI', 'SKL-ABCDEO', 'SKL-ABCDEL') as $amb) 
 }
 ok(infil_code_in('SKL-ABC23') === '', 'a five character code was accepted');
 
+/* ------------------------------------------------------------------ *
+ * THE TARGET ANNOUNCEMENT
+ *
+ * Driven through a stub of skl_discordmsg(), because the arithmetic in it
+ * is the part that can be quietly wrong: a window boundary off by a factor
+ * of sixty renders as a countdown that looks plausible and is not.
+ * ------------------------------------------------------------------ */
+head('a new target announces its windows as real instants');
+$SENT = null;
+if (!function_exists('skl_discordmsg')) {
+	function skl_discordmsg($title, $desc, $img = '', $url = '', $chan = '',
+	                        $thumb = '', $color = '000000') {
+		$GLOBALS['SENT'] = array('title' => $title, 'body' => $desc,
+		                         'url' => $url, 'chan' => $chan);
+	}
+}
+$posted_at = '2026-11-12 10:00:00';
+$t0        = strtotime($posted_at);
+infil_announce_target(null, array(
+	'status_id' => '2120916830747602945', 'label' => 'Portal announcement',
+	'posted_at' => $posted_at, 'early_mins' => 60, 'main_mins' => 1440,
+));
+$sent = $GLOBALS['SENT'];
+ok(is_array($sent), 'nothing was sent at all');
+ok($sent['chan'] === 'infiltrations',
+   'the target went to channel "' . $sent['chan'] . '", not the Infiltrations webhook');
+ok(strpos($sent['url'], '2120916830747602945') !== false,
+   'the embed does not link the target post');
+ok(strpos($sent['body'], 'Portal announcement') !== false, 'the label was dropped');
+
+/* MINUTES, NOT SECONDS. The windows are stored in minutes and Discord wants
+   a unix instant, so the x60 is the one place this can go wrong by a factor
+   that still looks like a time. */
+ok(strpos($sent['body'], '<t:' . ($t0 + 3600) . ':R>') !== false,
+   'the +2 window does not close one hour after the post');
+ok(strpos($sent['body'], '<t:' . ($t0 + 86400) . ':R>') !== false,
+   'the +1 window does not close one day after the post');
+ok(strpos($sent['body'], '<t:' . ($t0 + 60) . ':') === false,
+   'a window landed 60 seconds out, so minutes are being used as seconds');
+
+head('a target with no windows still announces something usable');
+$GLOBALS['SENT'] = null;
+infil_announce_target(null, array('status_id' => '123456789', 'label' => '',
+	'posted_at' => $posted_at, 'early_mins' => 1, 'main_mins' => 1));
+ok(is_array($GLOBALS['SENT']) && strpos($GLOBALS['SENT']['body'], '<t:') !== false,
+   'a one minute window produced no timestamp');
+
+head('nothing is announced for a target that did not save');
+$GLOBALS['SENT'] = null;
+infil_announce_target(null, array());
+ok($GLOBALS['SENT'] === null, 'an empty target was announced anyway');
+
 echo "\n" . ($fail ? "$fail FAILED of $ran\n" : "all $ran assertions pass\n");
 
 /* ================================================================== *
@@ -278,6 +330,14 @@ $MUTATIONS = array(
 	array('lib', 'return (float) pow(0.5, $age / INFIL_HALFLIFE_MINS);',
 	             'return 1.0;',
 	      'a target never cools'),
+
+	array('lib', '$early  = $posted + ((int) $target[\'early_mins\'] * 60);',
+	             '$early  = $posted + ((int) $target[\'early_mins\']);',
+	      'the announced window treats minutes as seconds'),
+
+	array('lib', 'if (!is_array($target) || empty($target[\'status_id\'])) return;',
+	             'if (false) return;',
+	      'a target that failed to save is announced anyway'),
 
 	array('cfg', 'foreach (dhcf_ladder() as $i => $t) $order[$t] = $i;',
 	             'foreach (dhcf_ladder() as $i => $t) $order[$t] = 0;',
