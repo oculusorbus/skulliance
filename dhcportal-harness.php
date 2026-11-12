@@ -587,6 +587,44 @@ $tail = $ans_at !== false ? substr($endCode, $ans_at + 10) : '';
 ok(strpos($tail, 'dhcp_out(') === false,
    'something still calls dhcp_out() after the answer has been sent, which writes past the declared length');
 
+echo "\nthe jettison is heard, and it stops when it is over\n";
+/*
+ * hyperspace.ogg under the take. Measured off the file: a continuous
+ * wash with its peak at 5.31s and no single hit to cut to, so unlike
+ * the daily reward -- where the animation was retimed to the sound --
+ * here the sound is laid under an animation that already works.
+ */
+ok(strpos($rev, "'sounds/hyperspace.ogg'") !== false, 'the jettison plays nothing');
+ok(strpos($rev, 'dhcpSfxStart();') !== false, 'the sound is never started');
+/* ON THE TAKE, with the first frame of the swallow -- before the phase
+   is set, so it cannot drift behind the particles. */
+preg_match('~anchor\(\);\s*feed\(fed\);(.*?)phase = .in.;~s', $rev, $m_st);
+ok(count($m_st) === 2 && strpos($m_st[1], 'dhcpSfxStart();') !== false,
+   'the sound does not start with the swallow, so it lags the thing it is describing');
+
+/*
+ * IT OUTLASTS THE SEQUENCE -- 6.7s of audio against roughly 4.6s of
+ * reveal -- so it has to be faded. A hard stop on a wash is a click,
+ * and letting it run leaves the room humming after the thing it was
+ * describing has finished.
+ */
+ok(strpos($rev, 'dhcpSfxFade(') !== false, 'nothing ever stops the sound');
+ok(preg_match('~at\(SHOW \+ 2600, function \(\) \{[^}]*dhcpSfxFade\(~s', $rev) === 1,
+   'the sound is not faded when the particles go idle, so it plays over the silence after');
+/* And taking the trait ends it too: the reload would cut it mid-wash. */
+preg_match('~getElementById\(.dhcpOutGo.\)\.addEventListener\(.click., function \(\) \{(.*?)\n\t\}\);~s', $rev, $m_go);
+ok(count($m_go) === 2 && strpos($m_go[1], 'dhcpSfxFade(') !== false,
+   'taking the trait leaves the sound running into a page reload, which cuts it with a click');
+
+/* Reduced motion gets no sound, the same as the daily reward. */
+preg_match('~function dhcpSfxStart\(\) \{(.*?)\n\t\}~s', $rev, $m_sf);
+$psf = count($m_sf) === 2 ? $m_sf[1] : '';
+ok($psf !== '' && strpos($psf, 'if (calm) return;') !== false,
+   'the jettison plays under prefers-reduced-motion');
+/* Allowed to fail: the reveal is the reveal and the sound is a bonus. */
+ok($psf !== '' && strpos($psf, 'try {') !== false && strpos($psf, 'pr.catch') !== false,
+   'a blocked or missing sound can throw into the jettison reveal');
+
 echo "\nthe pieces travel from the board to the Portal\n";
 /*
  * THE REPORT: "it displays over the grid instead of the portal, the

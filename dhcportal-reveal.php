@@ -376,6 +376,54 @@
 		else { CTX.clearRect(0, 0, r.width, r.height); }
 	}
 
+	/*
+	 * THE JETTISON, HEARD.
+	 *
+	 * hyperspace.ogg, and it is the whole take rather than a beat in it.
+	 * Measured off the file: there is no single hit to cut to -- it is a
+	 * continuous wash of onsets with its peak at 5.31s -- so unlike the
+	 * daily reward, where the animation was retimed to the sound, here
+	 * the sound is simply laid under an animation that already works.
+	 *
+	 * IT OUTLASTS THE SEQUENCE. 6.7s against roughly 4.6s of reveal, so
+	 * it is faded rather than cut: a hard stop on a wash is a click, and
+	 * letting it run past the result panel leaves the room humming after
+	 * the thing it was describing has finished.
+	 *
+	 * Plain <audio> and allowed to fail, the same as the claim modal's.
+	 * The reveal is the reveal; the sound is a bonus on top of it, and
+	 * nothing here may stop a jettison being shown.
+	 */
+	var DHCP_SFX_VOL = 0.6;
+	var dhcpAudio = null, dhcpFade = null;
+	function dhcpSfxStart() {
+		if (calm) return;
+		try {
+			if (dhcpFade) { clearInterval(dhcpFade); dhcpFade = null; }
+			if (!dhcpAudio) dhcpAudio = new Audio('sounds/hyperspace.ogg');
+			dhcpAudio.volume = DHCP_SFX_VOL;
+			dhcpAudio.currentTime = 0;
+			var pr = dhcpAudio.play();
+			if (pr && pr.catch) pr.catch(function () {});
+		} catch (e) {}
+	}
+	function dhcpSfxFade(ms) {
+		if (!dhcpAudio) return;
+		try {
+			var step = 50, left = Math.max(step, ms | 0), from = dhcpAudio.volume;
+			if (dhcpFade) clearInterval(dhcpFade);
+			dhcpFade = setInterval(function () {
+				left -= step;
+				var v = from * Math.max(0, left) / Math.max(step, ms | 0);
+				try { dhcpAudio.volume = v < 0 ? 0 : (v > 1 ? 1 : v); } catch (e) {}
+				if (left <= 0) {
+					clearInterval(dhcpFade); dhcpFade = null;
+					try { dhcpAudio.pause(); } catch (e) {}
+				}
+			}, step);
+		} catch (e) {}
+	}
+
 	function run(fn, ms) { return setTimeout(fn, ms); }
 	var timers = [];
 	function at(ms, fn) { timers.push(run(fn, ms)); }
@@ -429,6 +477,8 @@
 		   them. */
 		anchor();
 		feed(fed);
+		/* On TAKE, with the first frame of the swallow. */
+		dhcpSfxStart();
 		phase = 'in'; t0 = 0;
 		cancelAnimationFrame(raf); raf = requestAnimationFrame(frame);
 
@@ -446,11 +496,18 @@
 			out.classList.add('in');
 			document.getElementById('dhcpOutGo').focus();
 		});
-		at(SHOW + 2600, function () { phase = 'idle'; });
+		at(SHOW + 2600, function () {
+			phase = 'idle';
+			/* Out with the particles rather than after them. */
+			dhcpSfxFade(600);
+		});
 	};
 
 	document.getElementById('dhcpOutGo').addEventListener('click', function () {
 		clear(); phase = 'idle';
+		/* Taking the trait ends the reveal, so it ends the sound -- the
+		   page reload below would cut it anyway, and a cut is a click. */
+		dhcpSfxFade(200);
 		veil.classList.remove('on');
 		veil.setAttribute('aria-hidden', 'true');
 		location.reload();      /* the tray and the board both changed */

@@ -396,3 +396,24 @@ that one the wrong way round first.
 working, both of its conditions are unreachable through `dhcp_layout_fits()`,
 so deleting either changed no outcome and failed no assertion. Reached
 directly it can be handed the straddles the sort exists to prevent.
+
+
+## The jettison, heard (2026-11-11)
+
+`sounds/hyperspace.ogg` under the take, curl-verified before being referenced.
+
+**The sound is laid under the animation rather than the animation cut to the
+sound**, which is the opposite of the daily reward and for a measured reason:
+read off the file, hyperspace is a continuous wash of onsets with its peak at
+5.31s and no single hit worth cutting to. The chest's wreath had two clear
+transients and the animation was retimed to them; this one has none, so the
+reveal's clock is left alone.
+
+**It outlasts the sequence** -- 6.7s of audio against roughly 4.6s of reveal --
+so it is faded, not cut. A hard stop on a wash is a click, and letting it run
+leaves the room humming after the thing it was describing has finished. 600ms
+out when the particles go idle, and 200ms when the player takes the trait,
+because the page reload would otherwise cut it mid-wash.
+
+Plain `<audio>`, silent under `prefers-reduced-motion`, and allowed to fail
+every time: the reveal is the reveal and the sound is a bonus on top of it.
