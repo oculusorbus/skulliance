@@ -104,8 +104,8 @@ in a day and none for a fortnight.
 |---|---|
 | status id | parsed from the pasted URL |
 | posted at | when the window starts |
-| early window | default 3h, **set per target** |
-| main window | default 24h, **set per target** |
+| early window | default **1h**, **set per target** |
+| main window | default **24h**, **set per target** |
 | retired | the owner's hand only |
 
 **Nothing expires.** A target stays open forever and can always be
@@ -114,11 +114,20 @@ he deleted or no longer wants farmed. A deadline would not make anybody
 faster -- the prompt player was driven by a notification, not a rule -- and
 would punish the one who was travelling.
 
-The windows are per-target because window length is the only parameter that
-can quietly create a caste. A short window rewards timezone and
-notification settings rather than effort; 24h rewards the habit of checking
-in, which is what we actually want and what survives having a job. A short
-one is sometimes right, and should be a knowing choice.
+**THE DEFAULTS ARE RESEARCHED, NOT GUESSED.** See section 10. One hour is
+where a reply actually buys reach: Earlybird decays engagement counts with a
+half-life around 360 minutes, so a reply at 6h lands on a post at half its
+peak visibility and at 24h a sixteenth of it. Twenty-four hours is where a
+reply still counts as showing up.
+
+That maps onto the +2 / +1 split exactly: double for the thing that helps,
+single for participation.
+
+Per-target because window length is the only parameter that can quietly
+create a caste, and an earlier draft of this file defaulted the early window
+to 3h on nothing at all. The 1h window does NOT lock anybody out, because
+the 24h window still pays +1 and reaches rung 9 in nine targets -- the
+sprinters just get there in five.
 
 ---
 
@@ -277,6 +286,10 @@ resets, and it ranks **tiers earned that month** rather than tier held --
 which is what keeps a large bank from parking somebody at the top of the
 board while dormant.
 
+The board shows **the rank and the meter together** -- the owner's call, and
+the meter is the better half of it: a row of ten rungs with a bank trailing
+off the end says more about somebody than their position does.
+
 ---
 
 ## 5. Comment quality
@@ -284,7 +297,21 @@ board while dormant.
 The reply has to be the member's own words. Three gates, all on the slice
 `display_text_range` hands us, so the `@skulliance` prefix never counts:
 
-1. **Minimum length.** Characters of own words, not total.
+1. **Minimum length: 25 characters AND 4 words** of own words, not total.
+   Characters are the primary gate because word counts are trivially gamed
+   with single letters; the 4-word floor stops a wall of one repeated
+   character, which the duplicate check does not catch on a first offence.
+
+   **CALIBRATED AGAINST A REAL COMMENT.** The reply verified through
+   `admin-xprobe.php` was "I did and got a legendary background!" -- 37
+   characters, 7 words, and completely genuine. Any minimum that rejects
+   that comment is wrong, which rules out the double-digit word counts that
+   look reasonable in the abstract. 25 characters passes it comfortably and
+   still rejects "nice", "great post" and a lone emoji.
+
+   There is NO reply-length feature in X's ranker (section 10), so this
+   threshold is not an algorithmic gate. Its only jobs are to stop one-word
+   farming and to leave something worth replying to.
 2. **Not a duplicate of anything ever submitted.** Normalise -- lowercase,
    collapse whitespace, strip punctuation and emoji -- hash, and compare
    against every prior submission platform-wide, not just this target's.
@@ -344,27 +371,100 @@ is the member's own modal; nothing posts to Discord naming the mechanic.
 
 ## 9. Still open
 
-- Minimum own-words length, and the near-duplicate threshold.
-- Whether the early window default of 3h is right, or shorter.
-- Whether the leaderboard shows the meter itself or only a rank.
-- Names for the six new tables. `infil_*` is honest while only Infiltration
-  uses them; if other games ever want the finer bands they want neutral
-  names. Cosmetic, and cheap to change before anything ships.
+- The near-duplicate similarity threshold.
+- Names for the six new tables (below).
+`infil_*` is honest while only Infiltration uses them; if other games ever
+want the finer bands they want neutral names. Cosmetic, and cheap to change
+before anything ships.
 
-Settled, for the record: no cadence, no expiry, windows per target, ten
-tiers topping out AT `placement_1`, +2/+1/0/-1, an uncapped bank, a monthly
-leaderboard ranked on tiers earned that month, and verification through the
+Settled, for the record: no cadence, no expiry, windows of 1h/24h set per
+target, ten tiers topping out AT `placement_1`, +2/+1/0/-1, an uncapped
+bank, a monthly leaderboard showing **both rank and the meter**, a 25
+character / 4 word floor on own words, and verification through the
 syndication endpoint with a pending state rather than a rejection.
 
-## 10. Schema sketch
+## 10. What X actually rewards
+
+Researched 2026-11-12. The weights below are from the ranking code X
+published in March 2023 (`github.com/twitter/the-algorithm`), which is the
+only published ranking model of any major platform. Everything in this
+section that is NOT from that code is marked as such.
+
+### The weights
+
+| Action | Weight |
+|---|---|
+| Like | 0.5 |
+| Repost | 1.0 |
+| Reply | **13.5** |
+| **Reply the author engages back with** | **75.0** |
+
+Two things follow.
+
+**Replies are the right thing to pay for.** A reply is 27x a like. The
+decision to verify comments and merely trust likes and reposts was already
+made for other reasons; the weights happen to agree with it.
+
+**THE BIGGEST LEVER IS THE OWNER REPLYING TO THE COMMENTS.** An author reply
+turns a 13.5 into a 75 -- 5.5x, and about 150x a like. That is larger than
+any effect the ladder itself can have, and it costs one sentence per
+comment.
+
+So it should be a screen, not a habit to remember: **the admin tool lists
+infiltration comments the owner has not answered yet.** Working through that
+list is the highest-value thing in the entire feature.
+
+### Timing
+
+Earlybird feeds the ranker time-decayed engagement counts
+(`timelines.earlybird.decayed_favorite_count` and friends) and indexes a
+roughly 7-day realtime window. The decay half-life is around **360 minutes**
+-- six hours. A reply at 6h lands on a post at half its peak visibility, at
+24h a sixteenth.
+
+Hence 1h and 24h in section 3.
+
+**Discounted as folklore:** the oddly specific thresholds the growth guides
+repeat -- "10 replies in the first 15 minutes triggers a viral cascade",
+"under 3 engagements and the tweet dies". Those numbers appear in no
+published source. The defensible version of the claim is only that early
+velocity drives out-of-network distribution.
+
+### Length
+
+**There is no reply-length feature in the ranker.** Nothing is penalised for
+being short. What it rewards is reply DEPTH, meaning multi-turn
+conversation, which is the author-reply finding again rather than a separate
+one.
+
+This is why section 5's floor is 25 characters rather than a word count that
+sounds more serious. The floor exists to stop farming and to leave the owner
+something to reply to. It is not an algorithmic threshold, because no such
+threshold exists.
+
+### Sources
+
+- `github.com/twitter/the-algorithm` -- the published ranking code
+- `github.com/twitter/the-algorithm-ml/blob/main/projects/home/recap/README.md`
+  -- the heavy ranker's documented weights
+- Secondary write-ups were used only to locate constants in the above, and
+  are not relied on for any number in this file.
+
+---
+
+## 11. Schema sketch
 
 `users` needs nothing. New:
 
 - `infil_targets` -- status id, url, label, posted_at, early_mins,
   main_mins, retired
 - `infil_submissions` -- user_id, target_id, comment status id, raw text,
-  normalised text, hash, speed (`early`|`main`|`late`), notches awarded,
-  drop id, state (`verified`|`pending`|`rejected`), verified_at
+  normalised text, hash, speed (`early`|`main`|`late`), tiers awarded,
+  drop id, state (`verified`|`pending`|`rejected`), verified_at,
+  **answered_at**. The last one drives the unanswered-comments screen in
+  section 10, which is the highest-value surface in the feature: an author
+  reply is worth 75 against the comment's own 13.5. Set by the owner marking
+  it, not inferred -- nothing free from X lists the replies to a reply.
 - `infil_meter` -- user_id, notches, bank, updated_at. Stored rather than
   derived, with `infil_submissions` as the audit trail.
 - `x_link_codes` -- user_id, code, issued_at. One live code per member.
