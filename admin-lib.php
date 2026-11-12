@@ -943,6 +943,11 @@ function admin_tabs() {
 		   decision and cannot be read off a page, so it plays the real
 		   file through the Arena's own path. Plays audio, writes nothing. */
 		'bossrez'  => array('admin-bossrez.php', 'Boss Rez Sound'),
+		/* What X will tell us about a comment for nothing. Four facts decide
+		   whether a comment can be verified at all, and the free surfaces
+		   that might carry them are undocumented, so they get asked rather
+		   than assumed. Fetches, stores nothing. */
+		'xprobe'   => array('admin-xprobe.php',   'X Probe'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }
