@@ -157,22 +157,6 @@ $lp_sections = array(
 			array('gauntlets.php',       '🥊', 'Gauntlets',       'NFT roguelike run', 'nft'),   // every run is keyed on an nft_id
 			array('obscura.php',         '🔍', 'Obscura',         'Name the collection from a sliver'),
 
-			/*
-			 * NOT A GAME, and it sits here anyway.
-			 *
-			 * Play is where somebody looks for "what can I do that pays a
-			 * trait", which is exactly what this is -- and it has no other
-			 * home: it cannot go in dhc-nav.php, because that strip is
-			 * included on the PUBLIC Arena page and this feature must not be
-			 * put in front of anonymous visitors. The Launchpad is behind the
-			 * login (logged out it redirects to error.php), so a tile here is
-			 * safe where a nav entry there would not be.
-			 *
-			 * Last in the section because it is the odd one out: everything
-			 * above is something you play on this site.
-			 */
-			array('infiltration.php',    '🎯', 'Infiltration',    'Reply on X, climb the rarity ladder'),
-
 			// dashboard.php, NOT the bare directory. `dropship/` serves index.php,
 			// which is an unconditional redirect to the Skulliance login -- so a
 			// player who was ALREADY logged in got bounced to a login page. The
@@ -193,6 +177,22 @@ $lp_sections = array(
 			// thing a player meets on the page they land on after
 			// logging in. They still work: the ?project_id= links are
 			// unchanged and the game's own picker reaches all four.
+
+			/*
+			 * LAST IN THE SECTION, after the Drop Ship themes. The owner's
+			 * placement: it is the odd one out, because everything above it
+			 * is something you play on this site and this is something you
+			 * do on X.
+			 *
+			 * Play is still the right section -- it is where somebody looks
+			 * for "what can I do that pays a trait" -- and it has no other
+			 * home: it cannot go in dhc-nav.php, because that strip is
+			 * included on the PUBLIC Arena page and this must not be put in
+			 * front of anonymous visitors. The Launchpad is behind the login
+			 * (logged out it redirects to error.php), so a tile here is safe
+			 * where a nav entry there would not be.
+			 */
+			array('infiltration.php',    '🎯', 'Infiltration',    'Reply on X, climb the rarity ladder'),
 		),
 	),
 	'Collect' => array(
