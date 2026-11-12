@@ -185,9 +185,19 @@ include 'header.php';
 .inf-msg.bad  { border-color:#e0705f; background:rgba(224,112,95,.1); color:#e0705f; }
 
 /* ---- the code ------------------------------------------------------- */
-.inf-code { font:700 1.5rem/1 ui-monospace,Menlo,monospace; letter-spacing:.16em;
+/* THE CODE IS THE BUTTON. A separate "copy" control beside it is a second
+   thing to find and aim at on a phone, where this flow actually happens --
+   the member is holding the device they are about to open X on. */
+.inf-copy { margin:4px 0 0; }
+.inf button.inf-code { font:700 1.5rem/1 ui-monospace,Menlo,monospace; letter-spacing:.16em;
   color:#00e0b4; background:#07111d; border:1px dashed rgba(0,200,160,.45);
-  padding:14px 18px; display:inline-block; margin:4px 0 0; }
+  padding:14px 18px; display:inline-flex; align-items:center; gap:14px;
+  cursor:pointer; }
+.inf button.inf-code:hover { background:#0a1929; border-color:#00e0b4; }
+.inf button.inf-code.done { border-style:solid; border-color:#00e0b4; }
+.inf-copy-hint { font:400 .62rem/1 Arial,sans-serif; letter-spacing:.14em;
+  text-transform:uppercase; color:#5a7888; }
+.inf button.inf-code.done .inf-copy-hint { color:#00e0b4; }
 .inf-steps { margin:12px 0 0; padding-left:20px; font-size:.92rem; }
 .inf-steps li { margin:0 0 7px; }
 
@@ -230,7 +240,14 @@ include 'header.php';
     <div class="inf-meter">
       <h3>Connect your X account</h3>
       <p>One time. We need to know which account is yours before a reply can count.</p>
-      <div class="inf-code"><?php echo htmlspecialchars($inf_code); ?></div>
+      <div class="inf-copy">
+        <button type="button" class="inf-code" id="infCode"
+                data-code="<?php echo htmlspecialchars($inf_code, ENT_QUOTES); ?>"
+                aria-label="Copy your verification code">
+          <?php echo htmlspecialchars($inf_code); ?>
+          <span class="inf-copy-hint" id="infCopyHint">tap to copy</span>
+        </button>
+      </div>
       <ol class="inf-steps">
         <li>Reply to <a class="inf-go" style="padding:2px 8px;font-size:.78rem"
             href="https://x.com/skulliance/status/<?php echo htmlspecialchars(INFIL_LINK_STATUS); ?>"
@@ -365,6 +382,46 @@ include 'header.php';
 <?php endif; ?>
 </div>
 </div></div></div>
+
+<script>
+/* One tap, with a fallback that is not a dead end.
+   navigator.clipboard is unavailable on a plain-http origin and can be
+   refused outright, and this is the one control the whole connect flow
+   depends on -- so a failure selects the text instead, which leaves the
+   member one long-press from copying it by hand rather than stuck. */
+(function () {
+  var b = document.getElementById('infCode');
+  if (!b) return;
+  var hint = document.getElementById('infCopyHint');
+  var was  = hint ? hint.textContent : '';
+  var t;
+  function say(msg, good) {
+    if (!hint) return;
+    hint.textContent = msg;
+    b.classList.toggle('done', !!good);
+    clearTimeout(t);
+    t = setTimeout(function () { hint.textContent = was; b.classList.remove('done'); }, 2200);
+  }
+  function selectIt() {
+    try {
+      var r = document.createRange();
+      r.selectNodeContents(b.firstChild ? b : b);
+      var sel = window.getSelection();
+      sel.removeAllRanges(); sel.addRange(r);
+    } catch (e) {}
+  }
+  b.addEventListener('click', function () {
+    var code = b.getAttribute('data-code') || '';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(function () { say('copied', true); },
+                                              function () { selectIt(); say('press and hold to copy'); });
+    } else {
+      selectIt();
+      say('press and hold to copy');
+    }
+  });
+}());
+</script>
 
 <?php if (is_array($inf_drop)): ?>
 <script>
