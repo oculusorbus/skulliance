@@ -186,6 +186,44 @@ $db = new RezNoDb(); $b = rezb(array('oneUp' => 1)); $was = $b;
 dhcb_rez($db, $b);
 ok($b === $was, 'a refused resurrection still mutated the battle');
 
+echo "\na boss that dies on the sync still makes a noise\n";
+/*
+ * Reported: a boss crew went down with none of the usual noise.
+ *
+ * dhca_hurt() emits 'ko' when the killing blow is this Crew's own, and
+ * the client's handler is what plays the sound and greys the token. The
+ * boss-mode sync -- which clamps the board to the shared bar -- marked a
+ * boss dead with a FLAG and no event, so a boss that died there went
+ * grey on the next repaint in silence. That covers a bar somebody else
+ * drove to zero AND this Crew's own overkill trimmed by the clamp.
+ */
+$lib_sync = '';
+foreach (token_get_all((string) file_get_contents(__DIR__ . '/dhcbosses-lib.php')) as $t) {
+	if (is_array($t)) { if ($t[0] === T_COMMENT || $t[0] === T_DOC_COMMENT) continue; $lib_sync .= $t[1]; }
+	else $lib_sync .= $t;
+}
+ok(strpos($lib_sync, "array('k' => 'ko', 'side' => 'foes', 'i' => \$i)") !== false,
+   'the sync marks a boss dead without emitting ko, so it dies silently and without its moment');
+/* The SAME event dhca_hurt() sends, or the client needs a second handler. */
+$eng = (string) file_get_contents(__DIR__ . '/dhcarena-engine.php');
+ok(strpos($eng, "'k'=>'ko'") !== false,
+   'the engine no longer emits ko, so the shape this is matching is gone');
+/*
+ * AND NOT TWICE. When the blow is this Crew's own, dhca_hurt() has
+ * already set ko and emitted -- the guard above the new line is what
+ * stops a second event, and a doubled ko would play the sound twice and
+ * run the death twice.
+ */
+preg_match("~if \\(\\\$now <= 0\\) \\{(.*?)\\} elseif~s", $lib_sync, $m_ko);
+$koBlk = count($m_ko) === 2 ? $m_ko[1] : '';
+ok($koBlk !== '', 'the sync kill block could not be lifted');
+ok($koBlk !== '' && strpos($koBlk, "if (!empty(\$b['foes'][\$i]['ko'])) continue;") !== false,
+   'the already-dead guard is gone, so a boss killed by this Crew emits ko twice');
+$p_guard = strpos($koBlk, "['ko'])) continue;");
+$p_emit  = strpos($koBlk, "'k' => 'ko'");
+ok($p_guard !== false && $p_emit !== false && $p_guard < $p_emit,
+   'the ko event is emitted before the already-dead guard, so it fires twice on this Crew\'s own kill');
+
 echo "\nthe ledger can be asked what actually happened\n";
 /*
  * THE HARNESS PROVES THE RULES; ONLY THE LEDGER SAYS WHAT HAPPENED. A

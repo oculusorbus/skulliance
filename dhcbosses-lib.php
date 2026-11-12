@@ -1201,6 +1201,22 @@ function dhcb_commit($conn, &$b, $dealtNow) {
 		if ($now <= 0) {
 			if (!empty($b['foes'][$i]['ko'])) continue;
 			$b['foes'][$i]['ko'] = true;
+			/*
+			 * AND IT HAS TO BE AN EVENT, not just a flag.
+			 *
+			 * dhca_hurt() emits 'ko' when the killing blow is this
+			 * Crew's own, and the client's handler is what plays the
+			 * sound and greys the token. A boss that dies HERE -- the
+			 * bar clamped to a value somebody else drove to zero, or
+			 * this Crew's own overkill trimmed by the clamp -- was
+			 * marked dead silently, so it simply went grey on the next
+			 * repaint with no sound and no moment.
+			 *
+			 * Reported as a boss crew going down with none of the usual
+			 * noise. Same event dhca_hurt() sends, so the client needs
+			 * nothing new.
+			 */
+			$b['fx'][] = array('k' => 'ko', 'side' => 'foes', 'i' => $i);
 			/* Not this Crew's kill, or dhca_turn() would have called it. */
 			if (empty($fresh[$k])) $b['log'][] = '☠ ' . $f['name'] . ' fell to another Crew.';
 		} elseif (empty($fresh[$k])) {
