@@ -420,14 +420,38 @@ We cannot reply from our side at any price we are willing to pay: writes
 need `tweet.write` on the v2 API. So the job is getting him to the right
 place fast, not automating it.
 
-**A Discord ping per verified infiltration.** `alertAdmin()`
-(`webhooks.php:615`) already pings him by id in a channel members cannot
-read, and Discord posts are deferred, so it costs the submitting player
-nothing. **Pass the comment status id as `$signature`** or the 900 second
-cooldown swallows the second comment on the same target. The ping carries
-the member's own words inline plus a link to the comment and a composer
-aimed at it, which beats X's notification tab because it is only
-infiltrations and the text is already there.
+**A Discord ping per verified infiltration, DOWN ITS OWN PRIVATE WEBHOOK.**
+
+An earlier draft of this file said to use `alertAdmin()` (`webhooks.php:615`)
+because it "pings him in a channel members cannot read". **That was wrong
+and it would have broadcast the feature.** `alertAdmin()` passes
+`$channel = ""`, which falls through to `getWebhook()` (`webhooks.php:491`)
+-- the default, members-visible channel. Its `ops` flag only suppresses the
+mirror into the on-site Activity feed; it does not change the Discord
+destination.
+
+So the ping needs a channel of its own:
+
+1. A Discord channel only the owner or an admin role can see.
+2. A webhook on it, added to `credentials/webhooks_credentials.php` (that
+   directory is gitignored and exists only on the server) as
+   `function getInfiltrationWebhook(){ return "https://discord.com/api/webhooks/..."; }`
+3. An `'infiltration'` case in `skl_discordmsg()`'s channel switch, with the
+   same `function_exists` guard its neighbours carry (see the `testimonials`
+   case at `webhooks.php:417`), so an unadded credential skips the post
+   rather than fataling the submission that triggered it.
+
+Webhooks cannot DM, so it has to be a channel -- which is better anyway:
+searchable history, and it can be muted.
+
+What IS reusable from `alertAdmin()` is the `<@id>` mention, because a
+mention only notifies from the top-level `$content` field. Not its routing,
+and not its 900 second cooldown, which would swallow the second comment on
+the same target.
+
+The ping carries the member's own words inline plus a link to the comment
+and a composer aimed at it, which beats X's notification tab because it is
+only infiltrations and the text is already there.
 
 The composer link is `https://x.com/intent/post?in_reply_to=<status_id>` --
 the same free Web Intent family `lib/share-x.php:66` already uses. No API,
