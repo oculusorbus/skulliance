@@ -414,6 +414,44 @@ So it should be a screen, not a habit to remember: **the admin tool lists
 infiltration comments the owner has not answered yet.** Working through that
 list is the highest-value thing in the entire feature.
 
+### Making that cheap for the owner
+
+We cannot reply from our side at any price we are willing to pay: writes
+need `tweet.write` on the v2 API. So the job is getting him to the right
+place fast, not automating it.
+
+**A Discord ping per verified infiltration.** `alertAdmin()`
+(`webhooks.php:615`) already pings him by id in a channel members cannot
+read, and Discord posts are deferred, so it costs the submitting player
+nothing. **Pass the comment status id as `$signature`** or the 900 second
+cooldown swallows the second comment on the same target. The ping carries
+the member's own words inline plus a link to the comment and a composer
+aimed at it, which beats X's notification tab because it is only
+infiltrations and the text is already there.
+
+The composer link is `https://x.com/intent/post?in_reply_to=<status_id>` --
+the same free Web Intent family `lib/share-x.php:66` already uses. No API,
+no auth.
+
+**Sort the worklist by the parent's decay, not by arrival.** This is the
+part that cannot be done by eye in X, whose notification tab is strictly
+chronological. A comment on a 40 minute old post is worth far more than one
+on a three day old post, because the parent is still inside its 6h
+half-life. Order by parent age ascending and show the remaining window.
+
+**Like everything, reply selectively.** The published definition of the
+75-weight label is "the probability the user replies to the Tweet and this
+reply is ENGAGED by the Tweet author" -- engaged, not replied-to. Twitter's
+engagement taxonomy normally includes likes, so a like probably captures it,
+but the README does not spell that out and this file does not claim it does.
+A like is one tap and is the floor; a reply is strictly better regardless,
+because it also builds the reply depth the ranker rewards separately and
+gives the member a reason to come back.
+
+**Do NOT pre-fill the reply text.** Identical or templated replies from
+@skulliance under every comment is the pattern that reads as automation, and
+it undercuts the one thing members are being asked to do.
+
 ### Timing
 
 Earlybird feeds the ranker time-decayed engagement counts
