@@ -1,5 +1,15 @@
 # Infiltration -- design record
 
+**BUILT 2026-11-12.** This file is now a record of WHY, not a plan. The code
+is `lib/infiltration-lib.php`, `infiltration.php`, `admin-infiltration.php`,
+`checkInfiltrationLeaderboard()` in `db.php`, and the `infiltration` entry in
+`DHCF_GAMES`. `infiltration-harness.php` covers it, and
+`php infiltration-harness.php mutate` breaks the source ten ways to prove the
+assertions mean something.
+
+Where this file and the code disagree, the code is right and this file is a
+bug.
+
 **NOT FOR THE SKULL PAPER, and not to be broadcast.** The owner's
 constraint, stated plainly: Infiltration cannot go in `skullpaper/`, cannot
 appear in `MAINTENANCE.md`, and must not be announced publicly. The X posts
@@ -563,19 +573,49 @@ threshold exists.
 
 ---
 
-## 11. Schema sketch
+## 11. Schema, as built
 
-`users` needs nothing. New:
+`users` needed nothing -- `x_id`, `x_username` and `x_linked_at` already
+existed, with a UNIQUE index on `x_id`, because `process-x-oauth.php` was
+written to fill them. The four new tables are defined in `infil_schema()` and
+created by a button on the admin page, because the owner is usually on a
+phone and cannot open a SQL console.
 
-- `infil_targets` -- status id, url, label, posted_at, early_mins,
-  main_mins, retired
-- `infil_submissions` -- user_id, target_id, comment status id, raw text,
-  normalised text, hash, speed (`early`|`main`|`late`), tiers awarded,
-  drop id, state (`verified`|`pending`|`rejected`), verified_at,
-  **answered_at**. The last one drives the unanswered-comments screen in
-  section 10, which is the highest-value surface in the feature: an author
-  reply is worth 75 against the comment's own 13.5. Set by the owner marking
-  it, not inferred -- nothing free from X lists the replies to a reply.
-- `infil_meter` -- user_id, notches, bank, updated_at. Stored rather than
-  derived, with `infil_submissions` as the audit trail.
-- `x_link_codes` -- user_id, code, issued_at. One live code per member.
+- **`infil_targets`** -- status_id, label, posted_at, early_mins, main_mins,
+  retired, settled.
+- **`infil_submissions`** -- the attempt and its outcome, including the trait
+  won. TWO unique keys: `one_comment (status_id)` so a comment cannot be
+  claimed twice, and `one_per_target (user_id, target_id)` for the ration. A
+  retry with a DIFFERENT comment conflicts on the second, not the first,
+  which is why `status_id` is in the ON DUPLICATE KEY UPDATE list -- without
+  it the row takes the new text while still pointing at the old comment.
+- **`infil_meter`** -- tier, bank, month_tiers, month_key, total_tiers.
+  `month_key` makes the monthly counter self-resetting, so nothing has to be
+  scheduled to zero it.
+- **`infil_codes`** -- one live code per member, deleted the moment a link
+  succeeds.
+
+**No `answered_at`, and no `drop_id`.** An earlier draft had both. The first
+went when the owner chose to read the Discord channel and react with an emoji
+to what he had answered, which needs no state on our side. The second was
+worse than unnecessary: `dhcf_award()` returns `dhcf_drop_payload()`, which
+has never carried a `drop_id`, so the column was being written with nothing
+on every award. The trait's slug, name and tier are on the payload and are
+what the channel post and the admin table actually wanted.
+
+## 12. What changed in the platform
+
+Widening `DHCF_TIERS` from four tables to ten is the only change outside this
+feature, and it is load-bearing enough to write down:
+
+- `dhcf_ladder()` is new and is the single ordered list. `dhcf_table_rank()`
+  is built from it instead of a hardcoded map of four, because an unknown
+  name ranks 0 -- the six new rungs would otherwise have ranked as the WORST
+  table and lost every best-of comparison in `dhcf_table_for()`, so a member
+  on rung 8 would have rolled `run`.
+- The original four keep their values to the decimal, so no existing game
+  moves. Their rank NUMBERS changed (placement_1 is 9), which broke one
+  assertion in `dhcbosses-harness.php` that used `=== 3` as a stand-in for
+  "nothing outranks the best table". It asserts the property now.
+- Checked green afterwards: `dhcbosses`, `daily-reward`, `dhcportal` and
+  `dhc-glance` harnesses.
