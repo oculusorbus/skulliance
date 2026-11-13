@@ -189,10 +189,13 @@ include 'header.php';
      on a dark card, so brightness(.4) at opacity(.45) erased them into the
      panel. Compared side by side, a slight LIFT with the saturation gone
      reads as locked while staying legible. */
-  /* 300x256, every file. MATCHED ON HEIGHT rather than on the long edge:
-     side by side the eye compares heights, so a wide badge fitted by its
-     longest side came out visibly shorter and read as a smaller rank. */
-  aspect-ratio:300/256;    /* holds the row's shape before the art loads */
+  /* 394x404, every file, and THE SKULL IS WHAT IS MATCHED -- not the badge.
+     Scaling the frames to a common size kept failing because the skull is
+     a different fraction of each badge: the plain ring is almost all skull,
+     the top rank is mostly ornament. Each badge is registered against rung
+     9 by cross-correlation, so every skull is the same size with its eyes
+     on one line, and the BADGES are the things that differ in size. */
+  aspect-ratio:394/404;    /* holds the row's shape before the art loads */
   filter:grayscale(1) brightness(1.1); opacity:.55;
   transition:filter .25s ease, opacity .25s ease, transform .25s ease; }
 .inf-rcell.got img { filter:none; opacity:1; }
