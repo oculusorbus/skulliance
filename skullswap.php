@@ -672,6 +672,45 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
          .diamond-clear {
              animation: diamondShockwave 1s ease forwards;
          }
+         /*
+          * A TILE STOPS BEING A BUTTON THE MOMENT IT BLOWS UP.
+          *
+          * The border and the emboss exist to make a tile look pressable.
+          * An exploding one is not, and both read as wrong on it: the
+          * keyframes animate background-color and box-shadow, so the glow
+          * replaces the bevel on its own -- but NOTHING animates border, so
+          * the hard black edge survived and drew a frame around an
+          * expanding fireball. Reported as the explosion looking broken,
+          * and it was the border doing it.
+          *
+          * A plain match keeps neither: it scales to 1.2 and away, and a
+          * lit bevel scaling with it reads as a sticker rather than a pop.
+          *
+          * THE :hover PAIR IS NOT PADDING. .tile:not(.game-over):hover is
+          * (0,3,0) and would otherwise out-rank a bare .matched and put the
+          * bevel straight back -- and the pointer is usually still on the
+          * tile you just matched, so that is the common case, not the edge
+          * one. The paired selectors tie it and win on source order.
+          */
+         .tile.matched, .tile.carbon-clear, .tile.diamond-clear,
+         .tile.matched:hover, .tile.carbon-clear:hover, .tile.diamond-clear:hover {
+             border-color: transparent;
+             box-shadow: none;
+         }
+         /* The two detonations also lose the wash. Their keyframes animate
+            background-COLOR, which composites under background-image, so
+            leaving the gradient on would drop a dark veil over the bottom
+            of the fireball. A plain match keeps it: that one only scales
+            and fades, and stripping the gradient at frame zero reads as a
+            flicker. */
+         .tile.carbon-clear, .tile.diamond-clear,
+         .tile.carbon-clear:hover, .tile.diamond-clear:hover {
+             background-image: none;
+         }
+         /* NOTE: .bomb-creation above is dead CSS -- the rule exists, the
+            class is never added by the game (only matched, carbon-clear,
+            diamond-clear, selected and game-over are). Left alone rather
+            than styled here, so this rule does not imply otherwise. */
          #game-over-container {
              position: absolute;
              top: 50%;
