@@ -681,13 +681,8 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
                          inset -1px 0 0 rgba(0,0,0,.28),
                          0 3px 7px rgba(0,0,0,.7);
          }
-         /* Fast out, slow settle. `ease` gave all three the same lazy
-            middle; a blast should leave quickly and linger as it fades.
-            z-index lifts a clearing tile over its neighbours, or they clip
-            the ring it is throwing. */
          .matched {
-             animation: matchAnimation 0.3s cubic-bezier(.2,.8,.3,1) forwards;
-             z-index: 6;
+             animation: matchAnimation 0.3s ease forwards;
          }
          .falling {
              transition: transform 0.3s ease-out;
@@ -699,14 +694,10 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              animation: bombPopIn 0.5s ease forwards;
          }
          .carbon-clear {
-             animation: carbonSweep 0.8s cubic-bezier(.17,.85,.3,1) forwards;
-             z-index: 7;
+             animation: carbonSweep 0.8s ease forwards;
          }
-         /* Above Carbon: a Diamond detonation usually sets Carbons off
-            around it, and the bigger blast should be the one in front. */
          .diamond-clear {
-             animation: diamondShockwave 1s cubic-bezier(.15,.9,.25,1) forwards;
-             z-index: 8;
+             animation: diamondShockwave 1s ease forwards;
          }
          /*
           * A TILE STOPS BEING A BUTTON THE MOMENT IT BLOWS UP.
@@ -795,31 +786,10 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
          /* It's an anchor, not a button -- kill the link styling so it sits
             with the other two rather than looking like stray text. */
          #share-x { display: inline-block; text-decoration: none; }
-         /*
-          * THE CLEARS. Durations are LOCKED to the waits in the game loop
-          * (300 / 800 / 1000ms) -- changing one without the other desyncs
-          * the board, so these only change what happens inside the time
-          * they already had.
-          *
-          * What was wrong with all three: they ended on scale(0). Collapsing
-          * to a point reads as the tile being sucked away, which is the
-          * opposite of a detonation. They also glowed as SQUARES, and in
-          * colours (#ff00ff, #ffcc00) that belonged to no other part of the
-          * board.
-          *
-          * So: they round off as they go, the spread on the box-shadow
-          * throws a ring OUTWARD past the tile, and they fade near their
-          * original size instead of vanishing into a dot.
-          */
          @keyframes matchAnimation {
-             /* Fires constantly, so it stays cheap: one pop, one soft ring,
-                gone. Anything more would wear out within a minute. */
-             0%   { transform: scale(1);    opacity: 1;
-                    border-radius: 0;   box-shadow: 0 0 0 0 rgba(255,255,255,.45); }
-             40%  { transform: scale(1.14); opacity: .95;
-                    border-radius: 26%; box-shadow: 0 0 0 5px rgba(255,255,255,.16); }
-             100% { transform: scale(.88);  opacity: 0;
-                    border-radius: 50%; box-shadow: 0 0 0 14px rgba(255,255,255,0); }
+             0% { transform: scale(1); opacity: 1; }
+             50% { transform: scale(1.2); opacity: 0.8; }
+             100% { transform: scale(0); opacity: 0; }
          }
          @keyframes bombPopIn {
              0% { transform: scale(0); opacity: 0; }
@@ -827,39 +797,15 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              100% { transform: scale(1); opacity: 1; }
          }
          @keyframes carbonSweep {
-             /* An ember burst: flashes hot, throws a warm ring, cools as it
-                goes out. Ambers rather than the old #ffcc00 neon, which was
-                the brightest thing on a board of muted colour. */
-             0%   { transform: scale(1);    opacity: 1;   border-radius: 0;
-                    background-color: #FFC266;
-                    box-shadow: 0 0 10px 2px rgba(255,150,60,.85), 0 0 0 0 rgba(255,130,40,.8); }
-             28%  { transform: scale(1.26); opacity: 1;   border-radius: 30%;
-                    background-color: #FFE0A8;
-                    box-shadow: 0 0 22px 6px rgba(255,170,70,.9), 0 0 0 6px rgba(255,130,40,.35); }
-             65%  { transform: scale(1.06); opacity: .8;  border-radius: 46%;
-                    background-color: #E8761A;
-                    box-shadow: 0 0 18px 3px rgba(230,110,20,.6), 0 0 0 18px rgba(255,130,40,.12); }
-             100% { transform: scale(.92);  opacity: 0;   border-radius: 50%;
-                    background-color: #7A3100;
-                    box-shadow: 0 0 8px 0 rgba(180,70,0,0), 0 0 0 30px rgba(255,130,40,0); }
+             0% { transform: scale(1); opacity: 1; background-color: #ff6600; box-shadow: 0 0 10px #ff3300; }
+             50% { transform: scale(1.2); opacity: 0.8; background-color: #ff9900; box-shadow: 0 0 20px #ff6600; }
+             100% { transform: scale(0); opacity: 0; background-color: #ffcc00; box-shadow: 0 0 30px #ff9900; }
          }
          @keyframes diamondShockwave {
-             /* The big one, and the only clear that earns a full second. A
-                white core, then a violet ring thrown well past the tile --
-                the platform's purple rather than the old pure magenta,
-                which matched nothing else on the page. */
-             0%   { transform: scale(1);    opacity: 1;   border-radius: 0;
-                    background-color: #FFFFFF;
-                    box-shadow: 0 0 12px 2px rgba(200,170,255,.9), 0 0 0 0 rgba(138,99,210,.95); }
-             22%  { transform: scale(1.5);  opacity: 1;   border-radius: 34%;
-                    background-color: #D8C2FF;
-                    box-shadow: 0 0 30px 10px rgba(170,120,255,.95), 0 0 0 10px rgba(138,99,210,.45); }
-             55%  { transform: scale(1.18); opacity: .78; border-radius: 50%;
-                    background-color: #8A63D2;
-                    box-shadow: 0 0 24px 6px rgba(138,99,210,.6), 0 0 0 30px rgba(138,99,210,.18); }
-             100% { transform: scale(.9);   opacity: 0;   border-radius: 50%;
-                    background-color: #2A1B45;
-                    box-shadow: 0 0 10px 0 rgba(90,60,150,0), 0 0 0 52px rgba(138,99,210,0); }
+             0% { transform: scale(1); opacity: 1; background-color: #ffffff; box-shadow: 0 0 0 #ff00ff; }
+             50% { transform: scale(1.5); opacity: 0.8; background-color: #ff00ff; box-shadow: 0 0 20px #ff00ff; }
+             75% { transform: scale(1); opacity: 0.5; background-color: #9900cc; box-shadow: 0 0 40px #ff00ff; }
+             100% { transform: scale(0); opacity: 0; background-color: #000000; box-shadow: 0 0 60px #ff00ff; }
          }
          @keyframes gameOverPulse {
              0% { transform: scale(1); opacity: 0.8; }
