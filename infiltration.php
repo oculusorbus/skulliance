@@ -345,7 +345,7 @@ include 'header.php';
     <div class="inf-hero-in">
       <h2>Infiltration</h2>
       <p>Reply to our posts on X in your own words. Every verified infiltration pays a trait,
-         and replying promptly climbs the ladder that decides how good it is.</p>
+         and replying promptly climbs the ladder that decides the rarity tier.</p>
     </div>
   </div>
 
