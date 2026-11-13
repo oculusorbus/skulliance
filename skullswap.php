@@ -202,16 +202,7 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
       line-height: 1.55; overflow-x: hidden; -webkit-font-smoothing: antialiased;
     }
     /*
-     * THE CITY BEHIND THE BOARD -- DESKTOP ONLY.
-     *
-     * min-width, not max-width, and that is the point: a background-image
-     * inside a media query that does not match is never fetched, so a
-     * phone does not download 126KB it will not see. Written the other way
-     * round -- set on body, then hidden on small -- the file downloads
-     * everywhere and is thrown away on the devices least able to afford
-     * it.
-     *
-     * 769 because the page's own breakpoint is 768.
+     * THE CITY BEHIND THE BOARD.
      *
      * THE SCRIM IS BANDED, NOT FLAT, AND THAT IS THE WHOLE TRICK.
      *
@@ -228,12 +219,37 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
      * middle, where the only thing showing is the art to either side of
      * the board. The skulls and the green and magenta glows come through
      * at full strength and the text still reads.
+     */
+    body {
+      background-image:
+        linear-gradient(180deg,
+          rgba(7,17,29,.85) 0%,
+          rgba(7,17,29,.30) 26%,
+          rgba(7,17,29,.30) 74%,
+          rgba(7,17,29,.85) 100%),
+        url('images/skullswap-bg-sm.webp');
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      /*
+       * SCROLL, NOT FIXED, AND ONLY ON THE SMALL ONE.
+       *
+       * background-attachment: fixed is a known problem on iOS Safari --
+       * it is either ignored or repaints the whole background on every
+       * scroll frame, which on a phone is the difference between a smooth
+       * board and a stuttering one. The desktop rule below turns it back
+       * on, where it behaves and where the bands want to stay pinned to
+       * the viewport edges the text sits against.
+       */
+      background-attachment: scroll;
+    }
+    /*
+     * THE BIG FILE IS DESKTOP ONLY, and the direction of the query is the
+     * point: a background-image in a rule that does not match is never
+     * fetched, so a phone takes the 42KB and never the 126KB. Written as
+     * one image with an override, every device would download both.
      *
-     * Fixed attachment means the bands stay pinned to the viewport edges,
-     * which is where the text is, rather than scrolling away from it.
-     *
-     * It shows behind the GAME and not behind the landing, without being
-     * asked to: #ss-landing paints its own opaque #07111d over the top.
+     * 769 because the page's own breakpoint is 768.
      */
     @media (min-width: 769px) {
       body {
@@ -244,10 +260,7 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
             rgba(7,17,29,.30) 74%,
             rgba(7,17,29,.85) 100%),
           url('images/skullswap-bg.webp');
-        background-size: cover;
-        background-position: center center;
         background-attachment: fixed;
-        background-repeat: no-repeat;
       }
     }
   </style>
