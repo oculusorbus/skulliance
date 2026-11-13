@@ -1325,8 +1325,30 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              carbon: 'https://www.skulliance.io/staking/icons/carbon.png',
              diamond: 'https://www.skulliance.io/staking/icons/diamond.png'
          };
+         /*
+          * SLOT 5 WAS #666633 AND COLLIDED WITH THE CARBON BOMB.
+          *
+          * Carbon rests on #333300 -- the same hue as that khaki, a step
+          * darker. Flat tiles kept them apart on lightness alone; the
+          * gradient lights the top of both and the cue stops working, and
+          * a bomb that reads as an ordinary tile is a gameplay problem
+          * rather than a cosmetic one.
+          *
+          * Measured in CIELAB on the tile face as it actually renders:
+          * khaki against Carbon was deltaE 15.5, and every other pair on
+          * the board was above 25. Wine moves the worst pair to 25.5
+          * (brown against Carbon, which are different hues and read
+          * further apart than the number suggests) and leaves Carbon as
+          * the only olive on the board.
+          *
+          * Wine rather than the magenta the search preferred: six of these
+          * colours are muted and a bright one would sit outside the set.
+          * Carbon itself is untouched -- a bomb keeps its own identity,
+          * and its blast is orange, which a plum resting colour would have
+          * misreported.
+          */
          this.colorPalette = [
-             '#800000', '#008080', '#408000', '#4B0082', '#666633', '#804000', '#004080'
+             '#800000', '#008080', '#408000', '#4B0082', '#7A2A5C', '#804000', '#004080'
          ];
          this.icons = this.selectRandomIcons(7);
          this.iconColorMap = this.createIconColorMap();
