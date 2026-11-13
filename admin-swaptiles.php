@@ -23,8 +23,8 @@ admin_require();
 
 /* The game's own palette and specials, copied from skullswap.php so this
    page cannot flatter a treatment with colours the board never uses. */
-$st_palette = array('#800000', '#008080', '#408000', '#4B0082', '#7A2A5C', '#804000', '#004080');
-$st_special = array('carbon' => '#333300', 'diamond' => '#000000');
+$st_palette = array('#800000', '#008080', '#408000', '#4B0082', '#666633', '#804000', '#004080');
+$st_special = array('carbon' => '#4E4E4E', 'diamond' => '#000000');
 
 /* The same query the game uses to build its tile set. */
 $st_icons = array();

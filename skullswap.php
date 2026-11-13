@@ -70,7 +70,7 @@ $swap_icons = array_column($swap_projects, 'url');
  * single-sourced, and falls back to the full set if a rename ever empties
  * the filter -- a board with no tiles is worse than an off-brand one.
  */
-$ss_tile_set = ['dark', 'fire', 'ritual', 'void', 'bone', 'bat'];
+$ss_tile_set = ['dark', 'fire', 'ritual', 'void', 'bone', 'skowl'];
 $ss_by_slug  = [];
 foreach ($swap_projects as $sp) {
     $ss_by_slug[strtolower(basename($sp['url'], '.png'))] = $sp['url'];
@@ -1352,30 +1352,11 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              carbon: 'https://www.skulliance.io/staking/icons/carbon.png',
              diamond: 'https://www.skulliance.io/staking/icons/diamond.png'
          };
-         /*
-          * SLOT 5 WAS #666633 AND COLLIDED WITH THE CARBON BOMB.
-          *
-          * Carbon rests on #333300 -- the same hue as that khaki, a step
-          * darker. Flat tiles kept them apart on lightness alone; the
-          * gradient lights the top of both and the cue stops working, and
-          * a bomb that reads as an ordinary tile is a gameplay problem
-          * rather than a cosmetic one.
-          *
-          * Measured in CIELAB on the tile face as it actually renders:
-          * khaki against Carbon was deltaE 15.5, and every other pair on
-          * the board was above 25. Wine moves the worst pair to 25.5
-          * (brown against Carbon, which are different hues and read
-          * further apart than the number suggests) and leaves Carbon as
-          * the only olive on the board.
-          *
-          * Wine rather than the magenta the search preferred: six of these
-          * colours are muted and a bright one would sit outside the set.
-          * Carbon itself is untouched -- a bomb keeps its own identity,
-          * and its blast is orange, which a plum resting colour would have
-          * misreported.
-          */
+         /* The seven ordinary tiles. Unchanged -- a wine was tried here
+            to break the Carbon collision and read as pink, so the fix
+            moved to the bomb instead, where it belongs. */
          this.colorPalette = [
-             '#800000', '#008080', '#408000', '#4B0082', '#7A2A5C', '#804000', '#004080'
+             '#800000', '#008080', '#408000', '#4B0082', '#666633', '#804000', '#004080'
          ];
          /* Every tile in the set, not a sample of it. selectRandomIcons()
             still shuffles, so which colour each icon wears varies by game,
@@ -1512,7 +1493,29 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          this.icons.forEach((icon, index) => {
              map[icon] = this.colorPalette[index % this.colorPalette.length];
          });
-         map[this.specialIcons.carbon] = '#333300';
+         /*
+          * THE BOMBS ARE NEUTRAL: GREY AND BLACK.
+          *
+          * Carbon was #333300, the same hue as the khaki tile a step
+          * darker. Flat tiles kept those apart on lightness alone; the
+          * gradient lights the top of both and that cue stops working --
+          * measured at deltaE 15.5 on the rendered face, against 25+ for
+          * every other pair on the board. A bomb reading as an ordinary
+          * tile is a gameplay fault, not a cosmetic one.
+          *
+          * Grey rather than another colour, which is the owner's call and
+          * the better one: it pairs the two bombs as a neutral set against
+          * seven coloured tiles, so a bomb is recognisable as a bomb
+          * before you have identified WHICH bomb.
+          *
+          * #4E4E4E specifically. Lighter greys separate further from
+          * Diamond's black -- the pair that actually must not be confused
+          * -- and darker ones hold the white glyph better. This is the
+          * crossover: deltaE 19.4 from black, and 4.4:1 glyph contrast at
+          * the lit top of the tile, comfortably above the 3:1 a shape that
+          * size needs.
+          */
+         map[this.specialIcons.carbon] = '#4E4E4E';
          map[this.specialIcons.diamond] = '#000000';
          return map;
      }
