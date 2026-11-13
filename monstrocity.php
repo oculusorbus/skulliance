@@ -270,7 +270,31 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       box-sizing: border-box;
       z-index: 1;
       border: 1px solid black;
-      box-shadow: 0px 2px 5px black;
+      /*
+       * THE WASH GOES OVER THE COLOUR, NOT INSTEAD OF IT.
+       *
+       * The five tile colours are set by class (.first-attack and friends
+       * below), and background-image composites on top of background-color
+       * -- so one rule lights all five and none of them has to be restated
+       * here. Same treatment Skull Swap uses; see admin-swaptiles.php.
+       *
+       * LIGHTER THAN SKULL SWAP'S, deliberately. That board is dark maroons
+       * and teals; these are bright material colours, and the highlight
+       * that lifts a dark tile blows out an amber one. .26 against .38.
+       */
+      background-image: linear-gradient(180deg,
+          rgba(255,255,255,.20) 0,
+          rgba(255,255,255,.04) 45%,
+          rgba(0,0,0,.14) 55%,
+          rgba(0,0,0,.34) 100%);
+      /* Inset but for the last, so the tile keeps its footprint in the grid.
+         The top highlight sits just inside the existing 1px black border,
+         which is what reads as a bevelled edge rather than a painted line. */
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.26),
+                  inset 0 -2px 0 rgba(0,0,0,.38),
+                  inset 1px 0 0 rgba(255,255,255,.08),
+                  inset -1px 0 0 rgba(0,0,0,.24),
+                  0 2px 5px rgba(0,0,0,.65);
     }
 	
 	.tile:hover {
@@ -278,9 +302,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	}
     
     .tile img {
-      width: 80%;
-      height: 80%;
+      /* 75, matching Skull Swap: the emboss needs a margin of lit face
+         around the glyph or the bevel has nowhere to show. */
+      width: 75%;
+      height: 75%;
       object-fit: contain;
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,.5));
     }
     
     .legend-tile img {
