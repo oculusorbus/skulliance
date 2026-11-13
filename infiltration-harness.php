@@ -422,6 +422,23 @@ ok(preg_match('~@media\s*\(max-width:\s*700px\)[^@]*\.inf-table\s*\{[^}]*min-wid
 ok(strpos($pg, 'class="narrow"') !== false,
    'the table has no short headings, so five columns cannot fit 320px');
 
+/* ------------------------------------------------------------------ *
+ * THE BANK IS DRAWN WHERE IT MEANS SOMETHING
+ * ------------------------------------------------------------------ */
+head('overshoot reads as rungs past the top, and never silently truncates');
+ok(strpos($pg, 'inf-bank') !== false,
+   'the bank has no presence beside the ladder, so the one thing it protects '
+ . '-- rung 9 -- is nowhere near it');
+/* Uncapped is the whole point of the bank. A fixed number of pips with no
+   figure beside it shows 40 and 24 identically. */
+ok(preg_match('~min\(\$b,\s*8\)~', $pg) === 1,
+   'the pip row is not bounded at 8, so a large bank wraps the ladder row');
+ok(strpos($pg, "\$b > 8 ? '+' . (\$b - 8)") !== false,
+   'nothing prints the remainder past the pips, so an uncapped bank is '
+ . 'silently truncated the way the old 24-pip row was');
+ok(preg_match('~before you drop a rung~', $pg) === 1,
+   'the bank is described by its mechanic rather than by what it buys');
+
 echo "\n" . ($fail ? "$fail FAILED of $ran\n" : "all $ran assertions pass\n");
 
 /* ================================================================== *

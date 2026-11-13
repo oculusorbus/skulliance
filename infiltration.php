@@ -178,8 +178,20 @@ include 'header.php';
    cropped tight, each badge had its own aspect, so a common width gave
    them all different heights and the row looked like nine different
    sizes. The frame is uniform now and the badge is centred inside it. */
+.inf-ladderwrap { display:flex; align-items:center; gap:14px; margin:16px 0 4px; }
 .inf-ladder { display:grid; grid-template-columns:repeat(9,1fr); gap:10px;
-  margin:16px 0 4px; align-items:center; }
+  flex:1 1 auto; min-width:0; align-items:center; }
+/* Past the ninth badge, with a rule between: earned rungs with nowhere
+   left to go. The separator is what makes it read as beyond the ladder
+   rather than as a tenth rung. */
+.inf-bank { flex:0 0 auto; display:flex; flex-direction:column; align-items:center;
+  gap:6px; padding-left:14px; border-left:1px solid rgba(0,200,160,.22); }
+.inf-bank-pips { display:grid; grid-template-columns:repeat(4,8px); gap:5px;
+  justify-content:center; }
+.inf-bank-n { font:700 .78rem/1 Arial,sans-serif; color:#00e0b4;
+  font-variant-numeric:tabular-nums; }
+.inf-banked { margin:10px 0 0; font-size:.82rem; color:#8aa0b4; }
+.inf-banked b { color:#00e0b4; }
 .inf-ladder.noart { display:none; }
 .inf-rcell { text-align:center; min-width:0; }
 .inf-rcell img { display:block; width:100%; height:auto; margin:0 auto;
@@ -324,7 +336,8 @@ include 'header.php';
   /* margin-left:auto strands the handle on its own wrapped line. */
   .inf-standing > div[style] { margin-left:0 !important; }
   .inf-big { font-size:1.7rem; }
-  .inf-ladder { display:none; }
+  /* The row goes; the bank's own line survives and carries the number. */
+  .inf-ladderwrap { display:none; }
   .inf-badge-now { display:block; width:58px; }
   .inf-meter, .inf-target { padding:14px 15px; }
   /* At phone width the prep buttons share a line and the field takes its
@@ -439,6 +452,7 @@ include 'header.php';
        * Hidden under 700px, where nine of anything is 40px of mud. The phone
        * gets the single current badge up in the standing row instead.
        */ ?>
+      <div class="inf-ladderwrap">
       <div class="inf-ladder" aria-hidden="true">
         <?php for ($i = 1; $i <= INFIL_MAX_TIER; $i++): ?>
         <div class="inf-rcell<?php echo $i <= $t ? ' got' : ''; ?><?php
@@ -449,6 +463,27 @@ include 'header.php';
           <span class="inf-rnum"><?php echo $i; ?></span>
         </div>
         <?php endfor; ?>
+      </div>
+      <?php /*
+       * THE BANK LIVES PAST THE END OF THE LADDER, which is literally what
+       * it is: rungs you earned with nowhere left to put them. Beside rung
+       * 9 rather than in a line underneath, because what it protects is
+       * rung 9 -- drawn as a footnote it read as unrelated trivia.
+       *
+       * EIGHT PIPS THEN A FIGURE. The bank is uncapped on purpose, and the
+       * old render silently stopped drawing at 24, so somebody on 40 saw
+       * exactly what somebody on 24 saw. Eight is enough to read as a
+       * quantity at a glance; past that the number is the honest answer
+       * and it keeps the row from wrapping.
+       */ ?>
+      <?php if ($b > 0): ?>
+      <div class="inf-bank" aria-hidden="true">
+        <div class="inf-bank-pips">
+          <?php for ($i = 0; $i < min($b, 8); $i++): ?><i class="inf-pip"></i><?php endfor; ?>
+        </div>
+        <span class="inf-bank-n"><?php echo $b > 8 ? '+' . ($b - 8) : $b; ?></span>
+      </div>
+      <?php endif; ?>
       </div>
 
       <div class="inf-rungs" aria-label="Your rung">
@@ -463,15 +498,16 @@ include 'header.php';
       </div>
       <p class="inf-sub" style="margin-top:4px">mythic chance at each rung</p>
 
+      <?php /* THE CONSEQUENCE, NOT THE MECHANIC. "Each one absorbs a missed
+               target" is accurate and abstract; how many you can miss is
+               the thing somebody actually wants to know. */ ?>
       <?php if ($b > 0): ?>
-      <div class="inf-pips" aria-label="Banked">
-        <span class="inf-sub">Banked</span>
-        <?php for ($i = 0; $i < min($b, 24); $i++): ?><i class="inf-pip"></i><?php endfor; ?>
-        <b style="color:#00c8a0"><?php echo $b; ?></b>
-        <span class="inf-sub">&mdash; each one absorbs a missed target before your rung drops</span>
-      </div>
+        <p class="inf-banked"><b><?php echo $b; ?></b> banked &mdash;
+          <?php echo $b === 1 ? 'one missed target' : $b . ' missed targets'; ?>
+          before you drop a rung.</p>
       <?php elseif ($t >= INFIL_MAX_TIER): ?>
-        <p class="inf-sub" style="margin-top:10px">At the top. Every prompt reply from here banks a pip.</p>
+        <p class="inf-sub" style="margin-top:10px">At the top. Every prompt reply from here banks a pip,
+          and each pip is one target you can miss without falling.</p>
       <?php endif; ?>
     </div>
 
