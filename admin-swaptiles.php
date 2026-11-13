@@ -54,7 +54,7 @@ admin_chrome('swaptiles');
   background:#333; padding:10px; width:max-content; max-width:100%; }
 .st-t { width:62px; height:62px; position:relative; display:flex;
   align-items:center; justify-content:center; box-sizing:border-box; padding:3px; }
-.st-t img { width:80%; height:80%; object-fit:contain; position:relative; z-index:1; }
+.st-t img { width:75%; height:75%; object-fit:contain; position:relative; z-index:1; }
 
 /* --- flat: today ------------------------------------------------------ */
 .st-flat .st-t { box-shadow:0 1px 5px #000; }

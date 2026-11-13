@@ -595,8 +595,11 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              filter: grayscale(100%);
          }
          .tile img {
-             width: 80%;
-             height: 80%;
+             /* 75, not 80. The emboss needs a margin of lit face around the
+                glyph to read as a raised edge; at 80 the icon crowded it and
+                the bevel had nowhere to show. */
+             width: 75%;
+             height: 75%;
              object-fit: contain;
              position: absolute;
              z-index: 1;
