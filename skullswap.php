@@ -54,6 +54,33 @@ while ($icon_row = $icon_res->fetch_assoc()) {
 }
 $swap_icons = array_column($swap_projects, 'url');
 
+/*
+ * THE GAME'S TILE SET IS SIX, CHOSEN, NOT EVERY CURRENCY WE HAPPEN TO HAVE.
+ *
+ * It used to be seven drawn at random from every project currency, so the
+ * board's look changed each game and depended on which partners existed
+ * that week. These six are the owner's pick: the ones that read as
+ * Skulliance rather than as somebody else's logo.
+ *
+ * $swap_projects is deliberately NOT filtered -- the landing page's marquee
+ * is a roster of who is on the platform, which is a different question from
+ * what the board is made of.
+ *
+ * Built from the DB rows rather than from hardcoded URLs so the path stays
+ * single-sourced, and falls back to the full set if a rename ever empties
+ * the filter -- a board with no tiles is worse than an off-brand one.
+ */
+$ss_tile_set = ['dark', 'fire', 'ritual', 'void', 'bone', 'bat'];
+$ss_by_slug  = [];
+foreach ($swap_projects as $sp) {
+    $ss_by_slug[strtolower(basename($sp['url'], '.png'))] = $sp['url'];
+}
+$ss_chosen = [];
+foreach ($ss_tile_set as $slug) {
+    if (isset($ss_by_slug[$slug])) $ss_chosen[] = $ss_by_slug[$slug];
+}
+if ($ss_chosen) $swap_icons = $ss_chosen;
+
 // Standalone page for EVERYONE - same treatment as match3rpg.php /
 // monstrocity.php: no header.php nav and no staking platform CSS (which
 // fights the landing's design). Logged-in users keep their session (db.php
@@ -1350,7 +1377,12 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          this.colorPalette = [
              '#800000', '#008080', '#408000', '#4B0082', '#7A2A5C', '#804000', '#004080'
          ];
-         this.icons = this.selectRandomIcons(7);
+         /* Every tile in the set, not a sample of it. selectRandomIcons()
+            still shuffles, so which colour each icon wears varies by game,
+            but the six that play are fixed. Counted from the set rather
+            than written as 6, so adding a seventh is one edit above and
+            not a silent difficulty change here. */
+         this.icons = this.selectRandomIcons(this.allIcons.length);
          this.iconColorMap = this.createIconColorMap();
          this.specialTypes = { bomb4: 'carbon', bomb5: 'diamond' };
          this.isDragging = false;
