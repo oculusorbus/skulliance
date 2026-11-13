@@ -1443,6 +1443,11 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              // GO BACK button in the row below the board takes over.
              var ssExit = document.getElementById('ss-exit');
              if (ssExit) ssExit.style.display = 'none';
+             /* The board was sized while the container was display:none, so
+                the HUD and button row measured 0 and it took the floor. Now
+                that it is on screen, size it for real -- otherwise the first
+                board a visitor sees is the only one that can overflow. */
+             if (window.game && typeof game.sizeBoard === 'function') game.sizeBoard();
              window.scrollTo(0, 0);
          }
      </script>
@@ -1680,13 +1685,51 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
      sizeBoard() {
          const boardElement = document.getElementById('game-board');
          if (!boardElement) return;
-         const maxWidth = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.9 * (this.width / this.height));
-         const maxHeight = Math.min(window.innerHeight * 0.9, window.innerWidth * 0.9 * (this.height / this.width));
+         const hudElement = document.getElementById('hud');
+
+         /*
+          * THE BOARD GETS WHAT IS LEFT, NOT 90% OF THE SCREEN.
+          *
+          * This used to hand the board 90% of the viewport HEIGHT and then
+          * stack the HUD and the button row on top of it, so the document
+          * was taller than the window by construction on anything but a
+          * very tall screen -- the 10% was a guess at chrome that is really
+          * 100-150px. The page scrolled, and on the tall 6x10 a restored
+          * scroll position put the score and match count off the top.
+          *
+          * So measure the chrome instead of guessing at it: the HUD's own
+          * box (its 10px padding-bottom included), the button row plus its
+          * margin, and the container's padding and top margin. Whatever is
+          * left is the board's. The 4px is slack -- a sub-pixel rounding
+          * here is the difference between no scrollbar and a scrollbar.
+          *
+          * Both terms still read from the same pair of numbers, so the
+          * aspect ratio is exact and the board stays square-tiled.
+          */
+         const container = document.getElementById('game-container');
+         const btnsElement = document.getElementById('board-btns');
+         let chromeH = 4;
+         if (hudElement)  chromeH += hudElement.offsetHeight;
+         if (btnsElement) chromeH += btnsElement.offsetHeight + 10; /* its margin-top */
+         if (container) {
+             const cs = getComputedStyle(container);
+             chromeH += parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)
+                      + parseFloat(cs.marginTop)  + parseFloat(cs.marginBottom);
+         }
+         /*
+          * A hidden container measures 0 for all of that -- a VISITOR has
+          * the game behind the landing until they hit Play. The floor keeps
+          * that first sizing sane; ssPlay() re-runs this once it is visible.
+          */
+         const availH = Math.max(200, window.innerHeight - chromeH);
+         const availW = window.innerWidth * 0.9;
+
+         const maxWidth = Math.min(availW, availH * (this.width / this.height));
+         const maxHeight = Math.min(availH, availW * (this.height / this.width));
          boardElement.style.width = `${maxWidth}px`;
          boardElement.style.height = `${maxHeight}px`;
          boardElement.style.gridTemplateColumns = `repeat(${this.width}, 1fr)`;
 
-         const hudElement = document.getElementById('hud');
          if (hudElement) hudElement.style.width = `${maxWidth}px`;
 
          this.tileSizeWithGap = (maxWidth - (0.5 * (this.width - 1))) / this.width;
@@ -2881,6 +2924,32 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
  }
 
  const game = new Match3Game();
+
+ /*
+  * KEEP IT FITTING WHEN THE WINDOW CHANGES SHAPE.
+  *
+  * sizeBoard() ran exactly once, so rotating a phone or dragging a desktop
+  * window shorter left a board sized for the old viewport -- which is the
+  * one case that can still put a scrollbar on a page that otherwise has
+  * none. Re-running it is cheap: it sets two CSS lengths and recomputes
+  * tileSizeWithGap, and the grid resizes the tiles itself.
+  *
+  * Debounced because a rotation fires a burst of these, and deferred while
+  * a drag is live -- tileSizeWithGap is the unit the drag handler does all
+  * of its coordinate maths in, and moving it mid-drag is how a tile ends up
+  * somewhere the pointer does not expect. A cascade needs no such guard:
+  * the tiles are grid children at 100%, so the grid rescales them itself.
+  */
+ (function () {
+     var t = null;
+     function refit() {
+         if (game.isDragging) { t = setTimeout(refit, 120); return; }
+         game.sizeBoard();
+     }
+     function queue() { clearTimeout(t); t = setTimeout(refit, 120); }
+     window.addEventListener('resize', queue);
+     window.addEventListener('orientationchange', queue);
+ }());
 
  /*
   * THE SHAPE CONTROL. Phones only, and wired after the game exists so the
