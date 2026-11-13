@@ -185,7 +185,7 @@ $lp_sections = array(
 			 * do on X.
 			 *
 			 * Play is still the right section -- it is where somebody looks
-			 * for "what can I do that pays a trait" -- and it has no other
+			 * for "what can I do that earns a trait" -- and it has no other
 			 * home: it cannot go in dhc-nav.php, because that strip is
 			 * included on the PUBLIC Arena page and this must not be put in
 			 * front of anonymous visitors. The Launchpad is behind the login

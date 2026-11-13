@@ -1314,7 +1314,11 @@ $GLOBALS['DHCF_GAMES'] = array(
 	 * the claim it hangs off is already once per day.
 	 */
 	/*
-	 * INFILTRATION. A reply to one of our X posts, verified, pays a trait.
+	 * INFILTRATION. A reply to one of our X posts, verified, earns a trait.
+	 *
+	 * EARNS, NOT PAYS, AND THE WORD MATTERS HERE. Paying for posts is the
+	 * exact thing this feature must not look like, on X or anywhere else,
+	 * so the wording stays on the member's side of the sentence.
 	 *
 	 * unlisted, and that is not cosmetic: this feature must not appear in the
 	 * Skull Paper, on any public page, or in any announcement -- the X posts

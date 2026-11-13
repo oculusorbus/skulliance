@@ -121,7 +121,7 @@ admin_chrome('infiltration');
 <div class="row"><div class="adm">
   <h3>Infiltration</h3>
   <small>
-    Members reply to our posts on X in their own words. A verified reply pays a trait, and
+    Members reply to our posts on X in their own words. A verified reply earns a trait, and
     how promptly they replied moves them up a ten rung ladder that decides how good it is.
     Nothing here is public: not in the Skull Paper, not on a marketing page, and the posts
     themselves stay ordinary posts.
@@ -157,7 +157,7 @@ admin_chrome('infiltration');
       <?php else: ?>
         <b class="bad-dot">no webhook</b> &mdash; add
         <code>getInfiltrationsWebhook()</code> to
-        <code>credentials/webhooks_credentials.php</code>. Until then infiltrations are paid
+        <code>credentials/webhooks_credentials.php</code>. Until then infiltrations are awarded
         in silence; nothing breaks.
       <?php endif; ?>
     </p>

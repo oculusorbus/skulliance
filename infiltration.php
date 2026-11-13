@@ -534,7 +534,7 @@ include 'header.php';
           <?php if ($shut): ?>closed
           <?php elseif ($tg['window'] === 'early'): ?>first window &middot; worth +2
           <?php elseif ($tg['window'] === 'main'): ?>open &middot; worth +1
-          <?php else: ?>late &middot; pays a trait, no climb<?php endif; ?>
+          <?php else: ?>late &middot; earns a trait, no climb<?php endif; ?>
         </div>
       </div>
 

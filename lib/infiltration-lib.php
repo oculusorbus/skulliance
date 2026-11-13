@@ -1383,7 +1383,7 @@ function infil_announce_target($conn, $target) {
 	$body .= "Reply in your own words, then paste the link on the Infiltration page.\n\n";
 	$body .= '**+2 rungs** until <t:' . $early . ':t> (<t:' . $early . ':R>)' . "\n";
 	$body .= '**+1 rung** until <t:' . $main  . ':t> (<t:' . $main  . ':R>)' . "\n";
-	$body .= 'After that it still pays a trait, but it will not climb.';
+	$body .= 'After that it still earns a trait, but it will not climb.';
 
 	/*
 	 * THE BANNER ART ON THE ANNOUNCEMENT. Discord fetches this itself, so it
