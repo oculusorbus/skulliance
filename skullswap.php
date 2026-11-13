@@ -605,12 +605,51 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              align-items: center;
              overflow: hidden;
          }*/
+         /*
+          * FIXED, SO THE PAGE CANNOT SCROLL WHILE THE BOARD IS UP.
+          *
+          * Sizing the board against window.innerHeight got close, but on
+          * iOS those numbers disagree: 100dvh, innerHeight and the actually
+          * visible area are three different values, and in a standalone PWA
+          * the status bar and the home indicator are painted over the page
+          * on top of that. A box pinned to the four edges IS the visible
+          * viewport, whatever it currently measures, so sizeBoard() can
+          * measure the thing the board has to fit inside instead of
+          * inferring it. Nothing is in flow, so nothing can scroll.
+          *
+          * The marketing landing still scrolls normally -- it is a sibling,
+          * and this element is display:none until a visitor hits Play.
+          */
          #game-container {
+             position: fixed;
+             inset: 0;
              display: flex;
              flex-direction: column;
              align-items: center;
-             position: relative;
-             margin-top: 12px;
+             box-sizing: border-box;
+             /*
+              * THE HUD WAS BEHIND THE CLOCK. The page sets
+              * viewport-fit=cover, so it runs under the status bar and the
+              * home indicator, and this container never paid for either --
+              * on an iPhone 15 in standalone that is 59px of score line
+              * hidden at the top and 34px of button row under the indicator
+              * at the bottom. sizeBoard() reads this padding back, so the
+              * board shrinks to suit rather than the page overflowing.
+              */
+             padding: calc(env(safe-area-inset-top, 0px) + 12px)
+                      calc(env(safe-area-inset-right, 0px) + 8px)
+                      calc(env(safe-area-inset-bottom, 0px) + 12px)
+                      calc(env(safe-area-inset-left, 0px) + 8px);
+             /*
+              * Centred, and flex-start the moment it would not fit. A fixed
+              * box CLIPS what overflows -- there is no scrolling it back --
+              * so plain `center`, which overflows at both ends, would put
+              * the score line somewhere unreachable. `safe center` degrades
+              * to flex-start exactly there, and a browser that does not know
+              * the keyword drops the line and keeps the flex-start above.
+              */
+             justify-content: flex-start;
+             justify-content: safe center;
          }
          #hud {
              width: 100%;
@@ -633,37 +672,11 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              white-space: nowrap;
          }
         @media (max-width: 768px) {
-            /*
-             * CENTRED IN THE VIEWPORT, not dropped a fixed 62px.
-             *
-             * The square board is 8x8 at 90vw, so on a phone it is a third
-             * shorter than the tall 6x10 -- it sat up near the notch with
-             * roughly 350px of dead screen under the buttons, which is a
-             * long reach for a thumb. Filling the viewport and centring puts
-             * the tiles in the middle of the screen in both shapes.
-             *
-             * THE TWO-LINE justify-content IS THE POINT. The tall board can
-             * be taller than the viewport (any phone in landscape, and a
-             * 768-wide tablet in portrait), and plain `center` overflows
-             * equally at BOTH ends -- the HUD goes off the top where no
-             * amount of scrolling brings it back. `safe center` degrades to
-             * flex-start exactly in that case. A browser too old to know the
-             * keyword drops that line and keeps the flex-start above, which
-             * is today's behaviour, so nothing can clip either way.
-             *
-             * HUD type drops a couple of points so max scores fit one line on
-             * small phones. The old 48px burger-menu gutter on #matches is
-             * gone with the header.
-             */
-            #game-container {
-                margin-top: 0;
-                min-height: 100vh;
-                min-height: 100dvh;
-                padding: 12px 0;
-                box-sizing: border-box;
-                justify-content: flex-start;
-                justify-content: safe center;
-            }
+            /* HUD type drops a couple of points so max scores fit one line
+               on small phones. The old 48px burger-menu gutter on #matches
+               is gone with the header. Where the board SITS is no longer a
+               phone question: #game-container is fixed to the viewport at
+               every width. */
             #score, #matches { font-size: 20px; }
             /* Three buttons on one line at 390px only if they stop paying
                36px of side padding each. */
@@ -1708,21 +1721,33 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
           */
          const container = document.getElementById('game-container');
          const btnsElement = document.getElementById('board-btns');
-         let chromeH = 4;
+
+         /*
+          * The container is position:fixed inset:0, so its box IS the
+          * visible viewport -- including whatever the browser currently
+          * thinks that is on iOS, which window.innerHeight does not always
+          * agree with. clientHeight includes its padding, and the padding
+          * is where the safe-area insets live, so both come off together.
+          *
+          * A VISITOR's container is display:none until they hit Play and
+          * measures 0 for all of this; the floors keep that first sizing
+          * sane, and ssPlay() re-runs it once the thing is on screen.
+          */
+         let boxH = window.innerHeight, boxW = window.innerWidth, padY = 0, padX = 0;
+         if (container && container.clientHeight) {
+             const cs = getComputedStyle(container);
+             boxH = container.clientHeight;
+             boxW = container.clientWidth;
+             padY = parseFloat(cs.paddingTop)  + parseFloat(cs.paddingBottom);
+             padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+         }
+         let chromeH = padY + 4; /* 4px of slack: a sub-pixel rounding here is
+                                    the difference between fitting and clipping */
          if (hudElement)  chromeH += hudElement.offsetHeight;
          if (btnsElement) chromeH += btnsElement.offsetHeight + 10; /* its margin-top */
-         if (container) {
-             const cs = getComputedStyle(container);
-             chromeH += parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)
-                      + parseFloat(cs.marginTop)  + parseFloat(cs.marginBottom);
-         }
-         /*
-          * A hidden container measures 0 for all of that -- a VISITOR has
-          * the game behind the landing until they hit Play. The floor keeps
-          * that first sizing sane; ssPlay() re-runs this once it is visible.
-          */
-         const availH = Math.max(200, window.innerHeight - chromeH);
-         const availW = window.innerWidth * 0.9;
+
+         const availH = Math.max(160, boxH - chromeH);
+         const availW = Math.max(120, (boxW - padX) * 0.94);
 
          const maxWidth = Math.min(availW, availH * (this.width / this.height));
          const maxHeight = Math.min(availH, availW * (this.height / this.width));
