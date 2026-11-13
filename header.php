@@ -591,18 +591,6 @@
 		           session value, so without it the link opens whichever theme
 		           the session was last left on. -->
 		      <a href="dropship/dashboard.php?project_id=5">DHC Drop Ship</a>
-		      <!-- Infiltration. HERE AND NOWHERE ELSE: it pays DHC traits, so
-		           dhc-nav.php looks like its home -- but that strip is included
-		           on dhcarena.php, which is PUBLIC, and this feature must not
-		           be put in front of anonymous visitors. This navbar is inside
-		           `if(isset($name))`, so the menu is the one place it can sit.
-
-		           NO DROP BADGE, deliberately. dhcf_drops_glance() skips this
-		           game three times over (unlisted, carries a limit_note, cap 0)
-		           and would render nothing -- but even if it did, the number
-		           would be a lie: the ration here is targets, not a daily cap,
-		           so "0 left" would mean "none posted" rather than "spent". -->
-		      <a href="infiltration.php">Infiltration</a>
 		      <a href="cryptcrawl.php">Crypt Crawl<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'cryptcrawl.php'); ?></a>
 		      <a href="cryptconquest.php">Crypt Conquest<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'cryptconquest.php'); ?></a>
 		      <a href="monstrocity.php">Monstrocity<?php echo dhcf_drops_badge($conn, $sk_glance_uid, 'monstrocity.php'); ?></a>
@@ -636,6 +624,26 @@
 		           absent: both are reached from inside Drop Ship, and the
 		           Lounge is NSFW, so neither belongs in a menu that opens
 		           on every page. The ids still resolve if linked directly. -->
+
+		      <!-- LAST, AND THAT IS THE POINT. Infiltration is the loosest
+		           thing in here -- it is not a game you play on this site,
+		           it is a reply you leave on X -- and a player reading down
+		           a list of games will take its position as a claim about
+		           what it is. Bottom of the list makes the smaller claim.
+		           Same reasoning puts it last on the Launchpad.
+
+		           HERE AND NOWHERE ELSE: it pays DHC traits, so dhc-nav.php
+		           looks like its home -- but that strip is included on
+		           dhcarena.php, which is PUBLIC, and this must not be put in
+		           front of anonymous visitors. This navbar is inside
+		           `if(isset($name))`, so the menu is the one place it can sit.
+
+		           NO DROP BADGE, deliberately. dhcf_drops_glance() skips this
+		           game three times over (unlisted, carries a limit_note, cap 0)
+		           and would render nothing -- but even if it did, the number
+		           would be a lie: the ration here is targets, not a daily cap,
+		           so "0 left" would mean "none posted" rather than "spent". -->
+		      <a href="infiltration.php">Infiltration</a>
 		    </div>
 		  </div>
 
