@@ -561,7 +561,35 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              box-sizing: border-box;
              padding: 0.25vh;
              z-index: 1;
-			 box-shadow: 0px 1px 5px black;
+             /*
+              * THE WASH GOES OVER THE COLOUR, NOT INSTEAD OF IT.
+              *
+              * background-image composites on top of background-color, and
+              * the colour is written per tile in renderBoard() from
+              * iconColorMap. So one rule lights all nine tiles and the game's
+              * JavaScript is untouched -- no palette passed into CSS, no
+              * gradient built per hue.
+              *
+              * Light above the midpoint, dark below, with the turn at 45/55
+              * rather than 50/50 so the face reads as lit from above rather
+              * than as two halves.
+              */
+             background-image: linear-gradient(180deg,
+                 rgba(255,255,255,.24) 0,
+                 rgba(255,255,255,.05) 45%,
+                 rgba(0,0,0,.16) 55%,
+                 rgba(0,0,0,.40) 100%);
+             /*
+              * The emboss. A lit top edge and a dark bottom edge INSIDE the
+              * tile, with the sides doing a quieter version of the same, then
+              * the outer shadow that was already here. All inset but the last,
+              * so the tile keeps its exact footprint in the grid.
+              */
+             box-shadow: inset 0 1px 0 rgba(255,255,255,.38),
+                         inset 0 -2px 0 rgba(0,0,0,.45),
+                         inset 1px 0 0 rgba(255,255,255,.10),
+                         inset -1px 0 0 rgba(0,0,0,.28),
+                         0 2px 4px rgba(0,0,0,.55);
          }
          .tile.game-over {
              filter: grayscale(100%);
@@ -572,17 +600,14 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              object-fit: contain;
              position: absolute;
              z-index: 1;
+             /* Sits the white glyph ON the face rather than in it. Without
+                this the emboss reads as a sticker over a lit tile. */
+             filter: drop-shadow(0 1px 1px rgba(0,0,0,.5));
          }
-         .tile::before {
-             content: '';
-             position: absolute;
-             top: 0;
-             left: 0;
-             width: 100%;
-             height: 100%;
-             opacity: 0.6;
-             z-index: 0;
-         }
+         /* .tile::before was here and drew nothing: a full-size box at
+            opacity .6 with no background and no content, left behind by an
+            earlier overlay. Removed rather than left to be mistaken for the
+            gradient layer, which is on the tile itself. */
          .selected {
              transform: scale(1.05);
              border: 0.25vh solid white;
