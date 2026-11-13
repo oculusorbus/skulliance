@@ -213,11 +213,24 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
      *
      * 769 because the page's own breakpoint is 768.
      *
-     * THE SCRIM IS NOT DECORATION. The board is the thing being read, and
-     * this art is busy and full of bright green and magenta. A flat
-     * #07111d at .72 over it keeps the picture as depth behind the game
-     * rather than competition with it -- one number to tune if it wants to
-     * be more or less present.
+     * THE SCRIM IS BANDED, NOT FLAT, AND THAT IS THE WHOLE TRICK.
+     *
+     * A flat wash was the first attempt and it was wrong in an obvious way
+     * once seen on the real page: it darkened the art everywhere, and the
+     * art is only in the way in two places.
+     *
+     * The board is OPAQUE. Nothing behind it is visible, so darkening
+     * there buys nothing and costs the picture. What actually needs a dark
+     * ground is the HUD along the top and the buttons along the bottom,
+     * which are text sitting straight on the background.
+     *
+     * So: heavy at the top and bottom edges, nearly clear through the
+     * middle, where the only thing showing is the art to either side of
+     * the board. The skulls and the green and magenta glows come through
+     * at full strength and the text still reads.
+     *
+     * Fixed attachment means the bands stay pinned to the viewport edges,
+     * which is where the text is, rather than scrolling away from it.
      *
      * It shows behind the GAME and not behind the landing, without being
      * asked to: #ss-landing paints its own opaque #07111d over the top.
@@ -225,7 +238,11 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
     @media (min-width: 769px) {
       body {
         background-image:
-          linear-gradient(rgba(7,17,29,.72), rgba(7,17,29,.72)),
+          linear-gradient(180deg,
+            rgba(7,17,29,.85) 0%,
+            rgba(7,17,29,.30) 26%,
+            rgba(7,17,29,.30) 74%,
+            rgba(7,17,29,.85) 100%),
           url('images/skullswap-bg.webp');
         background-size: cover;
         background-position: center center;
