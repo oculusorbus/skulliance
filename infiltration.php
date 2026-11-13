@@ -199,8 +199,13 @@ include 'header.php';
   filter:grayscale(1) brightness(1.1); opacity:.55;
   transition:filter .25s ease, opacity .25s ease, transform .25s ease; }
 .inf-rcell.got img { filter:none; opacity:1; }
-.inf-rcell.now img { transform:translateY(-3px) scale(1.06);
-  filter:drop-shadow(0 0 12px rgba(138,99,210,.85)); }
+/* THE CURRENT RUNG GLOWS AND DOES NOT MOVE.
+   It used to scale(1.06) and lift 3px as well, which quietly undid the
+   alignment: every skull is cut to the same size with its eyes on one
+   line, and emphasis that resizes or raises one of them breaks both. A
+   glow is the only emphasis here that costs nothing geometrically. */
+.inf-rcell.now img { filter:drop-shadow(0 0 13px rgba(138,99,210,.95))
+                            drop-shadow(0 0 26px rgba(138,99,210,.5)); }
 .inf-rnum { display:block; margin-top:5px; font-size:.64rem; letter-spacing:.12em;
   color:#5a7888; font-variant-numeric:tabular-nums; }
 .inf-rcell.got .inf-rnum { color:#b9aed6; }
