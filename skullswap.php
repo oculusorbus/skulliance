@@ -540,7 +540,11 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
          #game-board {
              display: grid;
              gap: 0.5vh;
-             background: #333;
+             /* The platform's navy rather than a neutral #333. Grey read as
+                an unset default and gave the darkest tiles nothing to sit
+                against; this is the colour the rest of the site is built on.
+                Monstrocity makes the same move with its own teal. */
+             background: #0a1929;
              padding: 1vh;
              box-sizing: border-box;
              user-select: none;
@@ -561,6 +565,15 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              box-sizing: border-box;
              padding: 0.25vh;
              z-index: 1;
+             /*
+              * THE BORDER IS WHAT MAKES THE BEVEL READ, and this board had
+              * none while Monstrocity's always has. Without it the dark end
+              * of the palette has no edge at all -- the olive and the black
+              * tile dissolve into the board -- and the inset highlight has
+              * no hard line to sit inside, so it reads as a painted stripe
+              * rather than a lit edge. Rendered side by side before adding.
+              */
+             border: 1px solid #000;
              /*
               * THE WASH GOES OVER THE COLOUR, NOT INSTEAD OF IT.
               *

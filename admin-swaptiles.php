@@ -50,10 +50,14 @@ admin_chrome('swaptiles');
 <?php include 'admin-css.php'; ?>
 <style>
 /* The board, as the game draws it. */
+/* Mirrors the live board: platform navy, and a 1px black border on every
+   tile. Both were added after this page showed that the dark end of the
+   palette had no edge against the old grey. */
 .st-board { display:grid; grid-template-columns:repeat(9, 62px); gap:5px;
-  background:#333; padding:10px; width:max-content; max-width:100%; }
+  background:#0a1929; padding:10px; width:max-content; max-width:100%; }
 .st-t { width:62px; height:62px; position:relative; display:flex;
-  align-items:center; justify-content:center; box-sizing:border-box; padding:3px; }
+  align-items:center; justify-content:center; box-sizing:border-box; padding:3px;
+  border:1px solid #000; }
 .st-t img { width:75%; height:75%; object-fit:contain; position:relative; z-index:1; }
 
 /* --- flat: today ------------------------------------------------------ */
