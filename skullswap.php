@@ -242,6 +242,21 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
        * the viewport edges the text sits against.
        */
       background-attachment: scroll;
+      /*
+       * WITHOUT THIS THE PICTURE STOPS WHERE THE CONTENT DOES.
+       *
+       * body's background paints the whole canvas, but `cover` is resolved
+       * against BODY'S OWN BOX -- so on a short page the image is sized to
+       * that box and everything below it is bare background-colour. On a
+       * phone, where the board does not fill the screen, that is most of
+       * the view.
+       *
+       * dvh with a vh fallback: on mobile Safari 100vh is the height with
+       * the toolbars hidden, which leaves a gap exactly when the toolbars
+       * are showing.
+       */
+      min-height: 100vh;
+      min-height: 100dvh;
     }
     /*
      * THE BIG FILE IS DESKTOP ONLY, and the direction of the query is the
@@ -1064,6 +1079,12 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              <a id="back-btn" class="board-btn" href="launchpad.php" aria-label="Back to the Skulliance Launchpad">GO BACK</a>
              <?php endif; ?>
              <button id="guide-btn" class="board-btn" onclick="openGuide()">HOW TO PLAY</button>
+             <?php /* Phones only -- a desktop board is 8x8 and has nothing to
+                      switch to. Hidden by default and shown by the game once
+                      it knows it is on a small screen, rather than by a media
+                      query, so the control and the board can never disagree
+                      about which one they are on. */ ?>
+             <button id="shape-btn" class="board-btn" style="display:none"></button>
          </div>
      </div>
 
@@ -1390,13 +1411,44 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
  // score saves are skipped client-side (and rejected server-side anyway).
  const IS_LOGGED_IN = <?php echo $is_logged_in ? 'true' : 'false'; ?>;
 
+ /*
+  * THE SAVED BOARD SHAPE. localStorage in a try/catch because it throws
+  * outright in a private window, and a board that will not build is a
+  * worse outcome than a board in the wrong shape.
+  */
+ var SS_SHAPE_KEY = 'ss-board-shape';
+ function ssReadShape() {
+     try { return localStorage.getItem(SS_SHAPE_KEY) === 'square' ? 'square' : 'tall'; }
+     catch (e) { return 'tall'; }
+ }
+ function ssWriteShape(v) {
+     try { localStorage.setItem(SS_SHAPE_KEY, v); } catch (e) {}
+ }
+
  class Match3Game {
      constructor() {
          this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
          this.isMobile = (this.isTouchDevice && window.innerWidth <= 768) || window.innerWidth <= 768;
 
-         this.width = this.isMobile ? 6 : 8;
-         this.height = this.isMobile ? 10 : 8;
+         /*
+          * THE BOARD SHAPE IS A CHOICE ON A PHONE, NOT A VERDICT.
+          *
+          * A phone got 6x10 and a desktop 8x8, and the two are not the
+          * same game: 60 tiles against 64, and six columns give a shorter
+          * horizontal run to work with than eight. Both feed one weekly
+          * CARBON leaderboard, so a player on a phone was competing on a
+          * board that is not the one the scores were set on.
+          *
+          * 6x10 stays the DEFAULT, because it is the one that fits a phone
+          * screen and most people are not playing for the board. Anyone
+          * who is can switch to 8x8 and take the smaller tiles.
+          *
+          * Desktop has nothing to choose: it is 8x8 either way.
+          */
+         this.boardShape = this.isMobile ? ssReadShape() : 'square';
+         const tall = (this.boardShape === 'tall');
+         this.width  = tall ? 6  : 8;
+         this.height = tall ? 10 : 8;
 
          this.board = [];
          this.selectedTile = null;
@@ -1471,16 +1523,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          Object.values(this.sounds).forEach(sound => sound.preload = 'auto');
 
          const boardElement = document.getElementById('game-board');
-         const maxWidth = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.9 * (this.width / this.height));
-         const maxHeight = Math.min(window.innerHeight * 0.9, window.innerWidth * 0.9 * (this.height / this.width));
-         boardElement.style.width = `${maxWidth}px`;
-         boardElement.style.height = `${maxHeight}px`;
-         boardElement.style.gridTemplateColumns = `repeat(${this.width}, 1fr)`;
-
-         const hudElement = document.getElementById('hud');
-         hudElement.style.width = `${maxWidth}px`;
-
-         this.tileSizeWithGap = (maxWidth - (0.5 * (this.width - 1))) / this.width;
+         this.sizeBoard();
 
          this.initBoard();
          this.renderBoard();
@@ -1580,6 +1623,32 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          map[this.specialIcons.carbon] = '#4E4E4E';
          map[this.specialIcons.diamond] = '#000000';
          return map;
+     }
+
+     /*
+      * EVERY PIXEL THAT DEPENDS ON THE BOARD'S SHAPE, IN ONE PLACE.
+      *
+      * This was inline in the constructor and ran exactly once, which was
+      * fine while width and height could never change. They can now -- a
+      * phone can switch between 6x10 and 8x8 -- and three of these outlive
+      * a rebuild if they are not recomputed: the element's pixel size, the
+      * grid's column count, and tileSizeWithGap, which is the unit the drag
+      * handler does all of its coordinate maths in. A stale one of those
+      * leaves a board whose tiles are not where the pointer thinks they are.
+      */
+     sizeBoard() {
+         const boardElement = document.getElementById('game-board');
+         if (!boardElement) return;
+         const maxWidth = Math.min(window.innerWidth * 0.9, window.innerHeight * 0.9 * (this.width / this.height));
+         const maxHeight = Math.min(window.innerHeight * 0.9, window.innerWidth * 0.9 * (this.height / this.width));
+         boardElement.style.width = `${maxWidth}px`;
+         boardElement.style.height = `${maxHeight}px`;
+         boardElement.style.gridTemplateColumns = `repeat(${this.width}, 1fr)`;
+
+         const hudElement = document.getElementById('hud');
+         if (hudElement) hudElement.style.width = `${maxWidth}px`;
+
+         this.tileSizeWithGap = (maxWidth - (0.5 * (this.width - 1))) / this.width;
      }
 
      initBoard() {
@@ -2771,6 +2840,47 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
  }
 
  const game = new Match3Game();
+
+ /*
+  * THE SHAPE CONTROL. Phones only, and wired after the game exists so the
+  * button reports the board that was actually built rather than guessing
+  * from a media query.
+  *
+  * SWITCHING RESTARTS, AND IT SAYS SO. Width and height are baked into the
+  * grid, the tile sizing and every coordinate the drag handler works in --
+  * changing them mid-run would leave a board whose pieces disagree with the
+  * scores already on it. The confirm only appears once a run is actually
+  * under way; switching before the first move costs nothing and should not
+  * ask.
+  */
+ (function () {
+     var btn = document.getElementById('shape-btn');
+     if (!btn || !game.isMobile) return;
+     btn.style.display = '';
+
+     function label() {
+         btn.textContent = game.boardShape === 'tall' ? 'BOARD: TALL 6×10' : 'BOARD: SQUARE 8×8';
+         btn.title = game.boardShape === 'tall'
+             ? 'Switch to the 8x8 board desktop plays on. Smaller tiles, same board as the leaderboard.'
+             : 'Switch back to the tall board that fits a phone screen.';
+     }
+     label();
+
+     btn.addEventListener('click', function () {
+         var next = game.boardShape === 'tall' ? 'square' : 'tall';
+         var started = (game.score > 0 || game.matchCount > 0);
+         if (started && !confirm('Changing the board starts a new game. Your current run ends here. Continue?')) return;
+
+         ssWriteShape(next);
+         game.boardShape = next;
+         var tall = (next === 'tall');
+         game.width  = tall ? 6  : 8;
+         game.height = tall ? 10 : 8;
+         label();
+         game.sizeBoard();      /* before the rebuild: resetGame draws into it */
+         game.resetGame();
+     });
+ }());
      </script>
 
 <?php /* THE SLIDE, EXPLAINED ONCE. Only for an account with no score
