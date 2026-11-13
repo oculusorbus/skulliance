@@ -439,6 +439,33 @@ ok(strpos($pg, "\$b > 8 ? '+' . (\$b - 8)") !== false,
 ok(preg_match('~before you drop a rung~', $pg) === 1,
    'the bank is described by its mechanic rather than by what it buys');
 
+/* ------------------------------------------------------------------ *
+ * NOTHING INFILTRATION DOES REACHES A PUBLISHED SURFACE
+ *
+ * The feature announces to Discord, and skl_discordmsg() mirrors what it
+ * posts into the activity table. feed.php is behind the login so that is
+ * fine -- but TWO things built on that table leave the platform, and both
+ * carried it: admin-digest.php exists to be downloaded and posted, and
+ * the player digest has a Share on X button, which would have handed a
+ * member a card reading "Infiltrations" and a button to put it on X.
+ * ------------------------------------------------------------------ */
+head('infiltration is kept out of anything that gets published');
+$al = harness_strip_comments(@file_get_contents(__DIR__ . '/activity-lib.php'));
+ok($al !== false, 'activity-lib.php is missing');
+ok(preg_match("~function activity_private_channels\(\)~", (string) $al) === 1,
+   'there is no single list of channels that must not be published');
+ok(preg_match("~'infiltrations'~", (string) $al) === 1,
+   'infiltrations is not named as a private channel');
+/* Both digests, not just the admin one. */
+foreach (array('activity_digest', 'activity_player_digest') as $fn) {
+	$i = strpos((string) $al, 'function ' . $fn . '(');
+	$body = $i === false ? '' : substr((string) $al, $i, 2600);
+	ok($i !== false, "$fn is gone");
+	ok(strpos($body, 'activity_private_channels_sql') !== false,
+	   "$fn does not exclude private channels, so Infiltration reaches a "
+	 . 'surface that leaves the platform');
+}
+
 echo "\n" . ($fail ? "$fail FAILED of $ran\n" : "all $ran assertions pass\n");
 
 /* ================================================================== *

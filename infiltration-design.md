@@ -18,6 +18,16 @@ replies are being paid for. A promotion scheme that advertises itself as a
 promotion scheme is worth nothing to the algorithm it is trying to please,
 and reads as farming to everyone else.
 
+**AND IT IS KEPT OUT OF ANYTHING THAT GETS PUBLISHED.** The feature
+announces to Discord, and `skl_discordmsg()` mirrors what it posts into the
+activity table. `feed.php` is behind the login, so that is fine -- but two
+things built on that table LEAVE the platform and both carried it:
+`admin-digest.php` exists to be downloaded and posted, and the player digest
+carries a Share on X button, which would have handed a member a card reading
+"Infiltrations" and a button to put it on X. `activity_private_channels()`
+in `activity-lib.php` is the one list; both digests exclude it, and
+`infiltration-harness.php` fails if either stops.
+
 This file is served as a 403: `.htaccess` denies `\.(log|txt|md)$` at the
 document root. Keep it that way.
 

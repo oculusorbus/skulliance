@@ -514,6 +514,27 @@ define('ACTIVITY_DIGEST_PLAYERS', 24);   // players offered for shout-outs
  * created_at column is written with, so "today" means the same thing here
  * as it does on the feed.
  */
+/**
+ * Channels whose activity must never reach anything published.
+ *
+ * Returns a quoted, escaped list for an SQL IN (), never an empty string --
+ * `NOT IN ()` is a syntax error, so the list always has at least one entry.
+ *
+ * One place, because the next thing that leaves the platform will want the
+ * same exclusion and should not have to rediscover which channels are
+ * private. See infiltration-design.md for why this one is.
+ */
+function activity_private_channels() {
+	return array('infiltrations');
+}
+function activity_private_channels_sql($conn) {
+	$q = array();
+	foreach (activity_private_channels() as $c) {
+		$q[] = "'" . ($conn instanceof mysqli ? $conn->real_escape_string($c) : $c) . "'";
+	}
+	return $q ? implode(',', $q) : "''";
+}
+
 function activity_digest($conn, $day) {
 	$out = array(
 		'day'      => $day,
@@ -530,6 +551,20 @@ function activity_digest($conn, $day) {
 	   function form cannot use idx_created, so on a table holding months of
 	   announcements it reads every row to answer "what happened today". */
 	$win = "created_at >= '$d 00:00:00' AND created_at < DATE_ADD('$d 00:00:00', INTERVAL 1 DAY)";
+	/*
+	 * AND NOTHING FROM A CHANNEL THAT MAY NOT BE PUBLISHED.
+	 *
+	 * This page exists to be downloaded and posted -- that is the whole
+	 * point of it, and it is the one artefact here that leaves the
+	 * platform. Infiltration must not: the X posts it runs on stay
+	 * ordinary posts, and a poster counting "11 infiltrations" undoes
+	 * that in a single image.
+	 *
+	 * Filtered HERE rather than by not logging it, because the on-site
+	 * feed is behind the login and should keep showing it. The digest is
+	 * the surface that goes outside; the feed is not.
+	 */
+	$win .= " AND channel NOT IN (" . activity_private_channels_sql($conn) . ")";
 
 	/* ---- what kinds of thing, and how many ---- */
 	$r = @$conn->query("SELECT channel, COUNT(*) AS n FROM activity
@@ -681,6 +716,17 @@ function activity_player_digest($conn, $user_id, $day) {
 	$win = "a.created_at >= '$d 00:00:00'
 	        AND a.created_at < DATE_ADD('$d 00:00:00', INTERVAL 1 DAY)
 	        AND a.user_id = $user_id";
+	/*
+	 * AND NOT FROM A PRIVATE CHANNEL -- the same exclusion the day's
+	 * digest makes, and here it matters MORE.
+	 *
+	 * This one carries a Share on X button. The admin poster at least
+	 * passes through a person deciding to post it; this hands a member a
+	 * card listing their day by channel and a button that puts it on X.
+	 * A player who infiltrated that morning would have posted the word
+	 * "Infiltrations" to the very platform the feature is quiet about.
+	 */
+	$win .= " AND a.channel NOT IN (" . activity_private_channels_sql($conn) . ")";
 
 	$r = @$conn->query("SELECT a.channel, COUNT(*) AS n FROM activity a
 	                     WHERE $win GROUP BY a.channel ORDER BY n DESC");
