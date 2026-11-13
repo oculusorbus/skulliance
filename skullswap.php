@@ -633,13 +633,41 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              white-space: nowrap;
          }
         @media (max-width: 768px) {
-            /* Drop the board ~50px on phones so gameplay isn't pinned to
-               the very top of the viewport. HUD type drops a couple
-               points so max scores fit one line on small phones. The old
-               48px burger-menu gutter on #matches is gone with the
-               header. */
-            #game-container { margin-top: 62px; }
+            /*
+             * CENTRED IN THE VIEWPORT, not dropped a fixed 62px.
+             *
+             * The square board is 8x8 at 90vw, so on a phone it is a third
+             * shorter than the tall 6x10 -- it sat up near the notch with
+             * roughly 350px of dead screen under the buttons, which is a
+             * long reach for a thumb. Filling the viewport and centring puts
+             * the tiles in the middle of the screen in both shapes.
+             *
+             * THE TWO-LINE justify-content IS THE POINT. The tall board can
+             * be taller than the viewport (any phone in landscape, and a
+             * 768-wide tablet in portrait), and plain `center` overflows
+             * equally at BOTH ends -- the HUD goes off the top where no
+             * amount of scrolling brings it back. `safe center` degrades to
+             * flex-start exactly in that case. A browser too old to know the
+             * keyword drops that line and keeps the flex-start above, which
+             * is today's behaviour, so nothing can clip either way.
+             *
+             * HUD type drops a couple of points so max scores fit one line on
+             * small phones. The old 48px burger-menu gutter on #matches is
+             * gone with the header.
+             */
+            #game-container {
+                margin-top: 0;
+                min-height: 100vh;
+                min-height: 100dvh;
+                padding: 12px 0;
+                box-sizing: border-box;
+                justify-content: flex-start;
+                justify-content: safe center;
+            }
             #score, #matches { font-size: 20px; }
+            /* Three buttons on one line at 390px only if they stop paying
+               36px of side padding each. */
+            .board-btn { padding: 6px 12px; }
         }
          #game-board {
              display: grid;
@@ -896,6 +924,19 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
             gap: 10px;
             justify-content: center;
             margin-top: 10px;
+            /*
+             * THE ROW HAD NO WIDTH OF ITS OWN, so it was as wide as its three
+             * buttons -- which on a phone is wider than the screen, and the
+             * outer two sat hard against the glass with no gutter at all.
+             * Claiming the full width and paying the gutter out of its own
+             * padding gives the row a line to fit inside; wrap then drops the
+             * third button to a second row instead of letting flex-shrink
+             * squeeze GO BACK into two lines of text.
+             */
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0 14px;
+            flex-wrap: wrap;
         }
         .board-btn {
             display: inline-block;
