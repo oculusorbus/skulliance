@@ -632,9 +632,27 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              pointer-events: none;
              padding: 0;
          }
-         .tile:hover {
-             outline: 2px solid rgba(255,255,255,0.7);
-             outline-offset: -2px;
+         /*
+          * HOVER LIGHTS THE WHOLE TILE; SELECTION KEEPS THE WHITE EDGE.
+          *
+          * Both used to be a white outline, so pointing at a tile and
+          * having picked one looked nearly identical -- rendered side by
+          * side, the hovered tile and the selected tile were hard to tell
+          * apart. They say different things and now look different in kind:
+          * hover lifts the face toward you, selection draws a line round it.
+          *
+          * :not(.game-over) IS LOAD-BEARING. .tile.game-over and .tile:hover
+          * have the same specificity and hover is declared later, so without
+          * this the filter below would win and hovering a dead board would
+          * put the colour back into it.
+          */
+         .tile:not(.game-over):hover {
+             filter: brightness(1.28);
+             box-shadow: inset 0 2px 0 rgba(255,255,255,.65),
+                         inset 0 -2px 0 rgba(0,0,0,.45),
+                         inset 1px 0 0 rgba(255,255,255,.20),
+                         inset -1px 0 0 rgba(0,0,0,.28),
+                         0 3px 7px rgba(0,0,0,.7);
          }
          .matched {
              animation: matchAnimation 0.3s ease forwards;

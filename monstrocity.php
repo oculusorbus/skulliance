@@ -297,8 +297,27 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
                   0 2px 5px rgba(0,0,0,.65);
     }
 	
-	.tile:hover {
-		border: 1px solid white;
+	/*
+	 * HOVER LIGHTS THE WHOLE TILE; SELECTION KEEPS THE WHITE EDGE.
+	 *
+	 * A white border on hover said the same thing .selected says with its
+	 * white outline. Hover lifts the face toward you instead, so the two
+	 * states differ in kind rather than in thickness.
+	 *
+	 * Softer than Skull Swap's: these are bright material colours and the
+	 * same lift overexposes the amber.
+	 *
+	 * :not(.game-over) so hovering a finished board cannot put the colour
+	 * back into it -- the rule is only saved here by source order, and
+	 * source order is not a thing to rely on.
+	 */
+	.tile:not(.game-over):hover {
+		filter: brightness(1.18);
+		box-shadow: inset 0 2px 0 rgba(255,255,255,.48),
+		            inset 0 -2px 0 rgba(0,0,0,.40),
+		            inset 1px 0 0 rgba(255,255,255,.16),
+		            inset -1px 0 0 rgba(0,0,0,.26),
+		            0 3px 7px rgba(0,0,0,.7);
 	}
     
     .tile img {
