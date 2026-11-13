@@ -750,12 +750,43 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   transition:transform .12s,border-color .12s}
 .arena-wrap .cell:hover{border-color:var(--line)}
 .arena-wrap .cell.sel{border-color:var(--bone);transform:scale(.9)}
-.arena-wrap .cell .g{width:72%;height:72%;border-radius:50%;background:var(--gc);
+/* THE SHADE IS A GRADIENT, NOT AN INSET SHADOW, AND THAT IS THE WHOLE
+   POINT OF IT.
+   It was `inset 0 -3px 6px rgba(0,0,0,.45)` -- and this file already knows
+   what happens to a box-shadow on a clipped gem, a few rules down, where a
+   bomb's ring went missing on exactly two of the five shapes. The same
+   thing was happening here and nobody had noticed, because an absent
+   shade reads as a slightly flatter gem rather than as a bug: Square,
+   Diamond and the plain round gems had a lit bottom edge, Charge (hexagon)
+   and Shield did not.
+   background-image is painted INSIDE the element and clipped along with
+   it, so it follows a hexagon and a shield the way the shade always should
+   have. Tuned to land where the inset did, so the three shapes that were
+   already right do not visibly change.
+   background-color, not the `background` shorthand: the shorthand resets
+   background-image and would wipe the gradient out. */
+.arena-wrap .cell .g{width:72%;height:72%;border-radius:50%;
+  background-color:var(--gc);
+  background-image:linear-gradient(180deg,
+      rgba(255,255,255,.07) 0,
+      rgba(255,255,255,0) 38%,
+      rgba(0,0,0,.10) 62%,
+      rgba(0,0,0,.42) 100%);
   display:flex;align-items:center;justify-content:center;
-  box-shadow:inset 0 -3px 6px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08);
+  box-shadow:0 0 0 1px rgba(255,255,255,.08);
   transition:transform .18s,opacity .18s}
 .arena-wrap .cell.sq .g{border-radius:4px}
-.arena-wrap .cell.di .g{border-radius:3px;transform:rotate(45deg) scale(.82)}
+/* COUNTER-ROTATED, because the gem is not. A gradient is defined in the
+   element's own space and this one is turned 45 degrees, so a plain 180deg
+   wash came out running diagonally while every other gem was lit from
+   straight above. 135 in element space is 180 on screen. The old inset
+   shadow had the same lean and it simply did not show at that strength. */
+.arena-wrap .cell.di .g{border-radius:3px;transform:rotate(45deg) scale(.82);
+  background-image:linear-gradient(135deg,
+      rgba(255,255,255,.07) 0,
+      rgba(255,255,255,0) 38%,
+      rgba(0,0,0,.10) 62%,
+      rgba(0,0,0,.42) 100%)}
 /* Flat shoulders, straight flanks, tapering to a point at the bottom -- the
    same silhouette as the emoji sitting on it. */
 .arena-wrap .cell.shield .g{border-radius:3px 3px 0 0;
@@ -809,8 +840,10 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .cell.bomb .bglow{filter:drop-shadow(0 0 1.5px #fff)}
 .arena-wrap .cell.bomb2 .bglow{filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff)
   drop-shadow(0 0 1px #fff)}
-.arena-wrap .cell.bomb .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45);
-  animation:bmb 1.5s ease-in-out infinite}
+/* The shade comes from the gradient on .g now, so this no longer restates
+   it -- re-declaring the inset here both doubled it on the shapes where it
+   worked and dropped the hairline, which this rule was overriding away. */
+.arena-wrap .cell.bomb .g{animation:bmb 1.5s ease-in-out infinite}
 /* THE GLOW HUGS THE GEM, NOT THE TILE.
    It lived on .cell for a while, which is a square whatever shape the gem is
    -- so a hexagon sat inside a square halo, and the halo read as the thing
