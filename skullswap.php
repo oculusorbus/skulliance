@@ -1840,18 +1840,64 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                    + '&url=' + encodeURIComponent('https://skulliance.io/staking/skullswap.php');
      }
 
+     /*
+      * THE DRAG STARTS ON THE BOARD AND ENDS ON THE WINDOW.
+      *
+      * All six of these used to be on #game-board, and that is why pushing
+      * a tile to the edge and letting go did nothing. Once the pointer left
+      * the board, mousemove stopped firing -- so the tile froze mid-slide --
+      * and the mouseup landed on some other element entirely, so the handler
+      * never ran, isDragging stayed true and the swap never committed. The
+      * only way out was to drag back over the board to un-wedge it, by which
+      * point the aim was off and the move was wrong. Playing a corner, where
+      * overshooting the edge is the natural motion, was the worst case.
+      *
+      * handleMouseMove has always clamped the target to the last row and
+      * column. Listening on the window is what finally lets that clamp do
+      * its job: a release anywhere, however far past the edge, commits to
+      * the edge tile. The end handlers return immediately unless a drag is
+      * actually in progress, so an ordinary click elsewhere on the page --
+      * HOW TO PLAY, GO BACK -- is not mistaken for a released tile.
+      */
      addEventListeners() {
          const board = document.getElementById('game-board');
-        
+
          if (this.isTouchDevice && window.innerWidth <= 768) {
-             board.addEventListener('touchstart', (e) => this.handleTouchStart(e));
-             board.addEventListener('touchmove', (e) => this.handleTouchMove(e));
-             board.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+             board.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+             /*
+              * passive:false SPELLED OUT. A listener on the board defaults
+              * to non-passive, but one on the window defaults to passive,
+              * where preventDefault() is ignored with a console warning and
+              * the drag fights the browser's own gestures.
+              */
+             window.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+             window.addEventListener('touchend', (e) => this.handleTouchEnd(e));
+             window.addEventListener('touchcancel', () => this.cancelDrag());
          } else {
              board.addEventListener('mousedown', (e) => this.handleMouseDown(e));
-             board.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-             board.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+             window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+             window.addEventListener('mouseup', (e) => this.handleMouseUp(e));
          }
+     }
+
+     /*
+      * A DRAG THE SYSTEM TOOK AWAY -- an incoming call, a system edge
+      * gesture. Put the tile back without the bad-move sound: the player
+      * did not make a move, so they should not be told they made a bad one.
+      * Without this the cancelled drag just hangs, which is the same stall
+      * the window listeners above exist to prevent.
+      */
+     cancelDrag() {
+         if (!this.isDragging) return;
+         if (this.selectedTile) {
+             const tile = this.board[this.selectedTile.y][this.selectedTile.x];
+             if (tile && tile.element) tile.element.classList.remove('selected');
+         }
+         this.isDragging = false;
+         this.selectedTile = null;
+         this.targetTile = null;
+         this.dragDirection = null;
+         this.renderBoard();
      }
 
      handleMouseDown(e) {
@@ -1907,7 +1953,14 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
      }
 
      handleMouseUp(e) {
-         if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver || this.isGrandFinale) {
+         /*
+          * The listener is on the window now, so this fires for every
+          * release anywhere on the page. Only a drag this board started
+          * has anything to finish -- without this, clicking HOW TO PLAY
+          * would re-render the board and play the bad-move sound.
+          */
+         if (!this.isDragging) return;
+         if (!this.selectedTile || !this.targetTile || this.gameOver || this.isGrandFinale) {
              if (this.selectedTile) {
                  const tile = this.board[this.selectedTile.y][this.selectedTile.x];
                  if (tile.element) tile.element.classList.remove('selected');
@@ -1958,6 +2011,14 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          const selectedTileElement = this.board[this.selectedTile.y][this.selectedTile.x].element;
 
          requestAnimationFrame(() => {
+             /*
+              * THE FRAME CAN LAND AFTER THE FINGER IS ALREADY UP. On a quick
+              * flick, touchend runs first and nulls selectedTile, and this
+              * closure then throws on selectedTile.x -- leaving the tile
+              * stranded mid-transform with the board wedged until the next
+              * render. Same stall, different cause.
+              */
+             if (!this.isDragging || !this.selectedTile) return;
              if (!this.dragDirection) {
                  const dx = Math.abs(touchX - (this.selectedTile.x * this.tileSizeWithGap));
                  const dy = Math.abs(touchY - (this.selectedTile.y * this.tileSizeWithGap));
@@ -1986,7 +2047,14 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
      }
 
      handleTouchEnd(e) {
-         if (!this.isDragging || !this.selectedTile || !this.targetTile || this.gameOver || this.isGrandFinale) {
+         /*
+          * The listener is on the window now, so this fires for every
+          * release anywhere on the page. Only a drag this board started
+          * has anything to finish -- without this, clicking HOW TO PLAY
+          * would re-render the board and play the bad-move sound.
+          */
+         if (!this.isDragging) return;
+         if (!this.selectedTile || !this.targetTile || this.gameOver || this.isGrandFinale) {
              if (this.selectedTile) {
                  const tile = this.board[this.selectedTile.y][this.selectedTile.x];
                  if (tile.element) tile.element.classList.remove('selected');
