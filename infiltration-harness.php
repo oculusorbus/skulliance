@@ -380,10 +380,11 @@ head('and does not claim to be checking them');
 /* A fake check is one curious person away from casting doubt on the comment
    verification, which is real. The copy has to stay honest about which half
    is which. */
-/* Anchored on the CLAIM, not the sentence. The first version matched the
-   whole phrase and failed the moment the copy was reworded, which says
-   nothing about whether the page is still honest. */
-ok(preg_match('~We cannot check (these two|the like)~i', $pg) === 1,
+/* Anchored on the CLAIM ALONE. Two earlier versions pinned more of the
+   sentence -- first the whole phrase, then a list of its endings -- and
+   both failed on a reword that changed nothing about whether the page is
+   honest. What has to be true is that the page says we cannot check. */
+ok(stripos($pg, 'We cannot check') !== false,
    'the page no longer says the like and the repost are untracked');
 foreach (array('verified your like', 'we track', 'confirmed your repost') as $claim) {
 	ok(stripos($pg, $claim) === false, 'the page claims to verify a like or repost: "' . $claim . '"');

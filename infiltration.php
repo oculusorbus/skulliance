@@ -240,8 +240,8 @@ include 'header.php';
 .inf-win { font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; }
 .inf-win.early { color:#00e0b4; } .inf-win.main { color:#e8b24a; }
 .inf-win.late  { color:#7a8ea0; }
-.inf-form { display:flex; flex-wrap:wrap; gap:9px; margin-top:12px; }
-.inf-form input[type=text] { flex:1 1 100%; min-width:0; background:#07111d;
+.inf-form { display:flex; flex-wrap:wrap; gap:9px; margin-top:10px; align-items:stretch; }
+.inf-form input[type=text] { flex:1 1 320px; min-width:0; background:#07111d;
   border:1px solid rgba(110,74,168,.4); color:#c8d8e8; padding:10px 11px;
   font:400 14px/1.4 Arial,sans-serif; }
 .inf-form input[type=text]:focus { outline:2px solid #8a63d2; outline-offset:1px; }
@@ -254,18 +254,17 @@ include 'header.php';
 .inf-said { font-size:.86rem; color:#8aa0b4; margin:8px 0 0;
   border-left:2px solid rgba(0,200,160,.4); padding-left:10px; }
 
-/* Reading on the left, doing on the right. The actions are one column in
-   run order -- open, liked, reposted, infiltrate -- so the sequence is a
-   single vertical scan instead of three stops across the card. */
-.inf-tgrid { display:grid; grid-template-columns:minmax(0,1fr) 196px; gap:18px;
-  align-items:start; margin-top:12px; }
-.inf-tacts { display:flex; flex-direction:column; gap:8px; }
-.inf-tacts > * { width:100%; text-align:center; box-sizing:border-box; }
+/* PREPARE, THEN ACT. The three things you do on X sit on one line; the
+   field and the button that submits it are one row underneath. A control
+   next to the thing it acts on -- which a single right-hand column got
+   wrong, leaving the field and its submit diagonally opposite. */
+.inf-prep { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px; }
 /* The one that completes the run, so it stays the loudest thing on the card. */
 .inf button.inf-send { background:#6e4aa8; color:#fff; font-weight:bold; }
 .inf button.inf-send:hover:not(:disabled) { background:#8a63d2; }
 .inf button.inf-send:disabled { background:transparent; border:1px solid rgba(110,74,168,.35);
   color:#5a7888; cursor:not-allowed; }
+.inf button.inf-send { flex:0 0 auto; }
 .inf-steps-gate { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:4px; }
 .inf button.inf-step { background:transparent; border:1px solid rgba(110,74,168,.5);
   color:#b9aed6; font-weight:normal; font-size:.82rem; padding:8px 14px; }
@@ -328,9 +327,14 @@ include 'header.php';
   .inf-ladder { display:none; }
   .inf-badge-now { display:block; width:58px; }
   .inf-meter, .inf-target { padding:14px 15px; }
-  /* One column at phone width: the actions sit under what they act on. */
-  .inf-tgrid { grid-template-columns:1fr; gap:12px; }
-  .inf a.inf-go, .inf button { width:100%; text-align:center; }
+  /* At phone width the prep buttons share a line and the field takes its
+     own, with Infiltrate full width beneath it. */
+  .inf-prep .inf-go { flex:1 1 100%; }
+  .inf-prep .inf-step { flex:1 1 44%; }
+  .inf-trust { flex:1 1 100%; }
+  .inf-form input[type=text] { flex:1 1 100%; }
+  .inf a.inf-go, .inf button { text-align:center; }
+  .inf button.inf-send { flex:1 1 100%; }
   .inf-trow { gap:6px; }
   /*
    * THE TABLE'S OWN FLOOR HAS TO GO, not just the page's.
@@ -510,44 +514,35 @@ include 'header.php';
            wrong with your comment.</p>
       <?php elseif (!$shut): ?>
         <?php /*
-         * ONE COLUMN OF CONTROLS, ON THE RIGHT.
+         * TWO GROUPS, IN RUN ORDER: prepare, then act.
          *
-         * These were scattered: Open the post top left, the two checks in
-         * the middle, Infiltrate at the far end of a full-width input. Four
-         * controls in three places, and the eye crossed the card twice to
-         * use them in order.
+         * First attempt had these in three places, second put all four in
+         * one right-hand column -- which fixed the scatter and created a
+         * worse problem: the paste field was top left and the button that
+         * submits it was bottom right, diagonally opposite.
          *
-         * They stack on the right in run order now -- open, liked,
-         * reposted, infiltrate -- so the sequence reads top to bottom in
-         * one place and the left side is just what you read and paste.
-         *
-         * The submit sits OUTSIDE its form and reaches it by form="", which
-         * is what lets the button live in the right column while the input
-         * it belongs to stays on the left.
+         * A control belongs beside the thing it acts on. The three steps
+         * you do ON X sit together on one line, and the field and its
+         * Infiltrate button are one row underneath, so the pair that works
+         * together is the pair that lines up.
          */ ?>
-        <?php $fid = 'inf-f-' . (int) $tg['id']; ?>
-        <div class="inf-tgrid">
-          <div class="inf-tmain">
-            <form method="post" class="inf-form" data-gated id="<?php echo $fid; ?>">
-              <input type="hidden" name="target" value="<?php echo (int) $tg['id']; ?>">
-              <input type="text" name="comment" placeholder="Paste the link to your reply"
-                     autocomplete="off" required>
-            </form>
-            <p class="inf-sub" style="margin-top:7px">At least <?php echo INFIL_MIN_CHARS; ?> characters
-              in your own words, and not something you have said before.
-              <span class="inf-trust">We cannot check the like or the repost. We are trusting you.</span></p>
-          </div>
-
-          <div class="inf-tacts" data-gate>
-            <a class="inf-go" href="<?php echo htmlspecialchars($url); ?>"
-               target="_blank" rel="noopener">Open the post</a>
-            <button type="button" class="inf-step" data-step="like">I liked it</button>
-            <button type="button" class="inf-step" data-step="repost">I reposted it</button>
-            <button type="submit" class="inf-send" form="<?php echo $fid; ?>"
-                    name="infiltrate" value="1">Infiltrate<?php
-              echo $worth > 0 ? ' (+' . $worth . ')' : ''; ?></button>
-          </div>
+        <div class="inf-prep" data-gate>
+          <a class="inf-go" href="<?php echo htmlspecialchars($url); ?>"
+             target="_blank" rel="noopener">Open the post</a>
+          <button type="button" class="inf-step" data-step="like">I liked it</button>
+          <button type="button" class="inf-step" data-step="repost">I reposted it</button>
+          <span class="inf-trust">We cannot check those two. We are trusting you.</span>
         </div>
+
+        <form method="post" class="inf-form" data-gated>
+          <input type="hidden" name="target" value="<?php echo (int) $tg['id']; ?>">
+          <input type="text" name="comment" placeholder="Paste the link to your reply"
+                 autocomplete="off" required>
+          <button type="submit" class="inf-send" name="infiltrate" value="1">Infiltrate<?php
+            echo $worth > 0 ? ' (+' . $worth . ')' : ''; ?></button>
+        </form>
+        <p class="inf-sub" style="margin-top:7px">At least <?php echo INFIL_MIN_CHARS; ?> characters
+          in your own words, and not something you have said before.</p>
       <?php endif; ?>
     </div>
     <?php /*
