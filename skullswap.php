@@ -201,6 +201,38 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
       line-height: 1.55; overflow-x: hidden; -webkit-font-smoothing: antialiased;
     }
+    /*
+     * THE CITY BEHIND THE BOARD -- DESKTOP ONLY.
+     *
+     * min-width, not max-width, and that is the point: a background-image
+     * inside a media query that does not match is never fetched, so a
+     * phone does not download 126KB it will not see. Written the other way
+     * round -- set on body, then hidden on small -- the file downloads
+     * everywhere and is thrown away on the devices least able to afford
+     * it.
+     *
+     * 769 because the page's own breakpoint is 768.
+     *
+     * THE SCRIM IS NOT DECORATION. The board is the thing being read, and
+     * this art is busy and full of bright green and magenta. A flat
+     * #07111d at .72 over it keeps the picture as depth behind the game
+     * rather than competition with it -- one number to tune if it wants to
+     * be more or less present.
+     *
+     * It shows behind the GAME and not behind the landing, without being
+     * asked to: #ss-landing paints its own opaque #07111d over the top.
+     */
+    @media (min-width: 769px) {
+      body {
+        background-image:
+          linear-gradient(rgba(7,17,29,.72), rgba(7,17,29,.72)),
+          url('images/skullswap-bg.webp');
+        background-size: cover;
+        background-position: center center;
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+      }
+    }
   </style>
   <style>
     /* Marketing landing styles - all visitors (the page is standalone
