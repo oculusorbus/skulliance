@@ -173,6 +173,32 @@ include 'header.php';
 /* ---- the meter ------------------------------------------------------ */
 .inf-meter { background:#0a1929; border:1px solid rgba(110,74,168,.3);
   padding:18px 20px; margin:18px 0; }
+/* Nine across, each one sized by the track rather than by itself, so the
+   row stays even however different the badges' own proportions are. */
+.inf-ladder { display:grid; grid-template-columns:repeat(9,1fr); gap:10px;
+  margin:16px 0 4px; align-items:end; }
+.inf-ladder.noart { display:none; }
+.inf-rcell { text-align:center; min-width:0; }
+.inf-rcell img { display:block; width:100%; height:auto; margin:0 auto;
+  /* Unearned rungs keep their SHAPE and lose their colour. Seeing what is
+     coming is the point of showing all nine.
+     NOT DARKENED, which the first attempt did: these badges are dark metal
+     on a dark card, so brightness(.4) at opacity(.45) erased them into the
+     panel. Compared side by side, a slight LIFT with the saturation gone
+     reads as locked while staying legible. */
+  filter:grayscale(1) brightness(1.1); opacity:.55;
+  transition:filter .25s ease, opacity .25s ease, transform .25s ease; }
+.inf-rcell.got img { filter:none; opacity:1; }
+.inf-rcell.now img { transform:translateY(-3px) scale(1.06);
+  filter:drop-shadow(0 0 12px rgba(138,99,210,.85)); }
+.inf-rnum { display:block; margin-top:5px; font-size:.64rem; letter-spacing:.12em;
+  color:#5a7888; font-variant-numeric:tabular-nums; }
+.inf-rcell.got .inf-rnum { color:#b9aed6; }
+.inf-rcell.now .inf-rnum { color:#00e0b4; font-weight:bold; }
+/* The phone's single badge. Hidden on desktop, where the row says it better. */
+.inf-badge-now { display:none; width:64px; height:auto; flex:0 0 auto;
+  filter:drop-shadow(0 0 10px rgba(138,99,210,.7)); }
+
 .inf-rungs { display:flex; gap:4px; margin:12px 0 0; }
 .inf-rung { flex:1 1 0; min-width:0; height:16px; background:rgba(255,255,255,.07);
   border:1px solid rgba(255,255,255,.08); }
@@ -274,6 +300,8 @@ include 'header.php';
   /* margin-left:auto strands the handle on its own wrapped line. */
   .inf-standing > div[style] { margin-left:0 !important; }
   .inf-big { font-size:1.7rem; }
+  .inf-ladder { display:none; }
+  .inf-badge-now { display:block; width:58px; }
   .inf-meter, .inf-target { padding:14px 15px; }
   .inf-form input[type=text] { flex:1 1 100%; }
   .inf a.inf-go, .inf button { width:100%; text-align:center; }
@@ -355,12 +383,43 @@ include 'header.php';
     ?>
     <div class="inf-meter">
       <div class="inf-standing">
+        <?php /* The phone's version of the ladder: just the one you are on.
+                 Absent at rung 0, where there is no badge yet and the empty
+                 socket is the point. */ ?>
+        <?php if ($t > 0): ?>
+        <img class="inf-badge-now" src="icons/infiltration/rung-<?php echo $t; ?>.webp"
+             alt="" decoding="async" onerror="this.remove()">
+        <?php endif; ?>
         <div><span class="inf-big"><?php echo $t; ?></span><span class="inf-sub"> / <?php echo INFIL_MAX_TIER; ?> rungs</span></div>
         <div><span class="inf-sub">Rolling on</span><br><b><?php
           echo htmlspecialchars(isset($inf_labels[$tbl]) ? $inf_labels[$tbl] : $tbl); ?></b>
           &middot; <?php echo (float) $odds['mythic']; ?>% mythic</div>
         <div><span class="inf-sub">This month</span><br><b><?php echo (int) $inf_meter['month_tiers']; ?></b> rungs climbed</div>
         <div style="margin-left:auto"><span class="inf-sub">as @<?php echo htmlspecialchars($inf_handle); ?></span></div>
+      </div>
+
+      <?php /*
+       * THE LADDER, AS NINE BADGES.
+       *
+       * <img> rather than a CSS background, for the same reason
+       * launchpad.php gives: images deploy by FTP outside this repo, and a
+       * background-image that 404s is a silently empty row. One onerror
+       * marks the whole row and CSS hides it, leaving the bar below -- which
+       * is why the bar stays rather than being replaced.
+       *
+       * Hidden under 700px, where nine of anything is 40px of mud. The phone
+       * gets the single current badge up in the standing row instead.
+       */ ?>
+      <div class="inf-ladder" aria-hidden="true">
+        <?php for ($i = 1; $i <= INFIL_MAX_TIER; $i++): ?>
+        <div class="inf-rcell<?php echo $i <= $t ? ' got' : ''; ?><?php
+                              echo $i === $t ? ' now' : ''; ?>">
+          <img src="icons/infiltration/rung-<?php echo $i; ?>.webp" alt=""
+               decoding="async" loading="lazy"
+               onerror="this.closest('.inf-ladder').classList.add('noart')">
+          <span class="inf-rnum"><?php echo $i; ?></span>
+        </div>
+        <?php endfor; ?>
       </div>
 
       <div class="inf-rungs" aria-label="Your rung">
