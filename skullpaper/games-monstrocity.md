@@ -5,6 +5,7 @@ Monstrocity is Skulliance's **Match 3 RPG** - a single-player campaign that pair
 ## Playing
 
 * **A tile slides the whole row or column, it does not swap with a neighbour.** This is the one rule new players do not guess, because every other match-3 works the other way. Drag a tile left, right, up or down as far as you like and let go: it lands where you dropped it and everything it passed shifts back one place to make room. A match three cells away is **one move, not three** - and some lines can only be made this way at all. Players who never find this score badly and tend to assume the game is harder than it is, which is why it is now demonstrated on the board itself before a first run.
+* **Overshoot the edge all you like.** Playing a tile against the side or the bottom of the board means dragging past where the board stops, and letting go out there is a perfectly good move: the tile goes to the last row or column on that axis. You do not have to bring the pointer back inside the board to finish a slide, and you never have to aim.
 * Choose a **character theme** from one of 35+ skins drawn from NFT collections across every chain Skulliance supports (core artists, partners, and bonus themes). Themes are cosmetic - no specific NFT is required to play.
 * Progress through a **28-level campaign** of escalating difficulty.
 * Each level is a match-3 battle: you and an AI opponent alternate turns on a shared board, and the board state persists between turns.
