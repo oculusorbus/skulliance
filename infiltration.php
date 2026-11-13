@@ -173,10 +173,13 @@ include 'header.php';
 /* ---- the meter ------------------------------------------------------ */
 .inf-meter { background:#0a1929; border:1px solid rgba(110,74,168,.3);
   padding:18px 20px; margin:18px 0; }
-/* Nine across, each one sized by the track rather than by itself, so the
-   row stays even however different the badges' own proportions are. */
+/* Nine across, each sized by the track rather than by itself.
+   THE ART IS SQUARE and padded to it, which is what makes the row even:
+   cropped tight, each badge had its own aspect, so a common width gave
+   them all different heights and the row looked like nine different
+   sizes. The frame is uniform now and the badge is centred inside it. */
 .inf-ladder { display:grid; grid-template-columns:repeat(9,1fr); gap:10px;
-  margin:16px 0 4px; align-items:end; }
+  margin:16px 0 4px; align-items:center; }
 .inf-ladder.noart { display:none; }
 .inf-rcell { text-align:center; min-width:0; }
 .inf-rcell img { display:block; width:100%; height:auto; margin:0 auto;
@@ -186,6 +189,7 @@ include 'header.php';
      on a dark card, so brightness(.4) at opacity(.45) erased them into the
      panel. Compared side by side, a slight LIFT with the saturation gone
      reads as locked while staying legible. */
+  aspect-ratio:1;          /* holds the row's shape before the art loads */
   filter:grayscale(1) brightness(1.1); opacity:.55;
   transition:filter .25s ease, opacity .25s ease, transform .25s ease; }
 .inf-rcell.got img { filter:none; opacity:1; }
