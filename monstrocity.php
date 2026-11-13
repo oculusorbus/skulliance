@@ -1762,6 +1762,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     }
   </style>
 
+  <?php /* The gradient-and-border layer. It has to sit AFTER the block
+           above: that stylesheet is inline, so it is later in the
+           document than any <link> and nothing linked could outrank it.
+           Delete this line to revert; ?polish=0 turns it off without a
+           deploy. */ ?>
+  <?php include __DIR__ . '/polish-monstrocity.php'; ?>
+
   <script type="text/javascript">
     // Pass login status to JavaScript
     window.isLoggedIn = <?php echo json_encode(isset($_SESSION['userData']['user_id']) && !empty($_SESSION['userData']['user_id'])); ?>;

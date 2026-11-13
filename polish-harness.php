@@ -414,6 +414,148 @@ ok(count($dnofall) === 0,
    . implode(', ', array_unique($dnofall)));
 
 
+echo "\nMonstrocity is covered too, and it had to be different\n";
+/*
+ * TWO REASONS THIS PAGE NEEDED ITS OWN LAYER, not one.
+ *
+ * It does not include header.php at all -- it is a standalone game page
+ * like skullswap.php -- so dist/polish.css is never linked, the --msp-
+ * tokens do not exist, and polish-sweep.js never runs either. AND every
+ * surface it draws is in an inline <style>, so even a linked stylesheet
+ * would be outranked. So this layer DECLARES the tokens as well as
+ * consuming them, and it uses !important, and both of those are
+ * deviations the other two layers are forbidden -- which is exactly why
+ * they are asserted here rather than left to read as sloppiness.
+ */
+$mo    = (string) @file_get_contents(__DIR__ . '/polish-monstrocity.php');
+$moPage = preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(__DIR__ . '/monstrocity.php'));
+$moCss = $mo === '' ? '' : preg_replace('~/\*.*?\*/~s',
+	'', substr($mo, strpos($mo, '?>') + 2));
+$moCss = $moCss === '' ? '' : substr($moCss, strpos($moCss, '<style>') + 7);
+$moCss = $moCss === '' ? '' : substr($moCss, 0, strrpos($moCss, '</style>'));
+ok($mo !== '', 'the Monstrocity layer is gone');
+ok(strpos($mo, "\$_GET['polish']") !== false, 'the Monstrocity layer has no off switch');
+ok(strpos($mo, "defined('MONSTROCITY_POLISH')") !== false,
+   'the Monstrocity layer is not guarded against a second include');
+ok(substr_count($moPage, "include __DIR__ . '/polish-monstrocity.php'") === 1,
+   'monstrocity.php includes the layer more than once, or not at all');
+/*
+ * AFTER BOTH OF THE PAGE'S STYLESHEETS, or the page outranks it.
+ *
+ * Measured against the real <style> blocks, not the last `</style>` in
+ * the file: there is a document.write('<style>...</style>') further down
+ * that hides one container on #boss, and a plain strrpos reported that
+ * string as a stylesheet and failed on a clean tree.
+ */
+$moAt    = strpos($moPage, 'polish-monstrocity.php');
+$moSheets = array();
+if (preg_match_all('~<style>(.*?)</style>~s', $moPage, $mb, PREG_OFFSET_CAPTURE | PREG_SET_ORDER))
+	foreach ($mb as $b) if (strlen($b[1][0]) > 500) $moSheets[] = $b[0][1] + strlen($b[0][0]);
+ok(count($moSheets) === 2, 'monstrocity.php no longer has its two stylesheets where this expects them');
+ok($moAt !== false && count($moSheets) > 0 && max($moSheets) < $moAt,
+   'the Monstrocity layer is included before the page stops declaring styles, so it is outranked');
+
+/*
+ * THE TOKENS ARE A COPY, AND THIS IS WHAT STOPS THEM DRIFTING.
+ *
+ * They cannot be shared: linking dist/polish.css here would also drag
+ * its .content and .button rules into a page that has its own meanings
+ * for neither. So the five declarations are duplicated, and compared
+ * character for character against the platform's. Anything else and the
+ * platform quietly grows a second, slightly different look.
+ */
+$tokens = array('--msp-lift', '--msp-lift-soft', '--msp-fill', '--msp-fill-in', '--msp-ghost');
+$norm = function ($css, $t) {
+	if (preg_match('~' . preg_quote($t, '~') . '\s*:\s*([^;]+);~', $css, $m) !== 1) return null;
+	return preg_replace('~\s+~', ' ', trim($m[1]));
+};
+foreach ($tokens as $t) {
+	$a = $norm($platCss, $t);
+	$b = $norm($moCss, $t);
+	ok($b !== null, "$t is not declared in the Monstrocity layer, and nothing else declares it on that page");
+	ok($a !== null && $a === $b, "$t has drifted from the platform's value");
+}
+/* And the reason the copy is necessary has to stay true. */
+ok(strpos($moPage, 'dist/polish.css') === false,
+   'monstrocity.php now links the platform layer, so the tokens are declared twice');
+ok(strpos($moPage, '--msp-') === false,
+   'the trial has leaked its tokens into monstrocity.php itself');
+
+/*
+ * !important IS REQUIRED HERE, which is the opposite of the rule the
+ * other two layers follow. Every surface this shadows is declared
+ * !important by the page's own skin block, so a layer without it loses
+ * wherever it sits. The guard is that it may not be used on anything
+ * but the paint: a layout or type property forced from here would be
+ * the layer doing more than lighting.
+ */
+ok(strpos($moCss, '!important') !== false,
+   'the Monstrocity layer dropped !important, so the page skin outranks all of it');
+ok(preg_match('~\bbutton\s*\{[^}]*!important~', $moPage) === 1,
+   'the page no longer forces its own button fill, so the layer does not need !important either');
+$forced = array();
+preg_match_all('~([a-z-]+)\s*:[^;{}]*!important~i', $moCss, $imp, PREG_SET_ORDER);
+foreach ($imp as $r) if (!in_array(strtolower($r[1]), array('background', 'background-image', 'border', 'border-color', 'box-sizing'), true)) $forced[] = $r[1];
+ok(count($forced) === 0,
+   'the Monstrocity layer forces properties that are not paint: ' . implode(', ', array_unique($forced)));
+
+/*
+ * NO COLOUR IS INVENTED. Same rule as the platform layer: each surface
+ * keeps its own fill as the LAST layer, and that value has to be one
+ * monstrocity.php already chose.
+ */
+/* Spaces stripped from both sides: the page writes rgba(255, 255, 255,
+   0.08) and the layer writes it closed up, and a literal compare called
+   a colour that is right there on the page invented. */
+$moFills = 0; $moMade = array();
+$moFlat  = preg_replace('~\s+~', '', $moPage);
+preg_match_all('~background:\s*var\(--msp-[a-z-]+\),\s*([^;!]+)~i', $moCss, $mf, PREG_SET_ORDER);
+foreach ($mf as $r) {
+	$c = trim($r[1]);
+	if ($c === 'transparent') continue;
+	$moFills++;
+	if (stripos($moFlat, preg_replace('~\s+~', '', $c)) === false) $moMade[] = $c;
+}
+ok($moFills >= 8, 'only ' . $moFills . ' fill rules in the Monstrocity layer, so this is reading nothing');
+ok(count($moMade) === 0,
+   'these colours exist nowhere on the page, so the layer repainted rather than lit: '
+   . implode(' | ', array_unique($moMade)));
+
+/*
+ * THE RECESSES STAY FLAT, and on this page there are five of them. The
+ * board is the ground the tiles sit IN and they carry their own emboss,
+ * so a lift behind them reads as a smear across the top row; the filter
+ * is a form field; the three select containers are #07111d, the PAGE
+ * colour used as a full-bleed modal ground. Naming them is the only way
+ * to catch somebody adding them later for consistency.
+ */
+foreach (array('#game-board', '.boss-project-filter', '#character-select-container',
+               '#theme-select-container', '#boss-select-container') as $moWell) {
+	ok(strpos($moCss, $moWell) === false,
+	   "the Monstrocity layer lights $moWell, which is a recess or a ground, not a surface");
+}
+/* The bar is the one place the rail and the fill are both present and
+   only one of them may be lit. */
+ok(preg_match('~(^|\n)\s*\.health\s*\{[^}]*var\(--msp-fill~', $moCss) === 1,
+   'the health fill is not lit, so the one bar on the page stays flat');
+ok(preg_match('~(^|\n)\s*\.health-bar\s*[,{]~', $moCss) !== 1,
+   'the Monstrocity layer lights .health-bar, which is the groove the fill runs in');
+
+/*
+ * THE LEGEND IS A KEY TO THE TILES, so its swatches carry the tile's own
+ * treatment. The tiles got theirs in afe55149 and the swatches did not,
+ * which is how a key stops looking like the thing it describes. Compared
+ * against the page rather than pinned, so retuning .tile retunes this or
+ * fails here.
+ */
+$tileRamp = preg_match('~\.tile\s*\{[^}]*background-image:\s*(linear-gradient\([^;]+)~s', $moPage, $tr)
+          ? preg_replace('~\s+~', '', $tr[1]) : '';
+$legRamp  = preg_match('~\.legend-tile\s*\{[^}]*background-image:\s*(linear-gradient\([^;]+)~s', $moCss, $lr)
+          ? preg_replace('~\s+~', '', $lr[1]) : '';
+ok($tileRamp !== '', "the tile's own gradient cannot be read from monstrocity.php");
+ok($legRamp === $tileRamp,
+   'the legend swatches no longer carry the tile gradient, so the key and the board disagree');
+
 echo "\nthe sweep reaches what a stylesheet cannot\n";
 /*
  * FIFTY THREE PAGES carry panels in their own inline <style>, which is
