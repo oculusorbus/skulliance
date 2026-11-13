@@ -241,7 +241,7 @@ include 'header.php';
 .inf-win.early { color:#00e0b4; } .inf-win.main { color:#e8b24a; }
 .inf-win.late  { color:#7a8ea0; }
 .inf-form { display:flex; flex-wrap:wrap; gap:9px; margin-top:12px; }
-.inf-form input[type=text] { flex:1 1 320px; min-width:0; background:#07111d;
+.inf-form input[type=text] { flex:1 1 100%; min-width:0; background:#07111d;
   border:1px solid rgba(110,74,168,.4); color:#c8d8e8; padding:10px 11px;
   font:400 14px/1.4 Arial,sans-serif; }
 .inf-form input[type=text]:focus { outline:2px solid #8a63d2; outline-offset:1px; }
@@ -254,8 +254,18 @@ include 'header.php';
 .inf-said { font-size:.86rem; color:#8aa0b4; margin:8px 0 0;
   border-left:2px solid rgba(0,200,160,.4); padding-left:10px; }
 
-/* The two steps we cannot verify. Quiet until pressed, so the one control
-   that matters on this card is still the Infiltrate button. */
+/* Reading on the left, doing on the right. The actions are one column in
+   run order -- open, liked, reposted, infiltrate -- so the sequence is a
+   single vertical scan instead of three stops across the card. */
+.inf-tgrid { display:grid; grid-template-columns:minmax(0,1fr) 196px; gap:18px;
+  align-items:start; margin-top:12px; }
+.inf-tacts { display:flex; flex-direction:column; gap:8px; }
+.inf-tacts > * { width:100%; text-align:center; box-sizing:border-box; }
+/* The one that completes the run, so it stays the loudest thing on the card. */
+.inf button.inf-send { background:#6e4aa8; color:#fff; font-weight:bold; }
+.inf button.inf-send:hover:not(:disabled) { background:#8a63d2; }
+.inf button.inf-send:disabled { background:transparent; border:1px solid rgba(110,74,168,.35);
+  color:#5a7888; cursor:not-allowed; }
 .inf-steps-gate { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:4px; }
 .inf button.inf-step { background:transparent; border:1px solid rgba(110,74,168,.5);
   color:#b9aed6; font-weight:normal; font-size:.82rem; padding:8px 14px; }
@@ -318,9 +328,9 @@ include 'header.php';
   .inf-ladder { display:none; }
   .inf-badge-now { display:block; width:58px; }
   .inf-meter, .inf-target { padding:14px 15px; }
-  .inf-form input[type=text] { flex:1 1 100%; }
+  /* One column at phone width: the actions sit under what they act on. */
+  .inf-tgrid { grid-template-columns:1fr; gap:12px; }
   .inf a.inf-go, .inf button { width:100%; text-align:center; }
-  .inf button.inf-step { width:auto; flex:1 1 44%; }
   .inf-trow { gap:6px; }
   /*
    * THE TABLE'S OWN FLOOR HAS TO GO, not just the page's.
@@ -499,44 +509,66 @@ include 'header.php';
         <p class="inf-said">Waiting on X. This is saved and will be checked again -- nothing is
            wrong with your comment.</p>
       <?php elseif (!$shut): ?>
-        <a class="inf-go" href="<?php echo htmlspecialchars($url); ?>" target="_blank" rel="noopener">Open the post</a>
-
         <?php /*
-         * THE RUN ORDER, AND IT IS A CHECKLIST RATHER THAN A CHECK.
+         * ONE COLUMN OF CONTROLS, ON THE RIGHT.
          *
-         * Like, repost, then comment. The first two cannot be verified from
-         * any free surface -- the syndication endpoint reports a post's
-         * TOTAL likes, never who gave them -- so these two are the member's
-         * word and the copy says so.
+         * These were scattered: Open the post top left, the two checks in
+         * the middle, Infiltrate at the far end of a full-width input. Four
+         * controls in three places, and the eye crossed the card twice to
+         * use them in order.
          *
-         * SAYING SO IS THE POINT, not a concession. The comment check is
-         * real and rigorous, and the whole feature rests on members
-         * believing that; a fake check here is one curious person away from
-         * casting doubt on the one that matters. "We are trusting you" also
-         * asks more of somebody than a box they think is watched, because
-         * skipping it is a breach rather than a system beaten.
+         * They stack on the right in run order now -- open, liked,
+         * reposted, infiltrate -- so the sequence reads top to bottom in
+         * one place and the left side is just what you read and paste.
          *
-         * The gate is the reminder. Both have to be pressed before the
-         * comment box opens, which is what puts the two actions in front of
-         * somebody at the moment they are about to do the third.
+         * The submit sits OUTSIDE its form and reaches it by form="", which
+         * is what lets the button live in the right column while the input
+         * it belongs to stays on the left.
          */ ?>
-        <div class="inf-steps-gate" data-gate>
-          <p class="inf-sub" style="margin:10px 0 6px">Do these first</p>
-          <button type="button" class="inf-step" data-step="like">I liked it</button>
-          <button type="button" class="inf-step" data-step="repost">I reposted it</button>
-          <span class="inf-trust">We cannot check these two. We are trusting you.</span>
-        </div>
+        <?php $fid = 'inf-f-' . (int) $tg['id']; ?>
+        <div class="inf-tgrid">
+          <div class="inf-tmain">
+            <form method="post" class="inf-form" data-gated id="<?php echo $fid; ?>">
+              <input type="hidden" name="target" value="<?php echo (int) $tg['id']; ?>">
+              <input type="text" name="comment" placeholder="Paste the link to your reply"
+                     autocomplete="off" required>
+            </form>
+            <p class="inf-sub" style="margin-top:7px">At least <?php echo INFIL_MIN_CHARS; ?> characters
+              in your own words, and not something you have said before.
+              <span class="inf-trust">We cannot check the like or the repost. We are trusting you.</span></p>
+          </div>
 
-        <form method="post" class="inf-form" data-gated>
-          <input type="hidden" name="target" value="<?php echo (int) $tg['id']; ?>">
-          <input type="text" name="comment" placeholder="Paste the link to your reply" autocomplete="off" required>
-          <button type="submit" name="infiltrate" value="1">Infiltrate<?php
-            echo $worth > 0 ? ' (+' . $worth . ')' : ''; ?></button>
-        </form>
-        <p class="inf-sub" style="margin-top:7px">At least <?php echo INFIL_MIN_CHARS; ?> characters
-          in your own words, and not something you have said before.</p>
+          <div class="inf-tacts" data-gate>
+            <a class="inf-go" href="<?php echo htmlspecialchars($url); ?>"
+               target="_blank" rel="noopener">Open the post</a>
+            <button type="button" class="inf-step" data-step="like">I liked it</button>
+            <button type="button" class="inf-step" data-step="repost">I reposted it</button>
+            <button type="submit" class="inf-send" form="<?php echo $fid; ?>"
+                    name="infiltrate" value="1">Infiltrate<?php
+              echo $worth > 0 ? ' (+' . $worth . ')' : ''; ?></button>
+          </div>
+        </div>
       <?php endif; ?>
     </div>
+    <?php /*
+     * THE RUN ORDER, AND IT IS A CHECKLIST RATHER THAN A CHECK.
+     *
+     * Like, repost, then comment. The first two cannot be verified from any
+     * free surface -- the syndication endpoint reports a post's TOTAL likes,
+     * never who gave them -- so those two are the member's word and the copy
+     * says so.
+     *
+     * SAYING SO IS THE POINT, not a concession. The comment check is real
+     * and rigorous, and the whole feature rests on members believing that;
+     * a fake check here is one curious person away from casting doubt on the
+     * one that matters. "We are trusting you" also asks more of somebody
+     * than a box they think is watched, because skipping it is a breach
+     * rather than a system beaten.
+     *
+     * The gate is the reminder: both have to be pressed before the comment
+     * box opens, which puts the two actions in front of somebody at the
+     * moment they are about to do the third.
+     */ ?>
     <?php endforeach; ?>
 
   <?php endif; ?>
@@ -639,13 +671,20 @@ include 'header.php';
   function save(id, v) {
     try { sessionStorage.setItem('inf-gate-' + id, JSON.stringify(v)); } catch (e) {}
   }
+  /* Scoped to the CARD, not to the gate's parent. The actions moved into
+     their own column, so the form is no longer a sibling of the buttons --
+     looking for it next door found nothing and silently left every card
+     ungated. */
   var gates = document.querySelectorAll('[data-gate]');
   Array.prototype.forEach.call(gates, function (gate) {
-    var form = gate.parentNode.querySelector('[data-gated]');
+    var card = gate.closest('.inf-target') || gate.parentNode;
+    var form = card.querySelector('[data-gated]');
     if (!form) return;
     var hid  = form.querySelector('input[name="target"]');
     var id   = hid ? hid.value : '0';
-    var go   = form.querySelector('button[type="submit"]');
+    /* The submit lives outside the form now, bound by form="". */
+    var go   = card.querySelector('button[type="submit"][form="' + form.id + '"]')
+            || form.querySelector('button[type="submit"]');
     var done = load(id);
 
     function sync() {
