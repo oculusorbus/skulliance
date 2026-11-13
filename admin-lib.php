@@ -950,6 +950,10 @@ function admin_tabs() {
 		/* Targets, and the pending count. Next to the probe because they are
 		   the same job in two halves: the probe says what X will tell us, and
 		   this says whether it still is. */
+		/* Skull Swap tile treatments side by side. A few lines of CSS each,
+		   and the only question that matters is which reads right at tile
+		   size on the board -- which cannot be read off a diff. */
+		'swaptiles' => array('admin-swaptiles.php', 'Swap Tiles'),
 		'infiltration' => array('admin-infiltration.php', 'Infiltration'),
 		'xprobe'   => array('admin-xprobe.php',   'X Probe'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
