@@ -53,7 +53,11 @@ ok(substr_count($pageCode, "include __DIR__ . '/missions-polish.php'") === 1,
    'missions.php includes the page layer more than once, or not at all');
 /* A second caller is a second thing to unpick, which is the whole
    failure these guard. */
-foreach (array('dist/polish.css' => array('header.php'),
+/* game-exit-harness.php READS the platform file, it does not load it: the
+   shared exit button carries the --msp- ramps as literal fallbacks (neither
+   page that renders it links polish.css) and that harness compares them to
+   the real tokens. A reader is not a second caller. */
+foreach (array('dist/polish.css' => array('header.php', 'game-exit-harness.php'),
                'missions-polish' => array('missions.php', 'missions-polish.php', 'polish-harness.php')) as $needle => $allowed) {
 	$extra = array();
 	foreach (array_merge(glob(__DIR__ . '/*.php'), glob(__DIR__ . '/ajax/*.php')) as $f) {

@@ -41,16 +41,74 @@ echo "\nit is the platform's button, not a browser pill\n";
  * button translates into it. The old control was a translucent pill with a
  * 999px radius and a backdrop blur, which is none of those things.
  */
-ok(strpos($first, 'background: #00c8a0') !== false, 'the button is not the platform teal');
+/* THE TEAL IS NOW THE LAYER UNDER THE SHEEN, not the whole background, so
+   this reads the last layer rather than the literal declaration it used to
+   pin. Same for hover: the colour the page chose stays the colour. */
+ok(preg_match('~background:\s*var\(--msp-fill,[^;]*\),\s*#00c8a0\s*;~', $first) === 1,
+   'the button is not the platform teal, or the teal is no longer the layer under the sheen');
+ok(preg_match('~background:\s*var\(--msp-fill,[^;]*\),\s*#00e6b8\s*;~', $first) === 1,
+   "hover is not the page's own brighter teal");
+ok(preg_match('~background:\s*var\(--msp-fill-in,[^;]*\),\s*#00e6b8\s*;~', $first) === 1,
+   'the press is no longer the inverted ramp, so it does not read as a button being pushed');
+ok(strpos($first, 'border: 1px solid #2ee3bf') !== false,
+   'the lit edge is gone, so the sheen ends on nothing and reads as a painted stripe');
+/*
+ * THE SHEEN LITERALS ARE COPIES OF THE PLATFORM TOKENS, and this is what
+ * stops them drifting. They have to BE literals: neither page that renders
+ * this control links dist/polish.css -- monstrocity.php includes no header
+ * and match3rpg.php uses site-header.php -- so var(--msp-fill) alone would
+ * compute to nothing and the button would be TRANSPARENT, not flat. The
+ * token is still read first, so a page that does declare it (Monstrocity,
+ * through polish-monstrocity.php) shares the one value.
+ */
+$polCssRaw = preg_replace('~/\*.*?\*/~s', '', (string) @file_get_contents(__DIR__ . '/dist/polish.css'));
+foreach (array('--msp-fill', '--msp-fill-in') as $t) {
+	$want = preg_match('~' . preg_quote($t, '~') . ':\s*([^;]+);~', $polCssRaw, $m)
+	      ? preg_replace('~\s+~', ' ', trim($m[1])) : '';
+	/* A BALANCED SCAN, NOT A REGEX. The fallback is a pair of
+	   linear-gradient(rgba(...), ...) calls, so [^)]* stopped at the first
+	   inner paren and reported every value as drifted -- on a clean tree. */
+	$got = '';
+	$at  = strpos($first, 'var(' . $t . ',');
+	if ($at !== false) {
+		$i = $at + strlen('var(' . $t . ','); $depth = 1; $start = $i;
+		for (; $i < strlen($first); $i++) {
+			if ($first[$i] === '(') $depth++;
+			elseif ($first[$i] === ')') { $depth--; if ($depth === 0) break; }
+		}
+		$got = preg_replace('~\s+~', ' ', trim(substr($first, $start, $i - $start)));
+	}
+	ok($want !== '', "$t cannot be read from dist/polish.css");
+	ok($want === $got, "the $t fallback has drifted from the platform's value");
+}
 ok(strpos($first, 'border-radius: 0.5rem') !== false,
    'the radius is not the platform 0.5rem');
 ok(strpos($first, 'border-radius: 999px') === false, 'it is still a rounded pill');
 ok(strpos($first, 'backdrop-filter') === false, 'it still uses the blurred-glass treatment');
-ok(strpos($first, 'box-shadow: 0 4px #007a62') !== false,
-   'the hard offset shadow is missing, so it does not read as a platform button');
-/* THE PRESS IS THE SIGNATURE. Without both halves it is just a colour change. */
-ok(strpos($first, 'box-shadow: 0 2px #007a62') !== false && strpos($first, 'translateY(2px)') !== false,
-   'the button does not press: the shadow must shorten AND the button move into it');
+/*
+ * THE HARD SLAB IS GONE, AND THAT IS THE ASSERTION NOW.
+ *
+ * It was `box-shadow: 0 4px #007a62`, copied from .button in
+ * dist/flexbox.css -- an antiquated style neither page that renders this
+ * control actually uses. Monstrocity's buttons have no shadow at rest and
+ * lift into a soft teal glow; match3rpg's CTAs carry a soft glow and lift.
+ * The slab made this the one chunky 3D key on a page of flat lifting ones.
+ * Reading the stylesheet instead of the page is how it got there.
+ */
+ok(strpos($first, '#007a62') === false,
+   'the hard offset slab is back; neither page that renders this button has one');
+/* THE PRESS IS THE SIGNATURE, and it is now the lift collapsing: hover
+   raises the button into a glow, active settles it back. Both halves, or it
+   is just a colour change. */
+ok(strpos($first, 'translateY(-1px)') !== false
+   && strpos($first, 'box-shadow: 0 4px 14px rgba(0, 200, 160, 0.35)') !== false,
+   'hover does not lift into the glow the page gives its own buttons');
+ok(preg_match('~\.skl-exit:active\s*\{[^}]*transform:\s*translateY\(0\)~s', $first) === 1,
+   'the button does not settle on press, so the lift never collapses');
+/* An ambient shadow at rest, because unlike those buttons this one floats
+   over the board rather than sitting on a panel. */
+ok(strpos($first, 'box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4)') !== false,
+   'the floating control has no ambient shadow, so it reads as pasted onto the board');
 
 echo "\ncolour and alignment are re-stated\n";
 /*
