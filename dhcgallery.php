@@ -64,6 +64,22 @@ $dhcg_owner = isset($_GET['owner']) ? (int)$_GET['owner'] : 0;
 $dhcg_mine  = !empty($_GET['mine']);
 $dhcg_kit   = isset($_GET['kit']) ? preg_replace('/[^a-z]/', '', $_GET['kit']) : '';
 /*
+ * ?when=<today|week|month> -- WHEN a Fighter was assembled, where every other
+ * filter on this bar is about what it IS or what it has DONE.
+ *
+ * THE CLOCK IS MYSQL'S, NOT PHP'S, and that is not a detail. created_at is
+ * written with NOW() inside the INSERT (dhcfighters-lib.php), and the Fighter
+ * modal prints that string straight out with no conversion -- so the stamp a
+ * player READS is in the database server's timezone. Computing midnight in
+ * PHP's America/Chicago and comparing it to that column would put the
+ * boundary somewhere other than where the displayed date changes, and a
+ * filter that disagrees with the timestamp beside it is worse than no filter.
+ * So the three windows are evaluated in SQL, by the same clock that stamped
+ * the row, and PHP only ever reads back three flags.
+ */
+$dhcg_when  = isset($_GET['when']) ? preg_replace('/[^a-z]/', '', $_GET['when']) : '';
+if (!in_array($dhcg_when, array('today', 'week', 'month'), true)) $dhcg_when = '';
+/*
  * ?trait=<category>:<slug> -- CATEGORY AND SLUG, NOT SLUG ALONE.
  *
  * Nine slugs are both a head and a torso (dh-alien-punk, golden-cyborg,
@@ -118,7 +134,26 @@ if ($dhcg_mine && $dhcg_user) $where[] = 'f.user_id = ' . $dhcg_user;
    no row in dhc_arena_fighters at all, and must still appear in its owner's
    Collection. wins/losses are career totals and the schema marks them public.
    COALESCE so the payload is always two integers rather than two nulls. */
+/*
+ * THE WINDOWS, AS THREE FLAGS PER ROW.
+ *
+ * Computed here rather than in PHP so the comparison happens in the clock
+ * that wrote created_at -- see the note on $dhcg_when. They are nested, not
+ * exclusive: anything assembled today is also in this week and this month,
+ * which is what a player means by those words.
+ *
+ * The week is the CALENDAR week starting Monday, deliberately NOT
+ * gauntletGetWeekStart(), which is Thursday 4pm CT because that is when the
+ * competitive season rolls. Seasons are the wrong unit for a browse filter:
+ * on a Thursday evening "this week" would hide everything built on Tuesday,
+ * which is not what anybody means when they are looking through a shelf. The
+ * two are different questions and this is the only place on the platform
+ * where the calendar one is the right one.
+ */
 $sql = "SELECT f.*, u.username, u.discord_id, u.avatar,
+               (f.created_at >= CURDATE())                                  AS w_today,
+               (f.created_at >= DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)) AS w_week,
+               (f.created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01'))         AS w_month,
                COALESCE(af.wins, 0) AS arena_wins, COALESCE(af.losses, 0) AS arena_losses
         FROM dhc_fighters f
         INNER JOIN users u ON u.id = f.user_id
@@ -245,10 +280,16 @@ if ($res) {
 /* No originality pass any more: a trait set can only exist once, enforced when
    a Fighter is saved, so every Fighter here is the only one of its kind and a
    badge saying so would be on all of them. */
+$dhcg_when_counts = array('today' => 0, 'week' => 0, 'month' => 0);
 foreach ($dhcg_all as $i => $row) {
 	$dhcg_tier_counts[$dhcg_all[$i]['best']]++;
 	$kid = $dhcg_all[$i]['kit']['id'];
 	$dhcg_kit_counts[$kid] = (isset($dhcg_kit_counts[$kid]) ? $dhcg_kit_counts[$kid] : 0) + 1;
+	/* Counted over EVERY Fighter, like the tier and kit counts beside them,
+	   so a chip reads the same whatever else is selected. */
+	if (!empty($row['w_today'])) $dhcg_when_counts['today']++;
+	if (!empty($row['w_week']))  $dhcg_when_counts['week']++;
+	if (!empty($row['w_month'])) $dhcg_when_counts['month']++;
 }
 
 /*
@@ -320,9 +361,13 @@ foreach ($dhcg_all as $i => $r) {
 }
 
 $dhcg_total = count($dhcg_all);
-$dhcg_rows  = array_values(array_filter($dhcg_all, function ($r) use ($dhcg_tier, $dhcg_kit, $dhcg_trait, $dhcg_perf_f) {
+$dhcg_rows  = array_values(array_filter($dhcg_all, function ($r) use ($dhcg_tier, $dhcg_kit, $dhcg_trait, $dhcg_perf_f, $dhcg_when) {
 	if ($dhcg_tier !== '' && $r['best'] !== $dhcg_tier) return false;
 	if ($dhcg_kit !== '' && $r['kit']['id'] !== $dhcg_kit) return false;
+	/* The flag SQL already worked out, not a date compared in PHP. */
+	if ($dhcg_when === 'today' && empty($r['w_today'])) return false;
+	if ($dhcg_when === 'week'  && empty($r['w_week']))  return false;
+	if ($dhcg_when === 'month' && empty($r['w_month'])) return false;
 	/* In PHP like tier and kit, and for the same reason: the traits live in a
 	   JSON column. The rule itself is in the library so it can be driven
 	   without a database -- see dhcf_traits_include(). */
@@ -729,6 +774,34 @@ include 'header.php';
          href="<?php echo htmlspecialchars(dhcg_url(array('tier' => $k))); ?>"><i></i><?php
          echo $label; ?> <?php echo $dhcg_tier_counts[$k]; ?></a>
     <?php endforeach; ?>
+
+    <?php
+      /*
+       * WHEN IT WAS ASSEMBLED. Drawn only when there is something inside the
+       * widest of the three windows -- on a quiet month the whole group goes
+       * rather than offering three chips that all say 0, the same rule the
+       * tier and kit chips follow.
+       *
+       * The counts are nested on purpose: a Fighter made this morning is in
+       * all three. "This week 4 / this month 4" is not a bug, it is a month
+       * whose activity all landed in one week.
+       */
+      if ($dhcg_when_counts['month']): ?>
+    <span class="sep"></span>
+    <span class="lbl" title="When the Fighter was put together, by the same clock as the date on its card">Assembled</span>
+    <a class="<?php echo $dhcg_when === '' ? 'on' : ''; ?>"
+       href="<?php echo htmlspecialchars(dhcg_url(array('when' => ''))); ?>">Any time</a>
+    <?php foreach (array('today' => 'Today', 'week' => 'This week', 'month' => 'This month')
+                   as $wk => $wlabel):
+            if (!$dhcg_when_counts[$wk]) continue; ?>
+      <a class="<?php echo $dhcg_when === $wk ? 'on' : ''; ?>"
+         title="<?php echo htmlspecialchars($wk === 'week'
+                ? 'Since Monday. The calendar week, not the Thursday season the leaderboards run on.'
+                : ($wk === 'today' ? 'Since midnight.' : 'Since the first of the month.')); ?>"
+         href="<?php echo htmlspecialchars(dhcg_url(array('when' => $wk))); ?>"><?php
+         echo $wlabel . ' ' . $dhcg_when_counts[$wk]; ?></a>
+    <?php endforeach; ?>
+    <?php endif; ?>
 
     <span class="sep"></span>
     <?php /* The weapon is the only trait that changes HOW a Fighter fights, so

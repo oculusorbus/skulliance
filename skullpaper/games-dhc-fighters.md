@@ -350,6 +350,8 @@ staker's Fighters. Click any of them for the full breakdown at full size —
 every trait, its tier, how many of the 226 minted Fighters wear it, and what it
 contributes to the score.
 
+**Assembled** narrows the shelf by when, not by what: **Today**, **This week** or **This month**, each showing how many fall inside it. They are nested, so a Fighter built this morning counts in all three, and "this week 4, this month 4" just means a month whose activity landed in one week. The week here is the calendar week from Monday, not the Thursday season the leaderboards run on - a browse filter that hid everything you built on Tuesday because it was now Thursday evening would be useless. The whole group only appears when something has been assembled this month.
+
 **Every trait in that panel is a link.** Click one and the Collection comes
 back filtered to it: every Fighter anyone has assembled wearing that exact
 piece. It answers the question the panel provokes — *who else has this?* — the

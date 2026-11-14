@@ -401,5 +401,74 @@ echo "\nWinningest is a power board, not a volume board\n";
 	}
 }
 
+/* ---------- the "assembled when" filter --------------------------------- */
+/*
+ * THE CLOCK IS THE WHOLE RISK HERE, and it is invisible in a screenshot.
+ *
+ * created_at is written with NOW() inside the INSERT, so it carries the
+ * DATABASE SERVER'S timezone -- and dhc-fighter-modal.php prints that string
+ * straight out with no conversion, so the date a player reads on the card is
+ * in that same clock. PHP on this platform runs America/Chicago. Compute
+ * midnight with date() and the boundary lands somewhere other than where the
+ * displayed date changes, which makes the filter disagree with the timestamp
+ * printed beside it -- and nothing about that looks wrong until somebody
+ * assembles a Fighter near midnight and it files under yesterday.
+ *
+ * So the windows are evaluated in SQL and PHP only reads flags. These
+ * assertions are what keep it that way.
+ */
+$gal = no_comments((string) file_get_contents(__DIR__ . '/dhcgallery.php'));
+echo "\nassembled-when filters by the clock that stamped the row\n";
+ok(preg_match('~\(f\.created_at >= CURDATE\(\)\)\s*AS w_today~', $gal) === 1,
+   'today is not computed in SQL, so it is not in the clock created_at was written in');
+ok(preg_match('~\(f\.created_at >= DATE_SUB\(CURDATE\(\), INTERVAL WEEKDAY\(CURDATE\(\)\) DAY\)\)\s*AS w_week~', $gal) === 1,
+   'this week is not the calendar week computed in SQL');
+ok(preg_match("~\(f\.created_at >= DATE_FORMAT\(CURDATE\(\), '%Y-%m-01'\)\)\s*AS w_month~", $gal) === 1,
+   'this month is not computed in SQL');
+/* The filter must read the flags. A date comparison in PHP is the bug these
+   exist to prevent, and it would pass every check above by sitting beside
+   them. */
+foreach (array('today', 'week', 'month') as $wk) {
+	/* \s+ around the &&: the three lines are column-aligned, so 'week' and
+	   'month' carry extra spaces that a single-space pattern missed. */
+	ok(preg_match('~\$dhcg_when === .' . $wk . '.\s+&& empty\(\$r\[.w_' . $wk . '.\]\)~', $gal) === 1,
+	   "the $wk filter does not read the flag SQL worked out");
+}
+ok(preg_match('~(strtotime|date)\s*\([^)]*\)\s*(<=?|>=?)\s*\$r\[.created_at.\]~', $gal) !== 1
+   && strpos($gal, "strtotime(\$r['created_at'])") === false,
+   'a created_at boundary is being compared in PHP, which is a different clock from the one on the card');
+
+echo "\nand it is the calendar week, deliberately not the season\n";
+/*
+ * gauntletGetWeekStart() is Thursday 4pm CT because that is when the
+ * competitive season rolls, and db.php is emphatic that inventing a Monday
+ * near a weekly BOARD would quietly move it. This is the opposite case: a
+ * browse filter is not a board, and on a Thursday evening a season week would
+ * hide everything built on Tuesday. Pinned in both directions so the choice
+ * stays a choice rather than drifting into either.
+ */
+ok(strpos($gal, 'gauntletGetWeekStart') === false,
+   'the gallery now uses the season week, so "this week" hides Fighters built earlier in the calendar week');
+ok(strpos($gal, 'not the Thursday season the leaderboards run on') !== false,
+   'the chip no longer says which week it means, so the two definitions are indistinguishable to a player');
+
+echo "\nthe control cannot reach the page as anything else\n";
+ok(preg_match("~in_array\(\\\$dhcg_when, array\('today', 'week', 'month'\), true\)\) \\\$dhcg_when = '';~", $gal) === 1,
+   'the when control is not whitelisted to the three windows');
+
+echo "\nthe chips count every Fighter, and vanish when there are none\n";
+/* Counted in the pass over $dhcg_all -- the same place tier and kit are
+   counted -- so a chip reads the same whatever else is selected. Counting
+   over $dhcg_rows would make the numbers change as you clicked. */
+ok(preg_match('~\$dhcg_when_counts\[.today.\]\+\+~', $gal) === 1
+   && preg_match('~foreach \(\$dhcg_all as \$i => \$row\) \{[\s\S]{0,700}\$dhcg_when_counts~', $gal) === 1,
+   'the when counts are not taken over every Fighter, so they move as other filters are clicked');
+ok(preg_match('~if \(\$dhcg_when_counts\[.month.\]\):~', $gal) === 1,
+   'the chip group is not gated on the widest window, so a quiet month shows three chips reading 0');
+/* And it composes: the chip has to go through dhcg_url() or clicking it
+   throws away the tier and kit the player already picked. */
+ok(preg_match("~dhcg_url\(array\('when' => \\\$wk\)\)~", $gal) === 1,
+   'the when chips do not build their link through dhcg_url(), so they drop every other filter');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all gallery checks passed\n");
 exit($fail ? 1 : 0);
