@@ -3915,7 +3915,12 @@ window.DHCA_PLAY_FX = function (fx) { playTimeline(fx || [], S, function () {});
       return { name: f.name, hp: hp, maxHp: hp };
     });
     if (!foes.length) return;
-    window.DHCA_PLAY_FX([{ k:'rez', wave: next, hue: ((next - 1) % 5) * 72,
+    /* CLAMPED, NOT WRAPPED, to match dhcb_wave_hue(): at wave 6 the modulo
+       reported 0deg, which is wave 1's colourway and the exact thing that
+       function was changed to stop claiming. Nothing reads e.hue today --
+       the handler drives everything off e.wave -- so this was a wrong
+       number sitting in the payload waiting for somebody to trust it. */
+    window.DHCA_PLAY_FX([{ k:'rez', wave: next, hue: Math.min(4, next - 1) * 72,
                            pow: Math.pow(1.18, next - 1), foes: foes }]);
   });
 })();
@@ -4140,9 +4145,26 @@ function playTimeline(fx, state, done){
            checked against dhcb_wave_hue() by dhc-arena-card-harness.php.
            CAPPED at 5 the same way that function caps its degrees, so a
            resurrection into wave 6 holds the last hue instead of landing
-           back on wave 1's. */
+           back on wave 1's.
+           *
+           * BOTH HOSTS, AND ONLY ONE OF THEM USED TO BE TOLD. The colourway
+           * is carried by two separate elements -- .a-bosses is the panel
+           * strip, .teamcol.foes is the crew actually on the board -- and
+           * the board's attribute is written by bossWave(), which runs on
+           * the `start` and `resume` replies and on nothing else. A
+           * resurrection arrives on a `move` reply, so the board kept
+           * whatever wave the RUN began at: clear wave 1 and the wave 2
+           * crew stood up in no hue at all while the panel beside it
+           * showed the new one. It looked right again after a reload,
+           * which is what made it read as cosmetic. */
+        var bw2 = Math.min(5, Math.max(1, e.wave));
         var bosses = document.querySelector('.a-bosses');
-        if (bosses) bosses.setAttribute('data-wave', Math.min(5, Math.max(1, e.wave)));
+        if (bosses) bosses.setAttribute('data-wave', bw2);
+        var foeCol = document.querySelector('.teamcol.foes');
+        if (foeCol) {
+          if (bw2 > 1) foeCol.setAttribute('data-wave', bw2);
+          else         foeCol.removeAttribute('data-wave');
+        }
         rezFoes.forEach(function(nf, i){
           var t = fighterAt('foes', i); if (!t) return;
           t.ko = false; t.shield = 0;

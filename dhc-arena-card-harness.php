@@ -535,6 +535,46 @@ echo "\nand a boss run gets the same card, from the same endpoint\n";
 	   rotation does not. */
 	ok(strpos($src, "if (\$isBoss && !empty(\$fs[\$n]['wave'])) {") !== false,
 	   'the hue is not applied under its real guard, so it may never run');
+
+	/*
+	 * AND THE LIVE BOARD IS TOLD TOO, which is where this went wrong.
+	 *
+	 * REPORTED: "I just beat a crew and they resurrected with normal
+	 * colours despite displaying with hue adjusted in the UI." TWO
+	 * ELEMENTS CARRY THE COLOURWAY -- .a-bosses is the panel strip,
+	 * .teamcol.foes is the crew actually on the board -- and the board's
+	 * attribute is written by bossWave(), which runs on the `start` and
+	 * `resume` replies and on nothing else. A resurrection arrives on a
+	 * `move` reply, so the board kept whatever wave the RUN began at:
+	 * clear wave 1 and the wave 2 crew stood up in no hue at all while
+	 * the panel beside it showed the new one. A reload fixed it, which is
+	 * what made it look cosmetic rather than like a missing write.
+	 *
+	 * BOTH are asserted, because updating either one alone is the bug.
+	 */
+	$arena = (string) file_get_contents(__DIR__ . '/dhcarena.php');
+	$rezAt = strpos($arena, "case 'rez': {");
+	$rezEnd = $rezAt !== false ? strpos($arena, "\n      case '", $rezAt + 10) : false;
+	$rez = $rezAt === false ? '' : substr($arena, $rezAt, ($rezEnd === false ? 9000 : $rezEnd - $rezAt));
+	ok($rez !== '', 'the resurrection handler cannot be found, so none of this is being read');
+	/* ANCHORED ON THE VARIABLE EACH ONE WRITES, not on a window after the
+	   selector: a 200-character window after '.a-bosses' reached past the
+	   panel's own write into the board's and passed with the panel line
+	   deleted. The two writes are three lines apart. */
+	ok(preg_match('~\.a-bosses~', $rez) === 1
+	   && preg_match('~\bbosses\.setAttribute\(.data-wave.~', $rez) === 1,
+	   'the resurrection no longer re-grades the panel strip');
+	ok(preg_match('~\.teamcol\.foes~', $rez) === 1
+	   && preg_match('~\bfoeCol\.setAttribute\(.data-wave.~', $rez) === 1,
+	   'the resurrection does not re-grade the BOARD, so the new crew fights in the old '
+	 . "wave's colours until the page is reloaded");
+	/* The cap, in the handler, matching dhcb_wave_hue()'s own. A wrap here
+	   stands wave 6 up in wave 1's colourway -- the exact claim that
+	   function was changed to stop making. */
+	ok(strpos($rez, 'Math.min(5, Math.max(1, e.wave))') !== false,
+	   'the resurrection no longer caps the wave at 5, so wave 6 lands back on wave 1 colours');
+	ok(preg_match("~k:'rez'[^\\]]*hue:\\s*\\(\\(next - 1\\) % 5\\)~", $arena) !== 1,
+	   'the rez preview wraps its hue instead of clamping, so it reports wave 6 as 0deg');
 	/* EXECUTED against the spec's own numbers rather than read. A
 	   transcription slip in one coefficient would still look like a hue
 	   rotation and be the wrong one. */
