@@ -249,9 +249,23 @@ include 'header.php';
 .inf-target.shut { opacity:.55; }
 .inf-trow { display:flex; flex-wrap:wrap; gap:12px; align-items:baseline;
   justify-content:space-between; }
+/*
+ * THE WINDOW MODIFIER IS NAMESPACED, and it has to be.
+ *
+ * It used to echo $tg['window'] straight in as a class, so an open target
+ * rendered as class="inf-win main" -- and .main is a PLATFORM class in
+ * dist/flexbox.css: flex:70%, padding:20px, text-align:center. The status on
+ * an open target therefore became a 70%-wide centred block that no longer
+ * sat where justify-content:space-between had put it, while every late
+ * target beside it stayed flush right. Nothing about the page's own CSS was
+ * wrong, which is why it read as a mystery.
+ *
+ * 'early' and 'late' happen not to collide today. That is luck, not a
+ * design, so all three are prefixed rather than just the one that bit.
+ */
 .inf-win { font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; }
-.inf-win.early { color:#00e0b4; } .inf-win.main { color:#e8b24a; }
-.inf-win.late  { color:#7a8ea0; }
+.inf-win.inf-w-early { color:#00e0b4; } .inf-win.inf-w-main { color:#e8b24a; }
+.inf-win.inf-w-late  { color:#7a8ea0; }
 .inf-form { display:flex; flex-wrap:wrap; gap:9px; margin-top:10px; align-items:stretch; }
 .inf-form input[type=text] { flex:1 1 320px; min-width:0; background:#07111d;
   border:1px solid rgba(110,74,168,.4); color:#c8d8e8; padding:10px 11px;
@@ -321,6 +335,10 @@ include 'header.php';
   border-bottom:1px solid rgba(110,74,168,.24); }
 .inf-table td { padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.05); }
 .inf-table .n { font-variant-numeric:tabular-nums; text-align:right; }
+/* The rank sits under a left-aligned "#", so it is left-aligned too. It was
+   .n, which right-aligns -- the only column on the table whose numbers did
+   not line up with their own heading. */
+.inf-table .rank { font-variant-numeric:tabular-nums; text-align:left; }
 .inf-table tr.me td { background:rgba(110,74,168,.16); }
 .inf-table .narrow { display:none; }
 @media (max-width:700px){
@@ -432,7 +450,17 @@ include 'header.php';
         <img class="inf-badge-now" src="icons/infiltration/rung-<?php echo $t; ?>.webp"
              alt="" decoding="async" onerror="this.remove()">
         <?php endif; ?>
-        <div><span class="inf-big"><?php echo $t; ?></span><span class="inf-sub"> / <?php echo INFIL_MAX_TIER; ?> rungs</span></div>
+        <?php /*
+         * LABEL OVER VALUE, like the two beside it.
+         *
+         * This was one line -- the big number and "/ 9 rungs" together --
+         * while "Rolling on" and "This month" are each a label with their
+         * value underneath. The row is align-items:baseline, so the single
+         * line baselined against the LABELS, putting the headline number up
+         * on the caption row with an empty space beneath it. It read as a
+         * value that had failed to load.
+         */ ?>
+        <div><span class="inf-sub">Rung</span><br><span class="inf-big"><?php echo $t; ?></span><span class="inf-sub"> / <?php echo INFIL_MAX_TIER; ?></span></div>
         <div><span class="inf-sub">Rolling on</span><br><b><?php
           echo htmlspecialchars(isset($inf_labels[$tbl]) ? $inf_labels[$tbl] : $tbl); ?></b>
           &middot; <?php echo (float) $odds['mythic']; ?>% mythic</div>
@@ -530,7 +558,10 @@ include 'header.php';
           <b><?php echo htmlspecialchars($tg['label'] !== '' ? $tg['label'] : 'Target'); ?></b>
           <span class="inf-sub">&middot; <?php echo (int) $tg['crowd']; ?> infiltrated</span>
         </div>
-        <div class="inf-win <?php echo htmlspecialchars($tg['window']); ?>">
+        <?php /* PREFIXED, never the raw value: see .inf-win in the CSS. A
+                 database string used as a class name is a collision waiting
+                 for whichever word the platform already owns. */ ?>
+        <div class="inf-win inf-w-<?php echo htmlspecialchars($tg['window']); ?>">
           <?php if ($shut): ?>closed
           <?php elseif ($tg['window'] === 'early'): ?>first window &middot; worth +2
           <?php elseif ($tg['window'] === 'main'): ?>open &middot; worth +1
@@ -622,7 +653,7 @@ include 'header.php';
         <th class="n"><span class="wide">Banked</span><span class="narrow">Bank</span></th></tr>
     <?php foreach ($inf_top as $i => $row): ?>
     <tr<?php echo (int) $row['user_id'] === $inf_uid ? ' class="me"' : ''; ?>>
-      <td class="n"><?php echo $i + 1; ?></td>
+      <td class="rank"><?php echo $i + 1; ?></td>
       <td><?php echo htmlspecialchars($row['username']); ?></td>
       <td class="n"><?php echo (int) $row['month_tiers']; ?></td>
       <td class="n"><?php echo (int) $row['tier']; ?></td>

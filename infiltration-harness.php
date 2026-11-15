@@ -466,6 +466,73 @@ foreach (array('activity_digest', 'activity_player_digest') as $fn) {
 	 . 'surface that leaves the platform');
 }
 
+/* ==================================================================
+ * THE PAGE'S OWN CLASS NAMES CANNOT BE THE PLATFORM'S
+ * ================================================================== */
+/*
+ * REPORTED as "this positioning is odd": on an open target the status sat
+ * in the middle of the row while every late target beside it was flush
+ * right. Nothing in infiltration.php's CSS was wrong.
+ *
+ * The window modifier was echoed straight out of the database --
+ * class="inf-win <?= $tg['window'] ?>" -- so an open target rendered as
+ * class="inf-win main", and .main is a PLATFORM class in dist/flexbox.css:
+ * flex:70%, padding:20px, text-align:center. The status became a 70%-wide
+ * centred block. justify-content:space-between was still doing its job; the
+ * box was flush right and the text was centred inside it, which is why
+ * reading the page's own stylesheet found nothing.
+ *
+ * 'early' and 'late' happened not to collide. That is luck, not a design,
+ * so the check is on the SHAPE -- a value interpolated into a class
+ * attribute without a prefix -- and on the specific words this page uses.
+ */
+echo "\nno class on this page is a word the platform already owns\n";
+$infSrc = (string) file_get_contents(__DIR__ . '/infiltration.php');
+$flexCss = (string) file_get_contents(__DIR__ . '/dist/flexbox.css');
+ok(strpos($infSrc, 'class="inf-win inf-w-') !== false,
+   'the window modifier is no longer prefixed');
+/* THE SHAPE, not just the one word. Any raw value dropped into a class
+   attribute is a collision waiting for whichever word the platform owns. */
+/* THE PREFIX IS THE RULE, not the interpolation -- inf-w-<?= $window ?>
+   is exactly right. What must never appear is a value starting a class
+   token on its own, i.e. an echo opening straight after the quote or a
+   space, which is what produced class="inf-win main". */
+ok(preg_match('~class="[^"]*(?:"|\s)<\?php echo~', 'class="' . $infSrc) !== 1
+   && preg_match('~class="[^"]*\s<\?php echo~', $infSrc) !== 1
+   && preg_match('~class="<\?php echo~', $infSrc) !== 1,
+   'a value starts a class token on its own, so whatever word it holds becomes the class');
+/* AND THE WORDS. Every single-word modifier this page writes, checked
+   against the stylesheet that outranks nothing but reaches everything. */
+foreach (array('inf-w-early', 'inf-w-main', 'inf-w-late', 'got', 'on', 'top', 'done', 'shut') as $mod) {
+	ok(preg_match('~(^|[\s,>])\.' . preg_quote($mod, '~') . '([\s,.:{])~', $flexCss) !== 1,
+	   "the page uses .$mod as a modifier and dist/flexbox.css styles it too");
+}
+ok(preg_match('~\.inf-win\.main\b~', $infSrc) !== 1,
+   'the page still has a .inf-win.main rule, so the colliding class is still being written');
+
+echo "\nthe leaderboard rank lines up with its own heading\n";
+/* The "#" header is left-aligned (.inf-table th) and the rank cells were
+   .n, which right-aligns -- the one column whose numbers did not sit under
+   their heading. */
+ok(preg_match('~\.inf-table \.rank\s*\{[^}]*text-align:\s*left~', $infSrc) === 1,
+   'the rank column is not left-aligned');
+ok(preg_match('~<td class="rank">~', $infSrc) === 1,
+   'the rank cell is not using the rank class, so it right-aligns under a left-aligned #');
+ok(preg_match('~<td class="n"><\?php echo \$i \+ 1~', $infSrc) !== 1,
+   'the rank cell is back on the right-aligning class');
+
+echo "\nthe standing strip is three columns of the same shape\n";
+/*
+ * REPORTED as a gap that felt broken. .inf-standing is align-items:baseline
+ * and the other two columns are a label with their value underneath; the
+ * rung count was a single line, so it baselined against the LABELS and left
+ * a hole where its own value line would have been. It read as a figure that
+ * had failed to load.
+ */
+ok(preg_match('~<span class="inf-sub">Rung</span><br><span class="inf-big">~', $infSrc) === 1,
+   'the rung count has no label line, so it baselines against its neighbours\' captions '
+ . 'and leaves a hole beneath itself');
+
 echo "\n" . ($fail ? "$fail FAILED of $ran\n" : "all $ran assertions pass\n");
 
 /* ================================================================== *

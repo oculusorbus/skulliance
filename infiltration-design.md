@@ -629,3 +629,54 @@ feature, and it is load-bearing enough to write down:
   "nothing outranks the best table". It asserts the property now.
 - Checked green afterwards: `dhcbosses`, `daily-reward`, `dhcportal` and
   `dhc-glance` harnesses.
+
+## 13. Three layout bugs, and the one worth remembering
+
+**The status on an open target sat in the middle of the row.** Reported as
+"this positioning is odd". Every late target beside it was flush right, and
+nothing in the page's own CSS was wrong -- `.inf-trow` is
+`justify-content: space-between` with two children, which puts the second one
+hard against the right edge, and a fixture built from the page's stylesheet
+did exactly that.
+
+The window modifier was echoed straight out of the database:
+
+```php
+<div class="inf-win <?php echo htmlspecialchars($tg['window']); ?>">
+```
+
+So an open target rendered as `class="inf-win main"` -- and `.main` is a
+**platform class** in `dist/flexbox.css`:
+
+```css
+.main { flex: 70%; padding: 20px; text-align: center; }
+```
+
+The status became a 70%-wide centred block with 20px of padding, which also
+made that card taller than its neighbours. `space-between` was still working
+perfectly: the BOX was flush right and the TEXT was centred inside it, which
+is precisely why reading the page's CSS found nothing. The first fixture
+missed it too, because it loaded only `infiltration.php`'s own `<style>`
+blocks and not `flexbox.css` -- a scoped component is defined by what
+overrides it, so a preview that omits the global sheet hides the only bug
+worth catching.
+
+`early` and `late` happen not to collide. That is luck. All three modifiers
+are now prefixed `inf-w-`, and the harness checks the SHAPE rather than the
+one word: no value may start a class token on its own, and none of the
+page's single-word modifiers (`got`, `on`, `top`, `done`, `shut`) may be
+styled by `flexbox.css` either.
+
+**The leaderboard rank did not line up with its own heading.** `#` is a `th`
+(left-aligned) and the rank cells were `class="n"`, which right-aligns. It
+was the only column on the table whose numbers sat under nothing. They now
+use `.rank`, which keeps the tabular figures and aligns left.
+
+**The rung count left a hole under itself.** `.inf-standing` is
+`align-items: baseline`, and "Rolling on" and "This month" are each a label
+with their value underneath. The rung count was a single line -- the big
+number and "/ 9 rungs" together -- so it baselined against the two LABELS,
+putting the headline figure up on the caption row with empty space beneath
+it. It read as a value that had failed to load. It is now `Rung` over
+`6 / 9`, the same shape as the two beside it.
+
