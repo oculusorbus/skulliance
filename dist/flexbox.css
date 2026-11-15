@@ -230,6 +230,29 @@ a:hover { color: #00a882; }
   z-index: 100;
   flex-direction: column;
 }
+/*
+ * THE ADMIN DROPDOWN IS GROUPED, so it needs a heading that is plainly not a
+ * link: smaller, dimmer, letter-spaced and with no hover. The Admin menu is
+ * the only one that carries these -- it reached twenty-eight entries, where
+ * every other dropdown on the platform is under ten.
+ *
+ * A HAIRLINE ABOVE EACH BUT THE FIRST, which is what actually separates the
+ * groups; the label alone reads as another row in the list. :first-child
+ * rather than a modifier class so adding a group at the top cannot leave a
+ * rule stranded on the wrong one.
+ */
+.nav-dropdown-menu .nav-dd-cat {
+  display: block;
+  padding: 11px 20px 4px;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #3f5e70;
+  border-top: 1px solid rgba(0,200,160,0.12);
+  margin-top: 5px;
+  pointer-events: none;
+}
+.nav-dropdown-menu .nav-dd-cat:first-child { border-top: none; margin-top: 0; padding-top: 9px; }
 .nav-dropdown-menu a {
   padding: 12px 20px;
   text-align: left;

@@ -704,8 +704,15 @@
 		               and includes nothing, so requiring it from the nav is
 		               free. */
 		            require_once __DIR__ . '/admin-lib.php';
-		            foreach (admin_tabs() as $t) {
-		                printf('<a href="%s">%s</a>', htmlspecialchars($t[0]), htmlspecialchars($t[1]));
+		            /* GROUPED HERE TOO, from the same list. A dropdown of
+		               twenty-eight undifferentiated links is the same problem
+		               the tab strip had, and reading them from one source is
+		               what stopped the two drifting in the first place. */
+		            foreach (admin_tab_groups() as $group => $tabs) {
+		                printf('<span class="nav-dd-cat">%s</span>', htmlspecialchars($group));
+		                foreach ($tabs as $t) {
+		                    printf('<a href="%s">%s</a>', htmlspecialchars($t[0]), htmlspecialchars($t[1]));
+		                }
 		            } ?>
 		    </div>
 		  </div>

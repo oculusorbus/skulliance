@@ -12,10 +12,26 @@
 .adm h4{font-size:.9rem;letter-spacing:.03em;text-transform:uppercase;color:#5a7888;margin:18px 0 0}
 .adm-head{display:flex;flex-wrap:wrap;gap:14px;align-items:baseline;justify-content:space-between;
           padding:0 0 14px;border-bottom:1px solid rgba(0,200,160,.14);margin-bottom:18px}
-.adm-tabs{display:flex;gap:6px;flex-wrap:wrap}
+/* ONE ROW PER GROUP. The strip is a column of groups now, not a wrapped
+   line of chips: a grid so every category label shares one column and the
+   tabs all start on the same left edge, which is what makes the rows read
+   as rows rather than as six separate wrapped lines. */
+.adm-tabs{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;align-items:baseline}
+.adm-tabgroup{display:contents}
+.adm-tabcat{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:#3f5e70;
+            white-space:nowrap;padding-top:3px}
+.adm-tabrow{display:flex;gap:6px;flex-wrap:wrap}
 .adm-tabs a{padding:9px 14px;border:1px solid rgba(0,200,160,.14);color:#5a7888;
             text-decoration:none;font-size:.82rem}
 .adm-tabs a.on{background:#00c8a0;color:#07111d;border-color:#00c8a0;font-weight:bold}
+/* THE LABEL COLUMN GOES ON A PHONE. At 430px it costs a third of the width
+   and the groups still read: six short rows with a heading above each is
+   the same information in the space there actually is. */
+@media (max-width:560px){
+  .adm-tabs{display:block}
+  .adm-tabgroup{display:block;margin:0 0 10px}
+  .adm-tabcat{display:block;padding:0 0 5px}
+}
 .adm-msg{margin:12px 0;padding:11px 14px;border-left:3px solid;font-size:.88rem}
 .adm-msg.bad{border-color:#e0705f;background:rgba(224,112,95,.1);color:#e0705f}
 .adm-msg.good{border-color:#00c8a0;background:rgba(0,200,160,.1);color:#00c8a0}

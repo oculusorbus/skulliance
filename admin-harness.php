@@ -718,11 +718,54 @@ ok(strpos($old, 'admin-projects.php') !== false && stripos($old, 'Location:') !=
  * deliberately absent from header.php and the thing to assert is that the
  * list drives the nav and still names every page. */
 $hd = file_get_contents(__DIR__ . '/header.php');
-ok(strpos($hd, 'foreach (admin_tabs() as $t)') !== false,
-   'the Admin dropdown is not generated from admin_tabs()');
+/* The dropdown is grouped now, so it reads admin_tab_groups() -- the same
+   list the tab strip reads, which is the property worth holding. */
+ok(strpos($hd, 'foreach (admin_tab_groups() as $group => $tabs)') !== false,
+   'the Admin dropdown is not generated from the grouped tab list');
 ok(strpos($hd, "require_once __DIR__ . '/admin-lib.php';") !== false,
-   'header.php does not load admin-lib.php, so admin_tabs() is undefined in the nav');
+   'header.php does not load admin-lib.php, so the tab list is undefined in the nav');
 require_once __DIR__ . '/admin-lib.php';
+
+/* ---------------------------------------------------------------------------
+ * THE PANEL IS GROUPED, AND THERE IS ONLY ONE LIST
+ *
+ * It reached twenty-eight tabs in a flat strip that wrapped onto two lines
+ * with nothing saying which of them were the same kind of thing. The groups
+ * are now the authority and admin_tabs() flattens them.
+ *
+ * THE NEAR MISS THIS GUARDS. The obvious shape was a flat array plus a map
+ * of key => group, and that is a tab belonging to no group the first time
+ * somebody adds one and forgets the other -- invisible, because the flat
+ * strip would still show it. Here a tab cannot exist outside a group,
+ * because the group is where it is written, and these assertions are what
+ * stops that being quietly undone.
+ */
+echo "\nthe admin panel is grouped, from one list\n";
+$groups = admin_tab_groups();
+$flat   = admin_tabs();
+ok(count($groups) >= 4, 'the panel is no longer grouped, or has collapsed to one group');
+$fromGroups = array();
+foreach ($groups as $gname => $gtabs) {
+	ok($gname !== '' && count($gtabs) > 0, "the '$gname' group is empty, so it draws a heading over nothing");
+	foreach ($gtabs as $k => $t) {
+		ok(!isset($fromGroups[$k]), "the tab '$k' is in more than one group");
+		$fromGroups[$k] = $t;
+	}
+}
+/* FLATTENED, NOT COPIED. If admin_tabs() ever becomes a second hand-written
+   list again this is what catches it, and it catches it on the first tab
+   that exists in only one of the two. */
+ok($fromGroups == $flat,
+   'admin_tabs() is not the groups flattened; a tab exists in one and not the other: '
+   . implode(', ', array_keys(array_merge(
+       array_diff_key($fromGroups, $flat), array_diff_key($flat, $fromGroups)))));
+ok(count($flat) === count($fromGroups),
+   'flattening the groups loses or duplicates a tab -- two groups share a key');
+/* AND BOTH RENDERERS WALK THE GROUPS. Either one left on the flat list is a
+   nav that silently stops being grouped in one of the two places it shows. */
+$lib = file_get_contents(__DIR__ . '/admin-lib.php');
+ok(preg_match('~function admin_chrome\([^)]*\)\s*\{[\s\S]{0,900}admin_tab_groups\(\)~', $lib) === 1,
+   'the tab strip no longer walks the groups, so the panel is flat again');
 $navPages = array();
 foreach (admin_tabs() as $t) $navPages[] = $t[0];
 foreach ($PAGES as $f) ok(in_array($f, $navPages, true), "the admin menu no longer offers $f");

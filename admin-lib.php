@@ -865,107 +865,180 @@ function admin_require() {
  * header.php requires this file inside its user-1 branch. Safe because
  * nothing in here echoes or includes db.php -- see the header comment.
  */
-function admin_tabs() {
-	/* Ordered the way the work runs: a chain holds projects, a project holds
-	   collections, collections feed missions, and Monstrocity sits on top of
-	   all of it with its bosses behind it -- and the DHC boss crew beside
-	   those, since the two boss tabs belong together. The one-off tools go
-	   last. This array IS the tab order -- there is no separate sort, and it
-	   is also the ORDER OF THE DROPDOWN in header.php, which reads the same
-	   list. */
+/**
+ * THE PANEL, IN GROUPS. This array is the authority for everything: the tab
+ * strip, header.php's dropdown and the order of both.
+ *
+ * WHY IT IS GROUPED. It reached twenty-eight tabs in one flat strip that
+ * wrapped onto two lines, and finding anything meant reading all of them --
+ * Chains sat beside Projects sat beside Monstrocity sat beside Viewport,
+ * with nothing saying which of those were the same kind of thing.
+ *
+ * THE GROUPS ARE THE SINGLE LIST, and admin_tabs() below flattens them.
+ * They were nearly two lists -- a flat array plus a map of key => group --
+ * and that is a tab that belongs to no group the day somebody adds one and
+ * forgets the other. Here a tab cannot exist outside a group, because the
+ * group is where it is written.
+ *
+ * PREVIEWS IS A REAL CATEGORY, not a leftovers bin. Each page in it says the
+ * same thing in its own comment: it is not an admin page, it is the thing a
+ * PLAYER sees, forced open, and it writes nothing. They are all reachable
+ * exactly once in normal play -- a first realm, a won raid, a claimable day,
+ * a first match-3 -- so this is the only way to look at any of them twice.
+ * Grouping them says that out loud, where the flat strip had them scattered
+ * among tools that do change things.
+ *
+ * ORDER WITHIN A GROUP STILL MATTERS. Bosses and DHC Bosses are adjacent
+ * because they are the only two tabs about bosses, and admin-harness.php
+ * asserts that adjacency rather than an index, so inserting above them is
+ * free and separating them is not.
+ */
+function admin_tab_groups() {
 	return array(
-		'blockchains' => array('admin-blockchains.php', 'Chains'),
-		'projects'    => array('admin-projects.php',    'Projects'),
-		'collections' => array('admin-collections.php', 'Collections'),
-		'missions'    => array('admin-missions.php',    'Missions'),
-		'monstrocity' => array('admin-monstrocity.php', 'Monstrocity'),
-		'bosses'      => array('admin-monstrocity-boss.php', 'Bosses'),
-		/* 'bosses' above is the MONSTROCITY boss editor and predates this; the
-		   DHC boss crew is a different game and a read-only report, so it gets
-		   its own key rather than crowding that one. NEXT TO IT, though, and
-		   the owner's call: the two tabs are the only two about bosses, and
-		   with Daily Digest, Flyers and Nudges between them the eye had to
-		   cross three unrelated tools to get from one to the other. */
-		'dhcbosses'   => array('admin-dhcbosses.php',   'DHC Bosses'),
-		'digest'      => array('admin-digest.php',      'Daily Digest'),
-		/* Flyers and Outreach are one job in two halves -- the image, and
-		   the words that go with it into the same Discord post -- so they
-		   sit together and each page links the other. */
-		'flyers'      => array('admin-flyers.php',      'Flyers'),
-		'outreach'    => array('admin-outreach.php',    'Outreach'),
-		'nudges'      => array('admin-nudges.php',      'Nudges'),
-		'lapsed'      => array('admin-lapsed.php',      'Lapsed'),
-		'welcome'     => array('admin-welcome.php',     'Newcomers'),
-		/* Next to Newcomers, because it is the same funnel one step earlier:
-		   Newcomers is people who got in and stalled, Front Door is people
-		   who could not get in at all. */
-		'frontdoor'   => array('admin-frontdoor.php',   'Front Door'),
-		/* The same funnel one step LATER: Front Door is people who could
-		   not get into the server, Newcomers is people who got in and
-		   stalled, and this is the screen that decides whether they
-		   start at all. Not an admin page -- it is Realms itself, drawn
-		   the way somebody with no realm sees it, which is the only view
-		   of it nobody on this side has ever had. */
-		'onboarding'  => array('realms.php?preview=newcomer', 'Onboarding'),
-		/* Players in their own words, waiting to be read. Nothing they
-		   write reaches the site or Discord until it is approved here. */
-		'testimonials' => array('admin-testimonials.php', 'Testimonials'),
-		/* The ask itself, forced open. Not an admin page -- it is the
-		   modal a player meets, which is otherwise reachable only by
-		   winning a raid at the right moment. Writes nothing. */
-		'testimonial-ask' => array('realms.php?preview=testimonial', 'Testimonial Ask'),
-		/* The daily reward animation, openable on demand. It fires once a
-		   day for a player with a claimable day, so without this nobody
-		   could look at it twice. Claims nothing. */
-		'chest' => array('admin-chest.php', 'Reward Reveal'),
-		/* The match-3 slide intro. Gated on having no score on record for
-		   that game, so the moment anybody has played once it is
-		   unreachable to them -- this is the only way to look at it. */
-		'match3-intro' => array('admin-match3-intro.php', 'Match-3 Intro'),
-		/* The three crafting sequences, playable without a balance. Each one
-		   only runs when somebody can afford it and spends it to run, so this
-		   is the only way to see one twice. Crafts nothing. */
-		'crafting' => array('admin-crafting.php', 'Crafting Reveals'),
-		/* The two viewports a phone has, live. The back-to-top arrow is exact
-		   at 390px in a desktop browser and wrong on a phone, so the only
-		   place left to measure it is the phone. */
-		'viewport' => array('admin-viewport.php', 'Viewport'),
-		/* What this server can do about blocking Discord posts. The shell
-		   php here is a different build from the one serving the site, so
-		   the web SAPI's capabilities can only be read from the web. */
-		'defer'    => array('admin-defer.php', 'Deferred Posts'),
-		/* Who is holding half a tethered weapon. The assembler refuses to
-		   save a Fighter wearing one half without the other, and the picker
-		   only offers what a player owns, so an orphan reads as a weapon
-		   that attaches and then will not save. */
-		'tethers'  => array('admin-tethers.php', 'Tethers'),
-		/* The boss crew resurrection cue. A playbackRate curve is a feel
-		   decision and cannot be read off a page, so it plays the real
-		   file through the Arena's own path. Plays audio, writes nothing. */
-		'bossrez'  => array('admin-bossrez.php', 'Boss Rez Sound'),
-		/* What X will tell us about a comment for nothing. Four facts decide
-		   whether a comment can be verified at all, and the free surfaces
-		   that might carry them are undocumented, so they get asked rather
-		   than assumed. Fetches, stores nothing. */
-		/* Targets, and the pending count. Next to the probe because they are
-		   the same job in two halves: the probe says what X will tell us, and
-		   this says whether it still is. */
-		/* Skull Swap tile treatments side by side. A few lines of CSS each,
-		   and the only question that matters is which reads right at tile
-		   size on the board -- which cannot be read off a diff. */
-		'swaptiles' => array('admin-swaptiles.php', 'Swap Tiles'),
-		'infiltration' => array('admin-infiltration.php', 'Infiltration'),
-		'xprobe'   => array('admin-xprobe.php',   'X Probe'),
-		'collage'     => array('admin-collage.php',     'Avatar Wall'),
+		/* The data the rest of the platform is built on: a chain holds
+		   projects, projects hold collections, collections feed missions. */
+		'Catalogue' => array(
+			'blockchains' => array('admin-blockchains.php', 'Chains'),
+			'projects'    => array('admin-projects.php',    'Projects'),
+			'collections' => array('admin-collections.php', 'Collections'),
+			'missions'    => array('admin-missions.php',    'Missions'),
+		),
+		/* The games themselves, and the two boss screens side by side. */
+		'Games' => array(
+			'monstrocity' => array('admin-monstrocity.php', 'Monstrocity'),
+			'bosses'      => array('admin-monstrocity-boss.php', 'Bosses'),
+			/* The DHC boss crew is a different game and a read-only report,
+			   so it gets its own key rather than crowding that one. NEXT TO
+			   IT, though, and the owner's call: the two tabs are the only
+			   two about bosses, and with Daily Digest, Flyers and Nudges
+			   between them the eye had to cross three unrelated tools to
+			   get from one to the other. */
+			'dhcbosses'   => array('admin-dhcbosses.php',   'DHC Bosses'),
+			/* Targets, and the pending count. */
+			'infiltration' => array('admin-infiltration.php', 'Infiltration'),
+		),
+		/* Everything that ends up as a Discord post or a nudge to somebody
+		   who has gone quiet. Flyers and Outreach sit together because they
+		   are one job in two halves -- the picture and the words that go
+		   with it into the same post -- and each page links the other. */
+		'Outreach' => array(
+			'digest'      => array('admin-digest.php',      'Daily Digest'),
+			'flyers'      => array('admin-flyers.php',      'Flyers'),
+			'outreach'    => array('admin-outreach.php',    'Outreach'),
+			'nudges'      => array('admin-nudges.php',      'Nudges'),
+			'lapsed'      => array('admin-lapsed.php',      'Lapsed'),
+			/* Newcomers is people who got in and stalled, Front Door is
+			   people who could not get in at all. */
+			'welcome'     => array('admin-welcome.php',     'Newcomers'),
+			'frontdoor'   => array('admin-frontdoor.php',   'Front Door'),
+		),
+		/* Players in their own words, and their faces. Nothing a player
+		   writes reaches the site or Discord until it is approved here. */
+		'Players' => array(
+			'testimonials' => array('admin-testimonials.php', 'Testimonials'),
+			'collage'      => array('admin-collage.php',      'Avatar Wall'),
+		),
+		/*
+		 * NOT ADMIN PAGES. Every one of these is a screen a PLAYER meets,
+		 * forced open, and every one of them writes nothing -- no claim, no
+		 * craft, no approval. They are grouped because they share the thing
+		 * that makes them exist: each is reachable exactly once in normal
+		 * play, so this is the only way to look at one a second time.
+		 */
+		'Previews' => array(
+			/* Realms drawn the way somebody with no realm sees it, which is
+			   the only view of it nobody on this side has ever had. */
+			'onboarding'  => array('realms.php?preview=newcomer', 'Onboarding'),
+			/* The ask modal, otherwise reachable only by winning a raid at
+			   the right moment. */
+			'testimonial-ask' => array('realms.php?preview=testimonial', 'Testimonial Ask'),
+			/* The daily reward animation. It fires once a day for a player
+			   with a claimable day. Claims nothing. */
+			'chest' => array('admin-chest.php', 'Reward Reveal'),
+			/* The match-3 slide intro, gated on having no score on record
+			   for that game -- so the moment anybody has played once it is
+			   unreachable to them. */
+			'match3-intro' => array('admin-match3-intro.php', 'Match-3 Intro'),
+			/* The three crafting sequences, playable without a balance.
+			   Each only runs when somebody can afford it and spends it to
+			   run. Crafts nothing. */
+			'crafting' => array('admin-crafting.php', 'Crafting Reveals'),
+			/* The boss crew resurrection cue. A playbackRate curve is a feel
+			   decision and cannot be read off a page, so it plays the real
+			   file through the Arena's own path. Plays audio, writes nothing. */
+			'bossrez'  => array('admin-bossrez.php', 'Boss Rez Sound'),
+			/* Skull Swap tile treatments side by side. A few lines of CSS
+			   each, and the only question that matters is which reads right
+			   at tile size on the board, which cannot be read off a diff. */
+			'swaptiles' => array('admin-swaptiles.php', 'Swap Tiles'),
+		),
+		/* What the server, the data or an outside service is actually doing.
+		   The owner is usually on a phone and cannot run anything, which is
+		   why each of these is a page rather than a script. */
+		'Diagnostics' => array(
+			/* The two viewports a phone has, live. The back-to-top arrow is
+			   exact at 390px in a desktop browser and wrong on a phone. */
+			'viewport' => array('admin-viewport.php', 'Viewport'),
+			/* What this server can do about blocking Discord posts. The
+			   shell php here is a different build from the one serving the
+			   site, so the web SAPI's capabilities can only be read from
+			   the web. */
+			'defer'    => array('admin-defer.php', 'Deferred Posts'),
+			/* Who is holding half a tethered weapon. An orphan reads to a
+			   player as a weapon that attaches and then will not save. */
+			'tethers'  => array('admin-tethers.php', 'Tethers'),
+			/* What X will tell us about a comment for nothing. The free
+			   surfaces that might carry the four facts are undocumented, so
+			   they get asked rather than assumed. Fetches, stores nothing. */
+			'xprobe'   => array('admin-xprobe.php',   'X Probe'),
+		),
 	);
 }
 
+/**
+ * The same tabs, flat, in group order.
+ *
+ * KEPT because this is what every caller already reads -- the harness walks
+ * it to check each target exists, header.php built the dropdown from it, and
+ * admin_chrome() marked the active one from it. Derived rather than written,
+ * so there is no second list to fall out of step with the groups.
+ */
+function admin_tabs() {
+	$flat = array();
+	foreach (admin_tab_groups() as $tabs) {
+		foreach ($tabs as $key => $t) $flat[$key] = $t;
+	}
+	return $flat;
+}
+
+/*
+ * ONE ROW PER GROUP, every tab visible.
+ *
+ * Nothing is hidden behind a second click: at this size the panel is still
+ * something to scan, not to search, and the owner knows what is in it -- the
+ * problem was never that there were too many tabs to show, it was that
+ * twenty-eight of them in one wrapped strip had no shape. A label down the
+ * left gives each row a reason to exist, and a page is still one click from
+ * any other page.
+ *
+ * NO JAVASCRIPT. The panel is reached from a phone as often as not, and a
+ * nav that needs scripting to open is a nav that can fail to open.
+ */
 function admin_chrome($active) {
-	$tabs = admin_tabs();
 	echo '<div class="row"><div class="adm">';
 	echo '<div class="adm-head"><h2>Admin</h2><nav class="adm-tabs">';
-	foreach ($tabs as $key => $t) {
-		printf('<a href="%s" class="%s">%s</a>', $t[0], $key === $active ? 'on' : '', $t[1]);
+	foreach (admin_tab_groups() as $group => $tabs) {
+		/* The label is aria-hidden and the row carries the name instead: read
+		   aloud, "Catalogue Chains Projects" is a list of four links with a
+		   stray word in front of it, where a labelled group is four links in
+		   Catalogue. */
+		printf('<div class="adm-tabgroup" role="group" aria-label="%s">', htmlspecialchars($group));
+		printf('<span class="adm-tabcat" aria-hidden="true">%s</span>', htmlspecialchars($group));
+		printf('<span class="adm-tabrow">');
+		foreach ($tabs as $key => $t) {
+			printf('<a href="%s" class="%s">%s</a>', $t[0], $key === $active ? 'on' : '', $t[1]);
+		}
+		echo '</span></div>';
 	}
 	echo '</nav></div>';
 }
