@@ -191,6 +191,22 @@ function testimonial_offer($conn, $user_id) {
 		/* The last ask says so, so "not now" is a decision rather than
 		   a postponement somebody assumes will come round again. */
 		'last_call'  => ($shown + 1) >= TESTIMONIAL_MAX_NUDGES,
+		/*
+		 * HOW MANY ASKS COME AFTER THIS ONE. Counting forward from the
+		 * same number last_call reads, so the two can never disagree
+		 * about which ask this is: last_call is exactly asks_left === 0.
+		 *
+		 * It exists so the ask BEFORE the last one can say so. Somebody
+		 * putting it off has no way to know the supply is finite until
+		 * the final ask tells them, and by then the only choice left is
+		 * now or never -- which is the moment they are least likely to
+		 * want to write anything. One warning earlier is the difference
+		 * between a deadline and an ambush.
+		 *
+		 * Clamped at 0: shown can exceed the limit on a row written
+		 * before the cap existed, and a negative would read as a count.
+		 */
+		'asks_left'  => max(0, TESTIMONIAL_MAX_NUDGES - ($shown + 1)),
 		'min'        => (int) TESTIMONIAL_MIN,
 		'max'        => (int) TESTIMONIAL_MAX,
 	);

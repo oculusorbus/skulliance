@@ -74,6 +74,16 @@
  * a rule down the left like .adm-msg.warn, and left-aligned so it starts
  * where every other line of the card starts.
  */
+/* The ask before the last one. Deliberately plainer than .tst-last below:
+   that one is a point of no return and this one is a heads-up, and if they
+   carry the same weight the final notice stops reading as different. */
+.tst-penult {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgba(168,200,224,0.72);
+  text-align: left;
+}
 .tst-last {
   margin: 0 0 14px;
   padding: 10px 12px;

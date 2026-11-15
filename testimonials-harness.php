@@ -627,6 +627,66 @@ ok(strpos($modal, "No thanks, don't ask again") !== false,
    end of it. */
 ok(stripos($modal, 'turns the ask off for good') !== false,
    'the warning says this is the last ask but not that dismissing it is what closes it');
+/*
+ * ONE ASK LEFT, SAID ONE ASK EARLY.
+ *
+ * The final notice only helps somebody who was going to write one anyway:
+ * by the time they read it the only choice left is now or never, which is
+ * the moment they are least likely to want to. The ask before it says the
+ * supply is finite while there is still a later one to use.
+ *
+ * THE TWO FLAGS ARE EXTRACTED AND EXECUTED, not restated here. They are two
+ * expressions over the same $shown and the whole risk is that they drift
+ * into disagreeing about which ask this is -- a modal that says "one more
+ * after this" AND "this is the last time" at once, or neither. Re-deriving
+ * them in the harness would test the harness.
+ */
+$offFn = substr($src, strpos($src, 'function testimonial_offer('));
+$offFn = substr($offFn, 0, strpos($offFn, "\n}"));
+/* TO THE END OF THE LINE, not to the first comma: asks_left is
+   max(0, ...), whose own comma cut the capture in half and made the eval a
+   syntax error. */
+ok(preg_match("~'last_call'\s*=>\s*(.+?),\s*\n~", $offFn, $mLast) === 1,
+   'last_call is no longer a single expression in testimonial_offer()');
+ok(preg_match("~'asks_left'\s*=>\s*(.+?),\s*\n~", $offFn, $mLeft) === 1,
+   'the offer does not say how many asks are left, so the ask before the last cannot warn');
+if (!empty($mLast[1]) && !empty($mLeft[1])) {
+	for ($shown = 0; $shown <= TESTIMONIAL_MAX_NUDGES + 2; $shown++) {
+		$last = eval('return ' . $mLast[1] . ';');
+		$left = eval('return ' . $mLeft[1] . ';');
+		ok($last === ($left === 0),
+		   "at shown=$shown the two flags disagree about which ask this is: last_call="
+		 . var_export($last, true) . ", asks_left=" . var_export($left, true));
+		ok($left >= 0, "asks_left goes negative at shown=$shown, which would read as a count");
+	}
+	/* AND THE NOTICE ACTUALLY LANDS ON THE SECOND-TO-LAST ASK. The invariant
+	   above holds just as well if asks_left is never 1 for any real $shown,
+	   which would be a flag nothing ever shows. */
+	$hits = 0;
+	for ($shown = 0; $shown < TESTIMONIAL_MAX_NUDGES; $shown++) {
+		if (eval('return ' . $mLeft[1] . ';') === 1) $hits++;
+	}
+	ok($hits === 1, "exactly one ask should be the second-to-last one; $hits are");
+}
+/* The two notices are mutually exclusive in the markup, not merely unlikely
+   to coincide: elseif, so no state can print both. */
+/* The condition is isset(...) && ..., so [^)]* cannot span it, and the
+   comment explaining the two notices sits between them -- both of which
+   made the first version of this fail on a clean tree. */
+ok(preg_match('~tst-last[\s\S]{0,2000}<\?php elseif \(.*asks_left.*=== 1\): \?>~', $modal) === 1,
+   'the one-ask-left notice is not an elseif on the final one, so both can print at once');
+ok(strpos($modal, 'One more ask after this one') !== false,
+   'the second-to-last ask does not say it is the second-to-last');
+/* QUIETER THAN THE FINAL ONE. If a heads-up and a point of no return look
+   the same, the last notice stops reading as different -- which is the
+   whole thing the previous change was for. */
+$tcss2 = (string) file_get_contents(__DIR__ . '/dist/testimonials.css');
+ok(preg_match('~\.tst-penult\s*\{[^}]*border-left~s', $tcss2) !== 1,
+   'the one-ask-left notice has the final notice\'s rule, so the two read alike');
+/* And both states are previewable, since neither is reachable on demand. */
+ok(strpos($modal, "isset(\$_GET['penult'])") !== false,
+   'the second-to-last ask cannot be previewed, so nobody can look at it');
+
 ok(strpos($modal, 'aria-describedby="tst-final"') !== false,
    'the dismiss button is not tied to the warning, so a screen reader announces it alone');
 /* THE BUTTON STILL HAS TO ACTUALLY MUTE. All the copy in the world is a lie

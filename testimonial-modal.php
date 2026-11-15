@@ -57,6 +57,10 @@ if ($tst_preview && !$tst_offer) {
 		'prompt_key' => $tst_keys[0],
 		'prompt'     => testimonial_prompts()[$tst_keys[0]],
 		'last_call'  => isset($_GET['last']),
+		/* ?last=1 previews the final ask, ?penult=1 the one before it.
+		   Both states have copy of their own and neither is reachable on
+		   demand in normal play, which is what this preview is for. */
+		'asks_left'  => isset($_GET['last']) ? 0 : (isset($_GET['penult']) ? 1 : 2),
 		'min'        => (int) TESTIMONIAL_MIN,
 		'max'        => (int) TESTIMONIAL_MAX,
 	);
@@ -140,6 +144,23 @@ if ($tst_offer):
 		<?php if ($tst_offer['last_call']): ?>
 		<p class="tst-last" id="tst-final">This is the last time we will ask. Closing it here
 		   turns the ask off for good, not just for now.</p>
+		<?php
+		/*
+		 * ONE ASK LEFT, SAID ONE ASK EARLY.
+		 *
+		 * Quieter than the final notice on purpose -- no rule, no amber.
+		 * This one is information; that one is a point of no return, and
+		 * if they look the same the last one stops reading as different.
+		 *
+		 * EXACTLY ONE LEFT, not "fewer than two": with the limit at three
+		 * the first ask has two to come, and telling somebody on their
+		 * first ask that the supply is finite is nagging rather than
+		 * warning. Keyed on the number so raising TESTIMONIAL_MAX_NUDGES
+		 * moves this notice along with it instead of stranding it.
+		 */
+		?>
+		<?php elseif (isset($tst_offer['asks_left']) && (int) $tst_offer['asks_left'] === 1): ?>
+		<p class="tst-penult">One more ask after this one, then we stop.</p>
 		<?php endif; ?>
 
 		<div class="tst-actions">
