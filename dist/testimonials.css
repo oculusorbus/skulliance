@@ -67,7 +67,23 @@
     border: 1px solid rgba(132,178,208,0.28);
 }
 .tst-skip:hover { color: #eaf3fa !important; border-color: rgba(132,178,208,0.5); }
-.tst-last { margin: 12px 0 0; font-size: 12px; color: rgba(255,196,97,0.85); text-align: right; }
+/*
+ * A NOTICE, NOT A FOOTNOTE. This was 12px, right-aligned and under the
+ * actions, which on a phone put it below the button it warns about. It is
+ * now above them and reads as something to stop at: the platform's amber,
+ * a rule down the left like .adm-msg.warn, and left-aligned so it starts
+ * where every other line of the card starts.
+ */
+.tst-last {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-left: 3px solid rgba(255,196,97,0.85);
+  background: rgba(255,196,97,0.09);
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(255,214,140,0.95);
+  text-align: left;
+}
 .tst-card-thanks { text-align: left; }
 .tst-x {
     background: #000; color: #fff !important;

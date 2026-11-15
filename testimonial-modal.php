@@ -120,15 +120,39 @@ if ($tst_offer):
 
 		<div class="tst-err" id="tst-err" hidden></div>
 
+		<?php
+		/*
+		 * THE WARNING GOES ABOVE THE BUTTON IT IS ABOUT.
+		 *
+		 * It used to sit under the actions as a 12px right-aligned
+		 * footnote -- and on a phone .tst-actions is column-reverse, so
+		 * it was printed BELOW the very button it was warning about.
+		 * Somebody skimming to dismiss clicked before they ever reached
+		 * it. A consequence you read afterwards is not a warning.
+		 *
+		 * AND IT SAYS WHAT THE BUTTON DOES, not just that this ask is the
+		 * last one. Those are different sentences: "we will not ask
+		 * again" can be read as the ask expiring on its own, while the
+		 * thing that actually matters is that THIS CLICK ends it. After
+		 * three asks nothing offers it again, so there is no later.
+		 */
+		?>
+		<?php if ($tst_offer['last_call']): ?>
+		<p class="tst-last" id="tst-final">This is the last time we will ask. Closing it here
+		   turns the ask off for good, not just for now.</p>
+		<?php endif; ?>
+
 		<div class="tst-actions">
-			<button type="button" class="tst-skip" id="tst-later">
-				<?php echo $tst_offer['last_call'] ? 'No thanks' : 'Not now'; ?>
+			<?php /* THE LABEL IS THE ONE THING EVERYBODY READS, so on the
+			         last ask it names the consequence rather than leaving
+			         it to the line above. "No thanks" and "Not now" read
+			         almost identically at a glance, which is the problem. */ ?>
+			<button type="button" class="tst-skip" id="tst-later"
+			        <?php if ($tst_offer['last_call']) echo 'aria-describedby="tst-final"'; ?>>
+				<?php echo $tst_offer['last_call'] ? "No thanks, don't ask again" : 'Not now'; ?>
 			</button>
 			<button type="button" class="tst-go" id="tst-send">Send it</button>
 		</div>
-		<?php if ($tst_offer['last_call']): ?>
-		<p class="tst-last">This is the last time we will ask.</p>
-		<?php endif; ?>
 	</div>
 </div>
 

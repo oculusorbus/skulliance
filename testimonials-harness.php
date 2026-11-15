@@ -604,6 +604,43 @@ ok(strpos($modal, 'This is the last time we will ask') !== false,
    'the modal never warns that a reminder is the last one');
 
 /*
+ * THE LAST ASK HAS TO BE UNMISTAKABLE, because dismissing it is permanent.
+ *
+ * Saying it was not enough. The warning was a 12px right-aligned footnote
+ * UNDER the actions -- and .tst-actions is column-reverse on a phone, so it
+ * printed below the very button it was warning about. Somebody skimming to
+ * dismiss clicked before they ever reached it. A consequence you read
+ * afterwards is not a warning, and these three assertions are the ones that
+ * would have caught that.
+ */
+$beforeActions = strpos($modal, 'tst-last') !== false
+              && strpos($modal, 'tst-last') < strpos($modal, '<div class="tst-actions">');
+ok($beforeActions,
+   'the last-ask warning is printed after the actions again, so on a phone it sits '
+ . 'below the button it is about');
+/* THE LABEL NAMES THE CONSEQUENCE. "No thanks" and "Not now" are the same
+   sentence at a glance, and the label is the one thing everybody reads. */
+ok(strpos($modal, "No thanks, don't ask again") !== false,
+   'the last ask dismisses with a label indistinguishable from the ordinary one');
+/* AND IT SAYS THE CLICK IS WHAT ENDS IT. "We will not ask again" can be read
+   as the ask expiring on its own; what matters is that THIS button is the
+   end of it. */
+ok(stripos($modal, 'turns the ask off for good') !== false,
+   'the warning says this is the last ask but not that dismissing it is what closes it');
+ok(strpos($modal, 'aria-describedby="tst-final"') !== false,
+   'the dismiss button is not tied to the warning, so a screen reader announces it alone');
+/* THE BUTTON STILL HAS TO ACTUALLY MUTE. All the copy in the world is a lie
+   if the last dismissal is an ordinary one. */
+ok(preg_match("~action: 'dismiss', never: <\?php echo \\\$tst_offer\['last_call'\] \? '1' : '0'~", $modal) === 1,
+   'the last dismissal no longer mutes, so the warning promises something that does not happen');
+/* And the notice reads as a notice rather than small print. */
+$tcss = (string) file_get_contents(__DIR__ . '/dist/testimonials.css');
+ok(preg_match('~\.tst-last\s*\{[^}]*border-left~s', $tcss) === 1,
+   'the last-ask notice is styled as a footnote again');
+ok(preg_match('~\.tst-last\s*\{[^}]*text-align:\s*right~s', $tcss) !== 1,
+   'the notice is right-aligned again, so it reads as a caption on the buttons');
+
+/*
  * A REJECTION HAS TO GO SOMEWHERE.
  *
  * It used to go nowhere: the rejected row stayed current, so the modal
