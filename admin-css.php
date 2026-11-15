@@ -72,6 +72,13 @@
   color:#5a7888;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;font-weight:normal}
 .adm-table td{padding:8px 10px;border-bottom:1px solid rgba(0,200,160,.06)}
 .adm-table .mono{font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+/* WHERE AN ASK STANDS, in the colours this panel already means them in:
+   amber for a thing that is finished and worth reading (.adm-msg.warn),
+   dim for one still in progress. Red is wrong here -- nobody did anything
+   wrong by not writing a testimonial. */
+.adm-table .tst-never{color:#e8b24a}
+.adm-table .tst-spent{color:#e8b24a;opacity:.8}
+.adm-table .tst-open{color:#5a7888}
 .adm-table .trunc{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .adm-table a{color:#00c8a0}
 .ok-dot{color:#00c8a0}.bad-dot{color:#e0705f}

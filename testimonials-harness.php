@@ -990,5 +990,85 @@ ok(strpos($out, 'Share it on X') === false,
    'a rejected testimonial is offered a share link');
 ok(is_file(__DIR__ . '/testimonials-schema.md'), 'the schema is not written down anywhere');
 
+/* ---------------------------------------------------------------------------
+ * ASKED AND NEVER ANSWERED
+ *
+ * The modal was being shown and closed and the only trace was a counter in
+ * testimonial_nudges that no screen read. The admin page now reports it.
+ *
+ * WHAT IS ACTUALLY KNOWABLE, and the reason the column is "times asked".
+ * shown_count is bumped by testimonial_mark_shown() when the ask is
+ * DISPLAYED; testimonial_dismiss() touches only last_shown and muted and
+ * writes no event of its own. So nothing counts declines, and a page saying
+ * "declined 3 times" would be claiming a precision the table does not have.
+ * A decline here is an absence: asked N times, wrote nothing.
+ */
+echo "\nasked and never answered\n";
+ok(function_exists('testimonial_declined'), 'there is no way to ask who passed on the modal');
+ok(function_exists('testimonial_decline_state'), 'nothing says where a given ask stands');
+
+/* THE STATE IS READ OFF THE SAME TWO RULES testimonial_offer() GATES ON.
+   Executed, not pattern-matched: these are three branches of arithmetic and
+   the whole value of the column is that it agrees with whether the player
+   will actually be asked again. */
+list($k, $says) = testimonial_decline_state(array('muted' => 1, 'shown_count' => 1, 'last_shown' => null));
+ok($k === 'never', 'a player who said never again is not reported as final');
+list($k, $says) = testimonial_decline_state(
+	array('muted' => 0, 'shown_count' => TESTIMONIAL_MAX_NUDGES, 'last_shown' => null));
+ok($k === 'spent', 'a player who used every ask is still reported as askable');
+list($k, $says) = testimonial_decline_state(
+	array('muted' => 0, 'shown_count' => TESTIMONIAL_MAX_NUDGES + 5, 'last_shown' => null));
+ok($k === 'spent', 'past the limit is not reported as out of asks');
+list($k, $says) = testimonial_decline_state(array('muted' => 0, 'shown_count' => 1, 'last_shown' => null));
+ok($k === 'open', 'a player with asks left is reported as finished with');
+ok(strpos($says, (string) (TESTIMONIAL_MAX_NUDGES - 1)) !== false,
+   'the asks remaining are not counted off the limit, so changing it would lie: ' . $says);
+/* THE COOLDOWN, BOTH SIDES OF IT. "Due now" and "next in Nd" are the only
+   two things the fortnight can mean, and a page that said one when the other
+   was true would send the owner looking for an ask that is not coming. */
+list($k, $says) = testimonial_decline_state(
+	array('muted' => 0, 'shown_count' => 1, 'last_shown' => date('Y-m-d H:i:s', time() - 86400)));
+ok(strpos($says, 'next in') !== false,
+   'an ask still inside the cooldown is reported as due: ' . $says);
+list($k, $says) = testimonial_decline_state(
+	array('muted' => 0, 'shown_count' => 1,
+	      'last_shown' => date('Y-m-d H:i:s', time() - (TESTIMONIAL_NUDGE_DAYS + 1) * 86400)));
+ok(strpos($says, 'due now') !== false,
+   'an ask past the cooldown is not reported as due: ' . $says);
+/* MUTED WINS OVER EVERYTHING. Somebody who said never again with asks still
+   on the clock must not read as "1 ask left" -- that is the one answer here
+   that is actually final. */
+list($k) = testimonial_decline_state(array('muted' => 1, 'shown_count' => 0, 'last_shown' => null));
+ok($k === 'never', 'never again loses to the ask counter');
+
+/* THE QUERY COUNTS EVERY TESTIMONIAL, NOT THE CURRENT ONE. Somebody who
+   passed twice and then wrote one on the third ask is not avoiding it, and
+   joining on is_current would have put them back in this list the moment
+   they later edited and the current row changed. */
+$lib = file_get_contents(__DIR__ . '/testimonials-lib.php');
+$fn  = substr($lib, strpos($lib, 'function testimonial_declined'));
+$fn  = substr($fn, 0, strpos($fn, "\n}"));
+ok(strpos($fn, 'LEFT JOIN testimonials t ON t.user_id = n.user_id') !== false,
+   'the declined list does not join the testimonials at all, so it cannot tell who wrote one');
+ok(strpos($fn, 'is_current') === false,
+   'the declined list joins on is_current, so a player who wrote one and later edited reappears');
+ok(strpos($fn, 'HAVING written = 0') !== false,
+   'the declined list includes players who did write a testimonial');
+
+/* AND THE PAGE SAYS "ASKED", NOT "DECLINED". */
+/* COMMENTS STRIPPED FIRST. The page carries a note explaining why the
+   column is "times asked" and not "times declined", and a raw search found
+   that note and failed on a clean tree -- the prose describing the rule
+   read as a breach of it. */
+$pg = preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents(__DIR__ . '/admin-testimonials.php'));
+/* THE LABEL, not the identifiers. testimonial_declined() and $declined are
+   the right names for "players who passed"; what must not appear is a
+   COLUMN HEADING claiming to count declines, because nothing counts them. */
+ok(strpos($pg, 'Times asked') !== false, 'the asked column is gone');
+ok(preg_match('~<th>[^<]*declin~i', $pg) !== 1,
+   'a column heading claims to count declines, which nothing records');
+ok(strpos($pg, 'adm-tablewrap') !== false,
+   "the table has no scroll wrapper, so it pushes the panel sideways on a phone");
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

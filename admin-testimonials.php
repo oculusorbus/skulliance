@@ -95,6 +95,9 @@ $ready    = testimonials_ready($conn);
 $pending  = $ready ? testimonial_queue($conn, 'pending')  : array();
 $live     = $ready ? testimonial_queue($conn, 'approved') : array();
 $rejected = $ready ? testimonial_queue($conn, 'rejected') : array();
+/* Who met the modal and never wrote anything. Not in the queue above: the
+   queue is testimonials, and these players have none. */
+$declined = $ready ? testimonial_declined($conn) : array();
 
 ?>
 <div class="row"><div class="adm">
@@ -129,6 +132,45 @@ $rejected = $ready ? testimonial_queue($conn, 'rejected') : array();
 	<h3>Not published (<?php echo count($rejected); ?>)</h3>
 	<?php if (!$rejected): ?><p class="adm-note">Nothing rejected.</p><?php endif; ?>
 	<?php foreach ($rejected as $t) testimonial_admin_card($t, array('approve' => 'Approve after all'), $GLOBALS['tst_can_edit']); ?>
+
+	<?php
+	/*
+	 * ASKED AND NEVER ANSWERED. Everything above this is a testimonial
+	 * somebody wrote; this is the other side of the feature, which had no
+	 * screen at all -- the modal was being shown and closed and the only
+	 * trace was a counter nobody could read.
+	 *
+	 * "TIMES ASKED", NOT "TIMES DECLINED", because that is what the table
+	 * holds. shown_count is bumped when the ask is DISPLAYED; closing it
+	 * writes no event of its own. A decline here is an absence -- asked N
+	 * times, wrote nothing -- and the column name says only what is true.
+	 */
+	?>
+	<h3>Asked, never answered (<?php echo count($declined); ?>)</h3>
+	<?php if (!$declined): ?>
+		<p class="adm-note">Nobody has been asked and passed. Either the modal has not
+		   reached anybody yet, or everybody it reached wrote something.</p>
+	<?php else: ?>
+	<p class="adm-note">The modal is shown at most <?php echo TESTIMONIAL_MAX_NUDGES; ?> times,
+	   <?php echo TESTIMONIAL_NUDGE_DAYS; ?> days apart, and the last one says it is the last.
+	   Nobody here can be asked more than that.</p>
+	<?php /* .adm-table and its scroll wrapper, which every other table on the
+	         panel uses -- the wrapper is what stops a four-column table
+	         pushing the whole page sideways on a phone. */ ?>
+	<div class="adm-tablewrap"><table class="adm-table">
+		<thead><tr><th>Player</th><th>Times asked</th><th>Last asked</th><th>Where it stands</th></tr></thead>
+		<tbody>
+		<?php foreach ($declined as $d): list($state, $says) = testimonial_decline_state($d); ?>
+			<tr>
+				<td><?php echo htmlspecialchars($d['username']); ?></td>
+				<td class="mono"><?php echo (int) $d['shown_count']; ?></td>
+				<td class="mono"><?php echo htmlspecialchars($d['last_shown'] ? substr($d['last_shown'], 0, 16) : '--'); ?></td>
+				<td class="tst-<?php echo $state; ?>"><?php echo htmlspecialchars($says); ?></td>
+			</tr>
+		<?php endforeach; ?>
+		</tbody>
+	</table></div>
+	<?php endif; ?>
 <?php endif; ?>
 </div></div>
 <?php $conn->close(); ?>

@@ -391,6 +391,69 @@ function testimonial_pending($conn, $limit = 50) {
 	return testimonial_queue($conn, 'pending', $limit);
 }
 
+/**
+ * WHO WAS ASKED AND NEVER WROTE ONE.
+ *
+ * THE ONLY RECORD OF A DECLINE IS A COUNTER. Nothing logs "they closed the
+ * modal" as an event -- testimonial_mark_shown() bumps shown_count when the
+ * ask is DISPLAYED, and testimonial_dismiss() only touches last_shown and
+ * muted. So a decline is an absence: asked N times, wrote nothing. That is
+ * what this reports, and it is why the column is "times asked" rather than
+ * "times declined" -- the second would be claiming a precision the table
+ * does not have.
+ *
+ * THE LEFT JOIN IS AGAINST EVERY ROW, NOT THE CURRENT ONE. Somebody who
+ * dodged it twice and then wrote one on the third ask is not avoiding it,
+ * and matching on is_current would have counted them as if they were the
+ * moment they later edited and the row changed.
+ *
+ * Returns muted first, then the most-asked: muted is somebody who said never
+ * again, which is the one answer here that is actually final.
+ */
+function testimonial_declined($conn, $limit = 200) {
+	if (!testimonials_ready($conn)) return array();
+	$limit = max(1, min(500, intval($limit)));
+	$r = $conn->query(
+		"SELECT n.user_id, users.username, users.discord_id, users.avatar,
+		        n.shown_count, n.last_shown, n.muted,
+		        COUNT(t.id) AS written
+		 FROM testimonial_nudges n
+		 INNER JOIN users ON users.id = n.user_id
+		 LEFT JOIN testimonials t ON t.user_id = n.user_id
+		 GROUP BY n.user_id, users.username, users.discord_id, users.avatar,
+		          n.shown_count, n.last_shown, n.muted
+		 HAVING written = 0
+		 ORDER BY n.muted DESC, n.shown_count DESC, n.last_shown DESC
+		 LIMIT $limit");
+	$out = array();
+	if ($r) while ($row = $r->fetch_assoc()) $out[] = $row;
+	return $out;
+}
+
+/**
+ * Where a player stands with the ask, in the words the admin screen uses.
+ *
+ * READ OFF THE SAME TWO RULES testimonial_offer() GATES ON, not a guess:
+ * muted stops it outright, and so does running out of asks. Anything else
+ * will come round again, so the screen says when.
+ */
+function testimonial_decline_state($row) {
+	if (!empty($row['muted'])) return array('never', 'Said never again');
+	$shown = (int) $row['shown_count'];
+	if ($shown >= TESTIMONIAL_MAX_NUDGES) {
+		return array('spent', 'Out of asks (' . TESTIMONIAL_MAX_NUDGES . ' is the limit)');
+	}
+	$left = TESTIMONIAL_MAX_NUDGES - $shown;
+	$when = '';
+	if (!empty($row['last_shown'])) {
+		$due = strtotime($row['last_shown']) + (TESTIMONIAL_NUDGE_DAYS * 86400);
+		$when = ($due > time())
+		      ? ', next in ' . max(1, (int) ceil(($due - time()) / 86400)) . 'd'
+		      : ', due now';
+	}
+	return array('open', $left . ' ask' . ($left === 1 ? '' : 's') . ' left' . $when);
+}
+
 /** Everything ever written by one player, newest first. The archive. */
 function testimonial_history($conn, $user_id, $limit = 20) {
 	if (!testimonials_ready($conn)) return array();
