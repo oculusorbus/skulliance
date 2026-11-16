@@ -1891,3 +1891,69 @@ project has left. Magic Eden's Polygon URL shape could not be
 determined — `magiceden.io/collections/polygon/<contract>` and
 `magiceden.us/collections/polygon/<contract>` both 404 — so that is an
 open question rather than a finished decision.
+
+## 6d9. The interactive refresh was Cardano-only, and destructive
+
+Reported from a real onboarding, and worth reading as one story because it
+is three faults compounding:
+
+> I couldn't remember if I connected an XRPL wallet, so I refreshed. After
+> some loading: connection error. Turns out I never connected one. I then
+> connected Xaman, assumed my NFTs would load, they weren't there, so I
+> refreshed again. Error. My NFTs aren't loaded and now some of my Cardano
+> NFTs aren't loading either.
+
+**It only ever refreshed Cardano.** `getAddresses()` defaults to
+`blockchain_id = 1` and `verifyNFTs()` is the Cardano verifier, so a button
+labelled *Refresh Connected Wallet(s)* ran a pass that structurally could
+not see an XRPL wallet — and then reported "Any newly acquired NFTs have
+been verified", which was false. `xrpl_verify_user()` already existed,
+written for exactly this, with **no callers**. The two link endpoints
+(`ajax/xrpl-link.php`, `ajax/xaman-done.php`) call it; the refresh did not.
+
+**It unlinked before it could restore.** `removeUser($conn, $uid, 1)`
+cleared every Cardano NFT and trusted `verifyNFTs()` to put them back. That
+function retries each address up to four times against Koios, which on a
+phone is comfortably long enough for the gateway to give up. The request
+dies between the clear and the rebuild, the browser shows "Connection
+error", and the account is empty until the nightly pass. §5a and the header
+of `verifyNFTsXRPL()` already say why that ordering is wrong — *"a
+cleared-then-partially-rebuilt table is not a smaller truth, it is a wrong
+one"* — but only the XRPL path was ever built that way.
+
+**Nothing connected still ran the whole thing,** which was the most
+destructive case of the three, because the clear happened regardless.
+
+### What it does now
+
+A no-wallet refresh says so and touches nothing. XRPL runs first, through
+`xrpl_verify_user()`, which reads the ledger before it writes. The Cardano
+clear only runs for a user who has a Cardano address, and it is wrapped in
+a **snapshot**: the row ids are read before the clear and a shutdown handler
+puts them back if the rebuild never finishes, guarded by `user_id = 0` so it
+can only undo our own clear and never take a row verification legitimately
+gave to someone else.
+
+A transaction would also have fixed it and was rejected: `verifyNFTs()`
+spends minutes in an HTTP retry loop, and holding row locks on `nfts` for
+that long puts the interactive path in the way of the nightly job.
+
+Restoring can re-link something sold since the last pass. That is the trade
+`verifyNFTsXRPL()` already chose deliberately, and it is the right one here
+too: a missed refresh is recoverable, an account emptied by a timeout is
+what the player actually sees.
+
+### Still open: rich fungible tokens
+
+The same report notes the purchases were *"technically rich fungible
+tokens"*. `xrpl_account_nfts()` calls the `account_nfts` RPC, which returns
+**XLS-20 NFTokens only**. Fungible holdings — issued currencies on a trust
+line, or XLS-33 MPTs — are invisible to it, and no amount of refreshing will
+change that.
+
+This is a design question, not a bug: for a fungible token "do you hold it"
+is a *balance*, not a token id, so there is nothing to put in `nfts.asset_id`
+and nothing for the per-NFT payout to count. Options are a balance-threshold
+rule (hold N, count as one stake) or leaving them out. **Not implemented,
+and deliberately not guessed at.**
+

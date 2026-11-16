@@ -106,6 +106,66 @@ ok(strpos($src, 'hash_equals(') !== false,
 ok(preg_match('/return\s*\(string\)VERIFY_JOB_TOKEN\s*===/', $src) === 0,
    'the job token is compared with a plain === somewhere');
 
+/* ---------------------------------------------------------------------------
+ * THE INTERACTIVE REFRESH -- "Refresh Connected Wallet(s)"
+ *
+ * REPORTED from a real onboarding: connect Xaman, press refresh, nothing
+ * appears; press it again, "Connection error"; and now some CARDANO NFTs are
+ * missing too. Three faults in one button.
+ *
+ *   IT ONLY REFRESHED CARDANO. getAddresses() defaults to blockchain_id 1
+ *   and verifyNFTs() is the Cardano verifier, so an XRPL holder ran a pass
+ *   that could not see their wallet. xrpl_verify_user() was written for
+ *   exactly this and had no callers.
+ *
+ *   IT UNLINKED BEFORE IT COULD RESTORE. removeUser() cleared the chain and
+ *   trusted verifyNFTs() to put it back -- and that retries each address up
+ *   to four times against Koios, long enough for a gateway to give up. Die
+ *   in between and the NFTs are gone from the account until the nightly
+ *   pass. verify-xrpl.php refuses to work that way and says why in its own
+ *   header; the Cardano interactive path never got the same treatment.
+ *
+ *   NOTHING CONNECTED STILL RAN IT, which was the most destructive case
+ *   because the clear happened anyway.
+ */
+$wa = file_get_contents(__DIR__ . '/wallet-ajax.php');
+echo "\nthe wallet refresh covers every chain, and cannot empty an account\n";
+
+ok(strpos($wa, 'xrpl_verify_user($conn, $uid)') !== false,
+   'the refresh does not run the XRPL verifier, so "Refresh Connected Wallet(s)" '
+ . 'cannot see an XRPL wallet');
+ok(strpos($wa, "getAddresses(\$conn, XRPL_CHAIN_ID)") !== false,
+   'the refresh does not even look for XRPL addresses');
+
+/* NOTHING CONNECTED MUST NOT REACH THE CLEAR. Asserted by ORDER: the early
+   return has to come before removeUser() appears at all. */
+$guard = strpos($wa, 'No wallet is connected yet');
+$clear = strpos($wa, 'removeUser($conn, $uid, 1)');
+ok($guard !== false, 'a refresh with no wallet connected no longer says so');
+ok($guard !== false && $clear !== false && $guard < $clear,
+   'the no-wallet check runs after the clear, so the most destructive case is '
+ . 'still the unguarded one');
+
+/* THE SNAPSHOT, AND THE THREE THINGS THAT MAKE IT WORK. */
+ok(preg_match('~SELECT id FROM nfts WHERE user_id = \$uid AND blockchain_id = 1~', $wa) === 1,
+   'nothing snapshots the Cardano rows before the clear, so a timeout loses them');
+ok(strpos($wa, 'register_shutdown_function') !== false
+   && preg_match('~register_shutdown_function\(function \(\) use \(\$conn, \$uid, \$held~', $wa) === 1,
+   'the snapshot is not restored by a shutdown handler, so it does nothing on a timeout');
+/* The restore must only undo OUR clear. Without `user_id = 0` it would take
+   back a row verifyNFTs legitimately handed to somebody else. */
+ok(preg_match('~UPDATE nfts SET user_id = \$uid WHERE user_id = 0 AND id IN~', $wa) === 1,
+   'the restore is not limited to rows still unowned, so it can steal a row '
+ . 'verification gave to another account');
+/* And it must not fire on the happy path. */
+ok(preg_match('~\$cardano_done = false;~', $wa) === 1
+   && preg_match('~\$cardano_done = true;~', $wa) === 1
+   && preg_match('~if \(\$cardano_done \|\| !\$held\) return;~', $wa) === 1,
+   'the restore has no completion flag, so it fires after a successful refresh too');
+/* The clear only runs for a chain the user actually has. */
+ok(preg_match('~if \(\$cardano\) \{~', $wa) === 1,
+   'the Cardano clear is not gated on the user having a Cardano address');
+
 echo "\n";
 if ($fail) { echo "$fail check(s) FAILED\n"; exit(1); }
 echo "verify entry point: ok\n";

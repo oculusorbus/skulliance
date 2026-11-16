@@ -289,7 +289,17 @@ function capitalizeFirstLetter(string) {
 				fetch('wallet-ajax.php', { method: 'POST', body: new FormData(this) })
 					.then(r => r.json())
 					.then(data => showWalletResult(data.success, data.message, data.redirect || null))
-					.catch(() => showWalletResult(false, 'Connection error. Please try again.'));
+					/* NOT "connection error" ANY MORE. The refresh can legitimately
+					   take a while -- the Cardano verifier retries each address
+					   up to four times -- and the only way this catch fires is a
+					   response that never arrived, because wallet-ajax.php
+					   returns JSON even on a fatal. The old wording read as "it
+					   broke, and who knows what happened to your NFTs", which
+					   until the snapshot landed was a fair reading. */
+					.catch(() => showWalletResult(false,
+						'That took longer than expected, so the refresh may still be '
+						+ 'finishing. Nothing has been lost -- reload in a minute, and '
+						+ "tonight's pass picks up anything still missing."));
 			});
 		}
 	});
