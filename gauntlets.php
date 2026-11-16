@@ -788,9 +788,41 @@ if ($state === 'encounter') {
 document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());
 
 // Show loader overlay (used before form submissions for immediate feedback)
+/*
+ * A FULL-SCREEN OVERLAY GOES TO THE TOP OF THE PAGE AND PINS IT THERE.
+ *
+ * REPORTED: picking a card lower down the list, or opening the items
+ * panel, made the fight overlay and the loader "load off centre towards
+ * the top". The CSS is not the problem -- both are position:fixed inset:0
+ * with justify-content:center, and rendered against the real stylesheets
+ * while scrolled 900px down they measure full-viewport with their content
+ * dead centre. It is the scroll position.
+ *
+ * Picking a card POSTs and navigates. You had to scroll down to reach that
+ * card, so the browser restores that scroll on the next page -- and this
+ * page STREAMS, flushing the loader before the rest of the document
+ * exists. The overlay is laid out against a viewport that is still being
+ * established and then the page jumps underneath it, which on iOS leaves
+ * the fixed layer anchored where it started rather than where the viewport
+ * ended up. The further down the list you picked, the further off it sat.
+ *
+ * So: put the window back at the top, and hold it there while the overlay
+ * is up. Both halves are needed. Scrolling alone still lets a stray touch
+ * move the page behind a modal; locking alone leaves it locked at whatever
+ * offset it inherited.
+ */
+function lockForOverlay() {
+	window.scrollTo(0, 0);
+	document.body.style.overflow = 'hidden';
+}
+function unlockAfterOverlay() {
+	document.body.style.overflow = '';
+}
+
 function showLoader(msg) {
 	var loader = document.getElementById('gauntlet-loader');
 	if (!loader) return;
+	lockForOverlay();
 	var txt = loader.querySelector('.loader-text');
 	if (txt && msg) txt.textContent = msg;
 	// Reset bar animation by replacing the element
@@ -801,10 +833,44 @@ function showLoader(msg) {
 	loader.style.opacity = '1';
 }
 
+/*
+ * THIS PAGE ALWAYS STARTS AT THE TOP, and that is the other half of the
+ * fix above. Every move here is a POST that reloads the page, so the
+ * browser restores wherever you were scrolled -- and the first thing this
+ * page shows is a full-screen loader, which has nothing to do with the
+ * card you happened to be looking at. The restore is what put the overlay
+ * and the viewport out of step in the first place.
+ *
+ * scrollRestoration is set as early as the script runs rather than on
+ * unload, so it covers a back-navigation into the page too.
+ */
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+/* The loader is in the markup and visible before any of this runs, and a
+   result reveal is printed server-side after a fight -- so whatever the
+   browser did with the scroll, start level with the overlay. */
+(function(){
+	if (document.getElementById('gauntlet-loader') || document.getElementById('result-reveal')) {
+		lockForOverlay();
+	}
+})();
+
 // Fade out page loader now that DOM is fully rendered
 (function(){
 	var loader = document.getElementById('gauntlet-loader');
-	if (loader) { loader.classList.add('fade-out'); setTimeout(function(){ loader.style.display='none'; }, 500); }
+	if (loader) {
+		loader.classList.add('fade-out');
+		setTimeout(function(){
+			loader.style.display = 'none';
+			/* Only give the page back if nothing else is covering it: the
+			   result reveal is printed server-side and outlives the loader
+			   by up to four seconds. */
+			if (!document.getElementById('result-reveal')
+			    || document.getElementById('result-reveal').style.display === 'none') {
+				unlockAfterOverlay();
+			}
+		}, 500);
+	}
 })();
 
 // Show loader on every form submission (fight-form excluded — handled by startFight animation)
@@ -829,7 +895,7 @@ function dismissResult() {
 	if (!rr || rr.classList.contains('hiding')) return;
 	clearTimeout(rr._autoTimer);
 	rr.classList.add('hiding');
-	setTimeout(function(){ rr.style.display = 'none'; }, 400);
+	setTimeout(function(){ rr.style.display = 'none'; unlockAfterOverlay(); }, 400);
 }
 
 // Fight animation — show suspense overlay, then submit
@@ -844,6 +910,7 @@ function startFight() {
 	});
 	var overlay = document.getElementById('fight-reveal-overlay');
 	if (!overlay) { form.submit(); return; }
+	lockForOverlay();
 	overlay.classList.add('active');
 	// Shake both cards after a short beat
 	var timer1 = setTimeout(function() {

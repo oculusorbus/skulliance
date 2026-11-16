@@ -217,6 +217,56 @@ ok('exclude ids are intval-ed into the IN list',
 ok('an empty draw still returns false from startRun',
    strpos($src, 'if (!$rows) return false;') !== false);
 
+/*
+ * A FULL-SCREEN OVERLAY AND THE SCROLL POSITION
+ *
+ * REPORTED: picking a card lower down the list, or opening the items
+ * panel, made the fight overlay and the loader "load off centre towards
+ * the top". The CSS was never the cause -- both are position:fixed
+ * inset:0 with justify-content:center, and rendered against the real
+ * stylesheets while scrolled 900px down they measure full-viewport with
+ * their content dead centre. The scroll position was.
+ *
+ * Every move here POSTs and reloads. You scrolled down to reach the card,
+ * so the browser restores that scroll on the next page -- and this page
+ * STREAMS, flushing the loader before the rest of the document exists, so
+ * the fixed layer is laid out and then the page jumps underneath it.
+ */
+$gt = (string) file_get_contents(__DIR__ . '/gauntlets.php');
+ok('scroll restoration is off',
+   strpos($gt, "history.scrollRestoration = 'manual'") !== false,
+   'the browser restores a mid-list scroll onto a page that opens with a full-screen loader');
+ok('overlays reset the scroll and pin the page',
+   preg_match('~function lockForOverlay\(\)\s*\{\s*window\.scrollTo\(0, 0\);\s*document\.body\.style\.overflow = .hidden.;~', $gt) === 1,
+   'lockForOverlay() no longer does both halves -- scrolling alone still lets a touch '
+ . 'move the page behind the overlay, locking alone keeps whatever offset it inherited');
+/* Each of the three full-screen overlays has to use it. Named rather than
+   counted: a count passes with the one that was actually reported left out. */
+foreach (array(
+	'showLoader'  => 'function showLoader(msg) {',
+	'startFight'  => "var overlay = document.getElementById('fight-reveal-overlay');",
+) as $what => $anchor) {
+	$at = strpos($gt, $anchor);
+	ok("$what locks the page", $at !== false
+	   && strpos($gt, 'lockForOverlay();', $at) !== false
+	   && strpos($gt, 'lockForOverlay();', $at) - $at < 400,
+	   "$what shows a full-screen overlay without resetting the scroll under it");
+}
+/* AND IT IS GIVEN BACK. A page left at overflow:hidden is worse than the
+   bug -- the whole page stops scrolling. Both exits are checked. */
+ok('the loader gives the page back',
+   preg_match('~loader\.style\.display = .none.;[\s\S]{0,400}unlockAfterOverlay\(\);~', $gt) === 1,
+   'the loader hides without unlocking, so the page can never scroll again');
+ok('the result reveal gives the page back',
+   preg_match('~rr\.style\.display = .none.; unlockAfterOverlay\(\);~', $gt) === 1,
+   'dismissing the result leaves the page locked');
+/* The loader must NOT unlock while the result reveal is still up -- it is
+   printed server-side and outlives the loader by up to four seconds. */
+ok('the loader does not unlock under the result reveal',
+   strpos($gt, "if (!document.getElementById('result-reveal')") !== false,
+   'the loader unlocks unconditionally, so the result reveal spends four seconds '
+ . 'over a page that can scroll behind it');
+
 restore_error_handler();
 echo "\n-------------------------------------------\n";
 echo "pass: $pass   fail: $fail\n";
