@@ -1772,5 +1772,23 @@ ok($ph !== '' && preg_match('~\.popup-close \{[^}]*width:\s*(\d+)px~s', $ph, $m_
    && (int) $m_w[1] >= 44,
    'the close button is under 44px on a phone, which is smaller than a fingertip');
 
+/*
+ * THE FOOTER ACTIONS SIT ON THE RIGHT, WHERE THE THUMB IS.
+ *
+ * Reported on the location modals: a lone Close in the bottom-LEFT corner
+ * is the furthest point on the screen from a right-handed thumb, on dialogs
+ * people close constantly. It was never a decision -- .raid-modal-footer is
+ * flex with no justify-content, so it fell to flex-start. The footers that
+ * carry a label or a count were already right-aligned, because that element
+ * sets margin-right:auto and pushes the buttons over; only the ones holding
+ * nothing but buttons sat left. Pinned because it is one property, in a
+ * shared class, with no visible effect on the majority of footers that were
+ * already behaving -- exactly the shape of thing that gets tidied away.
+ */
+$fx = (string) file_get_contents(__DIR__ . '/dist/flexbox.css');
+ok(preg_match('~\.raid-modal-footer\s*\{[^}]*justify-content:\s*flex-end~s', $fx) === 1,
+   'modal footer actions are not right-aligned, so a lone Close button sits in the '
+ . 'far corner from a right-handed thumb');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);

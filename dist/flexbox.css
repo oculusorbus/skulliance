@@ -3622,6 +3622,23 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     flex-wrap: wrap;
     align-items: center;
     gap: 10px;
+    /*
+     * BUTTONS SIT ON THE RIGHT, WHERE THE THUMB IS.
+     *
+     * Reported on the Realms location modals: a lone Close button in the
+     * bottom-LEFT corner is the furthest point on the screen from a
+     * right-handed thumb, and these are dialogs people close constantly.
+     *
+     * It was never a decision -- the footer is flex with no
+     * justify-content, so it fell to flex-start. The footers that DO carry
+     * a label or a count were already right-aligned, because that element
+     * sets margin-right:auto and pushes the buttons over; the ones with
+     * nothing but buttons were the only ones left-aligned. So this makes
+     * the majority behaviour the actual rule rather than a side effect of
+     * what happens to be in the row, and it is the conventional place for
+     * dialog actions on a desktop too.
+     */
+    justify-content: flex-end;
     padding-top: 14px;
     border-top: 1px solid rgba(0,200,160,0.1);
     margin-top: 14px;
