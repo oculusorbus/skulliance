@@ -1943,17 +1943,39 @@ Restoring can re-link something sold since the last pass. That is the trade
 too: a missed refresh is recoverable, an account emptied by a timeout is
 what the player actually sees.
 
-### Still open: rich fungible tokens
+### Rich fungible tokens: already answered, on both chains
 
-The same report notes the purchases were *"technically rich fungible
-tokens"*. `xrpl_account_nfts()` calls the `account_nfts` RPC, which returns
-**XLS-20 NFTokens only**. Fungible holdings — issued currencies on a trust
-line, or XLS-33 MPTs — are invisible to it, and no amount of refreshing will
-change that.
+An earlier version of this section called this an open design question. It
+is not, and the mistake is worth keeping because of how it was made: I read
+`xrpl_account_nfts()` calling `account_nfts`, concluded that editions were
+invisible, and wrote it up — without reading §6c twenty pages above, which
+had already settled it. A design record only works if you read it before
+adding to it.
 
-This is a design question, not a bug: for a fungible token "do you hold it"
-is a *balance*, not a token id, so there is nothing to put in `nfts.asset_id`
-and nothing for the per-NFT payout to count. Options are a balance-threshold
-rule (hold N, count as one stake) or leaving them out. **Not implemented,
-and deliberately not guessed at.**
+**Cardano has a mechanism, and it is the `else` branch in `processNFT()`.**
+Same `asset_id`, already owned by somebody, not a protected Diamond Skull:
+`createNFT()` writes a SECOND row for the new holder. One asset, one row per
+holder. The comment in the code says it plainly — *"All other NFTs with
+existing owners are RFTs and get a new DB entry."* It is not elegant, and it
+works: every holder of an edition of 100 gets a row, and the per-NFT payout
+counts rows.
 
+**XRPL does not need that branch, because the ledger does the work.** An
+edition of 100 is 100 NFTokens, each with its own globally unique
+NFTokenID and exactly one holder, so each gets its own row the ordinary
+way. The RFT path never fires here and correctly never should. XRPL editions
+are therefore supported today — better supported than Cardano's, since the
+uniqueness is enforced by the chain rather than reconstructed by a row count.
+
+**True fungible tokens — coins, currencies on a trustline — are out of
+scope by decision, not by omission.** The platform takes art editions from
+artists; it does not take tokens. So the `account_lines` read, the
+issuer+currency collection identity and the quantity column sketched above
+are not deferred work. They are work that should not be done.
+
+What this leaves for an XRPL holder whose art does not appear is one
+question, and it is not about fungibility: **is the collection registered
+for XRPL?** `xrpl_verify_user()` returns early when
+`getCollectionIDs($conn, XRPL_CHAIN_ID)` is empty, and the link flow says
+"Nothing from a registered collection in it yet" when the address holds
+nothing the platform knows. Both messages are honest; neither is a bug.
