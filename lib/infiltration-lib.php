@@ -292,7 +292,20 @@ function infil_parse($json) {
 	if (isset($json['display_text_range'][0], $json['display_text_range'][1])) {
 		$a = (int) $json['display_text_range'][0];
 		$b = (int) $json['display_text_range'][1];
-		if ($b > $a && $a >= 0) $own = mb_substr($text, $a, $b - $a);
+		/*
+		 * A RANGE THAT SPANS NOTHING MEANS THE MEMBER WROTE NOTHING, and
+		 * this used to fail OPEN. On an image-only reply X sends
+		 * text="@skulliance https://t.co/XXXX" with the range [12,12] --
+		 * start equals end, because there are no own words between the
+		 * mention prefix and the media link. The old guard asked for
+		 * $b > $a before trusting the range and otherwise fell back to the
+		 * WHOLE text, so `own` became our own handle plus a t.co URL. Both
+		 * quality floors then passed on content the member did not write.
+		 *
+		 * The range is authoritative when it is present: an empty span is
+		 * an answer, not a malformed one.
+		 */
+		if ($a >= 0 && $b >= $a) $own = ($b === $a) ? '' : mb_substr($text, $a, $b - $a);
 	}
 
 	return array(
@@ -349,11 +362,37 @@ function infil_chars($own) {
  * Worded for the member, because this is the one refusal an honest person
  * will meet.
  */
+/**
+ * The member's own words, with the things they did not write taken out.
+ *
+ * URLS AND @MENTIONS ARE NOT WRITING. A bare t.co link normalises to
+ * "https t co ab3xk9mzq1" -- four words and twenty-plus characters, enough
+ * to clear both floors on its own, so an image-only reply read as a
+ * substantial comment. The handle we are replying to is ours, not theirs.
+ *
+ * Stripped only for MEASURING. The stored text stays exactly as written,
+ * because it is what the owner reads in Discord when deciding whether the
+ * reply was any good.
+ */
+function infil_own_words($own) {
+	$s = (string) $own;
+	/* Any scheme, and bare t.co/x.com links that arrive without one. */
+	$s = preg_replace('~\b(?:https?://|www\.)\S+~iu', ' ', $s);
+	$s = preg_replace('~\b(?:t\.co|x\.com|twitter\.com)/\S*~iu', ' ', $s);
+	/* @handle, anywhere -- a reply that is nothing but mentions is not a
+	   comment either. */
+	$s = preg_replace('~(?<!\w)@\w{1,15}~u', ' ', $s);
+	return trim(preg_replace('/\s+/u', ' ', $s));
+}
+
 function infil_quality($own) {
+	/* MEASURED ON THE WORDS THEY WROTE. See infil_own_words(). */
+	$own   = infil_own_words($own);
 	$norm  = infil_normalise($own);
 	$chars = infil_chars(trim((string) $own));
 	$words = infil_words($norm);
-	if ($norm === '') return 'that comment has no words in it';
+	if ($norm === '') return 'that comment has no words in it -- a link or an image on '
+	                       . 'its own does not count, tell us what you think';
 	if ($chars < INFIL_MIN_CHARS) {
 		return 'that comment is ' . $chars . ' characters; it needs at least '
 		     . INFIL_MIN_CHARS . ' in your own words';

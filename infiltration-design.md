@@ -680,3 +680,60 @@ putting the headline figure up on the caption row with empty space beneath
 it. It read as a value that had failed to load. It is now `Rung` over
 `6 / 9`, the same shape as the two beside it.
 
+## 14. The image-only reply that paid out
+
+Reported: a new participant replying with **nothing but an image** was
+earning credit and a trait. The quality gate was not bypassed, and it was
+not overridden. It ran, and it passed, on content the member did not write.
+
+Two faults, and either one alone is enough to pay out.
+
+**The display range failed open.** X sends an image-only reply as
+`text = "@skulliance https://t.co/XXXX"` with `display_text_range` of
+`[12, 12]` — start *equals* end, because there are no own words between the
+mention prefix and the media link. `infil_parse()` asked for `$b > $a`
+before trusting the range and otherwise fell back to the **whole text**.
+That guard was written against a malformed range, and an empty span is not
+malformed: it is X answering the question. So `own` became our own handle
+plus a t.co URL.
+
+**And the floors could not have caught it anyway.** `infil_normalise()`
+replaces every non-letter with a space, so `https://t.co/Ab3xK9mZq1`
+becomes `https t co ab3xk9mzq1` — four words and twenty-one characters out
+of a link nobody typed. Measured end to end, the reply scored **35
+characters and 5 words** against floors of 25 and 4.
+
+### What it does now
+
+An empty display range means empty `own`. And `infil_own_words()` strips
+URLs and `@handles` before measuring, so a link, an image, or a pile of
+mentions counts as nothing — while a real comment *with* an image still
+passes on the words beside it. Stripping is for MEASURING only; `raw_text`
+and `own_text` are stored exactly as written, because that is what gets
+read in Discord when judging whether the reply was any good.
+
+The refusal says so in the member's own terms: *"that comment has no words
+in it -- a link or an image on its own does not count, tell us what you
+think"*.
+
+Pinned by six assertions driven **through `infil_parse()`** rather than
+against `infil_quality()` directly, because either half alone still pays
+out, plus two on the strip itself. Three mutations: the empty range
+falling back to the whole text, the strip removed, and the original
+`$b > $a` guard restored.
+
+### Already paid
+
+Nothing is reversed automatically. `infil_submissions` keeps `own_text`
+and `tiers` per row, so the affected submissions are identifiable and the
+rungs they granted are known — but taking a trait back from a member who
+was told they earned it is the owner's call, not a migration's.
+
+### Noticed while here, not fixed
+
+`infil_words()` splits on whitespace, so a Japanese or Chinese reply of any
+length counts as one or two words and can never clear the four-word floor.
+`infil_normalise()` keeps `\p{L}` specifically so non-Latin alphabets
+survive, so the intent is clearly that they should qualify. The word floor
+defeats it. Left alone because it is a policy question, not a bug.
+

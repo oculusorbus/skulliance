@@ -191,6 +191,54 @@ ok(infil_words(infil_normalise('ok so i go')) >= INFIL_MIN_WORDS,
 ok(infil_quality('ok so i go') !== '',
    'ten characters in four words passed: the CHARACTER floor is doing nothing');
 
+/*
+ * THE IMAGE-ONLY REPLY, WHICH SHIPPED AND PAID OUT.
+ *
+ * REPORTED: a member replying with nothing but an image was getting credit
+ * and a trait. Two faults compounding, and the gate itself was innocent.
+ *
+ * X sends an image-only reply as text="@skulliance https://t.co/XXXX" with
+ * display_text_range [12,12] -- start EQUALS end, because there are no own
+ * words between the mention prefix and the media link. infil_parse() asked
+ * for $b > $a before trusting the range and otherwise fell back to the
+ * WHOLE text, so `own` became our own handle plus a t.co URL. It failed
+ * open.
+ *
+ * And the floors could not have caught it anyway: infil_normalise() turns
+ * https://t.co/Ab3xK9mZq1 into "https t co ab3xk9mzq1" -- four words and
+ * twenty-one characters from a link nobody wrote. Measured end to end
+ * through infil_parse(), because either half alone still pays out.
+ */
+head('a reply with no words of its own earns nothing');
+$imgOnly = function ($text, $range = null) {
+	$j = array('id_str' => '1', 'text' => $text,
+	           'user' => array('screen_name' => 's', 'id_str' => '9'));
+	if ($range !== null) $j['display_text_range'] = $range;
+	$d = infil_parse($j);
+	return infil_quality($d['own']);
+};
+ok($imgOnly('@skulliance https://t.co/Ab3xK9mZq1', array(12, 12)) !== '',
+   'an image-only reply still passes: an empty display range falls back to the whole text');
+ok($imgOnly('@skulliance https://t.co/Ab3xK9mZq1') !== '',
+   'an image-only reply with NO display range still passes');
+ok($imgOnly('@skulliance https://t.co/Ab3xK9mZq1 https://t.co/Zz9', array(12, 52)) !== '',
+   'a reply that is nothing but links passes');
+ok($imgOnly('@skulliance @someone @another', array(12, 29)) !== '',
+   'a reply that is nothing but mentions passes');
+/* AND THE HONEST ONES STILL GET THROUGH, with and without an image --
+   stripping the link must not cost somebody their comment. */
+ok($imgOnly('@skulliance I did and got a legendary background!', array(12, 48)) === '',
+   'a genuine reply was refused: ' . $imgOnly('@skulliance I did and got a legendary background!', array(12, 48)));
+ok($imgOnly('@skulliance Pulled a mythic on my first run https://t.co/Ab3xK9mZq1', array(12, 43)) === '',
+   'a genuine reply WITH an image was refused, so the strip is eating real words');
+/* The strip itself, directly: it must take out links and handles and
+   nothing else. */
+ok(infil_own_words('Pulled a mythic https://t.co/Ab3 @skulliance') === 'Pulled a mythic',
+   'infil_own_words() is not removing exactly the link and the handle: "'
+ . infil_own_words('Pulled a mythic https://t.co/Ab3 @skulliance') . '"');
+ok(infil_own_words('great run, no links here') === 'great run, no links here',
+   'infil_own_words() is altering text that has nothing to strip');
+
 head('normalising collapses the differences that are not differences');
 ok(infil_normalise('Great RUN!!  ') === infil_normalise('great run'),
    'punctuation and case still make two comments different');
@@ -552,9 +600,25 @@ $MUTATIONS = array(
 	             "return array('state' => INFIL_NO, 'http' => \$http, 'json' => null,",
 	      'X failing to answer is treated as the member lying'),
 
-	array('lib', 'if ($b > $a && $a >= 0) $own = mb_substr($text, $a, $b - $a);',
-	             'if (false) $own = mb_substr($text, $a, $b - $a);',
+	array('lib', "if (\$a >= 0 && \$b >= \$a) \$own = (\$b === \$a) ? '' : mb_substr(\$text, \$a, \$b - \$a);",
+	             "if (false) \$own = mb_substr(\$text, \$a, \$b - \$a);",
 	      'our own @mention is counted as the member\'s words'),
+
+	/* THE IMAGE-ONLY REPLY, which shipped and paid out. X sends
+	   text="@skulliance https://t.co/XXXX" with display_text_range [12,12]
+	   -- start equals end, because there are no own words. The old guard
+	   wanted $b > $a before trusting the range and otherwise fell back to
+	   the WHOLE text, so `own` became our handle plus a t.co link: 35
+	   characters and, once normalised, 5 words. Both floors passed. */
+	array('lib', "\$own = (\$b === \$a) ? '' : mb_substr(\$text, \$a, \$b - \$a);",
+	             "\$own = mb_substr(\$text, \$a, \$b - \$a);",
+	      'an empty display range falls back to the whole text again'),
+
+	/* And the second half: even with a correct range, a bare t.co link
+	   normalises to "https t co ab3xk9mzq1" -- four words on its own. */
+	array('lib', "\$own   = infil_own_words(\$own);",
+	             "",
+	      'links and mentions are counted as the member\'s own words'),
 
 	array('lib', '$bank += ($delta - $up);',
 	             '$bank = min(3, $bank + ($delta - $up));',
