@@ -136,6 +136,6 @@ $wx_said = array(
 // Close DB Connection
 $conn->close();
 ?>
-<script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
+<script type="module" src="wallet.js?v=<?php echo skl_asset_v(); ?>"></script>
 <script type="text/javascript" src="skulliance.js"></script>
 </html>

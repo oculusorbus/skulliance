@@ -590,9 +590,53 @@ ok($ifAt !== false && $endAt !== false && $atJs > $ifAt && $atJs < $endAt,
    'the off switch does not gate the sweep, so ?polish=0 only half reverts');
 /* [\s\S]{0,160}? and not [^>]*: the cache-buster is a PHP tag, and `?>`
    contains a > that stopped the window before it reached the attribute. */
-ok(strpos($headCode, 'polish-sweep.js?var=') !== false
+ok(strpos($headCode, 'polish-sweep.js?v=') !== false
    && preg_match('~polish-sweep\.js[\s\S]{0,160}?defer~', $headCode) === 1,
-   'the sweep is not deferred; it reads layout and must not do that during load');
+   'the sweep is not deferred, or lost its cache-busting token; it reads layout '
+ . 'and must not do that during load');
+
+/* ---------------------------------------------------------------------------
+ * THE CACHE-BUSTING TOKEN IS STABLE, NOT RANDOM
+ *
+ * Every asset tag on the platform used to be `?var=rand(0,999)`. A URL that
+ * changes on every request can never be served from the browser cache, so a
+ * returning player re-downloaded every stylesheet and script on every page
+ * view -- forty-seven tags across twenty-three files. Reported as a stuck
+ * loading bar on cellular, and once as a page that rendered with no CSS at
+ * all, both of which came good on a refresh.
+ *
+ * It did not even bust reliably: a thousand possible values means about one
+ * load in a thousand hit a cached copy, which after a deploy is the old file.
+ *
+ * Asserted across the whole platform rather than on header.php alone,
+ * because twenty-two other pages carried their own tags.
+ */
+echo "\nasset URLs are cached by the browser, and invalidated by VERSION\n";
+$assetFiles = array_merge(glob(__DIR__ . '/*.php'), glob(__DIR__ . '/lib/*.php'));
+$randy = array();
+foreach ($assetFiles as $af) {
+	if (substr(basename($af), -12) === '-harness.php') continue;
+	$t = (string) file_get_contents($af);
+	if (preg_match('~(href|src)="[^"]*\?var=<\?php echo rand~', $t)) $randy[] = basename($af);
+}
+ok(count($randy) === 0,
+   'these still cache-bust assets with rand(), so the browser can never cache them: '
+ . implode(', ', $randy));
+ok(function_exists('skl_asset_v') || is_file(__DIR__ . '/lib/asset-version.php'),
+   'the shared asset-version helper is gone');
+require_once __DIR__ . '/lib/asset-version.php';
+$v1 = skl_asset_v();
+$v2 = skl_asset_v();
+ok($v1 !== '' && $v1 === $v2,
+   'skl_asset_v() is not stable within a request, which is the whole bug it replaced');
+ok(preg_match('~^[A-Za-z0-9._-]+$~', $v1) === 1,
+   'the token is not safe in a query string: ' . $v1);
+/* AND IT TRACKS VERSION, which is what makes a deploy invalidate it. The
+   file is bumped on every commit for the PWA banner; this rides the same
+   signal, exactly as service-worker.js's header says it must. */
+$verRaw = trim((string) @file_get_contents(__DIR__ . '/VERSION'));
+ok($verRaw !== '' && strpos($v1, preg_replace('/[^A-Za-z0-9._-]/', '', $verRaw)) === 0,
+   'the asset token is not derived from VERSION, so a deploy will not invalidate it');
 
 echo "\nit adds a layer, it can never change a colour\n";
 /*

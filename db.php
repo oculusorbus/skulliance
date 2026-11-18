@@ -31,6 +31,8 @@
  * dhcarena-lib.php, which is where this was first diagnosed.
  */
 date_default_timezone_set('America/Chicago');
+/* One stable cache-busting token for every static asset; see the file. */
+require_once __DIR__ . '/lib/asset-version.php';
 
 require_once __DIR__ . '/daily-streak-lib.php';
 include 'credentials/db_credentials.php';

@@ -325,11 +325,11 @@ include 'header.php';
 <?php /* map-kit.js owns svgEl() and the text measurer; dhc-crew-kit.js owns
          the Crew packing and the portrait, shared with the Rivalries map.
          Both before siege.js, and all three after the markup it writes into. */ ?>
-<script src="map-kit.js?var=<?php echo rand(0,999); ?>"></script>
-<script src="dhc-crew-kit.js?var=<?php echo rand(0,999); ?>"></script>
+<script src="map-kit.js?v=<?php echo skl_asset_v(); ?>"></script>
+<script src="dhc-crew-kit.js?v=<?php echo skl_asset_v(); ?>"></script>
 <?php /* dhc-map-export.js: the download/copy buttons, shared with the
          Rivalries map. Needs js/save-image.js, which header.php carries. */ ?>
-<script src="dhc-map-export.js?var=<?php echo rand(0,999); ?>"></script>
-<script src="siege.js?var=<?php echo rand(0,999); ?>"></script>
+<script src="dhc-map-export.js?v=<?php echo skl_asset_v(); ?>"></script>
+<script src="siege.js?v=<?php echo skl_asset_v(); ?>"></script>
 <?php endif; ?>
 <?php $conn->close(); ?>

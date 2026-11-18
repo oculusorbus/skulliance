@@ -4,12 +4,18 @@
  * WHAT THIS DELIBERATELY DOES NOT DO: cache the site. Every HTML response
  * here is per-player and live -- balances, mission timers, raid state, what
  * is left to claim today -- and serving a stale one would be worse than
- * serving none. Static assets are not cached either: flexbox.css and the
- * game JS are unversioned URLs, so a cached copy would survive a deploy and
- * the update banner (version.php, polled from header.php) would be telling
- * people to refresh into the old stylesheet. If asset caching is ever added,
- * it has to be invalidated by that same VERSION signal, not by a cache name
- * someone remembers to bump.
+ * serving none.
+ *
+ * STATIC ASSETS ARE NOT CACHED HERE EITHER, AND NO LONGER NEED TO BE. This
+ * header used to say they were unversioned URLs. They were worse than that:
+ * every tag carried `?var=rand(0,999)`, so the URL changed on every request
+ * and the browser's own cache could never serve one. A returning player
+ * re-downloaded every stylesheet and script on every page view, which on a
+ * weak connection showed up as a stuck loading bar or a page with no CSS at
+ * all. They now carry ?v=<VERSION> (lib/asset-version.php) -- the same
+ * signal this comment already said any asset caching would have to be
+ * invalidated by -- so the HTTP cache does the job, correctly, without a
+ * second cache in here to get out of step with it.
  *
  * WHAT IT DOES: catch a page navigation that fails or hangs, and put
  * something on screen that explains it and offers a way out.

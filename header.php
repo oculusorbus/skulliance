@@ -144,9 +144,10 @@
   })();
   </script>
   <!--<link href="dist/output.css" rel="stylesheet">-->
-  <link href="dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
-  <link href="dist/modal.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
-  <link href="dist/circular-progress-bar.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
+<?php require_once __DIR__ . '/lib/asset-version.php'; /* skl_asset_v() */ ?>
+  <link href="dist/flexbox.css?v=<?php echo skl_asset_v(); ?>" rel="stylesheet">
+  <link href="dist/modal.css?v=<?php echo skl_asset_v(); ?>" rel="stylesheet">
+  <link href="dist/circular-progress-bar.css?v=<?php echo skl_asset_v(); ?>" media="all" rel="stylesheet" />
   <?php /*
    * THE GRADIENT-AND-BORDER LAYER, on trial. Deleting this one link is
    * the whole revert; ?polish=0 on any URL turns it off without one.
@@ -155,13 +156,13 @@
    * thing making it win.
    */ ?>
   <?php if (!isset($_GET['polish']) || $_GET['polish'] !== '0'): ?>
-  <link href="dist/polish.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
+  <link href="dist/polish.css?v=<?php echo skl_asset_v(); ?>" rel="stylesheet">
   <?php /* AND THE SWEEP, which does by colour what the stylesheet cannot do
            by name: fifty three pages carry panels in their own inline
            <style>, which outranks any <link>, each with its own class
            names -- but all one palette. defer, because it reads layout
            for every element and must not do that during load. */ ?>
-  <script src="dist/polish-sweep.js?var=<?php echo rand(0,999); ?>" defer></script>
+  <script src="dist/polish-sweep.js?v=<?php echo skl_asset_v(); ?>" defer></script>
   <?php endif; ?>
   <?php
   /*
@@ -180,8 +181,8 @@
   $sk_path = basename(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
   if ($sk_path === "realms.php" || $sk_path === "realms-map.php") {
   ?>
-	  <link href="dist/map.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
-	  <link href="dist/realms-onboarding.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
+	  <link href="dist/map.css?v=<?php echo skl_asset_v(); ?>" media="all" rel="stylesheet" />
+	  <link href="dist/realms-onboarding.css?v=<?php echo skl_asset_v(); ?>" media="all" rel="stylesheet" />
   <?php
   }
   /*
@@ -201,7 +202,7 @@
    * guard so it cannot unroll even if this link fails.
    */
   ?>
-	  <link href="dist/testimonials.css?var=<?php echo rand(0,999); ?>" media="all" rel="stylesheet" />
+	  <link href="dist/testimonials.css?v=<?php echo skl_asset_v(); ?>" media="all" rel="stylesheet" />
   <script type="text/javascript">
 	  // Toggle burger menu
 	  function toggleMenu(){
@@ -226,7 +227,7 @@
 	  	if(!isOpen) menu.classList.add('open');
 	  }
   </script>
-  <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
+  <script type="module" src="wallet.js?v=<?php echo skl_asset_v(); ?>"></script>
   <script>
     // Register service worker — needed for Android PWA install eligibility.
     if ('serviceWorker' in navigator) {

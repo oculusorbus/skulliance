@@ -1208,8 +1208,8 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 </div>
 </body>
 <?php $conn->close(); ?>
-<script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
-<script type="text/javascript" src="swipe-nav.js?var=<?php echo rand(0,999); ?>"></script>
+<script type="text/javascript" src="skulliance.js?v=<?php echo skl_asset_v(); ?>"></script>
+<script type="text/javascript" src="swipe-nav.js?v=<?php echo skl_asset_v(); ?>"></script>
 <script type="text/javascript">
 /* The document is here, so the overlay goes. Not waiting on window.load --
    that waits on every mission thumbnail, and the page is usable long

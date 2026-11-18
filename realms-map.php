@@ -139,7 +139,7 @@ $conn->close();
 <?php /* map-kit.js FIRST: map.js uses its globals at parse time, and
          map-world.js before map.js because map.js calls mwWorld() to
          build the continent. Same order as realms.php, same reasons. */ ?>
-<script type="text/javascript" src="map-kit.js?var=<?php echo rand(0,999); ?>"></script>
-<script type="text/javascript" src="map-world.js?var=<?php echo rand(0,999); ?>"></script>
-<script type="text/javascript" src="map.js?var=<?php echo rand(0,999); ?>"></script>
+<script type="text/javascript" src="map-kit.js?v=<?php echo skl_asset_v(); ?>"></script>
+<script type="text/javascript" src="map-world.js?v=<?php echo skl_asset_v(); ?>"></script>
+<script type="text/javascript" src="map.js?v=<?php echo skl_asset_v(); ?>"></script>
 </html>

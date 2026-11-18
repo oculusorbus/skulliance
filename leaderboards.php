@@ -985,7 +985,7 @@ $conn->close();
 if($filterby != ""){
 	echo "<script type='text/javascript'>document.getElementById('filterLeaderboard').value = '".$filterby."';</script>";
 }?>
-<script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+<script type="text/javascript" src="skulliance.js?v=<?php echo skl_asset_v(); ?>"></script>
 <script>
 // Fade out loader once page is fully rendered
 (function(){

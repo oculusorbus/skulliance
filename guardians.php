@@ -3805,7 +3805,7 @@ $rg_theme_img = $rg_theme > 0
 </script>
 
 </body>
-<script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+<script type="text/javascript" src="skulliance.js?v=<?php echo skl_asset_v(); ?>"></script>
 <?php include 'dhc-dropmodal.php'; ?>
 <?php
 $conn->close();

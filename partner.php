@@ -812,6 +812,6 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
 </div>
 </div>
 </body>
-<script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+<script type="text/javascript" src="skulliance.js?v=<?php echo skl_asset_v(); ?>"></script>
 <?php $conn->close(); ?>
 </html>
