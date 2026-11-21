@@ -768,6 +768,47 @@ require_once __DIR__ . '/admin-lib.php';
  * has open on a phone, and draws nothing. Indistinguishable from a dead
  * page, which is exactly how it was read.
  */
+/*
+ * A FAILED RESIZE MUST NOT COST THE UPLOAD.
+ *
+ * The resize is an optimisation. It spent four rounds of this behaving
+ * like a gate -- budget too small, then disk banned, then the clock too
+ * tight, then CPU -- and every one of those refused the upload outright
+ * on a host where the file would have rendered perfectly well unresized.
+ * admin_write_image() already said as much for a host with NO Imagick:
+ * "Still better than refusing: an unoptimised image renders."
+ */
+echo "\na resize that fails keeps the original\n";
+ok(function_exists('admin_keep_original'), 'the fallback is gone; a failed resize refuses the upload again');
+$ktmp = tempnam(sys_get_temp_dir(), 'adm');
+file_put_contents($ktmp, str_repeat('x', 2048));
+$kdst = sys_get_temp_dir() . '/adm-harness-kept.jpg';
+@unlink($kdst);
+$kres = admin_keep_original($ktmp, $kdst, 'time limit exceeded');
+ok($kres === '', 'a failed resize still reports an error, so the mission cannot be saved');
+ok(is_file($kdst) && filesize($kdst) === 2048, 'the original was not kept, so the art is missing');
+ok(strpos(adm_image_note(), 'original size') !== false
+   && strpos(adm_image_note(), 'time limit exceeded') !== false,
+   'the reason is swallowed, so a silently unoptimised file looks like a clean save');
+@unlink($ktmp); @unlink($kdst);
+/* But a fallback that cannot write either is a real error -- that one
+   must not be reported as success. */
+ok(admin_keep_original('/nonexistent/src', '/nonexistent/dst', 'x') !== '',
+   'a copy that fails is reported as a successful save');
+adm_image_note('');
+/* AND THE PATHS THAT ACTUALLY FAIL MUST USE IT. Testing the helper alone
+   passed with admin_write_image()'s catch still returning a bare error --
+   which is the exact path every one of these uploads took. */
+$albody = harness_strip_comments((string) file_get_contents(__DIR__ . '/admin-lib.php'));
+ok(preg_match('~catch \(Throwable \$ex\) \{[\s\S]{0,1400}?return admin_keep_original\(~', $albody) === 1,
+   'admin_write_image() catches a failed resize and still refuses the upload');
+ok(preg_match('~if \(\$ok\) return .{0,4};\s*return admin_keep_original\(~', $albody) === 1,
+   'a write that returns false refuses the upload instead of keeping the original');
+/* And the page has to SHOW it, as a warning rather than an error. */
+$mis2 = harness_strip_comments((string) file_get_contents(__DIR__ . '/admin-missions.php'));
+ok(strpos($mis2, "\$MSG['warn'][]") !== false && strpos($mis2, 'adm_image_note()') !== false,
+   'admin-missions.php never surfaces the unoptimised note, so it is saved and nobody is told');
+
 echo "\nthe mission form reacts to a press it refuses\n";
 $mis = harness_strip_comments((string) file_get_contents(__DIR__ . '/admin-missions.php'));
 ok(strpos($mis, "addEventListener('invalid'") !== false && strpos($mis, ', true)') !== false,

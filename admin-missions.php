@@ -162,8 +162,12 @@ foreach (array('art' => $EXTS, 'art_still' => array('gif', 'png', 'jpg')) as $fi
 	        . ' bpp=' . (function_exists('adm_imagick_bpp') ? adm_imagick_bpp() : '?'));
 	$t0 = microtime(true);
 	$e = adm_accept_upload($field, $dir, $slug, $allow);
+	$note = function_exists('adm_image_note') ? adm_image_note() : '';
 	adm_trace('upload done', $field . ' ' . round((microtime(true) - $t0) * 1000) . 'ms'
-	        . ($e === '' ? ' ok' : ' REFUSED: ' . $e));
+	        . ($e === '' ? ($note === '' ? ' ok' : ' ok (unoptimised: ' . $note . ')') : ' REFUSED: ' . $e));
+	/* Saved, but say what did not happen to it. Amber, not red: nothing was
+	   refused -- the art is in place at its original size. */
+	if ($e === '' && $note !== '') { $MSG['warn'][] = htmlspecialchars($note); adm_image_note(''); }
 	if ($e !== '') { $errs[] = $e; continue; }
 	/* Which extension actually landed -- adm_accept_upload() names the
 	   file from the FILE's type, not from what the field was called. */

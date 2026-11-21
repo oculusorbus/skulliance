@@ -599,6 +599,19 @@ if (!defined('ADMIN_IMAGE_MAX_MEM')) define('ADMIN_IMAGE_MAX_MEM', 576);        
  * Asked rather than assumed: the shell php on this host has no Imagick at
  * all, so a CLI reading could not have answered this either way.
  */
+/**
+ * WHY THE LAST IMAGE WAS STORED WITHOUT BEING OPTIMISED, if it was.
+ *
+ * admin_write_image() no longer refuses an upload because Imagick could
+ * not process it. It keeps the original and leaves the reason here for
+ * the page to show as a warning rather than an error.
+ */
+function adm_image_note($set = null) {
+	static $note = '';
+	if ($set !== null) $note = (string) $set;
+	return $note;
+}
+
 function adm_imagick_bpp() {
 	if (!class_exists('Imagick')) return 8;
 	$d    = @Imagick::getQuantumDepth();
@@ -835,7 +848,9 @@ function admin_write_image($tmp_path, $dest_path, $max_width = 1000) {
 				$im->setImageCompressionQuality(86);
 			$ok = $im->writeImage($dest_path);
 		}
-		return $ok ? '' : 'Imagick could not write ' . basename($dest_path) . '.';
+		if ($ok) return '';
+		return admin_keep_original($tmp_path, $dest_path,
+			'Imagick could not write ' . basename($dest_path) . '.');
 	} catch (Throwable $ex) {
 		/*
 		 * NAME THE LIMITS THAT WERE IN FORCE. "cache resources exhausted"
@@ -860,8 +875,36 @@ function admin_write_image($tmp_path, $dest_path, $max_width = 1000) {
 			if ($parts) $lim = ' [asked for ' . round($budget['mem'] / 1048576) . 'MB; in force: '
 			                 . implode(' ', $parts) . '; ' . adm_imagick_bpp() . ' bytes/px]';
 		}
-		return 'Could not process that image: ' . $ex->getMessage() . $lim;
+		return admin_keep_original($tmp_path, $dest_path, $ex->getMessage() . $lim);
 	}
+}
+
+/**
+ * KEEP THE ORIGINAL RATHER THAN REFUSE THE UPLOAD.
+ *
+ * THE RESIZE IS AN OPTIMISATION AND IT WAS ACTING LIKE A GATE. This file
+ * already says, for a host with no Imagick at all, "Still better than
+ * refusing: an unoptimised image renders" -- and then refused anyway the
+ * moment Imagick was present but could not finish. That is the wrong way
+ * round: a 1MB comic page displays perfectly well unresized, and the
+ * person uploading it is blocked by a step whose only job was to make the
+ * file smaller.
+ *
+ * It took three attempts at the resource limits to notice that. Each one
+ * fixed something real and none of them was the point: the owner wanted
+ * to add a mission, not to tune ImageMagick.
+ *
+ * The reason is kept for the page to show as a WARNING -- saved, and here
+ * is what did not happen -- rather than swallowed. adm-msg.warn exists
+ * for exactly this: nothing was refused, but something about what was
+ * saved will matter later.
+ */
+function admin_keep_original($tmp_path, $dest_path, $why) {
+	if (@copy($tmp_path, $dest_path)) {
+		adm_image_note('Saved, but stored at its original size: ' . $why);
+		return '';
+	}
+	return 'Could not process that image, and could not keep the original either: ' . $why;
 }
 
 /* ---------- reads and uploads, shared by the three admin pages ----------- *
