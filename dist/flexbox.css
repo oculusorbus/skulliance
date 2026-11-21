@@ -867,6 +867,30 @@ input {
     color: #D6DDDE;
 }
 
+/*
+ * TAPPING THE WORDS ON A BUTTON HAS TO PRESS THE BUTTON.
+ *
+ * REPORTED: "the text isn't clickable -- you have to click around the text
+ * on the actual button to get it to fire." That is iOS, not a layout bug:
+ * a tap that lands on selectable TEXT can begin a selection or a callout
+ * gesture, and the tap is spent on that instead of on the control. The
+ * padding around the label still works, which is exactly the shape of the
+ * report and is why it read as the button being unresponsive.
+ *
+ * Buttons have no text worth selecting, so this costs nothing. Applied to
+ * every control rather than the one form it was reported on, because the
+ * gesture is the browser's and every button on a phone has it.
+ */
+button,
+.button,
+.small-button,
+input[type="submit"],
+input[type="button"] {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 .button {
   background-color: #00c8a0;
   border: none;

@@ -156,7 +156,10 @@ $uploaded = array();
 foreach (array('art' => $EXTS, 'art_still' => array('gif', 'png', 'jpg')) as $field => $allow) {
 	if (!isset($_FILES[$field]) || $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) continue;
 	if ($errs) continue;                       // never write for a save that cannot happen
-	adm_trace('upload start', $field . ' ' . (int) $_FILES[$field]['size'] . 'B');
+	$dim = @getimagesize($_FILES[$field]['tmp_name']);
+	adm_trace('upload start', $field . ' ' . (int) $_FILES[$field]['size'] . 'B '
+	        . ($dim ? $dim[0] . 'x' . $dim[1] : 'not an image')
+	        . ' bpp=' . (function_exists('adm_imagick_bpp') ? adm_imagick_bpp() : '?'));
 	$t0 = microtime(true);
 	$e = adm_accept_upload($field, $dir, $slug, $allow);
 	adm_trace('upload done', $field . ' ' . round((microtime(true) - $t0) * 1000) . 'ms'

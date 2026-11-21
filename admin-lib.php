@@ -586,6 +586,29 @@ if (!defined('ADMIN_IMAGE_MAX_MEM')) define('ADMIN_IMAGE_MAX_MEM', 576);        
  *
  * Returns array('ok' => bool, 'mem' => bytes, 'why' => message).
  */
+/**
+ * BYTES PER PIXEL IN THIS IMAGICK BUILD, which is not a constant.
+ *
+ * ImageMagick's pixel cache is quantum-depth x 4 channels. A Q16 build is
+ * 8 bytes a pixel; an HDRI build stores every channel as a FLOAT and is 16,
+ * whatever the quantum says. The budget below assumed the small number, so
+ * on an HDRI host it granted an image roughly half of what it needed and
+ * ImageMagick answered "cache resources exhausted" at OpenPixelCache --
+ * in 4ms, before a single row was decoded.
+ *
+ * Asked rather than assumed: the shell php on this host has no Imagick at
+ * all, so a CLI reading could not have answered this either way.
+ */
+function adm_imagick_bpp() {
+	if (!class_exists('Imagick')) return 8;
+	$d    = @Imagick::getQuantumDepth();
+	$bits = isset($d['quantumDepthLong']) ? (int) $d['quantumDepthLong'] : 16;
+	$v    = @Imagick::getVersion();
+	$vs   = isset($v['versionString']) ? (string) $v['versionString'] : '';
+	$per  = (stripos($vs, 'HDRI') !== false) ? 4 : max(1, intdiv($bits, 8));
+	return max(4, $per * 4);
+}
+
 function admin_image_budget($w, $h, $frames = 1) {
 	$w = (int)$w; $h = (int)$h;
 	$frames = max(1, (int)$frames);
@@ -614,14 +637,56 @@ function admin_image_budget($w, $h, $frames = 1) {
 	 * showed the offline page. Exactly the 5000x5000 failure again, in
 	 * the one dimension the fix for it did not measure.
 	 */
-	$need = max(64 * 1024 * 1024, (int)($w * $h * 16) * $frames);
-	$cap  = ADMIN_IMAGE_MAX_MEM * 1024 * 1024;
+	/*
+	 * SOURCE PLUS THE COPY THAT LIVES BESIDE IT, AT THIS BUILD'S REAL
+	 * BYTES PER PIXEL.
+	 *
+	 * The old figure was a flat w x h x 16, which on a Q16 HDRI host is
+	 * EXACTLY the source cache and nothing else -- no destination, no
+	 * working room. ImageMagick refused at the first allocation with
+	 * "cache resources exhausted", in 4ms. Before RESOURCETYPE_DISK was
+	 * pinned to 0 the same shortfall spilled to disk instead and ground,
+	 * which is the "it locks up for a while and sometimes saves" this
+	 * started as. Same cause, two symptoms, depending on whether the
+	 * spill was available.
+	 *
+	 * resizeImage() holds the destination alongside the source, so the
+	 * budget is both. x1.6 for the pyramid Lanczos builds and the odd
+	 * clone, which is slack rather than a measured figure -- the point is
+	 * that it is no longer less than one.
+	 */
+	/*
+	 * THE OLD FIGURE WAS w x h x 16, AND ONLY ONE NUMBER IN IT WAS WRONG.
+	 *
+	 * 16 was "8 bytes a pixel, twice" -- the Q16 pixel cache plus one
+	 * working copy for the coalesce or the resize. The 8 is the part that
+	 * is not a constant: an HDRI build stores every channel as a float and
+	 * costs 16 bytes a pixel, so on this host the budget was granting
+	 * EXACTLY the source cache and nothing else. ImageMagick refused at
+	 * the first allocation -- "cache resources exhausted" at
+	 * OpenPixelCache, in 4ms, on a perfectly ordinary 1MB comic page.
+	 *
+	 * Before RESOURCETYPE_DISK was pinned to 0 the same shortfall spilled
+	 * to disk instead and ground away, which is the "it locks the server
+	 * up for a while and sometimes saves" this began as. One cause, two
+	 * symptoms, depending on whether the spill was available.
+	 *
+	 * So: the same x2, measured against what a pixel actually costs here.
+	 * Deliberately NOT a bigger multiplier -- a first attempt counted the
+	 * resize and the coalesce separately, which refused the 58-frame GIF
+	 * that has always worked and broke the frame-linearity this function
+	 * is held to. The harness caught both.
+	 */
+	$bpp  = adm_imagick_bpp();
+	$need = (int) max(96 * 1024 * 1024, (float) $w * (float) $h * $bpp * 2 * $frames);
+	$cap   = ADMIN_IMAGE_MAX_MEM * 1024 * 1024;
 	if ($need > $cap) {
 		return array('ok' => false, 'mem' => 0, 'why' => sprintf(
-			'That is %d frames at %d x %d, which needs about %dMB to process and the limit is '
-			. '%dMB. Either cut the frame count or scale it down -- mission art is never shown '
-			. 'above 1000px wide.',
-			$frames, $w, $h, (int)($need / 1048576), ADMIN_IMAGE_MAX_MEM));
+			'That is %d frame%s at %d x %d, which needs about %dMB to process (%d bytes a pixel '
+			. 'on this server) and the limit is %dMB. Either cut the frame count or scale it '
+			. 'down -- mission art is never shown above 1000px wide.',
+			$frames, $frames === 1 ? '' : 's', $w, $h,
+			(int)($need / 1048576), $bpp, ADMIN_IMAGE_MAX_MEM));
 	}
 	return array('ok' => true, 'mem' => $need, 'why' => '');
 }
