@@ -759,21 +759,34 @@ function admin_write_image($tmp_path, $dest_path, $max_width = 1000) {
 		$im->setResourceLimit(Imagick::RESOURCETYPE_MEMORY, $budget['mem']);
 		$im->setResourceLimit(Imagick::RESOURCETYPE_MAP,    $budget['mem']);
 		/*
-		 * AND IT MAY NOT USE THE DISK. Past its memory and map limits
-		 * Imagick does not fail -- it SPILLS TO A DISK CACHE and carries
-		 * on, which is why the symptom of every budget mistake in this
-		 * function has been a form that churns rather than one that
-		 * refuses. admin_image_budget()'s own comment records that
-		 * happening once already, as "a form that churned until the
-		 * service worker gave up at 20s".
+		 * AREA IS THE ONE THAT DECIDES WHETHER MEMORY IS USED AT ALL.
 		 *
-		 * A shared host is the worst place to do it: the spill is IO
-		 * against the same quota the whole account shares, so one upload
-		 * slows every other request. Zero here turns a slow grind into an
-		 * immediate exception, which the catch below turns into a
-		 * sentence on the page.
+		 * ImageMagick switches an image to a DISK-BACKED pixel cache when
+		 * its area exceeds the area limit -- no matter how much memory it
+		 * has been allowed. That is why raising MEMORY and MAP alone did
+		 * not stop "cache resources exhausted": the cache was never going
+		 * to memory, and DISK was pinned to 0, so the fallback it had
+		 * already chosen was the one thing forbidden.
 		 */
-		$im->setResourceLimit(Imagick::RESOURCETYPE_DISK, 0);
+		$im->setResourceLimit(Imagick::RESOURCETYPE_AREA, $budget['mem']);
+		/*
+		 * AND THE DISK IS A FALLBACK AGAIN, BOUNDED RATHER THAN BANNED.
+		 *
+		 * Pinning it to 0 was too blunt and it is my own mistake twice
+		 * over: lib/image-cache-lib.php does this same work on this same
+		 * host and leaves disk alone, and its header says plainly that its
+		 * limits are "settled and proven here". It brakes on TIME instead
+		 * -- ImageMagick's own clock, which set_time_limit() cannot touch
+		 * because that does not count time spent in C.
+		 *
+		 * That is the right brake. A spill is slow, not wrong; a spill
+		 * with no time limit is the hang. So the disk gets a bounded
+		 * allowance and the clock stops the grind.
+		 */
+		$im->setResourceLimit(Imagick::RESOURCETYPE_DISK, 2 * $budget['mem']);
+		if (defined('Imagick::RESOURCETYPE_TIME')) {
+			@$im->setResourceLimit(constant('Imagick::RESOURCETYPE_TIME'), 20);
+		}
 		/* A huge JPEG can be decoded already scaled down, which skips the
 		   full-size allocation entirely. PNG has no equivalent. */
 		if ($max_width > 0) $im->setOption('jpeg:size', ($max_width * 2) . 'x' . ($max_width * 2));
@@ -797,7 +810,30 @@ function admin_write_image($tmp_path, $dest_path, $max_width = 1000) {
 		}
 		return $ok ? '' : 'Imagick could not write ' . basename($dest_path) . '.';
 	} catch (Throwable $ex) {
-		return 'Could not process that image: ' . $ex->getMessage();
+		/*
+		 * NAME THE LIMITS THAT WERE IN FORCE. "cache resources exhausted"
+		 * does not say WHICH resource ran out, and this failure has now
+		 * been misdiagnosed twice from the message alone -- once as memory
+		 * and once as the disk ban. Reading them back from ImageMagick
+		 * also proves setResourceLimit() took effect, which was itself an
+		 * assumption until it was printed.
+		 */
+		$lim = '';
+		if (class_exists('Imagick')) {
+			$names = array('AREA' => 'RESOURCETYPE_AREA', 'MEMORY' => 'RESOURCETYPE_MEMORY',
+			               'MAP' => 'RESOURCETYPE_MAP', 'DISK' => 'RESOURCETYPE_DISK',
+			               'TIME' => 'RESOURCETYPE_TIME');
+			$parts = array();
+			foreach ($names as $label => $const) {
+				if (!defined('Imagick::' . $const)) continue;
+				$v = @Imagick::getResourceLimit(constant('Imagick::' . $const));
+				if ($v === false || $v === null) continue;
+				$parts[] = $label . '=' . ($v > 4096 ? round($v / 1048576) . 'MB' : $v);
+			}
+			if ($parts) $lim = ' [asked for ' . round($budget['mem'] / 1048576) . 'MB; in force: '
+			                 . implode(' ', $parts) . '; ' . adm_imagick_bpp() . ' bytes/px]';
+		}
+		return 'Could not process that image: ' . $ex->getMessage() . $lim;
 	}
 }
 
