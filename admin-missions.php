@@ -451,9 +451,65 @@ $Q = null; foreach ($M as $row) if ((int)$row['id'] === $qid) $Q = $row;
       reward <strong class="mono"><?php echo number_format($Q ? (int)$Q['reward'] : $def['reward']); ?></strong>,
       <strong class="mono"><?php echo $Q ? (int)$Q['duration'] : $def['duration']; ?></strong> days,
       <strong class="mono"><?php echo number_format($Q ? admin_mission_per_day((int)$Q['cost'], (int)$Q['reward'], (int)$Q['duration']) : $def['per_day']); ?></strong> net/day.</p>
-    <button type="submit"><?php echo $Q ? 'Save mission' : 'Add mission'; ?></button>
+    <button type="submit" id="mission-save"><?php echo $Q ? 'Save mission' : 'Add mission'; ?></button>
+    <p class="adm-msg bad" id="mission-blocked" hidden></p>
     <?php if ($Q): ?><p class="adm-note"><a href="admin-missions.php?project=<?php echo $pid; ?>">Cancel &mdash; add a new mission instead</a></p><?php endif; ?>
   </form>
+
+  <?php /*
+   * THE BUTTON HAS TO REACT, EVEN WHEN IT REFUSES.
+   *
+   * REPORTED: "I hit add mission, the button doesn't even react. Nothing is
+   * happening. There is no visual feedback." A submit that the browser
+   * refuses is SILENT: title and description are required, and if Chrome
+   * cannot focus an invalid control -- scrolled out of view, or inside
+   * anything it considers unfocusable -- it blocks the submit, logs to a
+   * console nobody has open on a phone, and shows nothing. Pressing a
+   * button and getting no response at all is indistinguishable from a dead
+   * page, which is why this was read as the server locking up.
+   *
+   * Two halves, and the first is the one that was missing entirely.
+   *
+   * REFUSED: the `invalid` event fires per field even when no bubble is
+   * drawn, so it is caught here and the reason is written on the page,
+   * naming the field. It does not preventDefault -- the browser's own
+   * bubble is better when it manages to show one, and this is only the
+   * floor underneath it.
+   *
+   * ACCEPTED: the button says "Saving..." and disables, so a slow upload
+   * looks like work rather than nothing. The form submits normally; this
+   * only changes what the button looks like while it does.
+   */ ?>
+  <script>
+  (function () {
+    var form = document.querySelector('form.adm-form');
+    if (!form) return;
+    var btn  = document.getElementById('mission-save');
+    var note = document.getElementById('mission-blocked');
+    var label = function (el) {
+      var l = el.closest('label');
+      var t = l ? l.textContent.replace(/\s+/g, ' ').trim() : (el.name || 'a field');
+      /* The label holds the control's own text too; keep the first words. */
+      return t.split(/\s{2,}|:/)[0].slice(0, 40) || el.name;
+    };
+    /* Capture: `invalid` does not bubble. */
+    form.addEventListener('invalid', function (e) {
+      if (!note) return;
+      note.textContent = 'Not saved -- ' + label(e.target) + ' needs filling in first.';
+      note.hidden = false;
+      if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || btn.textContent; }
+    }, true);
+    form.addEventListener('submit', function () {
+      if (note) note.hidden = true;
+      if (!btn) return;
+      btn.dataset.label = btn.textContent;
+      btn.textContent = 'Saving...';
+      /* Disabled AFTER the event, or the browser omits it from the POST and
+         a named submit button stops being submitted at all. */
+      setTimeout(function () { btn.disabled = true; }, 0);
+    });
+  }());
+  </script>
 </div>
 
 </div></div>

@@ -758,6 +758,30 @@ require_once __DIR__ . '/admin-lib.php';
  * SWEPT, not named. The next page that accepts a file is the one that will
  * forget, so the rule is "any admin page touching $_FILES".
  */
+/*
+ * A BUTTON THAT REFUSES STILL HAS TO REACT.
+ *
+ * REPORTED: "I hit add mission, the button doesn't even react. Nothing is
+ * happening. There is no visual feedback." A submit the browser refuses is
+ * SILENT -- title and description are required, and when Chrome cannot
+ * focus the invalid control it blocks the submit, logs to a console nobody
+ * has open on a phone, and draws nothing. Indistinguishable from a dead
+ * page, which is exactly how it was read.
+ */
+echo "\nthe mission form reacts to a press it refuses\n";
+$mis = harness_strip_comments((string) file_get_contents(__DIR__ . '/admin-missions.php'));
+ok(strpos($mis, "addEventListener('invalid'") !== false && strpos($mis, ', true)') !== false,
+   'nothing listens for a refused field, so a blocked submit is still silent '
+ . '(and `invalid` does not bubble, so it has to be captured)');
+ok(strpos($mis, 'mission-blocked') !== false,
+   'there is nowhere on the page to say why a save was refused');
+ok(strpos($mis, "'Saving...'") !== false,
+   'the button does not change on submit, so a slow upload looks like nothing happening');
+/* The disable has to be deferred, or the browser drops the button from the
+   POST -- and a named submit button then stops being submitted at all. */
+ok(preg_match('~setTimeout\(function \(\) \{ btn\.disabled = true; \}, 0\);~', $mis) === 1,
+   'the submit button is disabled synchronously, which removes it from the POST');
+
 echo "\nevery admin upload form detects a discarded POST\n";
 $uploaders = array();
 foreach (glob(__DIR__ . '/admin-*.php') as $af) {
