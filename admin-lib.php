@@ -768,7 +768,12 @@ function admin_write_image($tmp_path, $dest_path, $max_width = 1000) {
 		 * to memory, and DISK was pinned to 0, so the fallback it had
 		 * already chosen was the one thing forbidden.
 		 */
-		$im->setResourceLimit(Imagick::RESOURCETYPE_AREA, $budget['mem']);
+		/* GENEROUSLY, because AREA is a THRESHOLD and not an allocation:
+		   it only decides whether the cache may live in memory, and
+		   setting it equal to the memory budget means an image that needs
+		   the whole budget is pushed to disk by a hair. MEMORY and MAP
+		   above are the real ceilings. */
+		$im->setResourceLimit(Imagick::RESOURCETYPE_AREA, $budget['mem'] * 4);
 		/*
 		 * AND THE DISK IS A FALLBACK AGAIN, BOUNDED RATHER THAN BANNED.
 		 *
@@ -785,7 +790,11 @@ function admin_write_image($tmp_path, $dest_path, $max_width = 1000) {
 		 */
 		$im->setResourceLimit(Imagick::RESOURCETYPE_DISK, 2 * $budget['mem']);
 		if (defined('Imagick::RESOURCETYPE_TIME')) {
-			@$im->setResourceLimit(constant('Imagick::RESOURCETYPE_TIME'), 20);
+			/* 60s, the figure lib/image-cache-lib.php uses off the web
+			   path. 20 was my own invention and it cut off work that was
+			   merely slow, on a host that throttles CPU. The clock is
+			   here to stop a hang, not to police a big picture. */
+			@$im->setResourceLimit(constant('Imagick::RESOURCETYPE_TIME'), 60);
 		}
 		/* A huge JPEG can be decoded already scaled down, which skips the
 		   full-size allocation entirely. PNG has no equivalent. */
@@ -801,8 +810,26 @@ function admin_write_image($tmp_path, $dest_path, $max_width = 1000) {
 			$im = $im->deconstructImages();
 			$ok = $im->writeImages($dest_path, true);
 		} else {
+			/*
+			 * thumbnailImage(), NOT resizeImage(), AND THE DIFFERENCE IS
+			 * THE WHOLE COST.
+			 *
+			 * resizeImage() runs a Lanczos pass over every source pixel.
+			 * On an HDRI build that is four floats a pixel, and on a
+			 * throttled shared host a 3.7MP page took longer than the 20s
+			 * ImageMagick clock -- "time limit exceeded" at
+			 * GetImagePixelCache, after the budget was already large
+			 * enough to hold the image twice over. It was never short of
+			 * room; it was short of CPU.
+			 *
+			 * thumbnailImage() samples the image down cheaply FIRST and
+			 * only then filters, which is the operation this actually
+			 * wants: mission art is never displayed above 1000px, so
+			 * nothing is being thrown away that anybody sees. It also
+			 * strips the image as part of the job.
+			 */
 			if ($im->getImageWidth() > $max_width)
-				$im->resizeImage($max_width, 0, Imagick::FILTER_LANCZOS, 1);
+				$im->thumbnailImage($max_width, 0);
 			$im->stripImage();                       // drop EXIF and colour profiles
 			if (strtolower(pathinfo($dest_path, PATHINFO_EXTENSION)) === 'jpg')
 				$im->setImageCompressionQuality(86);
