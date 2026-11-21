@@ -18,7 +18,27 @@ require_once __DIR__ . '/missions-lib.php';
 $MSG = array('ok' => array(), 'err' => array());
 $pid = isset($_GET['project']) ? (int)$_GET['project'] : 0;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+/*
+ * PRESSED SAVE AND NOTHING HAPPENED.
+ *
+ * Reported while adding missions for a new project: the form "keeps doing
+ * nothing" on submit and the mission never appears. A POST over
+ * post_max_size is discarded entirely before this file runs -- no $_POST,
+ * no $_FILES, no error code anywhere -- so the save branch below read an
+ * empty form, found no title and no art, and the page came back looking
+ * untouched.
+ *
+ * .user.ini has named this failure since the theme uploader hit it, and
+ * admin-monstrocity.php has detected it by name ever since. This page never
+ * did, which is why the same cause read as a mystery here.
+ */
+$post_discarded = adm_post_discarded(
+	$_SERVER['REQUEST_METHOD'] ?? '', $_POST, $_SERVER['CONTENT_LENGTH'] ?? 0);
+if ($post_discarded) {
+	$MSG['err'][] = adm_post_discarded_message($_SERVER['CONTENT_LENGTH'] ?? 0, 'mission image');
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded) {
 	if (!adminIsSuper()) { http_response_code(403); exit; }
 
 	/* --- REORDER: a dragged order, or one of the up/down buttons --- */

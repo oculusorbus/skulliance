@@ -740,6 +740,67 @@ require_once __DIR__ . '/admin-lib.php';
  * because the group is where it is written, and these assertions are what
  * stops that being quietly undone.
  */
+/* ---------------------------------------------------------------------------
+ * EVERY UPLOAD FORM DETECTS A DISCARDED POST
+ *
+ * REPORTED: adding missions for a new project, "the form keeps locking up
+ * on submission" and the mission never appears. A POST over post_max_size
+ * is discarded entirely before the script runs -- no $_POST, no $_FILES, no
+ * error code anywhere, because $_FILES does not exist to carry one. The
+ * page reads an empty form and reports whichever field it checks first, or,
+ * on a page that checks nothing first, reports nothing at all: you press
+ * Save and it sits there.
+ *
+ * .user.ini has named this failure since the theme uploader hit it, and
+ * admin-monstrocity.php detected it. admin-missions.php did not -- which is
+ * the whole reason the same cause read as a mystery on that page.
+ *
+ * SWEPT, not named. The next page that accepts a file is the one that will
+ * forget, so the rule is "any admin page touching $_FILES".
+ */
+echo "\nevery admin upload form detects a discarded POST\n";
+$uploaders = array();
+foreach (glob(__DIR__ . '/admin-*.php') as $af) {
+	$bn = basename($af);
+	if ($bn === 'admin-lib.php') continue;          /* the helper, not a form */
+	/* NOT $src -- this harness already holds its page sources in $src and
+	   reusing the name here clobbered the lot, taking out a check four
+	   hundred lines further down. */
+	$upsrc = harness_strip_comments((string) file_get_contents($af));
+	if (strpos($upsrc, '$_FILES') === false) continue;
+	$uploaders[] = $bn;
+	/* THE CALL, not the word. Checking for 'post_discarded' passed with the
+	   call replaced by `$post_discarded = false;` -- the variable name
+	   survived and the detection did not. */
+	ok(preg_match('~(adm|monstrocity)_post_discarded\s*\(~', $upsrc) === 1,
+	   "$bn accepts an upload but never calls the discarded-POST detector, so an "
+	 . 'oversized form fails in silence');
+}
+ok(count($uploaders) >= 3,
+   'only ' . count($uploaders) . ' upload pages found; the sweep is reading nothing');
+
+/* ONE IMPLEMENTATION. It lived in monstrocity-themes-lib.php, which is why
+   a missions page could not reach it without pulling in a games library. */
+require_once __DIR__ . '/admin-lib.php';
+ok(function_exists('adm_post_discarded'), 'the shared detector is gone');
+ok(adm_post_discarded('POST', array(), 2500000) === true,
+   'a discarded POST is not detected');
+ok(adm_post_discarded('POST', array('title' => 'x'), 900) === false,
+   'an ordinary POST is reported as discarded, which would block every save');
+ok(adm_post_discarded('POST', array(), 0) === false,
+   'a genuinely empty POST with no body is reported as discarded');
+ok(adm_post_discarded('GET', array(), 500) === false, 'a GET is reported as discarded');
+$mon = harness_strip_comments((string) file_get_contents(__DIR__ . '/monstrocity-themes-lib.php'));
+ok(strpos($mon, 'adm_post_discarded(') !== false,
+   'monstrocity-themes-lib.php carries a second copy of the detector again');
+/* The message has to name BOTH limits and what was sent: they are different
+   numbers and which one was hit decides what you do about it. */
+$msg = adm_post_discarded_message(2500000, 'mission image');
+ok(strpos($msg, '2.4MB') !== false && strpos($msg, 'post_max_size') === false
+   && strpos($msg, (string) ini_get('post_max_size')) !== false
+   && strpos($msg, (string) ini_get('upload_max_filesize')) !== false,
+   'the message does not report what was sent and both real limits: ' . $msg);
+
 echo "\nthe admin panel is grouped, from one list\n";
 $groups = admin_tab_groups();
 $flat   = admin_tabs();

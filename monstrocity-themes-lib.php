@@ -389,9 +389,11 @@ function monstrocity_clean_collection_ids($raw) {
  * CONTENT_LENGTH, which stays true however the condition is broken.
  */
 function monstrocity_post_discarded($method, $post, $content_length) {
-	return strtoupper((string)$method) === 'POST'
-	    && empty($post)
-	    && (int)$content_length > 0;
+	/* ONE IMPLEMENTATION, in admin-lib.php. This was the only copy, and
+	   admin-missions.php not having it is exactly how a mission upload
+	   came to fail in silence. Kept as a name because callers use it. */
+	require_once __DIR__ . '/admin-lib.php';
+	return adm_post_discarded($method, $post, $content_length);
 }
 
 /**

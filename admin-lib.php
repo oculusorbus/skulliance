@@ -763,6 +763,46 @@ function adm_all_titles($conn, $except_id = 0) {
  * Returns '' or a message. Nothing is written until the type is confirmed
  * from the FILE, never from the name the browser supplied.
  */
+/**
+ * A POST OVER post_max_size ARRIVES AS NO POST AT ALL.
+ *
+ * PHP discards $_POST AND $_FILES before the script runs. There is no
+ * warning and nothing in $_FILES['x']['error'], because $_FILES does not
+ * exist either -- so the page sees an empty form and reports whichever
+ * field it validates first. An oversized image gets reported as "the title
+ * is required", or, on a page that validates nothing first, as nothing at
+ * all: you press Save and it just sits there.
+ *
+ * CONTENT_LENGTH survives, which is the only reason this is detectable.
+ *
+ * SHARED, because it is not a property of any one form. This lived in
+ * monstrocity-themes-lib.php and admin-missions.php did not have it, which
+ * is the whole reason a mission upload could fail silently -- so the
+ * Monstrocity one now delegates here rather than being a second copy.
+ */
+function adm_post_discarded($method, $post, $content_length) {
+	return strtoupper((string) $method) === 'POST'
+	    && empty($post)
+	    && (int) $content_length > 0;
+}
+
+/**
+ * The same thing, said to whoever is looking at the form.
+ *
+ * Names the two limits AND what was sent, because "too large" without a
+ * number is a guessing game -- and the per-form and per-file limits are
+ * different, so which one was hit decides whether you shrink the image or
+ * post fewer files.
+ */
+function adm_post_discarded_message($content_length, $what = 'upload') {
+	return 'That ' . $what . ' was too large, so the server discarded the whole form before '
+	     . 'this page ran -- which is why nothing came back and nothing was saved. You sent '
+	     . number_format(((int) $content_length) / 1048576, 1) . 'MB; the limit is '
+	     . htmlspecialchars((string) ini_get('post_max_size')) . ' per form and '
+	     . htmlspecialchars((string) ini_get('upload_max_filesize')) . ' per file. '
+	     . 'Shrink the file, or raise both in .user.ini.';
+}
+
 function adm_accept_upload($field, $dir, $basename, $allowed_ext) {
 	if (!isset($_FILES[$field]) || $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) return '';
 	$f = $_FILES[$field];
