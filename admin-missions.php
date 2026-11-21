@@ -32,6 +32,10 @@ $pid = isset($_GET['project']) ? (int)$_GET['project'] : 0;
  * admin-monstrocity.php has detected it by name ever since. This page never
  * did, which is why the same cause read as a mystery here.
  */
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+	adm_trace('POST arrived', 'bytes=' . (int) ($_SERVER['CONTENT_LENGTH'] ?? 0)
+	        . ' post=' . count($_POST) . ' files=' . count($_FILES));
+}
 $post_discarded = adm_post_discarded(
 	$_SERVER['REQUEST_METHOD'] ?? '', $_POST, $_SERVER['CONTENT_LENGTH'] ?? 0);
 if ($post_discarded) {
@@ -152,7 +156,11 @@ $uploaded = array();
 foreach (array('art' => $EXTS, 'art_still' => array('gif', 'png', 'jpg')) as $field => $allow) {
 	if (!isset($_FILES[$field]) || $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) continue;
 	if ($errs) continue;                       // never write for a save that cannot happen
+	adm_trace('upload start', $field . ' ' . (int) $_FILES[$field]['size'] . 'B');
+	$t0 = microtime(true);
 	$e = adm_accept_upload($field, $dir, $slug, $allow);
+	adm_trace('upload done', $field . ' ' . round((microtime(true) - $t0) * 1000) . 'ms'
+	        . ($e === '' ? ' ok' : ' REFUSED: ' . $e));
 	if ($e !== '') { $errs[] = $e; continue; }
 	/* Which extension actually landed -- adm_accept_upload() names the
 	   file from the FILE's type, not from what the field was called. */
@@ -183,6 +191,7 @@ else {
 		                cost=$cost, reward=$reward, duration=$duration, level=$level WHERE id=$id")
 		: $conn->query("INSERT INTO quests (title, description, extension, project_id, cost, reward, duration, level)
 		                VALUES ('$t','$d','$x',$project,$cost,$reward,$duration,$level)");
+	adm_trace('db write', $wrote ? 'ok' : 'FAILED: ' . $conn->error);
 	if (!$wrote) {
 	/* Put the files back: they were renamed for a title that was never
 	   written, and leaving them is worse than not having moved them. */
@@ -211,6 +220,20 @@ if ($pid && !isset($PROJECTS[$pid])) $pid = 0;
 
 include 'header.php';   // GLOBAL scope: header.php reads $name and $avatar_url
 admin_chrome('missions');
+
+/*
+ * THE LAST FEW SAVE ATTEMPTS, so a failure that leaves no page behind still
+ * leaves something to read. Four rounds of reading the source have not
+ * found this one; this is the first thing in the sequence that reports on
+ * the actual request. Temporary -- see adm_trace().
+ */
+$tr = adminIsSuper() ? adm_trace_tail(12) : array();
+if ($tr) {
+	echo '<details class="adm-note" style="margin:0 0 14px"><summary>Last save attempts ('
+	   . count($tr) . ')</summary><pre class="mono" style="white-space:pre-wrap;'
+	   . 'font-size:.74rem;margin:8px 0 0">'
+	   . htmlspecialchars(implode("\n", $tr)) . '</pre></details>';
+}
 admin_flash($MSG);
 admin_project_picker($PROJECTS, $pid, 'admin-missions.php');
 

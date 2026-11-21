@@ -91,3 +91,7 @@ credentials/
 # the outreach log is a record of messages actually sent, so unlike
 # dhcrenders/ it must not be somewhere anybody would think to empty.
 data/
+
+# Temporary save trace from admin-missions.php (adm_trace). Served 403 by
+# .htaccess regardless; this keeps it out of the repo as well.
+logs/

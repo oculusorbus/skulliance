@@ -693,6 +693,22 @@ function admin_write_image($tmp_path, $dest_path, $max_width = 1000) {
 		$im = new Imagick();
 		$im->setResourceLimit(Imagick::RESOURCETYPE_MEMORY, $budget['mem']);
 		$im->setResourceLimit(Imagick::RESOURCETYPE_MAP,    $budget['mem']);
+		/*
+		 * AND IT MAY NOT USE THE DISK. Past its memory and map limits
+		 * Imagick does not fail -- it SPILLS TO A DISK CACHE and carries
+		 * on, which is why the symptom of every budget mistake in this
+		 * function has been a form that churns rather than one that
+		 * refuses. admin_image_budget()'s own comment records that
+		 * happening once already, as "a form that churned until the
+		 * service worker gave up at 20s".
+		 *
+		 * A shared host is the worst place to do it: the spill is IO
+		 * against the same quota the whole account shares, so one upload
+		 * slows every other request. Zero here turns a slow grind into an
+		 * immediate exception, which the catch below turns into a
+		 * sentence on the page.
+		 */
+		$im->setResourceLimit(Imagick::RESOURCETYPE_DISK, 0);
 		/* A huge JPEG can be decoded already scaled down, which skips the
 		   full-size allocation entirely. PNG has no equivalent. */
 		if ($max_width > 0) $im->setOption('jpeg:size', ($max_width * 2) . 'x' . ($max_width * 2));
@@ -780,6 +796,45 @@ function adm_all_titles($conn, $except_id = 0) {
  * is the whole reason a mission upload could fail silently -- so the
  * Monstrocity one now delegates here rather than being a second copy.
  */
+/**
+ * A STAGE MARKER FOR A SAVE NOBODY CAN SEE FAIL.
+ *
+ * The missions form has now failed four different ways in one sitting --
+ * silent refusals, a button that would not take a press, a submit that
+ * said "Saving..." and saved nothing -- and every diagnosis so far has
+ * been reasoning from the source rather than evidence from the request.
+ * This is the evidence: each stage of the save appends a line, and the
+ * page prints the last few back for a super-admin.
+ *
+ * WHY A FILE. The owner is usually on a phone and cannot read a server
+ * log, and a request that dies mid-way cannot report on itself. A file
+ * survives the request that wrote it. .htaccess already refuses to serve
+ * .log, which was checked before choosing the extension.
+ *
+ * Deliberately crude and deliberately temporary: no rotation beyond a
+ * size cap, no levels, no structure. It exists to answer one question --
+ * how far does the save get -- and should come out once it has.
+ */
+function adm_trace($tag, $extra = '') {
+	$dir = __DIR__ . '/logs';
+	if (!is_dir($dir) && !@mkdir($dir, 0755, true)) return;
+	$file = $dir . '/admin-missions.log';
+	/* Cap it rather than grow a 5.7MB debug.log like ajax/ once did. */
+	if (@filesize($file) > 256 * 1024) @unlink($file);
+	@file_put_contents($file,
+		date('Y-m-d H:i:s') . '  ' . getmypid() . '  ' . $tag
+		. ($extra === '' ? '' : '  ' . $extra) . "\n", FILE_APPEND | LOCK_EX);
+}
+
+/** The last few lines of that trace, newest last. */
+function adm_trace_tail($lines = 12) {
+	$file = __DIR__ . '/logs/admin-missions.log';
+	if (!is_file($file)) return array();
+	$all = @file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+	if (!$all) return array();
+	return array_slice($all, -max(1, (int) $lines));
+}
+
 function adm_post_discarded($method, $post, $content_length) {
 	return strtoupper((string) $method) === 'POST'
 	    && empty($post)
