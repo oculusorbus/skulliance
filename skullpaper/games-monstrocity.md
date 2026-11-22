@@ -9,7 +9,6 @@ Monstrocity is Skulliance's **Match 3 RPG** - a single-player campaign that pair
 * Choose a **character theme** from one of 35+ skins drawn from NFT collections across every chain Skulliance supports (core artists, partners, and bonus themes). Themes are cosmetic - no specific NFT is required to play.
 * Progress through a **28-level campaign** of escalating difficulty.
 * Each level is a match-3 battle: you and an AI opponent alternate turns on a shared board, and the board state persists between turns.
-* **The health bar shows the hit, not just the total.** Your figure sits on the bar, and a red trail drains a beat behind the fill, so the strip between them is exactly the damage that just landed. Damage numbers rise off the portrait that took them, and a big hit shakes the whole card rather than just the picture.
 * Win a level by draining the opponent's health before yours runs out.
 
 ## Character Traits

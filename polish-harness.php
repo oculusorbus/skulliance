@@ -455,11 +455,7 @@ $moAt    = strpos($moPage, 'polish-monstrocity.php');
 $moSheets = array();
 if (preg_match_all('~<style>(.*?)</style>~s', $moPage, $mb, PREG_OFFSET_CAPTURE | PREG_SET_ORDER))
 	foreach ($mb as $b) if (strlen($b[1][0]) > 500) $moSheets[] = $b[0][1] + strlen($b[0][0]);
-/* AT LEAST TWO, not exactly two: the page grew a third block in 2026-11
-   for the battlefield rework, and the count was never the point. What
-   matters is the ORDER check below -- the polish include has to come
-   after the last of them, however many there are. */
-ok(count($moSheets) >= 2, 'monstrocity.php no longer has stylesheets where this expects them');
+ok(count($moSheets) === 2, 'monstrocity.php no longer has its two stylesheets where this expects them');
 ok($moAt !== false && count($moSheets) > 0 && max($moSheets) < $moAt,
    'the Monstrocity layer is included before the page stops declaring styles, so it is outranked');
 
