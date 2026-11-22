@@ -172,7 +172,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    height: auto;
 	    margin-bottom: 10px;
 	    border-radius: 5px;
-	    transition: transform 0.1slinear, filter 0.5sease;
+	    transition: transform 0.1s linear, filter 0.5s ease;
 	    -webkit-filter: drop-shadow(2px 5px 10px #000);
 	    filter: drop-shadow(2px 5px 10px #000);
 	    min-height: 265px;
@@ -1767,6 +1767,228 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
            document than any <link> and nothing linked could outrank it.
            Delete this line to revert; ?polish=0 turns it off without a
            deploy. */ ?>
+  <!-- ============================================================
+       BATTLEFIELD, 2026-11 — layout, HP, impact, hierarchy
+       Isolated block like the skin above it: delete it to revert.
+       ============================================================ -->
+  <style>
+/* ---- 1. A LAYOUT, NOT FOUR NUDGES -------------------------------------
+ * .character, .log and .legend each carried `position:relative; top:-225px`
+ * -- four separate shoves that happened to line up at one window size.
+ * Nothing was aligned to anything, which is why the columns drifted and
+ * why no amount of spacing tuning held. A grid replaces all four.
+ */
+/* FLEX, NOT GRID, and the first attempt got this wrong. A three-column
+ * grid needs a width for the middle column, and the board's width is set
+ * by JS from the viewport -- so the track could not contain it and the
+ * board overlapped both cards. Flex lets the board state its own size and
+ * the cards hold theirs, which is the actual relationship. */
+.battlefield {
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 22px;
+}
+.character { flex: 0 1 272px; }
+#game-board { flex: 0 0 auto; }
+.character {
+  /* RELATIVE, NOT STATIC. The shove was `top:-225px`, not the positioning,
+     and static broke the damage numbers: .dmg-float is absolute and with
+     no positioned ancestor it escaped the card and floated over the
+     board. Kill the offset, keep the containing block. */
+  position: relative !important;
+  top: auto !important;
+  width: auto !important;
+  min-height: 0 !important;
+  flex-shrink: 1 !important;
+}
+.m3-under {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 18px;
+  margin: 22px 0 0;
+}
+.m3-under > .log, .m3-under > .legend { flex: 1 1 320px; max-width: 560px; }
+.log, .legend {
+  position: static !important;
+  top: auto !important;
+  margin-top: 0 !important;
+  min-height: 0 !important;
+}
+.log { max-height: 190px; }
+
+/* ---- 1b. WHOSE TURN IT IS, SAID LIKE IT MATTERS ------------------------
+ * It was 1.2em bold white text nudged 10px down with position:relative.
+ * In a battler the turn is the single most important piece of state on
+ * the screen and it looked like a caption.
+ */
+.turn-indicator {
+  position: static !important;
+  top: auto !important;
+  display: inline-block;
+  margin: 0 auto 18px !important;
+  padding: 7px 22px;
+  font-size: .82rem !important;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #d6f5ec !important;
+  border: 1px solid rgba(0,200,160,.32);
+  border-radius: 3px;
+  background: linear-gradient(180deg, rgba(0,200,160,.17) 0%, rgba(0,200,160,.04) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 2px 10px rgba(0,0,0,.4);
+}
+/* The container centres its text, so the inline-block centres with it. */
+
+/* ---- 2. THE HEALTH BAR IS THE MOOD -------------------------------------
+ * It was a flat rail with a flat fill and the number hidden in a stats
+ * table four rows down. A battler lives here, so: the figure sits ON the
+ * bar, the rail carries ticks so a big hit visibly crosses them, and a
+ * DAMAGE TRAIL drains a beat behind the fill -- which is the whole point.
+ * You do not read a health bar, you read how far it just moved.
+ */
+.health-bar {
+  position: relative !important;
+  height: 26px !important;
+  border-radius: 4px !important;
+  border: 1px solid rgba(0,0,0,.6) !important;
+  overflow: hidden !important;
+  /* The groove, plus ticks every tenth. A recess, so it is lit from below
+     rather than above -- the rule the rest of the platform follows. */
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.28) 0 1px, rgba(0,0,0,0) 1px 10%),
+    linear-gradient(180deg, #121c24 0%, #1b2832 100%) !important;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.55) !important;
+}
+/* THE TRAIL SITS BEHIND THE FILL and is the same shape, so what you see
+   between them is exactly the damage just taken. */
+.health-trail {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 100%;
+  background: linear-gradient(180deg, #ff8a8a 0%, #c0392b 100%);
+  transition: width .5s cubic-bezier(.33,1,.68,1) .22s;
+  z-index: 1;
+}
+.health {
+  position: absolute !important; left: 0; top: 0; bottom: 0;
+  height: 100% !important;
+  transition: width .22s ease !important;
+  z-index: 2;
+  /* The fill colour is set per-frame by updateHealth(); this only lights
+     it, so the thresholds it chooses still mean what they meant. */
+  background-image: linear-gradient(180deg, rgba(255,255,255,.3) 0,
+      rgba(255,255,255,.06) 48%, rgba(0,0,0,.18) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35);
+}
+.hp-num {
+  position: absolute; inset: 0; z-index: 3;
+  display: flex; align-items: center; justify-content: center;
+  font: bold 12px/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .04em;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.9), 0 0 3px rgba(0,0,0,.7);
+  pointer-events: none;
+}
+/* The stats table still carries Health, and now it is the duplicate. */
+.character tr.hp-row { display: none; }
+
+/* ---- 3. IMPACT ---------------------------------------------------------
+ * A hit was a 200ms sideways shift and a glow class. Nothing told you how
+ * hard it landed, so a 12 and a 90 looked identical.
+ */
+.dmg-float {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  transform: translate(-50%, 0);
+  font: 900 28px/1 Arial, Helvetica, sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: #ff5f5f !important;
+  text-shadow: 0 2px 0 #4a0d0d, 0 -1px 0 #4a0d0d, 1px 0 0 #4a0d0d, -1px 0 0 #4a0d0d,
+               0 0 14px rgba(255,80,80,.6);
+  pointer-events: none;
+  z-index: 40;
+  animation: dmgFloat 1s cubic-bezier(.2,.7,.3,1) forwards;
+}
+.dmg-float.heal { color: #5ce8b0 !important; text-shadow: 0 2px 0 #06402c, 0 0 12px rgba(90,230,170,.5); }
+.dmg-float.big  { font-size: 42px; color: #ff4040 !important; }
+@keyframes dmgFloat {
+  0%   { opacity: 0; transform: translate(-50%, 10px) scale(.7); }
+  18%  { opacity: 1; transform: translate(-50%, -4px) scale(1.12); }
+  30%  { transform: translate(-50%, -8px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -54px) scale(1); }
+}
+/* A white flash on the portrait, because a shake alone reads as movement
+   rather than as being hit. */
+.character img.hit-flash, .character video.hit-flash {
+  animation: hitFlash .22s ease-out;
+}
+@keyframes hitFlash {
+  0%   { filter: brightness(2.6) saturate(.2); }
+  100% { filter: none; }
+}
+/* THE WHOLE CARD TAKES A BIG HIT, not just the picture. */
+.character.struck { animation: cardStruck .3s ease-out; }
+@keyframes cardStruck {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-5px); }
+  60%      { transform: translateX(4px); }
+}
+
+/* ---- 4. HIERARCHY ------------------------------------------------------
+ * The two combatants are the subject of the screen and were a name, a
+ * picture and a seven-row table in the same weight.
+ */
+.character { padding: 14px 14px 12px !important; }
+.character h2 {
+  font-size: .95rem !important;
+  letter-spacing: .06em !important;
+  margin: 0 0 10px !important;
+}
+/* A frame, so the portrait reads as a portrait. */
+.character img, .character video {
+  border-radius: 4px !important;
+  border: 1px solid rgba(0,0,0,.55) !important;
+  box-shadow: 0 3px 10px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.06) !important;
+  margin-bottom: 12px !important;
+}
+/* The stats are reference, not headline: quieter, and on a rhythm. */
+.character table { width: 100%; font-size: .8rem; }
+.character .attribute-label {
+  color: #7f9bb0 !important;
+  font-size: .68rem; letter-spacing: .08em; text-transform: uppercase;
+  padding: 3px 0; text-align: left;
+}
+.character .attribute { text-align: right; padding: 3px 0; font-variant-numeric: tabular-nums; }
+
+/* THE LEGEND IS A REFERENCE, NOT FURNITURE. It sat open beside the board
+   for the whole match, which reads as debug output. */
+.legend > summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: .85rem; letter-spacing: .04em; text-transform: uppercase;
+  color: #00c8a0 !important; padding: 2px 0; font-weight: bold;
+}
+.legend > summary::-webkit-details-marker { display: none; }
+.legend > summary::before { content: '+ '; opacity: .7; }
+.legend[open] > summary::before { content: '- '; }
+
+/* ---- the phone keeps one column ---------------------------------------- */
+@media (max-width: 1024px) {
+  /* One column. flex-wrap does the stacking, so there is nothing to
+     re-template -- the grid-template-columns that used to be here was
+     left over from the grid version and did nothing. */
+  .battlefield { gap: 14px; }
+  .character { flex: 1 1 100%; max-width: 420px; }
+  .m3-under { margin-top: 16px; }
+  .m3-under > .log, .m3-under > .legend { flex: 1 1 100%; max-width: none; }
+  .dmg-float { font-size: 24px; }
+  .dmg-float.big { font-size: 34px; }
+}
+  </style>
+
   <?php include __DIR__ . '/polish-monstrocity.php'; ?>
 
   <script type="text/javascript">
@@ -1820,10 +2042,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  <div class="character" id="player1">
 	      <h2><span id="p1-name"></span></h2>
 	      <img id="p1-image" src="" alt="Player 1 Image">
-	      <div class="health-bar"><div class="health" id="p1-health"></div></div>
+	      <div class="health-bar">
+	        <div class="health-trail" id="p1-trail"></div>
+	        <div class="health" id="p1-health"></div>
+	        <span class="hp-num" id="p1-hpnum"></span>
+	      </div>
   	      <button id="flip-p1">Flip Player 1 Image</button>
 	      <table>
-	          <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p1-hp"></span></td></tr>
+	          <tr class="hp-row"><td class="attribute-label">Health:</td><td class="attribute"><span id="p1-hp"></span></td></tr>
 	          <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p1-strength"></span></td></tr>
 	          <tr><td class="attribute-label">Speed:</td><td class="attribute"><span id="p1-speed"></span></td></tr>
 	          <tr><td class="attribute-label">Tactics:</td><td class="attribute"><span id="p1-tactics"></span></td></tr>
@@ -1836,10 +2062,14 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  <div class="character" id="player2">
 	      <h2><span id="p2-name"></span></h2>
 	      <img id="p2-image" src="" alt="Player 2 Image">
-	      <div class="health-bar"><div class="health" id="p2-health"></div></div>
+	      <div class="health-bar">
+	        <div class="health-trail" id="p2-trail"></div>
+	        <div class="health" id="p2-health"></div>
+	        <span class="hp-num" id="p2-hpnum"></span>
+	      </div>
   	      <button id="flip-p2">Flip Opponent Image</button>
 	      <table>
-	          <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p2-hp"></span></td></tr>
+	          <tr class="hp-row"><td class="attribute-label">Health:</td><td class="attribute"><span id="p2-hp"></span></td></tr>
 	          <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p2-strength"></span></td></tr>
 	          <tr><td class="attribute-label">Speed:</td><td class="attribute"><span id="p2-speed"></span></td></tr>
 	          <tr><td class="attribute-label">Tactics:</td><td class="attribute"><span id="p2-tactics"></span></td></tr>
@@ -1849,12 +2079,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      </table>
 	  </div>
     </div>
+    <div class="m3-under">
     <div class="log">
       <h3>Battle Log</h3>
       <ul id="battle-log"></ul>
     </div>
-	<div class="legend">
-	  <h3>Legend</h3>
+	<details class="legend">
+	  <summary>Legend</summary>
 	  <ul>
 	    <li>
 	      <span class="legend-tile first-attack"><img src="https://www.skulliance.io/staking/icons/first-attack.png" alt="First Attack"></span>
@@ -1984,7 +2215,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      </div>
 	    </li>
 	  </ul>
-	</div>
+	</details>
+    </div><!-- /.m3-under -->
 
   </div>
     <script>if(location.hash==='#boss'){document.write('<style>#character-select-container{display:none}</style>');}</script>
@@ -4992,6 +5224,40 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
         healthBar.style.backgroundColor = color;
         hpText.textContent = `${player.health}/${player.maxHealth}`;
+
+        /*
+         * THE READOUT GOES ON THE BAR. It was only ever in the stats table,
+         * four rows below the thing it describes, so the bar itself carried
+         * no number at all.
+         */
+        const side = (player === this.player1) ? 'p1' : 'p2';
+        const num  = document.getElementById(side + '-hpnum');
+        if (num) num.textContent = `${Math.max(0, player.health)} / ${player.maxHealth}`;
+
+        /*
+         * AND THE TRAIL, WHICH IS THE WHOLE POINT OF THE BAR.
+         *
+         * It sits behind the fill and follows it down a beat later, so the
+         * red strip between them IS the damage just taken. You do not read
+         * a health bar, you read how far it moved.
+         *
+         * A HEAL JUMPS INSTEAD OF LAGGING: if the trail eased upward behind
+         * a rising fill it would show a red strip for damage that never
+         * happened, which is the opposite of what it is for.
+         */
+        const trail = document.getElementById(side + '-trail');
+        if (trail) {
+          const prev = parseFloat(trail.dataset.pct);
+          if (!isNaN(prev) && percentage > prev) {
+            trail.style.transition = 'none';
+            trail.style.width = `${percentage}%`;
+            void trail.offsetWidth;              /* commit before restoring */
+            trail.style.transition = '';
+          } else {
+            trail.style.width = `${percentage}%`;
+          }
+          trail.dataset.pct = percentage;
+        }
       }
 
 	  endTurn() {
@@ -5501,6 +5767,70 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         const shiftDistance = Math.min(10, 2 + totalDamage * 0.4);
         const shiftX = shiftDirection * shiftDistance;
         this.applyAnimation(imageElement, shiftX, 'glow-recoil', 200);
+        /* The shift already scaled with damage and nothing else did, so a
+           12 and a 90 looked the same. Both of these do. */
+        this.flashHit(defender, totalDamage);
+        this.floatDamage(defender, totalDamage);
+      }
+
+      /**
+       * A WHITE FLASH ON THE PORTRAIT, AND A SHOVE TO THE WHOLE CARD.
+       *
+       * A sideways shift on its own reads as movement, not as being hit.
+       * The card only joins in above a threshold, so a big hit is visibly
+       * a different event rather than a louder version of the same one.
+       */
+      flashHit(defender, totalDamage) {
+        const img  = defender === this.player1 ? p1Image : p2Image;
+        const card = document.getElementById(defender === this.player1 ? 'player1' : 'player2');
+        if (img) {
+          img.classList.remove('hit-flash');
+          void img.offsetWidth;                        /* restart the animation */
+          img.classList.add('hit-flash');
+          setTimeout(() => img.classList.remove('hit-flash'), 260);
+        }
+        if (card && totalDamage >= 25) {
+          card.classList.remove('struck');
+          void card.offsetWidth;
+          card.classList.add('struck');
+          setTimeout(() => card.classList.remove('struck'), 340);
+        }
+      }
+
+      /**
+       * THE NUMBER, WHERE THE HIT LANDED.
+       *
+       * Removed on animationend rather than on a timer that has to agree
+       * with the CSS: two durations drifting apart leaves these stacking
+       * up on the card for the rest of the match.
+       */
+      floatDamage(defender, amount, kind) {
+        const card = document.getElementById(defender === this.player1 ? 'player1' : 'player2');
+        if (!card) return;
+        const n = Math.round(Number(amount) || 0);
+        if (!n) return;
+        const el = document.createElement('div');
+        el.className = 'dmg-float' + (kind === 'heal' ? ' heal' : '') + (n >= 25 ? ' big' : '');
+        el.textContent = (kind === 'heal' ? '+' : '-') + n;
+        /* Not dead centre every time -- identical placement on consecutive
+           hits reads as one number flickering rather than two landing. */
+        el.style.left = (42 + Math.random() * 16) + '%';
+        /*
+         * OVER THE PORTRAIT, MEASURED. A fixed percentage of the card put
+         * the number on the Flip button on a short card and below the
+         * picture on a tall one. The image is the thing being hit, so ask
+         * it where it is.
+         */
+        const face = defender === this.player1 ? p1Image : p2Image;
+        /* > 40px, not just non-zero: a portrait that has not loaded still
+           reports the broken-image placeholder's height, and measuring
+           against that puts the number up beside the name. Below that,
+           the CSS percentage is the better guess. */
+        if (face && face.offsetHeight > 40) {
+          el.style.top = (face.offsetTop + face.offsetHeight * 0.38) + 'px';
+        }
+        card.appendChild(el);
+        el.addEventListener('animationend', () => el.remove());
       }
     }
 
