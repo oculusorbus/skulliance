@@ -115,15 +115,23 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  background-color: #002f44;
 	  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 	  width: 100%;
-	  height: 100%;
 	  min-width: 910px;
 	  max-width: 1024px;
 	  box-sizing: border-box;
 	  border-left: 3px solid black;
 	  border-right: 3px solid black;
 	  display: none; /* Initially hidden */
-	  height: 100%;
-	  max-height: 2050px;
+	  /*
+	   * IT HUGS. This was height:100% (twice) with a 2050px cap, so the
+	   * tray was as tall as its parent whatever was in it -- and with the
+	   * log and the legend collapsible that is most of the page painted
+	   * over the background for no reason. height:auto lets the tray end
+	   * where the content ends, so closing both reveals the background.
+	   *
+	   * The 225px of dead space this would otherwise leave is taken off
+	   * .legend; see the margin-bottom there.
+	   */
+	  height: auto;
 	}
 
     .game-logo {
@@ -456,9 +464,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       text-align: left;
       background-color: #165777;
       padding: 10px;
-      max-height: 150px;
-      min-height: 150px;
-      overflow-y: auto;
+      /* THE SCROLLER IS #battle-log NOW, not this element. As a <details>
+         this is the summary AND the body, so scrolling it would carry the
+         summary out of view -- and log() has always set battleLog.scrollTop
+         to show the newest entry (they are prepended), which did nothing
+         while the overflow lived out here. */
       position: relative;
       top: -225px;
       border: 1px solid black;
@@ -468,7 +478,64 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       margin: 0 0 10px;
     }
 
-    #battle-log { list-style: none; padding: 0; }
+    /*
+     * THE LOG AND THE LEGEND ARE <details>, so their heading is a
+     * <summary>. This RESTATES the heading look rather than adding
+     * `summary` to the three `.log h3, .legend h3, ...` selector lists:
+     * editing one of those lists is exactly what left a dangling comma
+     * last time and silently restyled both panels.
+     *
+     * The colour needs !important for the usual reason on this page --
+     * `:where(.game-container, .game-container *)` forces an off-white
+     * with !important, which beats any normal declaration however
+     * specific.
+     */
+    .log > summary,
+    .legend > summary {
+      margin: 0;
+      padding: 2px 0;
+      cursor: pointer;
+      list-style: none;                 /* Firefox's own marker */
+      color: #00c8a0 !important;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      font-weight: bold;
+      /* A tap on the words must open the panel, not start a text
+         selection -- the same thing that made the missions button feel
+         dead when you hit the label instead of the gap around it. */
+      user-select: none;
+      -webkit-user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .log > summary::-webkit-details-marker,
+    .legend > summary::-webkit-details-marker { display: none; }
+    /* Drawn, not a glyph, so it can rotate and so it cannot pick up a
+       font the rest of the page does not have. */
+    .log > summary::before,
+    .legend > summary::before {
+      content: "";
+      width: 0;
+      height: 0;
+      flex-shrink: 0;
+      border-left: 5px solid #00c8a0;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      transition: transform 0.15s ease;
+    }
+    .log[open] > summary::before,
+    .legend[open] > summary::before { transform: rotate(90deg); }
+    @media (prefers-reduced-motion: reduce) {
+      .log > summary::before,
+      .legend > summary::before { transition: none; }
+    }
+
+    #battle-log { list-style: none; padding: 0;
+      /* min-height as well as max, so an open log does not resize
+         itself as the first few entries arrive. */
+      min-height: 150px; max-height: 150px; overflow-y: auto; }
     #battle-log li { margin: 5px 0; opacity: 0; animation: fadeIn 0.5s forwards; }
     @keyframes fadeIn { to { opacity: 1; } }
 
@@ -488,6 +555,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	}
 
 	.legend {
+	  /*
+	   * -225 TO MATCH THE top:-225px BELOW. A relative offset does not
+	   * change flow, so the legend still occupies its unshifted box and
+	   * the tray would end 225px below where the legend visibly ends --
+	   * which is the whole gap that stops it hugging. This is the only
+	   * one of the four shoves that needs it: .legend is the last child,
+	   * and everything above it is shifted by the same amount, so their
+	   * spacing is untouched.
+	   */
+	  margin-bottom: -225px;
 	  margin-top: 20px;
 	  text-align: left;
 	  background-color: #165777;
@@ -1937,7 +2014,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      </div>
   	      <button id="flip-p1">Flip Player 1 Image</button>
 	      <table>
-	          <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p1-hp"></span></td></tr>
 	          <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p1-strength"></span></td></tr>
 	          <tr><td class="attribute-label">Speed:</td><td class="attribute"><span id="p1-speed"></span></td></tr>
 	          <tr><td class="attribute-label">Tactics:</td><td class="attribute"><span id="p1-tactics"></span></td></tr>
@@ -1957,7 +2033,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      </div>
   	      <button id="flip-p2">Flip Opponent Image</button>
 	      <table>
-	          <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p2-hp"></span></td></tr>
 	          <tr><td class="attribute-label">Strength:</td><td class="attribute"><span id="p2-strength"></span></td></tr>
 	          <tr><td class="attribute-label">Speed:</td><td class="attribute"><span id="p2-speed"></span></td></tr>
 	          <tr><td class="attribute-label">Tactics:</td><td class="attribute"><span id="p2-tactics"></span></td></tr>
@@ -1967,12 +2042,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      </table>
 	  </div>
     </div>
-    <div class="log">
-      <h3>Battle Log</h3>
+    <details class="log" open>
+      <summary>Battle Log</summary>
       <ul id="battle-log"></ul>
-    </div>
-	<div class="legend">
-	  <h3>Legend</h3>
+    </details>
+	<details class="legend">
+	  <summary>Legend</summary>
 	  <ul>
 	    <li>
 	      <span class="legend-tile first-attack"><img src="https://www.skulliance.io/staking/icons/first-attack.png" alt="First Attack"></span>
@@ -2102,7 +2177,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      </div>
 	    </li>
 	  </ul>
-	</div>
+	</details>
 
   </div>
     <script>if(location.hash==='#boss'){document.write('<style>#character-select-container{display:none}</style>');}</script>
@@ -4075,7 +4150,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    } else {
 		        p1ImageNew.style.display = 'block';
 		    }
-		    p1Hp.textContent = this.player1.health + '/' + this.player1.maxHealth;
 
 		    // Reattach click event listener
 		    p1ImageNew.onclick = () => {
@@ -4129,7 +4203,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		    } else {
 		        p2ImageNew.style.display = 'block';
 		    }
-		    p2Hp.textContent = this.player2.health + '/' + this.player2.maxHealth;
 
 		    // Ensure no lingering classes
 		    p2ImageNew.classList.remove('winner', 'loser');
@@ -5092,7 +5165,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
       updateHealth(player) {
         const healthBar = player === this.player1 ? p1Health : p2Health;
-        const hpText = player === this.player1 ? p1Hp : p2Hp;
 
         const percentage = (player.health / player.maxHealth) * 100;
         healthBar.style.width = `${percentage}%`;
@@ -5109,12 +5181,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         }
 
         healthBar.style.backgroundColor = color;
-        hpText.textContent = `${player.health}/${player.maxHealth}`;
 
-        /* THE FIGURE GOES ON THE BAR. It was only ever in the stats table,
-           four rows below the thing it describes. The table row stays --
-           hiding it would change the card's height, and the narrow layout
-           is tuned against fixed offsets. */
+/* THE FIGURE GOES ON THE BAR, and now ONLY on the bar. It used
+           to be a row in the stats table as well, four rows below the
+           thing it describes; with the figure sitting on the fill that
+           row was saying the same number twice. Removing it is free
+           here because the card is held at min-height:584px, so the
+           content shrinking does not move the card. */
         const side = (player === this.player1) ? 'p1' : 'p2';
         const num  = document.getElementById(side + '-hpnum');
         if (num) {
@@ -5678,7 +5751,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     const p1Name = document.getElementById("p1-name");
     const p1Image = document.getElementById("p1-image");
     const p1Health = document.getElementById("p1-health");
-    const p1Hp = document.getElementById("p1-hp");
     const p1Strength = document.getElementById("p1-strength");
     const p1Speed = document.getElementById("p1-speed");
     const p1Tactics = document.getElementById("p1-tactics");
@@ -5688,7 +5760,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     const p2Name = document.getElementById("p2-name");
     const p2Image = document.getElementById("p2-image");
     const p2Health = document.getElementById("p2-health");
-    const p2Hp = document.getElementById("p2-hp");
     const p2Strength = document.getElementById("p2-strength");
     const p2Speed = document.getElementById("p2-speed");
     const p2Tactics = document.getElementById("p2-tactics");

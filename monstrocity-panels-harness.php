@@ -132,5 +132,75 @@ foreach (array('monstrocity.php', 'polish-monstrocity.php') as $f) {
 ok(preg_match("~game_exit_button\(array\((?:[^)]|\)[^)])*'radius'\s*=>\s*0~s", $src) === 1,
    'the exit button is not asked for a square corner, so it is the one rounded thing on the page');
 
+echo "\nthe log and the legend collapse\n";
+ok(preg_match('~<details class="log" open>\s*<summary>Battle Log</summary>~', $src) === 1,
+   'the battle log is not an open-by-default <details> with a summary');
+ok(preg_match('~<details class="legend">\s*<summary>Legend</summary>~', $src) === 1,
+   'the legend is not a closed-by-default <details> with a summary');
+ok(strpos($src, '<details class="legend" open') === false,
+   'the legend opens by default, which is the opposite of what it is for');
+/*
+ * THE SCROLLER IS THE LIST, NOT THE PANEL. On a <details> the panel is
+ * the summary too, so overflow out there scrolls the heading away. It
+ * also makes log()'s `battleLog.scrollTop = 0` do something: entries
+ * are PREPENDED, so that line has always meant "show the newest", and
+ * it was a no-op while the overflow lived on .log.
+ */
+ok(preg_match('~#battle-log\s*\{[^}]*overflow-y:\s*auto~s', $code) === 1,
+   'the battle log list is not the scroller, so the summary scrolls away with the entries');
+$lg = rule($code, '.log');
+ok($lg !== null && preg_match('~overflow-y~', $lg) !== 1,
+   '.log scrolls again, which carries its own summary out of view');
+/* The colour needs !important here for the same reason everything else
+   on this page does. */
+ok(preg_match('~\.log > summary,\s*\n\s*\.legend > summary\s*\{[^}]*color:[^;]*!important~s', $code) === 1,
+   'the summaries do not force their colour, so .game-container * softens them to off-white');
+ok(preg_match('~\.log > summary\s*\{[^}]*cursor|\.log > summary,\s*\n\s*\.legend > summary\s*\{[^}]*cursor:\s*pointer~s', $code) === 1,
+   'the summaries do not look clickable');
+ok(preg_match('~\.log > summary,\s*\n\s*\.legend > summary\s*\{[^}]*[;{\s]user-select:\s*none~s', $code) === 1,
+   'a tap on the summary text can start a selection instead of toggling it');
+
+echo "\nand the tray hugs what is left\n";
+$gc = rule($code, '.game-container');
+ok($gc !== null, 'the .game-container rule is gone');
+ok(preg_match('~height:\s*auto~', (string) $gc) === 1,
+   'the tray does not hug: height is not auto, so closing both panels reveals nothing');
+ok(preg_match('~(^|;|\s)height:\s*100%~', (string) $gc) !== 1,
+   'the tray is back to filling its parent whatever is in it');
+ok(preg_match('~max-height:\s*2050px~', (string) $gc) !== 1,
+   'the 2050px cap is back, which clips a tall legend instead of hugging it');
+/*
+ * THE COMPENSATION HAS TO MATCH THE SHOVE. .legend is the last child and
+ * carries top:-225px; a relative offset does not change flow, so without
+ * an equal negative bottom margin the tray ends 225px below where the
+ * legend visibly ends -- which IS the gap that stops it hugging. Read
+ * both numbers out and compare them, so moving one moves the other.
+ */
+$le = rule($code, '.legend');
+ok($le !== null, 'the .legend rule is gone');
+preg_match('~(^|[;\s])top:\s*-?(\d+)px~', (string) $le, $t);
+preg_match('~margin-bottom:\s*-(\d+)px~', (string) $le, $mb);
+ok(isset($t[2]) && isset($mb[1]) && $t[2] === $mb[1],
+   'the legend\'s negative bottom margin no longer matches its top offset, so the tray stops hugging');
+/*
+ * NARROW IS DELIBERATELY NOT HUGGING. min-height:100vh makes the tray
+ * the full-screen backdrop on a phone so no themed body background
+ * shows around the game. That is a decision, not an oversight, and
+ * "fixing" it to match desktop would undo it.
+ */
+ok(preg_match('~@media[^{]*max-width:\s*1025px.*?\.game-container\s*\{[^}]*min-height:\s*100vh~s', $code) === 1,
+   'the narrow tray lost min-height:100vh, so the themed background now shows around the game on a phone');
+
+echo "\nand the duplicated Health row is gone\n";
+ok(strpos($src, 'id="p1-hp"') === false && strpos($src, 'id="p2-hp"') === false,
+   'the Health row is back in the stats table, saying the same number the bar already shows');
+/*
+ * AND NOTHING STILL WRITES TO IT. updateHealth() runs in the attack path
+ * AHEAD of sounds.match.play(), so a TypeError on a null element there
+ * would take the match sound out with it.
+ */
+ok(preg_match('~\bp[12]Hp\b~', $src) !== 1,
+   'something still writes to the removed Health cell, which throws in the attack path');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all panel checks passed\n");
 exit($fail ? 1 : 0);
