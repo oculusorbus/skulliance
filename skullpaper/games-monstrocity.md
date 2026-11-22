@@ -12,7 +12,7 @@ Monstrocity is Skulliance's **Match 3 RPG** - a single-player campaign that pair
 * Win a level by draining the opponent's health before yours runs out.
 * **The board and the character cards use the whole space they occupy.** Both used to sit inside a panel - padding, a border and a fill - that held room the content could have used. The panels are gone, so the tiles run to the board's own edge and the cards are wider, in exactly the same footprint as before.
 * **Nothing in the game is rounded.** Tiles, cards, bars, buttons, the log and the legend all have square corners.
-* **The battle log and the legend fold away.** The log is open when you arrive and the legend is closed; click either heading to toggle it. The tray shrinks to whatever is left showing, so closing both gives the background back.
+* **The battle log and the legend fold away.** The log is open when you arrive and the legend is closed; click either heading to toggle it. The tray shrinks to whatever is left showing, so closing both gives the background back. On a phone the board is 330px square, or as wide as the screen allows on the narrowest handsets.
 * **Health is on the bar and nowhere else.** The stats table used to repeat it a few rows below the bar that already showed it.
 
 ## Character Traits

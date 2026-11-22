@@ -132,6 +132,18 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	   * .legend; see the margin-bottom there.
 	   */
 	  height: auto;
+	  /*
+	   * AND IT STAYS AT THE TOP. body is `display:flex; align-items:center`
+	   * with min-height:100vh, which never showed while this was
+	   * height:100% -- a full-height child has nothing to centre. Now that
+	   * it hugs, a short tray (both panels closed) floated in the middle of
+	   * the window instead of staying put.
+	   *
+	   * align-self HERE rather than changing the body's align-items: the
+	   * three select containers are body children too, and those ARE meant
+	   * to be centred.
+	   */
+	  align-self: flex-start;
 	}
 
     .game-logo {
@@ -1155,8 +1167,25 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       }
 
       #game-board {
-        width: 250px;
-        height: 250px;
+        /*
+         * 330, OR THE SCREEN IF THE SCREEN IS SMALLER. A flat 330 fits
+         * every phone from 360 up (15px clear each side at 360), but a
+         * 320px device has only 300 between the tray's 10px gutters and
+         * the board hung 13px off the edge -- measured, at a real 320px
+         * viewport. min() keeps the asked-for 330 everywhere it fits and
+         * degrades on the two or three handsets where it does not.
+         *
+         * 100% AND NOT 100vw: vw includes the scrollbar, so on a narrow
+         * desktop window calc(100vw - 20px) is about 15px wider than the
+         * space actually available and the board hangs off the edge
+         * again. 100% resolves against .battlefield, which is already
+         * inside the tray's gutters. aspect-ratio keeps it square, since
+         * a percentage HEIGHT cannot resolve against an auto-height
+         * parent.
+         */
+        width: min(330px, 100%);
+        height: auto;
+        aspect-ratio: 1 / 1;
         position: relative;
         top: -225px;
         margin-top: 0px;
@@ -1180,8 +1209,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       #game-over-container {
         top: 317px;
         /* Nudge the win/lose modal down so it sits centered over the board
-           after the mobile layout shifts (pill + full-viewport container). */
-        margin-top: 41px;
+           after the mobile layout shifts (pill + full-viewport container).
+           81, WAS 41: the board grew 250 -> 330 and its top edge is fixed,
+           so its centre moved down by half of that. Measured -- the modal
+           sat 40px high of where it used to relative to the board. */
+        margin-top: 81px;
       }
 
       #character-select-container {

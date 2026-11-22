@@ -202,5 +202,41 @@ ok(strpos($src, 'id="p1-hp"') === false && strpos($src, 'id="p2-hp"') === false,
 ok(preg_match('~\bp[12]Hp\b~', $src) !== 1,
    'something still writes to the removed Health cell, which throws in the attack path');
 
+echo "\nthe narrow board is 330, and the tray starts at the top\n";
+/* REQUESTED: 330x330 on mobile, up from 250. */
+ok(preg_match('~@media[^{]*max-width:\s*1025px.*?#game-board\s*\{[^}]*width:\s*min\(330px, 100%\)~s', $code) === 1,
+   'the narrow board is not min(330px, 100%), so it is the wrong size or it can overflow the screen');
+/*
+ * 100% AND NOT 100vw. vw counts the scrollbar, so calc(100vw - 20px) is
+ * about 15px wider than the space actually available on a narrow desktop
+ * window and the board hangs off the edge. Measured that way round.
+ */
+ok(preg_match('~@media[^{]*max-width:\s*1025px.*?#game-board\s*\{[^}]*100vw~s', $code) !== 1,
+   'the narrow board sizes off 100vw, which includes the scrollbar and overflows');
+/* A percentage HEIGHT cannot resolve against an auto-height parent, so
+   square comes from aspect-ratio rather than a second min(). */
+ok(preg_match('~@media[^{]*max-width:\s*1025px.*?#game-board\s*\{[^}]*aspect-ratio:\s*1~s', $code) === 1,
+   'the narrow board has no aspect-ratio, so it is not square once it has to shrink');
+/*
+ * AND THE WIN/LOSE OVERLAY FOLLOWED IT. The board's top edge is fixed
+ * and it grew 250 -> 330, so its centre moved down 40px; the overlay is
+ * absolutely placed and does not move on its own. Measured: the modal
+ * sat 40px high of the board until margin-top went 41 -> 81.
+ */
+ok(preg_match('~@media[^{]*max-width:\s*1025px.*?#game-over-container\s*\{[^}]*margin-top:\s*81px~s', $code) === 1,
+   'the narrow win/lose overlay is not nudged 81px, so it no longer sits where it did over the board');
+/*
+ * THE TRAY STARTS AT THE TOP. body is display:flex with
+ * align-items:center and min-height:100vh. That never showed while the
+ * tray was height:100%, but a hugging tray got centred -- and when it
+ * was TALLER than the window, centring put its top at -483px, off the
+ * screen. align-self on the tray, not align-items on the body, because
+ * the select containers are body children too and are meant to centre.
+ */
+ok(preg_match('~(^|[;\s])align-self:\s*flex-start~', (string) $gc) === 1,
+   'the tray is not top-aligned, so it floats in the middle once the panels are closed');
+ok(preg_match('~(^|\n)\s*body\s*\{[^}]*align-items:\s*center~s', $code) === 1,
+   "body no longer centres its children -- the select containers rely on that");
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all panel checks passed\n");
 exit($fail ? 1 : 0);
