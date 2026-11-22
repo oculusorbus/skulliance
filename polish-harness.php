@@ -455,12 +455,14 @@ $moAt    = strpos($moPage, 'polish-monstrocity.php');
 $moSheets = array();
 if (preg_match_all('~<style>(.*?)</style>~s', $moPage, $mb, PREG_OFFSET_CAPTURE | PREG_SET_ORDER))
 	foreach ($mb as $b) if (strlen($b[1][0]) > 500) $moSheets[] = $b[0][1] + strlen($b[0][0]);
-/* THREE NOW, not two: the health bar component came back on its own
-   after the battlefield rework was reverted, and it carries an isolated
-   block of its own that sits just before the include. The count is a
-   tripwire that the regex above found real stylesheets rather than the
-   document.write one -- the assertion that matters is the next line. */
-ok(count($moSheets) === 3, 'monstrocity.php no longer has its three stylesheets where this expects them');
+/* FOUR NOW. The battlefield rework was reverted whole, then two of its
+   pieces came back on their own, each as a marked block that can be
+   deleted by itself: the health bar, then the impact layer. Both sit
+   before the include. The count is a tripwire that the regex above
+   found real stylesheets rather than the document.write one, and that
+   a block was added deliberately -- the assertion that MATTERS is the
+   next line, that the polish layer still comes after all of them. */
+ok(count($moSheets) === 4, 'monstrocity.php no longer has its four stylesheets where this expects them');
 ok($moAt !== false && count($moSheets) > 0 && max($moSheets) < $moAt,
    'the Monstrocity layer is included before the page stops declaring styles, so it is outranked');
 
