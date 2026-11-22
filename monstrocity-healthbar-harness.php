@@ -89,5 +89,42 @@ ok(preg_match('~\.health-trail\s*\{[^}]*z-index:\s*1~s', $blk) === 1
    && preg_match('~\.hp-num\s*\{[^}]*z-index:\s*3~s', $blk) === 1,
    'the three layers are not stacked trail / fill / figure');
 
+echo "\nand the figure stays readable at every fill colour\n";
+/*
+ * REPORTED: white on the green read badly, and on the yellow it was
+ * worse. The fill runs #00c8a0 -> #ffc800 -> #ff9632 -> #ff5c5c, where
+ * white measures 2.2 / 1.6 / 2.2 / 3.0 : 1 -- the yellow is effectively
+ * invisible -- while the rail behind it is #525F65, where near-black
+ * would be just as unreadable. So there are two copies of the figure,
+ * each clipped to the stretch it reads against.
+ */
+foreach (array('1', '2') as $n) {
+	ok(preg_match('~id="p' . $n . '-hpnum"><span class="hp-ink hp-ink-on"></span>'
+	              . '<span class="hp-ink hp-ink-off"></span>~', $src) === 1,
+	   "player $n does not have both ink layers, so one fill range is unreadable");
+}
+/* Dark over the fill, white over the rail -- and NOT the other way
+   round, which is the bug this replaced. */
+ok(preg_match('~\.hp-ink-on\s*\{[^}]*color:\s*#0[0-9a-f]{5}~s', $blk) === 1,
+   'the ink over the fill is not dark, so it is unreadable on the yellow again');
+ok(preg_match('~\.hp-ink-off\s*\{[^}]*color:\s*#fff~s', $blk) === 1,
+   'the ink over the empty rail is not white');
+/* The two clips must be COMPLEMENTARY: one hides what the other shows.
+   If both measure from the same side the figure doubles or vanishes. */
+ok(preg_match('~\.hp-ink-on\s*\{[^}]*clip-path:\s*inset\(0 calc\(100% - var\(--hp-pct~s', $blk) === 1,
+   'the dark copy is not clipped to the fill');
+ok(preg_match('~\.hp-ink-off\s*\{[^}]*clip-path:\s*inset\(0 0 0 var\(--hp-pct~s', $blk) === 1,
+   'the white copy is not clipped to the empty rail');
+/* The wrapper must not set a colour of its own: both inks would inherit
+   it and one of them would be wrong on every frame. */
+ok(preg_match('~\.hp-num\s*\{[^}]*color:~s', $blk) !== 1,
+   '.hp-num sets a colour, which overrides one of the two inks');
+/* And the clips need the width, or they both sit at their 100% default
+   and the bar shows dark text on a dark rail. */
+ok(strpos($src, "setProperty('--hp-pct'") !== false,
+   'the fill width is never published, so the clips never move');
+ok(strpos($src, "querySelectorAll('.hp-ink')") !== false,
+   'only one copy of the figure is written, so the other stays empty');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all health bar checks passed\n");
 exit($fail ? 1 : 0);

@@ -1822,13 +1822,44 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 }
 .hp-num {
   position: absolute; inset: 0; z-index: 3;
-  display: flex; align-items: center; justify-content: center;
   font: bold 11px/1 Arial, Helvetica, sans-serif;
   letter-spacing: .03em;
   font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+/*
+ * TWO COPIES OF THE SAME FIGURE, STACKED EXACTLY, each clipped to the
+ * stretch of bar it can actually be read against. One ink colour cannot
+ * work here: the fill runs #00c8a0 -> #ffc800 -> #ff9632 -> #ff5c5c,
+ * where white measures between 1.6:1 and 3:1 -- on the yellow it is
+ * effectively invisible -- while the empty rail behind it is #525F65,
+ * where near-black would be just as bad.
+ *
+ * Switching one colour at the halfway mark does not fix it either: at
+ * 50% the figure sits exactly astride the boundary, which is the worst
+ * case and happens in every fight. Clipping two copies is exact at
+ * every width, including that one.
+ */
+.hp-ink {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  /* Follows the fill, which eases over 0.3s, so the boundary between the
+     two inks travels with the edge instead of jumping ahead of it. */
+  transition: clip-path .3s ease;
+}
+/* Over the remaining health. Near-black measures 6.3:1 on the red and
+   12.2:1 on the yellow, so this one copy covers all four fills. */
+.hp-ink-on {
+  color: #07140f;
+  text-shadow: 0 1px 0 rgba(255,255,255,.3);
+  clip-path: inset(0 calc(100% - var(--hp-pct, 100%)) 0 0);
+}
+/* Over the empty rail and the damage trail, where white is the legible
+   one: 6.5:1 on the #525F65 groove, 4.7:1 on the trail's deep red. */
+.hp-ink-off {
   color: #fff;
   text-shadow: 0 1px 2px rgba(0,0,0,.95), 0 0 3px rgba(0,0,0,.8);
-  pointer-events: none;
+  clip-path: inset(0 0 0 var(--hp-pct, 100%));
 }
   </style>
 
@@ -1888,7 +1919,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      <div class="health-bar">
 	        <div class="health-trail" id="p1-trail"></div>
 	        <div class="health" id="p1-health"></div>
-	        <span class="hp-num" id="p1-hpnum"></span>
+	        <span class="hp-num" id="p1-hpnum"><span class="hp-ink hp-ink-on"></span><span class="hp-ink hp-ink-off"></span></span>
 	      </div>
   	      <button id="flip-p1">Flip Player 1 Image</button>
 	      <table>
@@ -1908,7 +1939,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      <div class="health-bar">
 	        <div class="health-trail" id="p2-trail"></div>
 	        <div class="health" id="p2-health"></div>
-	        <span class="hp-num" id="p2-hpnum"></span>
+	        <span class="hp-num" id="p2-hpnum"><span class="hp-ink hp-ink-on"></span><span class="hp-ink hp-ink-off"></span></span>
 	      </div>
   	      <button id="flip-p2">Flip Opponent Image</button>
 	      <table>
@@ -5072,7 +5103,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
            is tuned against fixed offsets. */
         const side = (player === this.player1) ? 'p1' : 'p2';
         const num  = document.getElementById(side + '-hpnum');
-        if (num) num.textContent = `${Math.max(0, player.health)} / ${player.maxHealth}`;
+        if (num) {
+          const figure = `${Math.max(0, player.health)} / ${player.maxHealth}`;
+          /* The clips read this, so the dark copy covers exactly the fill
+             and the white copy exactly the rail. */
+          num.style.setProperty('--hp-pct', `${percentage}%`);
+          num.querySelectorAll('.hp-ink').forEach(ink => { ink.textContent = figure; });
+        }
 
         /*
          * AND THE TRAIL, WHICH IS WHAT MAKES IT A BATTLER'S BAR. It
