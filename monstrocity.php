@@ -172,12 +172,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    height: auto;
 	    margin-bottom: 10px;
 	    border-radius: 5px;
-	    /* WAS `0.1slinear, filter 0.5sease` -- no space between the time
-	       and the easing, which makes the whole declaration invalid, so
-	       NEITHER property transitioned. The recoil still worked because
-	       applyAnimation() sets its own transform transition inline, which
-	       is how this went unnoticed; the hit glows snapped on and off. */
-	    transition: transform 0.1s linear, filter 0.5s ease;
+	    transition: transform 0.1slinear, filter 0.5sease;
 	    -webkit-filter: drop-shadow(2px 5px 10px #000);
 	    filter: drop-shadow(2px 5px 10px #000);
 	    min-height: 265px;
@@ -1881,110 +1876,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 }
   </style>
 
-  <!-- ============================================================
-       THE IMPACT LAYER. Isolated block: delete it to revert.
-
-       A hit was a 200ms sideways shift and a glow class, so a 12 and a
-       90 looked identical. These three say how hard it landed.
-
-       NOTHING HERE MOVES ANYTHING. That is the constraint, because the
-       layout rework that carried these first had to be reverted whole.
-       The narrow layout is tuned against hard-coded offsets -- the card
-       is min-height:552px at top:-225px and #game-over-container sits
-       at top:317px against it -- so every rule below is either on an
-       absolutely positioned element that is out of flow, or a transform
-       or filter, neither of which reflows. No widths, no heights, no
-       margins, no padding, no font metrics on anything in flow.
-       ============================================================ -->
-  <style>
-/*
- * THE NUMBER, WHERE THE HIT LANDED.
- *
- * Absolute, so it is out of flow and cannot push the card around.
- * .character is already position:relative and sets no overflow, so this
- * anchors to the card and is free to rise past its top edge.
- */
-.dmg-float {
-  position: absolute;
-  left: 50%;
-  top: 38%;
-  transform: translate(-50%, 0);
-  font: 900 28px/1 Arial, Helvetica, sans-serif;
-  font-variant-numeric: tabular-nums;
-  /* !important for the same reason the health figure needs it:
-     `:where(.game-container, .game-container *)` sets a softened
-     off-white with !important, and that beats any normal declaration
-     however specific. Without it the damage number is not red. */
-  color: #ff5f5f !important;
-  /* A drawn outline rather than a blur, so it stays legible over a
-     bright portrait as well as a dark one. */
-  text-shadow: 0 2px 0 #4a0d0d, 0 -1px 0 #4a0d0d, 1px 0 0 #4a0d0d, -1px 0 0 #4a0d0d,
-               0 0 14px rgba(255,80,80,.6);
-  pointer-events: none;
-  z-index: 40;
-  animation: dmgFloat 1s cubic-bezier(.2,.7,.3,1) forwards;
-}
-.dmg-float.heal { color: #5ce8b0 !important;
-  text-shadow: 0 2px 0 #06402c, 0 -1px 0 #06402c, 1px 0 0 #06402c, -1px 0 0 #06402c,
-               0 0 12px rgba(90,230,170,.5); }
-.dmg-float.big  { font-size: 42px; color: #ff4040 !important; }
-@keyframes dmgFloat {
-  0%   { opacity: 0; transform: translate(-50%, 10px)  scale(.7); }
-  18%  { opacity: 1; transform: translate(-50%, -4px)  scale(1.12); }
-  30%  {             transform: translate(-50%, -8px)  scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -54px) scale(1); }
-}
-
-/*
- * A WHITE FLASH ON THE PORTRAIT.
- *
- * THE DROP-SHADOW IS RESTATED IN BOTH FRAMES. The base rule sets
- * `filter: drop-shadow(2px 5px 10px #000)`, and filter is one property:
- * animating it to `none` drops the portrait's shadow for the length of
- * the flash and snaps it back, which reads as the card flickering.
- */
-.character img.hit-flash, .character video.hit-flash {
-  animation: hitFlash .22s ease-out;
-}
-@keyframes hitFlash {
-  0%   { filter: drop-shadow(2px 5px 10px #000) brightness(2.6) saturate(.2); }
-  100% { filter: drop-shadow(2px 5px 10px #000); }
-}
-
-/*
- * AND A SHOVE TO THE WHOLE CARD, above a threshold, so a big hit is a
- * different event rather than a louder version of the same one.
- *
- * transform only: it paints the card a few pixels off its own box
- * without reflowing, so the offsets the narrow layout is tuned against
- * are untouched. .character has no transform of its own for this to
- * overwrite, and applyAnimation() animates the IMAGE, not the card, so
- * the two do not fight.
- */
-.character.struck { animation: cardStruck .3s ease-out; }
-@keyframes cardStruck {
-  0%, 100% { transform: translateX(0); }
-  25%      { transform: translateX(-5px); }
-  60%      { transform: translateX(4px); }
-}
-
-/* The page's own narrow breakpoint, not one a pixel off it. */
-@media (max-width: 1025px) {
-  .dmg-float     { font-size: 24px; }
-  .dmg-float.big { font-size: 34px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  /* The number still appears and still leaves; it just does not fly,
-     and the card does not shake. */
-  .dmg-float        { animation-duration: .6s; }
-  .character.struck { animation: none; }
-  @keyframes dmgFloat {
-    0%   { opacity: 0; transform: translate(-50%, 0); }
-    20%  { opacity: 1; transform: translate(-50%, 0); }
-    100% { opacity: 0; transform: translate(-50%, 0); }
-  }
-}
-  </style>
   <?php include __DIR__ . '/polish-monstrocity.php'; ?>
 
   <script type="text/javascript">
@@ -5153,9 +5044,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       }
 
 	  usePowerup(player, defender, size) {
-	    /* Measured, not taken from effectValue: the restore is clamped at
-	       maxHealth, so a 10-point Heal at 4 from full is a +4 on screen. */
-	    const healthBefore = player.health;
 	    const reductionFactor = 1 - (defender.tactics * 0.05);
 	    let effectValue;
 	    let originalValue;
@@ -5197,9 +5085,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      reducedBy = originalValue - effectValue;
 	      player.health = Math.min(player.maxHealth, player.health + effectValue);
 	      log(`${player.name} uses Minor Regen, restoring ${effectValue} HP${bonusMessage}${defender.tactics > 0 ? ` (originally ${originalValue}, reduced by ${reducedBy} due to ${defender.name}'s tactics)` : ""}!`);
-	    }
-	    if (player.health > healthBefore) {
-	      this.floatDamage(player, player.health - healthBefore, 'heal');
 	    }
 	    this.updateHealth(player);
 	  }
@@ -5770,74 +5655,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         const shiftDistance = Math.min(10, 2 + totalDamage * 0.4);
         const shiftX = shiftDirection * shiftDistance;
         this.applyAnimation(imageElement, shiftX, 'glow-recoil', 200);
-        /* The shift already scaled with damage and nothing else did, so
-           a 12 and a 90 looked the same. Both of these do. */
-        this.flashHit(defender, totalDamage);
-        this.floatDamage(defender, totalDamage);
-      }
-
-      /**
-       * A WHITE FLASH ON THE PORTRAIT, AND A SHOVE TO THE WHOLE CARD.
-       *
-       * A sideways shift on its own reads as movement, not as being hit.
-       * The card only joins in above a threshold, so a big hit is visibly
-       * a different event.
-       */
-      flashHit(defender, totalDamage) {
-        const img  = defender === this.player1 ? p1Image : p2Image;
-        const card = document.getElementById(defender === this.player1 ? 'player1' : 'player2');
-        if (img) {
-          /* Remove, force a reflow, re-add: re-adding a class that is
-             already on the element does not restart a CSS animation, so
-             consecutive hits would flash once and then stop. */
-          img.classList.remove('hit-flash');
-          void img.offsetWidth;
-          img.classList.add('hit-flash');
-          setTimeout(() => img.classList.remove('hit-flash'), 260);
-        }
-        if (card && totalDamage >= 25) {
-          card.classList.remove('struck');
-          void card.offsetWidth;
-          card.classList.add('struck');
-          setTimeout(() => card.classList.remove('struck'), 340);
-        }
-      }
-
-      /**
-       * THE NUMBER, WHERE THE HIT LANDED.
-       *
-       * Removed on animationend rather than on a timer that has to agree
-       * with the CSS: two durations drifting apart leaves these stacking
-       * up on the card for the rest of the match.
-       */
-      floatDamage(defender, amount, kind) {
-        const card = document.getElementById(defender === this.player1 ? 'player1' : 'player2');
-        if (!card) return;
-        const n = Math.round(Number(amount) || 0);
-        if (!n) return;
-        const el = document.createElement('div');
-        el.className = 'dmg-float' + (kind === 'heal' ? ' heal' : '') + (n >= 25 ? ' big' : '');
-        el.textContent = (kind === 'heal' ? '+' : '-') + n;
-        /* Not dead centre every time -- identical placement on consecutive
-           hits reads as one number flickering rather than two landing. */
-        el.style.left = (42 + Math.random() * 16) + '%';
-        /*
-         * OVER THE PORTRAIT, MEASURED. A fixed percentage of the card put
-         * the number on the Flip button on a short card and below the
-         * picture on a tall one. The image is the thing being hit, so ask
-         * it where it is.
-         *
-         * > 40px, not just non-zero: a portrait that has not loaded still
-         * reports the broken-image placeholder's height, and measuring
-         * against that puts the number up beside the name. Below that the
-         * CSS percentage is the better guess.
-         */
-        const face = defender === this.player1 ? p1Image : p2Image;
-        if (face && face.offsetHeight > 40) {
-          el.style.top = (face.offsetTop + face.offsetHeight * 0.38) + 'px';
-        }
-        card.appendChild(el);
-        el.addEventListener('animationend', () => el.remove());
       }
     }
 

@@ -10,8 +10,6 @@ Monstrocity is Skulliance's **Match 3 RPG** - a single-player campaign that pair
 * Progress through a **28-level campaign** of escalating difficulty.
 * Each level is a match-3 battle: you and an AI opponent alternate turns on a shared board, and the board state persists between turns.
 * Win a level by draining the opponent's health before yours runs out.
-* **The health bar shows the hit, not just the total.** Your figure sits on the bar itself, and a red trail drains a beat behind the fill, so the strip between the two is exactly the damage that just landed. The number is drawn twice and clipped at the fill edge - dark over the colour, white over the empty rail - so it stays readable whatever the bar is doing.
-* **A hit looks like what it was worth.** The portrait flashes white, the damage rises off the picture that took it, and anything over 25 shakes the whole card rather than just the picture. Healing floats in green with the amount actually restored, which is less than the powerup promises when you are near full.
 
 ## Character Traits
 
