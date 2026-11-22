@@ -10,6 +10,7 @@ Monstrocity is Skulliance's **Match 3 RPG** - a single-player campaign that pair
 * Progress through a **28-level campaign** of escalating difficulty.
 * Each level is a match-3 battle: you and an AI opponent alternate turns on a shared board, and the board state persists between turns.
 * Win a level by draining the opponent's health before yours runs out.
+* **The board and the character cards use the whole space they occupy.** Both used to sit inside a panel - padding, a border and a fill - that held room the content could have used. The panels are gone, so the tiles run to the board's own edge and the cards are wider, in exactly the same footprint as before.
 
 ## Character Traits
 

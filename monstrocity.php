@@ -155,16 +155,32 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     }
 
     .character {
-      width: 265px;
-      padding: 15px;
-      background-color: #165777;
-      border-radius: 5px;
+      /*
+       * NO PANEL CHROME. This was a 265px box inside 15px of padding and
+       * a border, so the card's own content had 265px to work with while
+       * the column occupied 297. Dropping the padding, border, radius and
+       * fill and widening to 295 gives the portrait and the bar 30px more
+       * to use and leaves the column 2px NARROWER than it was.
+       *
+       * box-sizing is content-box here (the page sets border-box on
+       * #game-board and the select cards, not on this), which is why the
+       * width goes up rather than staying put: with no padding or border
+       * to subtract, 295 is both the content box and the outer box.
+       */
+      width: 295px;
       text-align: center;
       flex-shrink: 0;
       position: relative;
       top: -225px;
-      min-height: 552px;
-      border: 1px solid black;
+      /*
+       * 584, NOT 552. min-height is content-box like the width, so the
+       * old card stood 552 + 30 of padding + 2 of border = 584 tall in
+       * flow. Leaving it at 552 with the padding gone made the column
+       * 32px shorter, and .log and .legend -- which follow .battlefield
+       * and carry their own top:-225px -- both rode up by exactly that.
+       * MEASURED, not reasoned: 552 moved them, 584 does not.
+       */
+      min-height: 584px;
     }
 
 	.character img, .character video {
@@ -240,8 +256,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       box-sizing: border-box;		
       display: grid;
       gap: 0.5vh;
-      background: #165777;
-      padding: 1vh;
+      /* NO PADDING, NO FILL. box-sizing is border-box above, so the 1vh
+         of padding was taken OUT of the 342px -- removing it hands those
+         pixels to the tiles and the board's footprint does not move. */
       box-sizing: border-box;
       user-select: none;
       position: relative;
@@ -998,9 +1015,16 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         text-align: right;
         width: 100%;
         max-width: 330px;
-        padding: 5px;
-        padding-left: 10px;
-        padding-right: 10px;
+        /*
+         * 6 AND 11, WAS 5 AND 10. The narrow card sizes itself with its
+         * own padding on top of the base rule's 1px border, and that
+         * border is gone now -- so without this the card lost 2px in each
+         * axis, which pulled the board up 2px and the log and legend 4px.
+         * The content is capped at 330 either way, so the extra pixel of
+         * padding costs the card nothing and keeps the narrow layout,
+         * which is the one tuned against fixed offsets, pixel-identical.
+         */
+        padding: 6px 11px;
       }
       
       .character h2 {
@@ -1214,17 +1238,29 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
        game board — all a step lighter than the container so they read as
        cards on a tray, not pits in the floor. The game board (which holds
        the tiles) shares the same elevation; was the legacy #165777 blue. */
-    .character,
+    /*
+     * .character AND #game-board ARE OUT OF THIS LIST. Both lost their
+     * padding, fill, border and radius so the card's content and the tile
+     * grid could use the space the chrome was holding; a fill and a
+     * hairline on a panel that is not there just paints it back, and a
+     * box-shadow still renders on a transparent box, so both would have
+     * left a shadow around nothing. .character's own heavier shadow rule
+     * went with them. .log and .legend are still panels and keep all of
+     * it.
+     *
+     * #game-board WAS THE LAST SELECTOR IN THIS LIST, and deleting it
+     * without the comma left `.character, .log, .legend,` dangling into
+     * the `.log h3, .legend h3, .character h2` rule below -- which put
+     * uppercase 0.85rem heading styling on the whole log and legend
+     * panels. Nothing errored; the legend just quietly lost 121px of
+     * height. Caught by measuring, not by reading.
+     */
     .log,
-    .legend,
-    #game-board {
+    .legend {
       background-color: #1a3142 !important;
       border: 1px solid rgba(0, 200, 160, 0.18) !important;
       border-radius: 8px !important;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
-    }
-    .character {
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(0, 200, 160, 0.05) !important;
     }
 
     /* Heading accents */

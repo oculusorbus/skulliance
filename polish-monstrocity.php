@@ -54,7 +54,10 @@ define('MONSTROCITY_POLISH', 1);
  * that was missing, and it is what the hairline has to end against.
  */
 .game-container { background: var(--msp-lift), #0d2230 !important; }
-.character,
+/* .character IS NO LONGER LIT, because it is no longer a panel: its
+   padding, border, radius and fill were removed so the card's content
+   could use the width the chrome was holding. Lighting a transparent
+   box just paints the panel back. .log and .legend are still panels. */
 .log,
 .legend       { background: var(--msp-lift), #1a3142 !important; }
 
