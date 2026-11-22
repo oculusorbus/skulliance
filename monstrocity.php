@@ -1850,14 +1850,27 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 /* Over the remaining health. Near-black measures 6.3:1 on the red and
    12.2:1 on the yellow, so this one copy covers all four fills. */
 .hp-ink-on {
-  color: #07140f;
+  /*
+   * !important IS REQUIRED HERE, and it is the page's own convention.
+   * A few hundred lines up, `:where(.game-container, .game-container *)`
+   * sets `color: #e8eaed !important` to soften every pure white in the
+   * original game CSS. :where() makes it specificity 0,0,0 -- its
+   * comment says as much, and says a later rule with one unit of
+   * specificity plus !important is how you win. Without that, BOTH inks
+   * came out off-white and the figure sat on the yellow fill with no
+   * dark copy and no outline: worse than the single white copy it
+   * replaced, which at least kept its black shadow.
+   */
+  color: #07140f !important;
   text-shadow: 0 1px 0 rgba(255,255,255,.3);
   clip-path: inset(0 calc(100% - var(--hp-pct, 100%)) 0 0);
 }
 /* Over the empty rail and the damage trail, where white is the legible
    one: 6.5:1 on the #525F65 groove, 4.7:1 on the trail's deep red. */
 .hp-ink-off {
-  color: #fff;
+  /* Same override, same reason -- it would otherwise be softened to
+     #e8eaed too, which is close but not the colour this was measured at. */
+  color: #fff !important;
   text-shadow: 0 1px 2px rgba(0,0,0,.95), 0 0 3px rgba(0,0,0,.8);
   clip-path: inset(0 0 0 var(--hp-pct, 100%));
 }

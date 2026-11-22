@@ -27,6 +27,10 @@ $src = (string) file_get_contents(__DIR__ . '/monstrocity.php');
 $a = strpos($src, 'THE HEALTH BAR. Isolated block');
 ok($a !== false, 'the health bar block is gone, or lost its marker');
 $blk = $a === false ? '' : substr($src, $a, strpos($src, '</style>', $a) - $a);
+/* DECLARATIONS ONLY. The block's comments quote the very selectors and
+   colours these checks search for -- the #e8eaed rule is named in full
+   -- so a raw search reads the prose and passes on deleted code. */
+$blkCode = preg_replace('~/\*.*?\*/~s', '', $blk);
 
 echo "it is a bar, not a layout\n";
 /* EVERY ONE OF THESE IS A THING THE REVERTED VERSION DID. */
@@ -37,13 +41,13 @@ foreach (array('.battlefield', '.m3-under', '.turn-indicator', '.dmg-float',
 }
 /* .character may not be touched at all: its position and height are what
    the narrow layout's fixed offsets are measured against. */
-ok(preg_match('~\.character\s*[,{]~', $blk) !== 1,
+ok(preg_match('~\.character\s*[,{]~', $blkCode) !== 1,
    'the block styles .character, whose geometry the narrow layout is tuned against');
 
 echo "\nand it changes no geometry\n";
 /* 20px is the original height. A taller bar makes a taller card, and
    #game-over-container is positioned at a hard-coded 317px below it. */
-ok(preg_match('~\.health-bar\s*\{[^}]*height\s*:~s', $blk) !== 1,
+ok(preg_match('~\.health-bar\s*\{[^}]*height\s*:~s', $blkCode) !== 1,
    'the block sets a height on .health-bar, which moves every fixed offset below it');
 /* The duplicate Health row stays. Hiding it is tidier and also changes
    the card height, which is the same mistake in the other direction. */
@@ -51,15 +55,15 @@ ok(strpos($blk, 'hp-row') === false && strpos($src, 'class="hp-row"') === false,
    'the Health table row is being hidden, which shortens the card');
 /* The children need a containing block, and that is the only positioning
    this is allowed to do. */
-ok(preg_match('~\.health-bar\s*\{[^}]*position:\s*relative~s', $blk) === 1,
+ok(preg_match('~\.health-bar\s*\{[^}]*position:\s*relative~s', $blkCode) === 1,
    '.health-bar is not a containing block, so the fill and the figure escape it');
 /* background-IMAGE only: the skin block's background-color still shows
    through and keeps its own value. */
-ok(preg_match('~\.health-bar\s*\{[^}]*background-image:~s', $blk) === 1
-   && preg_match('~\.health-bar\s*\{[^}]*background-color:~s', $blk) !== 1,
+ok(preg_match('~\.health-bar\s*\{[^}]*background-image:~s', $blkCode) === 1
+   && preg_match('~\.health-bar\s*\{[^}]*background-color:~s', $blkCode) !== 1,
    'the block sets a background-color and overwrites the skin block\'s own');
 /* And .health keeps the skin's teal glow, so no box-shadow here. */
-ok(preg_match('~\.health\s*\{[^}]*box-shadow:~s', $blk) !== 1,
+ok(preg_match('~\.health\s*\{[^}]*box-shadow:~s', $blkCode) !== 1,
    '.health sets box-shadow, which drops the skin block\'s glow');
 
 echo "\nthe bar shows the figure and the damage\n";
@@ -81,12 +85,12 @@ ok(strpos($src, 'if (!isNaN(prev) && percentage > prev) {') !== false
    in the same frame as the fill and no red is ever visible -- the bar
    still passes every other check here and shows no damage at all. The
    delay is what makes the fill move first and the trail follow it. */
-ok(preg_match('~\.health-trail\s*\{[^}]*transition:\s*width\s+[.\d]+s[^;]*\s[.\d]+s\s*;~s', $blk) === 1,
+ok(preg_match('~\.health-trail\s*\{[^}]*[;{\s]transition:\s*width\s+[.\d]+s[^;]*\s[.\d]+s\s*;~s', $blkCode) === 1,
    'the trail does not ease behind the fill, so no damage is ever visible');
 /* The trail sits BEHIND the fill, or there is nothing to see. */
-ok(preg_match('~\.health-trail\s*\{[^}]*z-index:\s*1~s', $blk) === 1
-   && preg_match('~\.health\s*\{[^}]*z-index:\s*2~s', $blk) === 1
-   && preg_match('~\.hp-num\s*\{[^}]*z-index:\s*3~s', $blk) === 1,
+ok(preg_match('~\.health-trail\s*\{[^}]*z-index:\s*1~s', $blkCode) === 1
+   && preg_match('~\.health\s*\{[^}]*z-index:\s*2~s', $blkCode) === 1
+   && preg_match('~\.hp-num\s*\{[^}]*z-index:\s*3~s', $blkCode) === 1,
    'the three layers are not stacked trail / fill / figure');
 
 echo "\nand the figure stays readable at every fill colour\n";
@@ -105,19 +109,38 @@ foreach (array('1', '2') as $n) {
 }
 /* Dark over the fill, white over the rail -- and NOT the other way
    round, which is the bug this replaced. */
-ok(preg_match('~\.hp-ink-on\s*\{[^}]*color:\s*#0[0-9a-f]{5}~s', $blk) === 1,
-   'the ink over the fill is not dark, so it is unreadable on the yellow again');
-ok(preg_match('~\.hp-ink-off\s*\{[^}]*color:\s*#fff~s', $blk) === 1,
-   'the ink over the empty rail is not white');
+/*
+ * BOTH INKS NEED !important, AND THIS IS THE CHECK THAT SHIPPED BROKEN
+ * WITHOUT IT.
+ *
+ * `:where(.game-container, .game-container *)` a few hundred lines up
+ * sets `color: #e8eaed !important` to soften the original game CSS's
+ * pure whites. :where() zeroes its specificity, but !important does not
+ * care about specificity -- it beats any normal declaration however
+ * specific. So the first version of this, which set the colours without
+ * !important, rendered BOTH copies off-white: the figure sat on the
+ * yellow fill with no dark copy and, because the dark copy's shadow is
+ * a white one, no outline either. Worse than the single white copy it
+ * replaced. It passed a fixture that had no .game-container ancestor.
+ */
+ok(preg_match('~\.hp-ink-on\s*\{[^}]*[;{\s]color:\s*#0[0-9a-f]{5}\s*!important~s', $blkCode) === 1,
+   'the ink over the fill is not dark-and-!important, so .game-container * softens it to off-white');
+ok(preg_match('~\.hp-ink-off\s*\{[^}]*[;{\s]color:\s*#fff\s*!important~s', $blkCode) === 1,
+   'the ink over the empty rail is not white-and-!important');
+/* And the adversary has to still be there: if that rule is ever dropped
+   these two !importants are cargo, and the next person should be told
+   why they exist rather than finding them unexplained. */
+ok(preg_match('~:where\([^)]*\.game-container \*[^)]*\)\s*\{[^}]*color:[^;]*!important~s', $src) === 1,
+   'the :where(.game-container *) colour override is gone, so the ink !importants need re-justifying');
 /* The two clips must be COMPLEMENTARY: one hides what the other shows.
    If both measure from the same side the figure doubles or vanishes. */
-ok(preg_match('~\.hp-ink-on\s*\{[^}]*clip-path:\s*inset\(0 calc\(100% - var\(--hp-pct~s', $blk) === 1,
+ok(preg_match('~\.hp-ink-on\s*\{[^}]*clip-path:\s*inset\(0 calc\(100% - var\(--hp-pct~s', $blkCode) === 1,
    'the dark copy is not clipped to the fill');
-ok(preg_match('~\.hp-ink-off\s*\{[^}]*clip-path:\s*inset\(0 0 0 var\(--hp-pct~s', $blk) === 1,
+ok(preg_match('~\.hp-ink-off\s*\{[^}]*clip-path:\s*inset\(0 0 0 var\(--hp-pct~s', $blkCode) === 1,
    'the white copy is not clipped to the empty rail');
 /* The wrapper must not set a colour of its own: both inks would inherit
    it and one of them would be wrong on every frame. */
-ok(preg_match('~\.hp-num\s*\{[^}]*color:~s', $blk) !== 1,
+ok(preg_match('~\.hp-num\s*\{[^}]*[;{\s]color:~s', $blkCode) !== 1,
    '.hp-num sets a colour, which overrides one of the two inks');
 /* And the clips need the width, or they both sit at their 100% default
    and the bar shows dark text on a dark rail. */
