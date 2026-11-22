@@ -42,7 +42,8 @@
 /**
  * $opts: href, label, aria, top (px below the top inset -- 62 on a page with
  * the sticky site-header, which is ~51px tall, so the button loses to the
- * nav instead of covering its skull mark).
+ * nav instead of covering its skull mark), radius (CSS length; Monstrocity
+ * passes 0 because that page has no rounded corners left anywhere).
  */
 function game_exit_button($opts = array()) {
 	static $css_done = false;
@@ -50,6 +51,10 @@ function game_exit_button($opts = array()) {
 	$href  = isset($opts['href'])  ? $opts['href']  : 'launchpad.php';
 	$label = isset($opts['label']) ? $opts['label'] : 'Exit';
 	$top   = isset($opts['top'])   ? (int)$opts['top'] : 10;
+	/* A LENGTH, NOT A NUMBER: it goes straight into a CSS custom property,
+	   so it is whitelisted against a pattern rather than cast. */
+	$rad   = (isset($opts['radius']) && preg_match('~^[0-9.]+(px|rem|em|%)?$~', (string)$opts['radius']))
+	       ? (string)$opts['radius'] : '0.5rem';
 	$aria  = isset($opts['aria'])  ? $opts['aria']
 	       : 'Leave the game and return to the Skulliance Launchpad';
 
@@ -90,7 +95,10 @@ function game_exit_button($opts = array()) {
      is a painted stripe. box-sizing is already border-box above, so the
      button does not grow by the 2px. */
   border: 1px solid #2ee3bf;
-  border-radius: 0.5rem;
+  /* The platform's 0.5rem unless the page says otherwise -- Monstrocity
+     has had every radius removed and a rounded exit button would be the
+     one curved thing on it. Same per-page mechanism as --skl-exit-top. */
+  border-radius: var(--skl-exit-radius, 0.5rem);
   text-decoration: none;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 0.88rem;
@@ -138,7 +146,7 @@ function game_exit_button($opts = array()) {
 		<?php
 	}
 	?>
-<a class="skl-exit" style="--skl-exit-top:<?php echo $top; ?>px"
+<a class="skl-exit" style="--skl-exit-top:<?php echo $top; ?>px;--skl-exit-radius:<?php echo $rad; ?>"
    href="<?php echo htmlspecialchars($href); ?>"
    aria-label="<?php echo htmlspecialchars($aria); ?>"><span class="skl-exit-arrow" aria-hidden="true">&larr;</span><span class="skl-exit-label"><?php echo htmlspecialchars($label); ?></span></a>
 	<?php

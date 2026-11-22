@@ -81,8 +81,22 @@ foreach (array('--msp-fill', '--msp-fill-in') as $t) {
 	ok($want !== '', "$t cannot be read from dist/polish.css");
 	ok($want === $got, "the $t fallback has drifted from the platform's value");
 }
-ok(strpos($first, 'border-radius: 0.5rem') !== false,
-   'the radius is not the platform 0.5rem');
+/* THE RADIUS IS PER PAGE NOW, like the top offset, because Monstrocity
+   has had every border-radius removed and a rounded exit button would be
+   the one curved thing on the page. The DEFAULT is still the platform
+   0.5rem, and the CSS has to actually read the variable -- asserting only
+   that the attribute is set passes while the rule hardcodes a value and
+   ignores it, which is the mutation that got through the top-offset
+   check the first time. */
+ok(strpos($first, 'border-radius: var(--skl-exit-radius, 0.5rem)') !== false,
+   'the radius is not the platform 0.5rem, or the CSS ignores the per-page variable');
+ok(strpos($first, '--skl-exit-radius:0.5rem') !== false,
+   'a page that asks for nothing does not get the platform radius');
+ok(strpos(render(array('radius' => 0)), '--skl-exit-radius:0') !== false,
+   'a page cannot square the button off');
+/* It lands in a style attribute, so anything but a length must not. */
+ok(strpos(render(array('radius' => 'red;background:url(x)')), 'background:url') === false,
+   'the radius is not validated, so it can inject into the style attribute');
 ok(strpos($first, 'border-radius: 999px') === false, 'it is still a rounded pill');
 ok(strpos($first, 'backdrop-filter') === false, 'it still uses the blurred-glass treatment');
 /*

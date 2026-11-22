@@ -92,7 +92,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  background-color: #165777;
 	  color: #fff;
 	  border: 1px solid black;
-	  border-radius: 5px;
 	  font-size: 16px;
 	  max-width: 265px;
 	}
@@ -187,7 +186,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		width: 100%;
 	    height: auto;
 	    margin-bottom: 10px;
-	    border-radius: 5px;
 	    transition: transform 0.1slinear, filter 0.5sease;
 	    -webkit-filter: drop-shadow(2px 5px 10px #000);
 	    filter: drop-shadow(2px 5px 10px #000);
@@ -232,7 +230,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       width: 100%;
       height: 20px;
       background-color: #525F65;
-      border-radius: 5px;
       overflow: hidden;
       margin: 5px 0;
 	  -webkit-filter: drop-shadow(2px 5px 10px #000);
@@ -268,7 +265,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       grid-template-columns: repeat(5, 1fr);
       flex-shrink: 0;
       margin-top: 17px;
-      border-radius: 5px;
       border: 1px solid black;
     }
 
@@ -390,7 +386,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    display: none;
 	    background: rgba(0, 0, 0, 0.8);
 	    padding: 20px;
-	    border-radius: 10px;
 	}
 
     #game-over {
@@ -461,7 +456,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       text-align: left;
       background-color: #165777;
       padding: 10px;
-      border-radius: 5px;
       max-height: 150px;
       min-height: 150px;
       overflow-y: auto;
@@ -482,7 +476,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	    padding: 10px 20px;
 	    background-color: #49BBE3;
 	    border: none;
-	    border-radius: 5px;
 	    cursor: pointer;
 	    font-weight: bold;
 	    margin-bottom: 20px;
@@ -499,7 +492,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  text-align: left;
 	  background-color: #165777;
 	  padding: 10px;
-	  border-radius: 5px;
 	  position: relative;
 	  top: -225px;
 	  border: 1px solid black;
@@ -617,7 +609,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       margin: 10px;
       padding: 10px;
       background: #165777;
-      border-radius: 5px;
       cursor: pointer;
       transition: transform 0.2s ease, background 0.2s ease;
 	  border: 1px solid black;
@@ -631,7 +622,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	.character-option img, .character-option video {
 	    width: 100%;
 	    height: auto;
-	    border-radius: 5px;
 	    -webkit-filter: drop-shadow(2px 5px 10px #000);
 	    filter: drop-shadow(2px 5px 10px #000);
 	}
@@ -661,7 +651,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	.progress-modal-content {
 	  background-color: #1a1a1a;
 	  padding: 20px;
-	  border-radius: 10px;
 	  text-align: center;
 	  color: #fff;
 	  font-family: Arial, sans-serif;
@@ -688,7 +677,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  font-size: 16px;
 	  cursor: pointer;
 	  border: none;
-	  border-radius: 5px;
 	  transition: background-color 0.3s;
 	}
 
@@ -721,7 +709,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  padding: 10px 20px;
 	  background-color: #49BBE3;
 	  border: none;
-	  border-radius: 5px;
 	  cursor: pointer;
 	  font-weight: bold;
 	  font-size: 16px;
@@ -763,7 +750,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  padding: 10px 20px;
 	  background-color: #f44336;
 	  border: none;
-	  border-radius: 5px;
 	  cursor: pointer;
 	  font-weight: bold;
 	  font-size: 16px;
@@ -803,7 +789,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  background-color: #121212; /* Fallback color */
 	  background-size: cover;
 	  background-position: center;
-	  border-radius: 5px;
 	  cursor: pointer;
 	  transition: transform 0.2s ease, background 0.2s ease;
 	  border: 1px solid black;
@@ -832,7 +817,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  background: rgba(0, 0, 0, 0.8);
 	  color: #fff;
 	  padding: 5px 10px;
-	  border-radius: 5px;
 	  font-size: 0.8em;
 	  bottom: 140px; /* Above title bar */
 	  left: 50%;
@@ -888,7 +872,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  margin: 10px;
 	  padding: 10px;
 	  background: #165777;
-	  border-radius: 5px;
 	  cursor: pointer;
 	  transition: transform 0.2s ease, background 0.2s ease;
 	  border: 1px solid black;
@@ -902,7 +885,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	
 	.boss-option div {
 	  max-height: 200px;
-	  border-radius: 5px;
 	  overflow: hidden;
 	  -webkit-filter: drop-shadow(2px 5px 10px #000);
 	  filter: drop-shadow(2px 5px 10px #000);
@@ -911,7 +893,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	.boss-option img {
 	  width: 100%;
 	  height: auto;
-	  border-radius: 5px;
 	  -webkit-filter: drop-shadow(2px 5px 10px #000);
 	  filter: drop-shadow(2px 5px 10px #000);
 	}
@@ -1089,7 +1070,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         font-size: 0.85em;
         background: rgba(7, 17, 29, 0.92);
         border: 1px solid rgba(0, 200, 160, 0.45);
-        border-radius: 999px;
         padding: 7px 14px;
         white-space: nowrap;
         max-width: calc(100vw - 110px);
@@ -1259,7 +1239,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     .legend {
       background-color: #1a3142 !important;
       border: 1px solid rgba(0, 200, 160, 0.18) !important;
-      border-radius: 8px !important;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4) !important;
     }
 
@@ -1283,7 +1262,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       background-color: #00c8a0 !important;
       color: #0a0a0a !important;
       border: none !important;
-      border-radius: 8px !important;
       font-weight: 600 !important;
       transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease !important;
     }
@@ -1302,7 +1280,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       background-color: #00c8a0 !important;
       color: #0a0a0a !important;
       border: 2px solid #00c8a0 !important;
-      border-radius: 10px !important;
       font-family: Arial, sans-serif !important;
     }
     #try-again:hover,
@@ -1318,7 +1295,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       background-color: #00c8a0 !important;
       color: #0a0a0a !important;
       border: none !important;
-      border-radius: 8px !important;
     }
     #theme-select-button:hover,
     #select-boss-button:hover {
@@ -1331,7 +1307,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       background: rgba(255, 255, 255, 0.08) !important;
       color: #e8eaed !important;
       border: 1px solid rgba(255, 255, 255, 0.12) !important;
-      border-radius: 8px !important;
     }
     #theme-close-button:hover {
       background: rgba(255, 70, 70, 0.18) !important;
@@ -1344,7 +1319,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       background-color: #00c8a0 !important;
       color: #0a0a0a !important;
       border: none !important;
-      border-radius: 8px !important;
     }
     #progress-resume:hover {
       background-color: #00e6b8 !important;
@@ -1353,7 +1327,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       background-color: rgba(255, 255, 255, 0.08) !important;
       color: #e8eaed !important;
       border: 1px solid rgba(255, 255, 255, 0.15) !important;
-      border-radius: 8px !important;
     }
     #progress-start-fresh:hover {
       background-color: rgba(255, 255, 255, 0.14) !important;
@@ -1369,7 +1342,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     #boss-select-container,
     .progress-modal-content {
       border: 1px solid rgba(0, 200, 160, 0.35) !important;
-      border-radius: 12px !important;
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 200, 160, 0.1) !important;
     }
     #character-select-container,
@@ -1401,7 +1373,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     .theme-option,
     .boss-option {
       border: 2px solid #0d6354 !important;
-      border-radius: 10px !important;
       transition: box-shadow 0.15s ease, transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease !important;
     }
     .theme-option {
@@ -1456,7 +1427,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       background-size: 40%;
       background-position: center;
       background-repeat: no-repeat;
-      border-radius: 6px;
       /*
        * ITS OWN COMPOSITING LAYER. On iOS these images report loaded and
        * then intermittently never paint -- the card renders with correct
@@ -1514,7 +1484,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       background-color: #1a3142 !important;
       color: #e8eaed !important;
       border: 1px solid rgba(0, 200, 160, 0.35) !important;
-      border-radius: 8px !important;
       font-size: 0.9rem !important;
       cursor: pointer;
       /* Center the selected-option text in the closed state. The dropdown
@@ -1651,7 +1620,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       }
       .theme-group-row::-webkit-scrollbar-thumb {
         background: rgba(0, 200, 160, 0.5);
-        border-radius: 32px;
         border: 8px solid transparent;
         background-clip: padding-box;
       }
@@ -1662,7 +1630,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       }
       .theme-group-row::-webkit-scrollbar-track {
         background: rgba(0, 200, 160, 0.08);
-        border-radius: 32px;
       }
       .theme-group-row > .theme-option {
         flex-shrink: 0;
@@ -1710,7 +1677,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         transform: translateY(-50%);
         width: 44px;
         height: 44px;
-        border-radius: 50%;
         border: 1px solid rgba(0, 200, 160, 0.45) !important;
         background: rgba(7, 17, 29, 0.85) !important;
         color: #00c8a0 !important;
@@ -1744,7 +1710,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
     /* Game-over container — looser, matches modal aesthetic */
     #game-over-container {
-      border-radius: 12px !important;
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7) !important;
     }
     #game-over {
@@ -1756,7 +1721,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     .health-bar {
       background-color: rgba(0, 0, 0, 0.45) !important;
       border: 1px solid rgba(255, 255, 255, 0.08) !important;
-      border-radius: 6px !important;
       overflow: hidden;
     }
     .health {
@@ -1781,7 +1745,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       background-color: rgba(0, 0, 0, 0.4) !important;
       color: #e8eaed !important;
       border: 1px solid rgba(0, 200, 160, 0.25) !important;
-      border-radius: 6px !important;
     }
 
     /* Mobile: drop the container's side borders and outline ring so the
@@ -1928,7 +1891,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
   <?php if ($user_id): ?>
   <?php game_exit_button(array(
       'label' => 'Exit',
-      'aria'  => 'Exit Monstrocity and return to the Skulliance Launchpad')); ?>
+      'aria'  => 'Exit Monstrocity and return to the Skulliance Launchpad',
+    /* No rounded corners anywhere on this page any more. */
+    'radius' => 0)); ?>
   <?php endif; ?>
   <div class="game-container">
     <div id="game-over-container">
@@ -2407,7 +2372,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                      <div><img src="${imageSrc}" alt="${boss.name}" loading="lazy" decoding="async"
 	                          onload="this.classList.add('loaded')" onerror="this.src='icons/skull.png'"></div>
 	                      <div class="health-bar" style="margin-bottom: 10px;">
-	                          <div class="health" style="width: ${healthPercentage}%; background-color: ${healthColor}; filter: none; border-radius: 5px 0 0 5px;"></div>
+	                          <div class="health" style="width: ${healthPercentage}%; background-color: ${healthColor}; filter: none;"></div>
 	                      </div>
 	                      <table>
 	                          <tr><td>Health:</td><td>${boss.health}/${boss.maxHealth}</td></tr>

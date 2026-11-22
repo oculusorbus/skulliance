@@ -101,5 +101,36 @@ ok(preg_match('~,\s*\n\s*(/\*|\n)~', preg_replace('~/\*.*?\*/~s', '/**/', $src))
    || preg_match('~,\s*\n\s*/\*\*/\s*\n\s*[.#@a-zA-Z][^{\n]*\{~', preg_replace('~/\*.*?\*/~s', '/**/', $src)) !== 1,
    'a selector list ends in a comma with only a comment after it, which swallows the next rule');
 
+echo "\nand nothing on the page is rounded\n";
+/*
+ * REQUESTED: no border-radius anywhere in the game. This scans the WHOLE
+ * file, not just the stylesheets, because one of the 38 was inline in a
+ * JS template literal that builds a boss card -- a CSS-block-only check
+ * would have missed it and left one rounded health fill on the page.
+ *
+ * It also catches the long-hand corners (border-top-left-radius and
+ * friends), which are a different property name and would sail past a
+ * search for "border-radius".
+ *
+ * OUT OF SCOPE ON PURPOSE: dhc-dropmodal.php keeps its corners. It is a
+ * platform modal shared by about twenty pages and is not Monstrocity's
+ * UI; squaring it here would square it on all of them.
+ */
+foreach (array('monstrocity.php', 'polish-monstrocity.php') as $f) {
+	$t = (string) file_get_contents(__DIR__ . '/' . $f);
+	/* Comments may discuss radii -- the removal is explained in several. */
+	$t = preg_replace('~/\*.*?\*/~s', '', $t);
+	preg_match_all('~border(?:-[a-z]+)*-radius\s*:\s*([^;"\']+)~i', $t, $m);
+	$round = array();
+	foreach ($m[1] as $v) if (preg_match('~[1-9]~', $v)) $round[] = trim($v);
+	ok(count($round) === 0,
+	   "$f still rounds something: " . implode(' | ', array_unique($round)));
+}
+/* The exit button comes from a SHARED component whose stylesheet is
+   emitted after every one of this page's, so the page cannot override
+   it -- it has to ask for the square corner by option. */
+ok(preg_match("~game_exit_button\(array\((?:[^)]|\)[^)])*'radius'\s*=>\s*0~s", $src) === 1,
+   'the exit button is not asked for a square corner, so it is the one rounded thing on the page');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all panel checks passed\n");
 exit($fail ? 1 : 0);
