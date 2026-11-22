@@ -1767,6 +1767,71 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
            document than any <link> and nothing linked could outrank it.
            Delete this line to revert; ?polish=0 turns it off without a
            deploy. */ ?>
+  <!-- ============================================================
+       THE HEALTH BAR. Isolated block: delete it to revert.
+       Only the bar. No layout, no geometry, nothing outside .health-bar
+       -- the battlefield's offsets are a tuned system and this does not
+       go near them.
+       ============================================================ -->
+  <style>
+/*
+ * THE BAR SHOWS THE HIT, NOT JUST THE TOTAL.
+ *
+ * It was a flat rail with a flat fill, and the figure lived four rows
+ * down the stats table, so the bar itself carried no number at all.
+ *
+ * HEIGHT IS DELIBERATELY UNCHANGED at the original 20px. The narrow
+ * layout is tuned against hard-coded offsets (#game-over-container sits
+ * at top:317px, the board at top:-225px), so anything that alters a
+ * card's height moves furniture three rules away. A taller bar was part
+ * of the version that had to be reverted.
+ */
+.health-bar {
+  /* The containing block for the three children below. Everything else
+     about the bar -- height, radius, border, margin -- is left alone. */
+  position: relative !important;
+  /* A groove with a tick every tenth, so a big hit visibly crosses them.
+     background-image only: the skin block's background-COLOR still shows
+     through underneath and keeps its own value. */
+  background-image:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.30) 0 1px, rgba(0,0,0,0) 1px 10%),
+    linear-gradient(180deg, rgba(0,0,0,.35) 0%, rgba(0,0,0,.08) 100%) !important;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.5) !important;
+}
+/*
+ * THE TRAIL IS THE POINT. It sits behind the fill and follows it down a
+ * beat later, so the red strip between them is exactly the damage just
+ * taken. You do not read a health bar, you read how far it moved.
+ */
+.health-trail {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 100%;
+  background: linear-gradient(180deg, #ff8a8a 0%, #c0392b 100%);
+  transition: width .5s cubic-bezier(.33,1,.68,1) .2s;
+  z-index: 1;
+}
+.health {
+  /* Absolute so the trail can sit behind it. The fill COLOUR is still
+     chosen per-frame by updateHealth(), and box-shadow is deliberately
+     not set here so the skin block's teal glow survives. */
+  position: absolute !important;
+  left: 0; top: 0; bottom: 0;
+  height: 100% !important;
+  z-index: 2;
+  background-image: linear-gradient(180deg, rgba(255,255,255,.3) 0,
+      rgba(255,255,255,.06) 48%, rgba(0,0,0,.18) 100%);
+}
+.hp-num {
+  position: absolute; inset: 0; z-index: 3;
+  display: flex; align-items: center; justify-content: center;
+  font: bold 11px/1 Arial, Helvetica, sans-serif;
+  letter-spacing: .03em;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.95), 0 0 3px rgba(0,0,0,.8);
+  pointer-events: none;
+}
+  </style>
+
   <?php include __DIR__ . '/polish-monstrocity.php'; ?>
 
   <script type="text/javascript">
@@ -1820,7 +1885,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  <div class="character" id="player1">
 	      <h2><span id="p1-name"></span></h2>
 	      <img id="p1-image" src="" alt="Player 1 Image">
-	      <div class="health-bar"><div class="health" id="p1-health"></div></div>
+	      <div class="health-bar">
+	        <div class="health-trail" id="p1-trail"></div>
+	        <div class="health" id="p1-health"></div>
+	        <span class="hp-num" id="p1-hpnum"></span>
+	      </div>
   	      <button id="flip-p1">Flip Player 1 Image</button>
 	      <table>
 	          <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p1-hp"></span></td></tr>
@@ -1836,7 +1905,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  <div class="character" id="player2">
 	      <h2><span id="p2-name"></span></h2>
 	      <img id="p2-image" src="" alt="Player 2 Image">
-	      <div class="health-bar"><div class="health" id="p2-health"></div></div>
+	      <div class="health-bar">
+	        <div class="health-trail" id="p2-trail"></div>
+	        <div class="health" id="p2-health"></div>
+	        <span class="hp-num" id="p2-hpnum"></span>
+	      </div>
   	      <button id="flip-p2">Flip Opponent Image</button>
 	      <table>
 	          <tr><td class="attribute-label">Health:</td><td class="attribute"><span id="p2-hp"></span></td></tr>
@@ -4992,6 +5065,37 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
         healthBar.style.backgroundColor = color;
         hpText.textContent = `${player.health}/${player.maxHealth}`;
+
+        /* THE FIGURE GOES ON THE BAR. It was only ever in the stats table,
+           four rows below the thing it describes. The table row stays --
+           hiding it would change the card's height, and the narrow layout
+           is tuned against fixed offsets. */
+        const side = (player === this.player1) ? 'p1' : 'p2';
+        const num  = document.getElementById(side + '-hpnum');
+        if (num) num.textContent = `${Math.max(0, player.health)} / ${player.maxHealth}`;
+
+        /*
+         * AND THE TRAIL, WHICH IS WHAT MAKES IT A BATTLER'S BAR. It
+         * follows the fill down a beat later, so the red strip between
+         * them IS the damage just taken.
+         *
+         * A HEAL JUMPS INSTEAD OF LAGGING: a trail easing upward behind a
+         * rising fill would paint a red strip for damage that never
+         * happened, which is the opposite of what it is for.
+         */
+        const trail = document.getElementById(side + '-trail');
+        if (trail) {
+          const prev = parseFloat(trail.dataset.pct);
+          if (!isNaN(prev) && percentage > prev) {
+            trail.style.transition = 'none';
+            trail.style.width = `${percentage}%`;
+            void trail.offsetWidth;              /* commit before restoring */
+            trail.style.transition = '';
+          } else {
+            trail.style.width = `${percentage}%`;
+          }
+          trail.dataset.pct = percentage;
+        }
       }
 
 	  endTurn() {
