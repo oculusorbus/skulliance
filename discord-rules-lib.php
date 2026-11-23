@@ -238,6 +238,21 @@ define('SK_REQUIRE_VISITOR', true);
 define('SK_EPHEMERAL', 64);           // message flag: only the clicker sees it
 define('SK_BTN_START', 'sk_rules_start');
 
+/*
+ * THE WEB ROUTE. join.php runs the same quiz with no 3000ms deadline on
+ * it, which is the whole reason it exists -- see that file's header.
+ *
+ * It is offered as a LINK BUTTON rather than a URL in the text. A button
+ * is a control rendered by Discord inside a message from this server's
+ * own application, so it reads as part of the server rather than as a
+ * link somebody has to decide whether to trust; and join.php carries
+ * Open Graph tags so that even pasted bare it unfurls as a Skulliance
+ * card. Discord may still show its own "you are leaving Discord"
+ * confirmation -- nothing on our side removes that, and it is arguably
+ * the right thing for it to do.
+ */
+if (!defined('SK_WEB_JOIN_URL')) define('SK_WEB_JOIN_URL', 'https://skulliance.io/staking/join.php');
+
 // ---------------------------------------------------------------------------
 // THE GATE MESSAGE ITSELF.
 //
@@ -317,6 +332,9 @@ function sk_rules_payload() {
 				 * server and out of patience. A mention inside an EMBED does not
 				 * ping, which is how it sits here without breaking rule 4 above.
 				 */
+				. "**If the button errors out**, use **Verify on the website** instead — "
+				. "it runs the same questions on skulliance.io with no time limit, and it "
+				. "cannot fail the way the button does.\n\n"
 				. "Contact " . sk_rules_owner_mention() . " if you encounter a persistent error "
 				. "or have difficulty with the rules.",
 			'color'       => hexdec('CC0000'),
@@ -339,9 +357,22 @@ function sk_rules_payload() {
 			 * truncate. So the harness measures this rather than trusting
 			 * whoever edits it next.
 			 */
-			'label'     => 'I Agree to the Rules - CLICK MULTIPLE TIMES IF ERRORING OUT',
+			'label'     => 'I Agree to the Rules',
 				'emoji'     => ['name' => '💀'],
 				'custom_id' => SK_BTN_START,
+			], [
+				/*
+				 * STYLE 5 IS A LINK BUTTON: it carries a url and MUST NOT
+				 * carry a custom_id -- Discord rejects the whole message if
+				 * it has both, and a link button never reaches the
+				 * interactions endpoint, which is the point. This is the
+				 * way in that cannot time out.
+				 */
+				'type'  => 2,                 // 2 = button
+				'style' => 5,                 // 5 = link
+				'label' => 'Verify on the website',
+				'emoji' => ['name' => '🌐'],
+				'url'   => SK_WEB_JOIN_URL,
 			]],
 		]],
 	];

@@ -190,7 +190,30 @@ if ($skj_step === 'signin') $_SESSION['skl_after_login'] = 'join.php';
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Join the Skulliance</title>
-<meta name="robots" content="noindex">
+<?php /*
+ * THE UNFURL IS THE REASSURANCE. Posted as a bare URL in Discord this is
+ * a blue string somebody is being asked to trust; with these it renders
+ * as a card carrying the Skulliance name, mark and teal stripe, which is
+ * what tells a stranger the link goes where it says.
+ *
+ * NO robots noindex HERE, deliberately. Discord's unfurler honours
+ * robots.txt (this site has none) rather than the meta tag, so the tag
+ * would almost certainly be harmless -- but the whole value of this page
+ * is that the card renders, and a public join page being indexed costs
+ * nothing worth that risk.
+ *
+ * theme-color is what Discord paints the card's left stripe with, so the
+ * card is brand-coloured rather than grey. Absolute URLs throughout: an
+ * unfurler has no page to resolve a relative one against.
+ */ ?>
+<meta property="og:site_name"   content="Skulliance">
+<meta property="og:type"        content="website">
+<meta property="og:url"         content="https://skulliance.io/staking/join.php">
+<meta property="og:title"       content="Join the Skulliance">
+<meta property="og:description" content="Pick the blockchain you know best, answer two quick questions about it, and you're in. Works on any chain - we're multi-chain.">
+<meta property="og:image"       content="https://skulliance.io/staking/icons/skulliance.png">
+<meta name="twitter:card"       content="summary">
+<meta name="theme-color"        content="#00c8a0">
 <link rel="stylesheet" href="dist/flexbox.css?v=<?php echo skl_asset_v(); ?>">
 <style>
 /* Self-contained: this page is for people who do not have an account yet,

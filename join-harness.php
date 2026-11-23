@@ -124,5 +124,46 @@ ok(strpos($code, '<?php echo $skj_name') === false
 ok(preg_match('~echo \$q\[.prompt.\]~', $code) !== 1,
    'a question prompt is printed unescaped');
 
+echo "\nthe url unfurls as a card, not a bare blue string\n";
+/*
+ * THE CARD IS THE REASSURANCE. This link is posted into a channel full
+ * of people who have been told since forever not to click links in
+ * Discord. Unfurled it carries the Skulliance name, mark and teal
+ * stripe; bare it is a string they are asked to trust.
+ */
+foreach (array('og:site_name', 'og:type', 'og:url', 'og:title', 'og:description', 'og:image') as $tag)
+	ok(preg_match('~<meta property="' . preg_quote($tag, '~') . '"\s+content="[^"]+"~', $src) === 1,
+	   "join.php has no $tag, so the link unfurls as a bare URL");
+/* ABSOLUTE, both of them. An unfurler has no page to resolve a relative
+   URL against, so a root-relative path silently yields no image. */
+foreach (array('og:url', 'og:image') as $tag) {
+	preg_match('~<meta property="' . preg_quote($tag, '~') . '"\s+content="([^"]+)"~', $src, $m);
+	ok(isset($m[1]) && strpos($m[1], 'https://') === 0,
+	   "$tag is not an absolute https URL, so it will not render");
+}
+/* Discord paints the card's left stripe with this. */
+ok(preg_match('~<meta name="theme-color"\s+content="#00c8a0"~', $src) === 1,
+   'the card has no brand stripe colour');
+/*
+ * AND NO noindex. Discord's unfurler goes by robots.txt rather than the
+ * meta tag, so this is belt and braces -- but the entire point of the
+ * page is that the card renders, and nothing is gained by risking it.
+ */
+ok(preg_match('~<meta name="robots"[^>]*noindex~', $src) !== 1,
+   'join.php is marked noindex, which risks suppressing the very card it needs');
+
+echo "\nand the button and the card point at the same place\n";
+/*
+ * Two files name this URL: the rules message's link button, and the
+ * page's own og:url. If they drift, the card describes one page and the
+ * button opens another.
+ */
+$lib = (string) file_get_contents(__DIR__ . '/discord-rules-lib.php');
+preg_match("~define\('SK_WEB_JOIN_URL',\s*'([^']+)'\)~", $lib, $bm);
+preg_match('~<meta property="og:url"\s+content="([^"]+)"~', $src, $om);
+ok(isset($bm[1]), 'the rules library no longer defines SK_WEB_JOIN_URL');
+ok(isset($bm[1]) && isset($om[1]) && rtrim($bm[1], '/') === rtrim($om[1], '/'),
+   'the rules button and join.php\'s og:url disagree about where this page is');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all join checks passed\n");
 exit($fail ? 1 : 0);

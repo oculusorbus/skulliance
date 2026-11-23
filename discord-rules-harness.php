@@ -378,6 +378,39 @@ $btn = $pay['components'][0]['components'][0];
 ok(mb_strlen($btn['label']) <= 80,
    'the button label is ' . mb_strlen($btn['label']) . ' characters; Discord caps it at 80 and '
  . 'refuses the entire message past it');
+
+/* ----------------------------------------------------------------------------
+ * THE WAY IN THAT CANNOT TIME OUT.
+ *
+ * Every press of the button above has to be answered inside Discord's
+ * 3000ms interaction deadline, and the presses members report as failures
+ * are lost before they ever arrive -- which is why that label used to
+ * shout CLICK MULTIPLE TIMES. join.php runs the same questions on the
+ * website with no deadline, offered here as a LINK BUTTON: a control
+ * rendered by Discord inside a message from this server's own app, rather
+ * than a URL somebody has to decide whether to trust.
+ * ---------------------------------------------------------------------------- */
+$lnk = $pay['components'][0]['components'][1] ?? null;
+ok($lnk !== null, 'the rules message has no second button, so there is no way in but the one that times out');
+if ($lnk) {
+	ok(($lnk['type'] ?? 0) === 2 && ($lnk['style'] ?? 0) === 5,
+	   'the web route is not a link button (type 2, style 5)');
+	/* A link button carries a url and MUST NOT carry a custom_id --
+	   Discord rejects the WHOLE message if it has both, which means no
+	   rules post at all rather than a slightly wrong one. */
+	ok(!empty($lnk['url']) && !isset($lnk['custom_id']),
+	   'the link button has a custom_id or no url; Discord refuses the entire message for either');
+	ok(strpos((string) ($lnk['url'] ?? ''), 'https://') === 0,
+	   'the link button is not https');
+	ok(strpos((string) ($lnk['url'] ?? ''), 'join.php') !== false,
+	   'the link button no longer points at the web quiz');
+	ok(mb_strlen((string) ($lnk['label'] ?? '')) <= 80,
+	   'the link button label is over Discord\'s 80-character cap');
+}
+/* And it has to be MENTIONED, not just present: somebody whose button
+   press just died is reading the embed, not scanning the component row. */
+ok(strpos($pay['embeds'][0]['description'], 'Verify on the website') !== false,
+   'the embed does not name the web route, so the person it is for will not find it');
 ok(mb_strlen($pay['content']) <= 2000,
    'the rules content is ' . mb_strlen($pay['content']) . ' characters; Discord caps a message '
  . 'at 2000');
@@ -389,13 +422,24 @@ ok(strlen($btn['custom_id']) <= 100, 'the button custom_id is over Discord\'s 10
 /*
  * THE TWO THINGS A STUCK MEMBER NEEDS, and they are on the message because
  * measurement said so: every press that reaches the endpoint is answered in
- * 3ms, and the presses reported as failures never arrive at all. The retry
- * instruction and the way to reach a human are the only help this server can
- * actually give, so losing either silently is worth failing over.
+ * 3ms, and the presses reported as failures never arrive at all.
+ *
+ * THE FIRST OF THOSE USED TO BE "PRESS IT AGAIN", shouted on the button
+ * label, because retrying was the only help this server could give. It is
+ * not any more -- join.php runs the same questions with no interaction
+ * deadline on them, so the label is a plain one again and the way out is a
+ * real way out rather than an instruction to keep trying the thing that
+ * failed. What is still worth failing over is that SOME stated escape
+ * exists, which is now the link button asserted above.
+ *
+ * Pinned as "either, not neither": a message carrying the link button does
+ * not need the shouting, and one that somehow loses the link button had
+ * better bring it back.
  */
-ok(stripos($btn['label'], 'CLICK MULTIPLE TIMES') !== false,
-   'the button no longer tells a member to press again, which is the only workaround there is '
- . 'for a press that never reaches Discord');
+ok(($lnk !== null && !empty($lnk['url']))
+   || stripos($btn['label'], 'CLICK MULTIPLE TIMES') !== false,
+   'the rules message offers no escape from a press that never reaches Discord: no web '
+ . 'route, and the button no longer tells a member to press again');
 ok(stripos($pay['embeds'][0]['description'], 'persistent error') !== false,
    'the rules message no longer says who to contact when the button will not work');
 
