@@ -124,6 +124,31 @@ ok(strpos($code, '<?php echo $skj_name') === false
 ok(preg_match('~echo \$q\[.prompt.\]~', $code) !== 1,
    'a question prompt is printed unescaped');
 
+echo "\nand the page carries the agreement itself\n";
+/*
+ * THE "I AGREE" BUTTON IN DISCORD IS GONE -- every press had to be
+ * answered inside a 3000ms deadline and the failures never arrived at
+ * all. The rules message now carries one link button to this page, so
+ * the act of agreeing has to happen on THIS side of it or it happens
+ * nowhere.
+ *
+ * On every screen before the pass, not once on a screen somebody may
+ * never see: a member who is already signed in lands straight on the
+ * chain question.
+ */
+/* Defined UNCONDITIONALLY: wrapping it in a branch that never runs leaves
+   every mention of it in the file and passes a plain search. */
+ok(preg_match("~^if \\(!defined\\('SKJ_AGREE'\\)\\) define\\('SKJ_AGREE',~m", $code) === 1,
+   'join.php states no agreement, and the Discord button that used to carry it is gone');
+/* THE THREE PRE-PASS SCREENS, counted exactly: sign-in, chain, question.
+   A threshold would pass while one of them quietly lost it. */
+ok(preg_match_all('~htmlspecialchars\\(SKJ_AGREE\\)~', $code) === 3,
+   'the agreement is not on all three pre-pass screens, so somebody can reach the quiz '
+ . 'without being told what they are agreeing to');
+preg_match("~define\\('SKJ_AGREE',\\s*\n?\\s*'([^']+)'~", $code, $am);
+ok(isset($am[1]) && stripos($am[1], 'agree') !== false && stripos($am[1], 'rules') !== false,
+   'the agreement wording no longer says what is being agreed to');
+
 echo "\nthe url unfurls as a card, not a bare blue string\n";
 /*
  * THE CARD IS THE REASSURANCE. This link is posted into a channel full

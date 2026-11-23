@@ -311,12 +311,22 @@ function sk_rules_payload() {
 			 * confusion that got them kicked. Describing the flow accurately is
 			 * not decoration; it is the instruction that makes it passable.
 			 */
-			'description' => "Press the button to agree. You'll pick the blockchain you know "
-				. "best, then answer **two quick questions** about that chain.\n\n"
+			'description' => "**Agree and verify on our website** using the button below. "
+				. "You'll pick the blockchain you know best, then answer **two quick "
+				. "questions** about that chain.\n\n"
 				. "Any chain is fine — Cardano, XRP Ledger, Solana, Polygon or Ethereum. "
 				. "We're multi-chain, so we're not asking you to know ours.\n\n"
 				. "Answer correctly and you'll be welcomed in as a Candidate. "
-				. "**Answer incorrectly and you'll be removed from the server** — so take your time.\n\n"
+				/*
+				 * NO LONGER A THREAT OF REMOVAL, because the website does not
+				 * carry one out. join.php sets SKJ_KICK_ON_WRONG to false and
+				 * simply lets people try again -- being kicked by a browser tab
+				 * is a baffling experience, and the reason this route exists is
+				 * that we are losing people at the door. Leaving the old warning
+				 * up would have promised a consequence that no longer happens,
+				 * which teaches members the rules message is not accurate.
+				 */
+				. "Get one wrong and you can simply try again.\n\n"
 				/*
 				 * A WAY OUT THAT IS NOT THE BUTTON.
 				 *
@@ -332,9 +342,8 @@ function sk_rules_payload() {
 				 * server and out of patience. A mention inside an EMBED does not
 				 * ping, which is how it sits here without breaking rule 4 above.
 				 */
-				. "**If the button errors out**, use **Verify on the website** instead — "
-				. "it runs the same questions on skulliance.io with no time limit, and it "
-				. "cannot fail the way the button does.\n\n"
+				. "This runs on skulliance.io with no time limit, so it cannot fail the "
+				. "way the old in-Discord button did.\n\n"
 				. "Contact " . sk_rules_owner_mention() . " if you encounter a persistent error "
 				. "or have difficulty with the rules.",
 			'color'       => hexdec('CC0000'),
@@ -342,36 +351,29 @@ function sk_rules_payload() {
 		'components' => [[
 			'type' => 1,
 			'components' => [[
-				'type'      => 2,
-				'style'     => 1,              // primary/blurple
 				/*
-			 * THE WORKAROUND IS ON THE BUTTON, because the button is the one
-			 * thing somebody stuck outside the server is certain to read.
-			 * Shouted on purpose: it is an instruction, not a caption, and
-			 * it is the difference between a member retrying and a member
-			 * giving up. It is here because presses are being lost before
-			 * they reach Discord -- see the embed note above.
-			 *
-			 * Discord caps a label at 80 characters and REJECTS THE WHOLE
-			 * MESSAGE past it: the post fails outright, it does not
-			 * truncate. So the harness measures this rather than trusting
-			 * whoever edits it next.
-			 */
-			'label'     => 'I Agree to the Rules',
-				'emoji'     => ['name' => '💀'],
-				'custom_id' => SK_BTN_START,
-			], [
-				/*
+				 * ONE BUTTON, AND IT LEAVES DISCORD. The interactive button
+				 * that used to sit here is gone: REPORTED repeatedly, and
+				 * finally with a screenshot of "Skull Bot didn't respond in
+				 * time" under a freshly pressed button. Every press has to be
+				 * answered inside a 3000ms interaction deadline and the ones
+				 * members report as failures never arrive at all, so there was
+				 * nothing left to fix on this side.
+				 *
+				 * So PRESSING THIS IS THE AGREEMENT now, not just the
+				 * verification -- join.php says so in those words on the first
+				 * screen, because the act of agreeing has to happen somewhere
+				 * and it no longer happens here.
+				 *
 				 * STYLE 5 IS A LINK BUTTON: it carries a url and MUST NOT
-				 * carry a custom_id -- Discord rejects the whole message if
-				 * it has both, and a link button never reaches the
-				 * interactions endpoint, which is the point. This is the
-				 * way in that cannot time out.
+				 * carry a custom_id -- Discord rejects the whole message if it
+				 * has both. It never reaches the interactions endpoint, which
+				 * is the entire point.
 				 */
 				'type'  => 2,                 // 2 = button
 				'style' => 5,                 // 5 = link
-				'label' => 'Verify on the website',
-				'emoji' => ['name' => '🌐'],
+				'label' => 'Agree to the Rules & Verify',
+				'emoji' => ['name' => '💀'],
 				'url'   => SK_WEB_JOIN_URL,
 			]],
 		]],

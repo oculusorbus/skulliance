@@ -373,7 +373,7 @@ ok($at_write !== false && $at_tail !== false && $at_tail > $at_write,
  * phone at one in the morning, so "be careful" is not the control.
  * ---------------------------------------------------------------------------- */
 $pay = sk_rules_payload();
-$btn = $pay['components'][0]['components'][0];
+$btn = $pay['components'][0]['components'][0];   /* the link button */
 
 ok(mb_strlen($btn['label']) <= 80,
    'the button label is ' . mb_strlen($btn['label']) . ' characters; Discord caps it at 80 and '
@@ -390,11 +390,15 @@ ok(mb_strlen($btn['label']) <= 80,
  * rendered by Discord inside a message from this server's own app, rather
  * than a URL somebody has to decide whether to trust.
  * ---------------------------------------------------------------------------- */
-$lnk = $pay['components'][0]['components'][1] ?? null;
-ok($lnk !== null, 'the rules message has no second button, so there is no way in but the one that times out');
+$row = $pay['components'][0]['components'];
+ok(count($row) === 1,
+   'the rules message has ' . count($row) . ' buttons; it should have exactly one, the link');
+$lnk = $row[0] ?? null;
+ok($lnk !== null, 'the rules message has no button at all');
 if ($lnk) {
 	ok(($lnk['type'] ?? 0) === 2 && ($lnk['style'] ?? 0) === 5,
-	   'the web route is not a link button (type 2, style 5)');
+	   'the way in is not a link button (type 2, style 5) -- an interactive button is exactly '
+	 . 'what stopped working');
 	/* A link button carries a url and MUST NOT carry a custom_id --
 	   Discord rejects the WHOLE message if it has both, which means no
 	   rules post at all rather than a slightly wrong one. */
@@ -406,40 +410,55 @@ if ($lnk) {
 	   'the link button no longer points at the web quiz');
 	ok(mb_strlen((string) ($lnk['label'] ?? '')) <= 80,
 	   'the link button label is over Discord\'s 80-character cap');
+	/* AND IT HAS TO READ AS THE AGREEMENT, not just a verification step.
+	   There is no "I agree" button any more; this is it. */
+	ok(stripos((string) ($lnk['label'] ?? ''), 'agree') !== false,
+	   'the only button does not say it is the agreement, which is now the only place agreeing happens');
 }
-/* And it has to be MENTIONED, not just present: somebody whose button
-   press just died is reading the embed, not scanning the component row. */
-ok(strpos($pay['embeds'][0]['description'], 'Verify on the website') !== false,
-   'the embed does not name the web route, so the person it is for will not find it');
+/* NO INTERACTIVE BUTTON ANYWHERE in this message. Every press of one has
+   to be answered inside Discord's 3000ms deadline, and the presses members
+   report as failures never arrive at all -- reported again with a
+   screenshot of "Skull Bot didn't respond in time". Adding one back puts
+   the broken door next to the working one. */
+foreach ($row as $b)
+	ok(!isset($b['custom_id']),
+	   'an interactive button is back on the rules message; that is the thing that times out');
+/* And the embed has to describe the website, since that is the whole flow
+   now rather than a fallback. */
+ok(stripos($pay['embeds'][0]['description'], 'website') !== false,
+   'the embed does not mention the website, which is now the only way in');
+/*
+ * AND IT MUST NOT THREATEN A REMOVAL THE WEBSITE WILL NOT CARRY OUT.
+ * join.php sets SKJ_KICK_ON_WRONG to false and simply lets people retry.
+ * The embed used to say "Answer incorrectly and you'll be removed from
+ * the server", which was true of the bot flow and is not true of this
+ * one -- leaving it up promises a consequence that no longer happens and
+ * teaches members the rules message is not accurate.
+ */
+ok(stripos($pay['embeds'][0]['description'], 'removed from the server') === false,
+   'the embed still threatens removal for a wrong answer, which the website does not do');
 ok(mb_strlen($pay['content']) <= 2000,
    'the rules content is ' . mb_strlen($pay['content']) . ' characters; Discord caps a message '
  . 'at 2000');
 ok(mb_strlen($pay['embeds'][0]['description']) <= 4096,
    'the embed description is ' . mb_strlen($pay['embeds'][0]['description']) . '; Discord caps '
  . 'it at 4096');
-ok(strlen($btn['custom_id']) <= 100, 'the button custom_id is over Discord\'s 100 bytes');
+/* The custom_id cap no longer applies: the only button is a link button
+   and carries none. SK_BTN_START is still used by discord-interactions.php
+   for any older message still sitting in a channel, so it is checked where
+   that endpoint is checked rather than here. */
 
 /*
  * THE TWO THINGS A STUCK MEMBER NEEDS, and they are on the message because
  * measurement said so: every press that reaches the endpoint is answered in
  * 3ms, and the presses reported as failures never arrive at all.
  *
- * THE FIRST OF THOSE USED TO BE "PRESS IT AGAIN", shouted on the button
- * label, because retrying was the only help this server could give. It is
- * not any more -- join.php runs the same questions with no interaction
- * deadline on them, so the label is a plain one again and the way out is a
- * real way out rather than an instruction to keep trying the thing that
- * failed. What is still worth failing over is that SOME stated escape
- * exists, which is now the link button asserted above.
- *
- * Pinned as "either, not neither": a message carrying the link button does
- * not need the shouting, and one that somehow loses the link button had
- * better bring it back.
+ * THE FIRST USED TO BE "PRESS IT AGAIN", shouted on the button label,
+ * because retrying was the only help this server could give. Then it was a
+ * web route offered beside the button. Now it IS the message -- the
+ * interactive button is gone entirely, asserted above. What is left to pin
+ * here is the second thing: a way to reach a human.
  */
-ok(($lnk !== null && !empty($lnk['url']))
-   || stripos($btn['label'], 'CLICK MULTIPLE TIMES') !== false,
-   'the rules message offers no escape from a press that never reaches Discord: no web '
- . 'route, and the button no longer tells a member to press again');
 ok(stripos($pay['embeds'][0]['description'], 'persistent error') !== false,
    'the rules message no longer says who to contact when the button will not work');
 

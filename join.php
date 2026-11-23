@@ -54,6 +54,22 @@ if (!defined('SKJ_KICK_ON_WRONG')) define('SKJ_KICK_ON_WRONG', false);
 
 if (!defined('SKJ_INVITE')) define('SKJ_INVITE', 'https://discord.gg/JqqBZBrph2');
 
+/*
+ * THE AGREEMENT HAPPENS HERE NOW.
+ *
+ * It used to be the "I Agree to the Rules" button in Discord. That button
+ * is gone -- every press had to be answered inside a 3000ms interaction
+ * deadline and the ones members reported as failures never arrived at all
+ * -- so the rules message carries a single link button to this page and
+ * the act of agreeing has to happen on this side of it.
+ *
+ * Stated on EVERY screen before the pass, not once on a screen somebody
+ * may never see: a member who is already signed in lands straight on the
+ * chain question and would otherwise be asked to agree to nothing.
+ */
+if (!defined('SKJ_AGREE')) define('SKJ_AGREE',
+	'By continuing you agree to the Skulliance server rules, posted in the rules channel.');
+
 /* The site's login IS Discord OAuth, so "sign in" and "tell us who you are
    on Discord" are the same step. Copied from index.php; identify + guilds is
    all this needs. */
@@ -257,11 +273,12 @@ form { margin:0; }
 <?php elseif ($skj_step === 'signin'): ?>
   <div class="j-card">
     <h1>Join the Skulliance</h1>
-    <p>Two quick questions about the chain you know best, and you are in.</p>
+    <p>Agree to the rules and verify, in one go: two quick questions about the chain you know best.</p>
     <p class="j-muted">First, tell us who you are on Discord. This is the same
        sign-in the rest of the site uses, and it is how we know which account
        to give the role to.</p>
     <a class="j-btn j-go" href="<?php echo htmlspecialchars($skj_oauth); ?>">Continue with Discord</a>
+    <p class="j-muted" style="margin:14px 0 0"><?php echo htmlspecialchars(SKJ_AGREE); ?></p>
   </div>
 
 <?php elseif ($skj_step === 'unknown'): ?>
@@ -328,6 +345,7 @@ form { margin:0; }
         <button class="j-btn" type="submit" name="chain" value="<?php echo htmlspecialchars($key); ?>"><?php echo htmlspecialchars($c['label']); ?></button>
       <?php endforeach; ?>
     </form>
+    <p class="j-muted" style="margin:14px 0 0"><?php echo htmlspecialchars(SKJ_AGREE); ?></p>
   </div>
 
 <?php else:
@@ -353,6 +371,7 @@ form { margin:0; }
         <button class="j-btn" type="submit" name="choice" value="<?php echo htmlspecialchars($k); ?>"><?php echo htmlspecialchars($q['options'][$k]); ?></button>
       <?php endforeach; ?>
     </form>
+    <p class="j-muted" style="margin:14px 0 0"><?php echo htmlspecialchars(SKJ_AGREE); ?></p>
   </div>
 <?php endif; ?>
 
