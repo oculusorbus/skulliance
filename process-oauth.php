@@ -224,5 +224,19 @@ checkUser($conn);
    cannot be defeated by a stray notice from anywhere in this file or
    the ones it includes. */
 while (ob_get_level() > 0) ob_end_clean();
-header("location: launchpad.php");
+/*
+ * A PAGE MAY ASK TO BE RETURNED TO, from a FIXED LIST and nothing else.
+ * join.php sends people through this login and needs them back, because
+ * being dropped on the Launchpad mid-way through the rules quiz is the
+ * same lost-at-the-door problem that page exists to fix.
+ *
+ * A whitelist, not a sanitised string: this value decides where a freshly
+ * authenticated session lands, so an open redirect here would be worth
+ * something to somebody. The session key is consumed either way, so a
+ * stale one cannot redirect a later, unrelated login.
+ */
+$po_after = (string) ($_SESSION['skl_after_login'] ?? '');
+unset($_SESSION['skl_after_login']);
+$po_allowed = array('join.php');
+header('location: ' . (in_array($po_after, $po_allowed, true) ? $po_after : 'launchpad.php'));
 exit();
