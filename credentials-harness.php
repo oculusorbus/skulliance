@@ -77,10 +77,23 @@ ok(preg_match("~ini_set\('display_errors',\s*0\)~", $po) === 1,
  */
 $ob  = strpos($po, 'ob_start()');
 $clr = strpos($po, 'ob_end_clean()');
-$hdr = strpos($po, 'header("location: launchpad.php")');
+/* THE REDIRECT IS COMPUTED NOW, not a literal: join.php can ask to be
+   returned to, from a whitelist, so this matches the header() call itself
+   rather than the string it used to contain. The ordering is the point. */
+/* COMMENT-STRIPPED, or a commented-out header() still matches and the
+   ordering check passes on a page that no longer redirects at all. */
+$poCode = harness_strip_comments($po);
+$ob  = strpos($poCode, 'ob_start()');
+$clr = strpos($poCode, 'ob_end_clean()');
+$hdr = false;
+if (preg_match('~header\(\s*[\'"]location:~i', $poCode, $m, PREG_OFFSET_CAPTURE)) $hdr = $m[0][1];
 ok($ob !== false, 'the callback does not buffer its own output');
+ok($hdr !== false, 'process-oauth.php no longer redirects at all');
 ok($clr !== false && $hdr !== false && $clr < $hdr,
    'the buffer is not discarded before the redirect, so a stray notice still breaks it');
+/* And the Launchpad is still where an ordinary login lands. */
+ok(strpos($po, 'launchpad.php') !== false,
+   'the default landing is no longer the Launchpad');
 
 /* ---------------------------------------------------------------- *
  * And the sweep: anything that loads a credentials file.
