@@ -110,6 +110,10 @@ it anywhere on the platform, so what dropping a second and third crew buys the
 community is **more rolls**, not better ones. The boxes on the page carry their own
 multiplier so you can see what a round is worth before you spend it.
 
+Each box also has a **badge** over it, the same art as the rungs of Infiltration's ladder. It
+stays grey until you bank that round, turns full colour once you have, and **glows purple** if you
+sent all three Crews that round. The glow is just for show and banks nothing extra.
+
 A round is **24 hours from 4pm CT**, the same boundary the week turns on — not a
 calendar day. The page carries a live countdown to the next one, so you never have
 to work out where the boundary is. So your three Crews reset at 4pm, not at midnight, and the Arena's

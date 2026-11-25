@@ -1508,6 +1508,15 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-slot.today span{color:var(--ochre)}
 .arena-wrap .a-slot.missed i{background:transparent;border-style:dotted;opacity:.4}
 .arena-wrap .a-slot.missed span{opacity:.4}
+/* The badge over each box. Locked = Infiltration's unearned rung: shape kept,
+   colour gone, a slight lift so dark metal does not vanish into the card. */
+.arena-wrap .a-sbadge{display:block;width:100%;max-width:56px;height:auto;margin:0 auto 4px;
+  aspect-ratio:394/404;filter:grayscale(1) brightness(1.1);opacity:.45;
+  transition:filter .25s ease,opacity .25s ease}
+.arena-wrap .a-slot.b-on .a-sbadge{filter:none;opacity:1}
+.arena-wrap .a-slot.b-full .a-sbadge{filter:drop-shadow(0 0 9px rgba(138,99,210,.95))
+  drop-shadow(0 0 18px rgba(138,99,210,.5));opacity:1}
+.arena-wrap .a-cache.noart .a-sbadge{display:none}
 @keyframes aSlotPulse{0%,100%{opacity:.55}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){ .arena-wrap .a-slot.today i{animation:none;opacity:.9} }
 .arena-wrap .a-cachenote{margin-bottom:10px}
@@ -2543,14 +2552,27 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                  identical boxes would be lying about four of them. The
                  multiplier is drawn only where it is not one, because x1 on
                  every box in an ordinary week is noise. */ ?>
+        <?php /* A BADGE OVER EACH BOX, borrowed from Infiltration's ladder:
+                 rungs 1 and 4-9, so the week climbs the way the ladder does.
+                 Grey until you turn up, full colour once the round is banked,
+                 and the purple glow once all DHCB_DAILY_RUNS Crews were sent.
+                 Images deploy by FTP, so one failed load hides the whole row
+                 rather than leaving a gap over one box. */
+          $dhcb_badges = array(1, 4, 5, 6, 7, 8, 9); ?>
         <div class="a-cache">
-          <?php foreach ($dhcb_slots as $sl): $w = (int)$sl['traits']; ?>
-          <div class="a-slot <?php echo $sl['state']; ?>"
+          <?php foreach ($dhcb_slots as $si => $sl): $w = (int)$sl['traits'];
+            $badge = $sl['state'] === 'filled'
+              ? ((int)$sl['runs'] >= DHCB_DAILY_RUNS ? ' b-full' : ' b-on') : ''; ?>
+          <div class="a-slot <?php echo $sl['state'] . $badge; ?>"
                title="<?php echo 'Round ' . htmlspecialchars($sl['label']) . ' of 7 — ' . (
                  $sl['state'] === 'filled' ? 'banked ' . $w . ($w === 1 ? ' trait' : ' traits')
                  : ($sl['state'] === 'today' ? 'now, still open · worth ' . $w
                  : ($sl['state'] === 'missed' ? 'missed'
-                 : 'still to come · worth ' . $w . ' at the wave standing now'))); ?>">
+                 : 'still to come · worth ' . $w . ' at the wave standing now')))
+                 . ($sl['state'] === 'filled' ? ' · ' . (int)$sl['runs'] . ' of ' . DHCB_DAILY_RUNS . ' Crews sent' : ''); ?>">
+            <img class="a-sbadge" src="icons/infiltration/rung-<?php echo $dhcb_badges[$si % 7]; ?>.webp"
+                 alt="" decoding="async" loading="lazy"
+                 onerror="this.closest('.a-cache').classList.add('noart')">
             <i><?php if ($w > 1 && $sl['state'] !== 'missed'): ?><em>&times;<?php
               echo $w; ?></em><?php endif; ?></i>
             <span><?php echo htmlspecialchars($sl['label']); ?></span>

@@ -1933,7 +1933,8 @@ function dhcb_settle($conn, $day = null, $announce = true, $repay = false, $pace
  * The count alone cannot say which day was missed, and the missed day is
  * the whole motivation.
  *
- * Returns seven rows in week order: date, label, state. State is one of
+ * Returns seven rows in week order: index, label, state, traits, and runs
+ * (Crews finished that round, qualifying or not). State is one of
  *   'filled'  a real run landed that day, the slot is earned
  *   'today'   today, and still unearned
  *   'open'    a future day of this week
@@ -1959,6 +1960,20 @@ function dhcb_cache_slots($conn, $user_id, $week = null) {
 	                     GROUP BY " . skl_week_day_sql_for($week, 'started_at'));
 	if ($r) while ($x = $r->fetch_assoc()) $done[(int)$x['d']] = (int)$x['w'];
 
+	/* EVERY FINISHED CREW PER ROUND, qualifying or not, for the badge above
+	   each box: full colour for turning up, the purple glow for sending all
+	   DHCB_DAILY_RUNS. Separate from the query above because that one is
+	   filtered to runs that bank, and a third Crew that did little damage
+	   was still sent. */
+	$sent = array();
+	$r = @$conn->query("SELECT " . skl_week_day_sql_for($week, 'started_at') . " AS d, COUNT(*) AS n
+	                      FROM dhc_boss_runs
+	                     WHERE user_id = $uid
+	                       AND day = '" . $conn->real_escape_string($week) . "'
+	                       AND outcome <> 0
+	                     GROUP BY " . skl_week_day_sql_for($week, 'started_at'));
+	if ($r) while ($x = $r->fetch_assoc()) $sent[(int)$x['d']] = (int)$x['n'];
+
 	/* What a round played RIGHT NOW would bank, for the slots not yet
 	   earned. One read of the standing wave, not one per slot. */
 	$nowWave = dhcb_wave($conn, $week);
@@ -1981,7 +1996,8 @@ function dhcb_cache_slots($conn, $user_id, $week = null) {
 		$worth = ($st === 'filled') ? dhcb_round_traits($done[$i])
 		       : (($st === 'missed') ? 0 : dhcb_round_traits($nowWave));
 		$out[] = array('index' => $i, 'label' => (string)($i + 1), 'state' => $st,
-		               'traits' => $worth);
+		               'traits' => $worth,
+		               'runs'   => isset($sent[$i]) ? $sent[$i] : 0);
 	}
 	return $out;
 }
