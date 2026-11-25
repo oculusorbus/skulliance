@@ -1513,12 +1513,19 @@ ok(strpos($ARE, 'Took one down') !== false,
  * run's own window. Attributing by user alone would credit every run that
  * player made all week with every boss they ever finished.
  */
-ok(strpos($LIB, 'AND d.killed_at >= r.started_at') !== false
-   && strpos($LIB, 'AND d.killed_at <= COALESCE(r.ended_at, NOW())') !== false,
-   'the kill is not attributed to the run that made it, so one player\'s kill would be '
- . 'claimed by every run they sent this week');
-ok(strpos($LIB, 'AND d.killed_by = r.user_id') !== false,
-   'the kill is not attributed to the player who landed it');
+/*
+ * THE ATTRIBUTION MOVED OUT OF THE QUERY, so this no longer matches SQL
+ * fragments. It is dhcb_attribute_kills(), a pure function, and it is
+ * DRIVEN with the awkward cases further down this file -- a run that
+ * cleared two waves, two runs a second apart, and an abandoned run that
+ * never ended. Those are about timestamps, and no source search can see
+ * a timestamp.
+ *
+ * It moved because the query joined `d.wave = r.wave`, which threw away
+ * every boss a run dropped after the first crew fell. Reported.
+ */
+ok(function_exists('dhcb_attribute_kills'),
+   'the kill attributor is gone, so nothing says which run dropped which boss');
 ok(strpos($LIB, "\$rows[\$i]['kills']") !== false,
    'the report does not carry the kills, so the feed has nothing to name');
 ok(strpos($ARE, "elseif (!empty(\$rn['kills'])):") !== false,
@@ -3654,6 +3661,88 @@ ok(strpos($bl, 'dhcb_ladder($conn, DHCB_LADDER_ALL_TIME, 100)') !== false,
    months and stop being a reason to look. */
 ok(strpos($DB, "'dhcbosses'         => function(\$c) { checkDHCBossesLeaderboard(\$c, true); }") !== false,
    'the hub snapshot no longer takes the weekly cut');
+
+/* ----------------------------------------------------------------------------
+ * WHICH RUN DROPPED WHICH BOSS -- driven, not grepped.
+ *
+ * REPORTED: "I just took down wave 6 and wave 7 in one battle. The UI is
+ * only reporting the boss casualties for wave 6." The kills query joined
+ * `d.wave = r.wave`, and a run carries ONE wave -- the one it was stood up
+ * against -- so every boss it dropped after the first crew fell was thrown
+ * away. Silently: an INNER JOIN matching fewer rows looks exactly like a
+ * run that killed fewer bosses.
+ *
+ * These drive the real function, because the awkward cases are about
+ * timestamps and no source search can see a timestamp.
+ * ---------------------------------------------------------------------------- */
+echo "\nkills are attributed to the run that made them\n";
+$NOW = strtotime('2026-11-25 12:00:00');
+$mkRun = function ($id, $uid, $start, $end) {
+	return array('id' => $id, 'user_id' => $uid, 'started_at' => $start, 'ended_at' => $end);
+};
+$mkKill = function ($key, $wave, $uid, $at) {
+	return array('boss_key' => $key, 'wave' => $wave, 'killed_by' => $uid, 'killed_at' => $at);
+};
+
+/* THE REPORTED CASE. One run, stood up against wave 6, which cleared 6 and
+   went on to clear 7 before it ended. */
+$runs  = array($mkRun(10, 7, '2026-11-25 11:00:00', '2026-11-25 11:10:00'));
+$kills = array(
+	$mkKill('cip666',     6, 7, '2026-11-25 11:02:00'),
+	$mkKill('d34thbrngr', 6, 7, '2026-11-25 11:04:00'),
+	$mkKill('xk4t',       7, 7, '2026-11-25 11:08:00'),   /* the NEXT wave */
+);
+$got = dhcb_attribute_kills($runs, $kills, $NOW);
+ok(isset($got[10]) && count($got[10]) === 3,
+   'a run that cleared two waves reports ' . (isset($got[10]) ? count($got[10]) : 0)
+ . ' of its 3 kills -- the wave condition is back');
+$waves = array(); foreach (($got[10] ?? array()) as $k) $waves[] = $k['wave'];
+sort($waves);
+ok($waves === array(6, 6, 7), 'the second wave\'s casualties are missing from the run that took them');
+
+/* TWO RUNS, BACK TO BACK. Each keeps its own. */
+$runs = array($mkRun(20, 7, '2026-11-25 11:00:00', '2026-11-25 11:05:00'),
+              $mkRun(21, 7, '2026-11-25 11:06:00', '2026-11-25 11:09:00'));
+$got = dhcb_attribute_kills($runs, array(
+	$mkKill('a', 6, 7, '2026-11-25 11:02:00'),
+	$mkKill('b', 7, 7, '2026-11-25 11:07:00')), $NOW);
+ok(count($got[20] ?? array()) === 1 && count($got[21] ?? array()) === 1,
+   'two runs by one player do not each keep their own kill');
+
+/*
+ * AN ABANDONED RUN MUST NOT SWALLOW THE WEEK. ended_at is NULL while a run
+ * is in progress, so its window runs to now -- and the old query was
+ * shielded from that only by the wave condition that caused the bug above.
+ * Removing one without the other trades a missing kill for a wrong one.
+ */
+$runs = array($mkRun(30, 7, '2026-11-25 09:00:00', null),            /* never ended */
+              $mkRun(31, 7, '2026-11-25 11:00:00', '2026-11-25 11:30:00'));
+$got = dhcb_attribute_kills($runs, array($mkKill('c', 6, 7, '2026-11-25 11:10:00')), $NOW);
+ok(!isset($got[30]) && count($got[31] ?? array()) === 1,
+   'an abandoned run claims a later run\'s kill; the latest start must win');
+
+/* Somebody else's kill, and a kill outside every window. */
+$runs = array($mkRun(40, 7, '2026-11-25 11:00:00', '2026-11-25 11:10:00'));
+$got = dhcb_attribute_kills($runs, array(
+	$mkKill('d', 6, 99, '2026-11-25 11:05:00'),    /* another player */
+	$mkKill('e', 6, 7,  '2026-11-25 10:00:00')),   /* before the run */
+	$NOW);
+ok(!$got, 'a kill by another player, or outside the run window, is being attributed anyway');
+
+/* And the query it feeds must not re-introduce the wave condition. */
+$repSrc = substr($dbl, strpos($dbl, 'function dhcb_runs_report'));
+ok(strpos($repSrc, 'd.wave = r.wave') === false,
+   'the kills query joins on the run\'s own wave again, which drops everything it killed '
+ . 'after the first crew fell');
+ok(strpos($repSrc, 'dhcb_attribute_kills(') !== false,
+   'the report no longer attributes kills through dhcb_attribute_kills()');
+
+echo "\nand the feed names every wave that fell at a break\n";
+/* One battle can clear more than one crew, so the gap between two adjacent
+   rows is not always one. The line used to name only the lower row's wave,
+   so wave 7 vanished between a wave 8 row and a wave 6 one. */
+ok(strpos($ARE, '$fellWaves = range($wv, (int)$prevWave - 1);') !== false,
+   'the wave break names only one wave again, so a wave cleared in the same battle disappears');
 
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all DHC Bosses checks passed\n");
 exit($fail ? 1 : 0);

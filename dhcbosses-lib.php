@@ -2603,6 +2603,58 @@ function dhcb_ladder_html($rows, $user_id, $guest, $empty) {
 }
 
 /** Every Crew that went in on a day, newest first. The owner's report. */
+/**
+ * Which run dropped which boss.
+ *
+ * SPLIT OUT AND PURE so it can be driven with the awkward cases instead
+ * of reasoned about: a run that cleared two waves, two runs a second
+ * apart, and an abandoned run that never ended.
+ *
+ * A kill belongs to the run by the SAME PLAYER whose window contains it,
+ * and where more than one does, to the LATEST one to have started. That
+ * tie-break is not decoration: dhc_boss_runs.ended_at is NULL while a run
+ * is in progress, so an abandoned run's window runs to now and would
+ * otherwise swallow every boss that player dropped for the rest of the
+ * week. The old query was shielded from that by the wave condition that
+ * caused the bug this replaces, so removing one without the other would
+ * have traded a missing kill for a misattributed one.
+ *
+ * @param array $runs  rows with id, user_id, started_at, ended_at
+ * @param array $kills rows with boss_key, wave, killed_by, killed_at
+ * @return array run_id => list of ['key','name','art','wave']
+ */
+function dhcb_attribute_kills($runs, $kills, $nowTs = null) {
+	if ($nowTs === null) $nowTs = time();
+	$out = array();
+	foreach ($kills as $k) {
+		$at = strtotime((string)$k['killed_at']);
+		if ($at === false) continue;
+		$best = null; $bestStart = null;
+		foreach ($runs as $r) {
+			if ((int)$r['user_id'] !== (int)$k['killed_by']) continue;
+			$st = strtotime((string)$r['started_at']);
+			if ($st === false || $st > $at) continue;
+			$en = (isset($r['ended_at']) && $r['ended_at'] !== null && $r['ended_at'] !== '')
+				? strtotime((string)$r['ended_at']) : $nowTs;
+			if ($en === false || $en < $at) continue;
+			/* Latest start wins; same second, the later row wins. */
+			if ($best === null || $st > $bestStart
+			    || ($st === $bestStart && (int)$r['id'] > (int)$best['id'])) {
+				$best = $r; $bestStart = $st;
+			}
+		}
+		if ($best === null) continue;
+		$bz = function_exists('dhcb_boss') ? dhcb_boss($k['boss_key']) : null;
+		$out[(int)$best['id']][] = array(
+			'key'  => $k['boss_key'],
+			'name' => $bz ? $bz['name'] : strtoupper((string)$k['boss_key']),
+			'art'  => function_exists('dhcb_art') ? dhcb_art($k['boss_key']) : '',
+			'wave' => (int)$k['wave'],
+		);
+	}
+	return $out;
+}
+
 function dhcb_runs_report($conn, $day = null, $limit = 200) {
 	if ($day === null) $day = dhcb_week($conn);
 	$esc = $conn->real_escape_string($day);
@@ -2660,24 +2712,30 @@ function dhcb_runs_report($conn, $day = null, $limit = 200) {
 	 * column -- attributing by user alone would credit every run that
 	 * player made this week with every boss they ever finished.
 	 */
+	/*
+	 * NO `d.wave = r.wave` HERE, AND THAT WAS THE BUG.
+	 *
+	 * REPORTED: a battle that cleared wave 6 and wave 7 reported only the
+	 * wave 6 casualties. A run carries ONE wave -- the one it was stood up
+	 * against -- but it can clear more than one before it ends; that is
+	 * what dhc_boss_runs.waves_cleared counts. Joining on the run's own
+	 * wave therefore threw away every boss it dropped after the first
+	 * crew fell, silently, because an INNER JOIN that matches fewer rows
+	 * looks exactly like a run that killed fewer bosses.
+	 *
+	 * The window is what attributes a kill, and it always was: the same
+	 * player, inside that run's own start and end. The wave condition only
+	 * ever narrowed it, and wrongly.
+	 */
 	$kills = array();
-	$kq = @$conn->query("SELECT r.id AS run_id, d.boss_key
-	                       FROM dhc_boss_runs r
-	                       INNER JOIN dhc_boss_day d
-	                               ON d.day = r.day AND d.wave = r.wave
-	                              AND d.killed_by = r.user_id
-	                              AND d.killed_at IS NOT NULL
-	                              AND d.killed_at >= r.started_at
-	                              AND d.killed_at <= COALESCE(r.ended_at, NOW())
-	                      WHERE r.id IN (" . implode(',', $ids) . ")");
-	if ($kq) while ($x = $kq->fetch_assoc()) {
-		$bz = dhcb_boss($x['boss_key']);
-		$kills[(int)$x['run_id']][] = array(
-			'key'  => $x['boss_key'],
-			'name' => $bz ? $bz['name'] : strtoupper($x['boss_key']),
-			'art'  => dhcb_art($x['boss_key']),
-		);
-	}
+	$kq = @$conn->query("SELECT boss_key, wave, killed_by, killed_at
+	                       FROM dhc_boss_day
+	                      WHERE day = '$esc'
+	                        AND killed_at IS NOT NULL
+	                        AND killed_by IS NOT NULL");
+	$kraw = array();
+	if ($kq) while ($x = $kq->fetch_assoc()) $kraw[] = $x;
+	$kills = dhcb_attribute_kills($rows, $kraw);
 
 	foreach ($rows as $i => $r) {
 		$rows[$i]['fighters'] = isset($byRun[(int)$r['id']]) ? $byRun[(int)$r['id']] : array();

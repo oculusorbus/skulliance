@@ -2876,10 +2876,33 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
             : 'Day ' . ((int)$prevDay + 1); ?></span>
         </div>
       <?php endif; if ($dy !== null) $prevDay = $dy; ?>
-      <?php if ($prevWave !== null && $wv < $prevWave): ?>
+      <?php if ($prevWave !== null && $wv < $prevWave):
+        /*
+         * EVERY WAVE ACROSS THE GAP, NOT JUST THE FIRST.
+         *
+         * REPORTED: one battle took wave 6 and wave 7 together, and this
+         * line read "wave 8 stood up, wave 6 had fallen" -- 7 simply
+         * missing, as though it had never been there. A run can clear
+         * more than one crew before it ends (dhc_boss_runs.waves_cleared
+         * counts them), so the gap between two adjacent rows is not
+         * always one.
+         *
+         * The waves between are not a guess: the crews stand up in order
+         * and the next cannot appear until the last has fallen, so every
+         * wave from the lower row's up to the higher row's minus one went
+         * down at this boundary.
+         */
+        $fellWaves = range($wv, (int)$prevWave - 1);
+        $fellTxt = count($fellWaves) === 1
+          ? 'wave ' . $fellWaves[0] . ' had fallen'
+          : 'waves ' . implode(' and ', array_map(function ($w) { return (string)$w; },
+              count($fellWaves) === 2 ? $fellWaves
+                : array(implode(', ', array_slice($fellWaves, 0, -1)), end($fellWaves))))
+            . ' had fallen';
+      ?>
         <div class="a-wavebreak<?php echo $off; ?>">
           <span>Wave <?php echo (int)$prevWave; ?> stood up
-            &middot; wave <?php echo (int)$wv; ?> had fallen</span>
+            &middot; <?php echo htmlspecialchars($fellTxt); ?></span>
         </div>
       <?php endif; $prevWave = $wv; $shown++; ?>
       <?php
