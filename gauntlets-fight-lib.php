@@ -508,6 +508,16 @@ function gaunt_theme_bg($conn, $project_name, $project_id = 0, $collection_id = 
 		if ($r && $r->num_rows) $slug = (string)$r->fetch_assoc()['slug'];
 	}
 
+	/* Realms' theme art is the one that is always there. It is keyed by
+	   project_id and every project has a tile, where a Monstrocity
+	   background only exists for the projects that got battlefield art
+	   drawn -- so half the encounters were fought on a flat dark panel.
+	   Monstrocity art still wins when it exists; this fills the rest. */
+	if ($slug === '' && $pid > 0) {
+		$memo[$key] = '/staking/images/themes/' . $pid . '.jpg';
+		return $memo[$key];
+	}
+
 	$memo[$key] = $slug === '' ? ''
 		: '/staking/images/monstrocity/' . rawurlencode($slug) . '/monstrocity.png';
 	return $memo[$key];

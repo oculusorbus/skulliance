@@ -498,6 +498,15 @@ ok(strpos($REN, 'gf-group-label') !== false, 'the groups render without labels')
 
 echo "\nthe backdrop is the opponent\'s world, when there is art for it\n";
 ok(strpos($LIB, 'function gaunt_theme_bg') !== false, 'there is no backdrop lookup');
+/* EVERY project has a backdrop. Monstrocity backgrounds only exist for
+   the projects that got battlefield art drawn, so keying the arena on
+   them alone left half the encounters on a flat dark panel. Realms'
+   theme tiles are keyed by project_id and cover the whole roster. */
+$tb = substr($LIB, (int)strpos($LIB, 'function gaunt_theme_bg'), 2200);
+ok(strpos($tb, '/staking/images/themes/\' . $pid . \'.jpg') !== false,
+   'a project with no Monstrocity background falls through to no backdrop at all');
+ok((int)strpos($tb, "monstrocity_theme_collections") < (int)strpos($tb, "images/themes/"),
+   'the realms tile is consulted before the Monstrocity art, which drops the battlefield backdrops');
 /* The flag is what says the image exists -- without it the fight would
    point at a 404 and show nothing, which is worse than no backdrop. */
 ok(substr_count($LIB, 'background = 1') === 3,
