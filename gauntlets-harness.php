@@ -232,7 +232,10 @@ ok('an empty draw still returns false from startRun',
  * STREAMS, flushing the loader before the rest of the document exists, so
  * the fixed layer is laid out and then the page jumps underneath it.
  */
-$gt = (string) file_get_contents(__DIR__ . '/gauntlets.php');
+$gt = (string) file_get_contents(__DIR__ . '/gauntlets.php')
+    . (string) file_get_contents(__DIR__ . '/gauntlets-body.php')
+    . (string) file_get_contents(__DIR__ . '/gauntlets-actions.php')
+    . (string) file_get_contents(__DIR__ . '/gauntlets-state.php');
 ok('scroll restoration is off',
    strpos($gt, "history.scrollRestoration = 'manual'") !== false,
    'the browser restores a mid-list scroll onto a page that opens with a full-screen loader');

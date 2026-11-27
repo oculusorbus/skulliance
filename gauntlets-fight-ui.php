@@ -272,10 +272,20 @@ define('GF_UI_DONE', 1);
      build because the path was read off the tail of a grep hit. */
   var SND  = '/staking/audio/sounds/';
   var TRK  = '/staking/audio/tracks/';
-  /* The tracks already ARE the state machine; nothing new was composed. */
-  var MUSIC = { theme: 'Crypt Crawl Theme.mp3', frantic: 'Crypt Crawl Frantic.mp3',
-                doom: 'Crypt Crawl Doom.mp3', win: 'Crypt Crawl Triumph.mp3',
-                lose: 'Crypt Crawl Death.mp3' };
+  /*
+   * THREE TRACKS, AND ONLY ONE OF THEM PLAYS DURING A RUN.
+   *
+   * There were five: the theme swapped for 'frantic' under half health
+   * and 'doom' under a quarter, and a won fight cut to 'Triumph'. A
+   * round lasts a handful of turns, so none of that read as scoring --
+   * it read as the song restarting every time anything happened. The
+   * theme now runs from the moment the page opens, through every round,
+   * every win and every swap, and is interrupted exactly once: when the
+   * RUN ends. Triumph for a swept gauntlet, Death for a wipe.
+   */
+  var MUSIC = { theme: 'Crypt Crawl Theme.mp3',
+                win:   'Crypt Crawl Triumph.mp3',
+                lose:  'Crypt Crawl Death.mp3' };
   var cur = null, muted = false, playing = false;
 
   try { muted = localStorage.getItem('gfMute') === '1'; } catch (e) {}
@@ -310,7 +320,9 @@ define('GF_UI_DONE', 1);
     if (cur === key && playing && !el.paused) return;
     if (cur !== key) {
       cur = key;
-      el.loop = (key === 'theme' || key === 'frantic' || key === 'doom');
+      /* Only the theme loops. The other two mark the end of a run and
+         are meant to finish. */
+      el.loop = (key === 'theme');
       el.src  = TRK + encodeURIComponent(MUSIC[key]);
       el.volume = 0.32;
     }
@@ -328,17 +340,21 @@ define('GF_UI_DONE', 1);
   function unlock() {
     if (playing || muted) return;
     var area = document.getElementById(AREA);
-    if (area) music(moodFrom(area));
+    if (area) music(moodFrom());
   }
   document.addEventListener('pointerdown', unlock, true);
   document.addEventListener('touchstart',  unlock, true);
-  function moodFrom(area) {
-    var hp = parseInt(area.getAttribute('data-hp') || '0', 10);
-    var mx = parseInt(area.getAttribute('data-hpmax') || '1', 10) || 1;
-    if (area.classList.contains('gf-won'))  return 'win';
-    if (area.classList.contains('gf-lost')) return 'lose';
-    var r = hp / mx;
-    return r <= 0.25 ? 'doom' : (r <= 0.5 ? 'frantic' : 'theme');
+  /*
+   * The PAGE decides, not the fight. #g-area carries the mood the
+   * server worked out in gaunt_page_mood(), which is 'theme' for the
+   * whole of a run and only changes when the run is over. A fight
+   * ending does not touch it, which is what stops the track restarting
+   * between rounds.
+   */
+  function moodFrom() {
+    var page = document.getElementById('g-area');
+    var m = page ? page.getAttribute('data-mood') : '';
+    return MUSIC[m] ? m : 'theme';
   }
 
   /* Animate exactly what the server said happened, and nothing else. */
@@ -389,7 +405,7 @@ define('GF_UI_DONE', 1);
         play(e.sfx);
       }, i * 420);
     });
-    music(moodFrom(area));
+    music(moodFrom());
   }
 
   function wire(area) {
@@ -421,11 +437,18 @@ define('GF_UI_DONE', 1);
     });
   }
 
+  /*
+   * Called on load and again after the page body is swapped. The music
+   * is started whatever state the page is in -- there may be no fight
+   * on screen at all -- so the theme is running from the moment the
+   * Gauntlet is opened, not from the first swing.
+   */
   function boot() {
     var area = document.getElementById(AREA);
-    if (!area) return;
-    wire(area); music(moodFrom(area));
+    if (area) wire(area);
+    music(moodFrom());
   }
+  window.GF_BOOT = boot;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 })();

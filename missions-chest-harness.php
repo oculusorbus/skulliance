@@ -1049,7 +1049,10 @@ echo "\nthe reveal is shared, not copied\n";
  * the split is that there is ONE performance: a second copy would
  * drift the moment either was tuned.
  */
-$gau = (string) file_get_contents(__DIR__ . '/gauntlets.php');
+/* The Gauntlet page is a shell plus the body it swaps between rounds;
+   the chest lives in the body. Read as one page. */
+$gau = (string) file_get_contents(__DIR__ . '/gauntlets.php')
+     . (string) file_get_contents(__DIR__ . '/gauntlets-body.php');
 ok(strpos($gau, "include __DIR__ . '/missions-claim-modal.php';") !== false,
    'Gauntlets does not include the reveal partial, so it has nowhere to put its chest');
 ok(strpos($gau, '$sk_reveal_only = true;') !== false,

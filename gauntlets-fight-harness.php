@@ -417,7 +417,13 @@ ok(substr_count(gaunt_schema_sql(), 'ALTER TABLE') === 4,
 $REN = (string) file_get_contents(__DIR__ . '/gauntlets-fight-render.php');
 $UI  = (string) file_get_contents(__DIR__ . '/gauntlets-fight-ui.php');
 $AJX = (string) file_get_contents(__DIR__ . '/ajax/gauntlet-fight.php');
-$PG  = (string) file_get_contents(__DIR__ . '/gauntlets.php');
+/* The page is a shell plus the body it swaps between rounds. Both
+   halves together are what used to be gauntlets.php, so the checks
+   below read them as one. */
+$PG  = (string) file_get_contents(__DIR__ . '/gauntlets.php')
+     . (string) file_get_contents(__DIR__ . '/gauntlets-body.php')
+     . (string) file_get_contents(__DIR__ . '/gauntlets-actions.php')
+     . (string) file_get_contents(__DIR__ . '/gauntlets-state.php');
 
 echo "\nthe music survives a turn\n";
 /*
@@ -892,9 +898,76 @@ ok(strpos($PG, "<span class=\"played-label\">Down</span>") !== false,
    'a downed card is not distinguished from a used one');
 ok(strpos($PG, '$out  = !empty($card[' . "'played'" . ']) || !empty($card[' . "'down'" . ']);') !== false,
    'a downed card is still selectable, and sending one loses the encounter instantly');
-/* The bar's CSS lives with the fight, so the deck has to pull it in. */
-ok(substr_count($PG, "include __DIR__ . '/gauntlets-fight-ui.php';") === 2,
-   'the deck does not include the fight UI, so its health bars render unstyled');
+/*
+ * ONCE, AND IN THE SHELL. The fight's CSS, its <audio> and its script
+ * are loaded by gauntlets.php and never by the body -- the body is
+ * what gets swapped between rounds, and a second <audio> arriving in a
+ * fragment is both a duplicate player and the restart the swap exists
+ * to prevent. Every state still gets the CSS because the shell is
+ * always there.
+ */
+$SHELL = (string) file_get_contents(__DIR__ . '/gauntlets.php');
+$BODY  = (string) file_get_contents(__DIR__ . '/gauntlets-body.php');
+ok(substr_count($SHELL, "include __DIR__ . '/gauntlets-fight-ui.php';") === 1,
+   'the shell does not include the fight UI exactly once, so the deck renders unstyled or the player is doubled');
+ok(strpos($BODY, 'gauntlets-fight-ui.php') === false,
+   'the swapped body carries the fight UI, so every round change rebuilds the <audio> and restarts the music');
+ok(strpos(preg_replace('~/\*.*?\*/~s', '', $BODY), '<audio') === false,
+   'there is an <audio> element inside the part of the page that gets replaced');
+
+echo "\nthe soundtrack survives a round\n";
+/*
+ * REPORTED: "the music should play when opening gauntlets and not get
+ * interrupted between rounds ... rounds move too quick for that ...
+ * only win music on gauntlet ends after the third win."
+ */
+$UIF = (string) file_get_contents(__DIR__ . '/gauntlets-fight-ui.php');
+$AJP = (string) file_get_contents(__DIR__ . '/ajax/gauntlet-page.php');
+$ST  = (string) file_get_contents(__DIR__ . '/gauntlets-state.php');
+
+/* No health bands. Those were the restarts mid-fight. */
+$UIFNC = preg_replace('~/\*.*?\*/~s', '', $UIF);
+ok(strpos($UIFNC, 'frantic') === false && strpos($UIFNC, 'doom') === false,
+   'the track still changes with the fighter\'s health, which reads as the song restarting');
+/* The mood is the PAGE's, worked out server-side, and only a finished
+   run moves it off the theme. */
+ok(strpos($ST, 'function gaunt_page_mood') !== false,
+   'nothing decides the page mood, so the fight picks the track again');
+ok(strpos($ST, "if (\$state !== 'run_over') return 'theme';") !== false,
+   'a mood other than the theme can be chosen mid-run, so a round change cuts the music');
+ok(strpos($ST, "return \$wins >= GAUNTLET_MAX_WINS ? 'win' : 'lose';") !== false,
+   'the win track is not gated on sweeping the gauntlet');
+ok(strpos($UIF, "var m = page ? page.getAttribute('data-mood') : '';") !== false,
+   'the player does not read the page mood, so the server\'s decision is ignored');
+
+/* Started on open, not on the first swing. */
+ok(strpos($UIF, "    if (area) wire(area);\n    music(moodFrom());") !== false,
+   'the music only starts once there is a fight on screen');
+ok(strpos($UIF, 'window.GF_BOOT = boot;') !== false,
+   'the fight cannot be re-wired after a body swap, so a swapped-in arena is dead');
+
+/* The round change must not navigate. */
+ok(strpos($PG, "fetch('ajax/gauntlet-page.php'") !== false,
+   'a round change still posts and redirects, which tears the player down');
+ok(strpos($PG, 'if (window.GF_BOOT) GF_BOOT();') !== false,
+   'the swapped body is never handed to the fight script');
+ok(strpos($PG, "if (!f || f.id === 'gf-form') return;") !== false,
+   'the page swap swallows the fight\'s own turn form');
+/* .submit() fires no submit event, so the card picker must not use it. */
+ok(strpos($PG, 'if (!window.GAUNT_POST || !GAUNT_POST(f)) f.submit();') !== false,
+   'picking a card calls .submit() directly, which fires no submit event and reloads the page');
+/* One implementation of the actions, included by both. */
+ok(strpos($AJP, "require __DIR__ . '/../gauntlets-actions.php';") !== false,
+   'the endpoint does not run the page\'s own action code, so the two can drift');
+ok(strpos($AJP, "require __DIR__ . '/../gauntlets-body.php';") !== false,
+   'the endpoint does not render the page\'s own body');
+ok(strpos($AJP, 'gauntlets-fight-ui.php') === false,
+   'the endpoint ships the fight UI, so every swap adds another <audio> to the page');
+/* The no-JS path has to keep working on its own. */
+ok(strpos($PG, "header('Location: gauntlets.php');") !== false,
+   'the post-and-redirect fallback is gone, so a player without JavaScript cannot act');
+ok(strpos($PG, '.catch(function () { form.submit(); });') !== false,
+   'a failed swap leaves the player stuck instead of falling back to a real post');
 ok(strpos($UI, "if (defined('GF_UI_DONE')) return;") !== false,
    'the fight UI is not guarded, so including it twice duplicates the audio element');
 

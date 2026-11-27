@@ -8,147 +8,12 @@ require_once __DIR__ . '/gauntlets-fight-render.php';  // shared with ajax/gaunt
 
 $user_id = intval($_SESSION['userData']['user_id']);
 
-// ── Flash messages via session ──────────────────────────────
-if (!isset($_SESSION['gauntlet_flash'])) $_SESSION['gauntlet_flash'] = [];
+define('GAUNTLET_ACTIONS_OK', 1);
+require __DIR__ . '/gauntlets-actions.php';
 
-function gauntletFlash($msg, $type = 'info') {
-	$_SESSION['gauntlet_flash'][] = ['msg' => $msg, 'type' => $type];
-}
-
-// ── POST action handling — must run before any output ───────
+// PRG, exactly as before: the no-JS path posts and is redirected. The
+// AJAX path never reaches here -- it posts to ajax/gauntlet-page.php.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-	$action = $_POST['action'] ?? '';
-
-	if ($action === 'start_run') {
-		$run_id = gauntletStartRun($conn, $user_id);
-		if (!$run_id) gauntletFlash('No available NFTs to draw a hand. Use your NFTs in staking first.', 'error');
-
-	} elseif ($action === 'start_encounter') {
-		$nft_id  = intval($_POST['gauntlet_pick_nft_id'] ?? 0);
-		$run     = gauntletGetActiveRun($conn, $user_id);
-		if ($run && $nft_id > 0) {
-			$result = gauntletStartEncounter($conn, $user_id, intval($run['id']), $nft_id);
-			if (!$result) gauntletFlash('Could not start encounter. Please try again.', 'error');
-		}
-
-	} elseif ($action === 'fast_forward') {
-		$enc_id     = intval($_POST['encounter_id'] ?? 0);
-		$new_nft_id = intval($_POST['new_nft_id'] ?? 0);
-		if ($enc_id > 0 && $new_nft_id > 0) {
-			$ok = gauntletFastForward($conn, $user_id, $enc_id, $new_nft_id);
-			if (!$ok) {
-				gauntletFlash('Could not swap card. Make sure you have a Fast Forward item.', 'error');
-			} else {
-				/* The live fight is a blob on the same row and
-				   gauntletFastForward() does not touch it, so without
-				   this the new fighter inherits the old one's health. */
-				$ff_run = gauntletGetActiveRun($conn, $user_id);
-				if ($ff_run) gaunt_fight_swap($conn, $enc_id, intval($ff_run['id']), $new_nft_id);
-			}
-		}
-
-	} elseif ($action === 'fight_turn') {
-		/*
-		 * THE NO-JS PATH. ajax/gauntlet-fight.php does this without a
-		 * navigation so the music keeps playing; this is the same turn
-		 * through a plain form post, for a browser that cannot. The game
-		 * is complete either way -- only the continuous soundtrack is
-		 * lost, which is exactly the trade cryptcrawl.php makes.
-		 */
-		$enc_id = intval($_POST['encounter_id'] ?? 0);
-		$turn   = (string)($_POST['turn'] ?? 'bare');
-		$kind = $turn; $item = 0;
-		if (strpos($turn, ':') !== false) { list($kind, $item) = explode(':', $turn, 2); $item = intval($item); }
-		if ($enc_id > 0) {
-			$res = gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item);
-			if (empty($res['ok'])) gauntletFlash($res['why'] ?: 'That move is not available.', 'error');
-		}
-
-	} elseif ($action === 'claim_chest') {
-		$run_id = intval($_POST['run_id'] ?? 0);
-		if ($run_id > 0) {
-			$got = gaunt_chest_claim($conn, $user_id, $run_id);
-			if ($got) {
-				$_SESSION['gauntlet_chest'] = $got;
-			} else {
-				gauntletFlash('That chest has already been opened.', 'error');
-			}
-		}
-
-	} elseif ($action === 'close_fight') {
-		$enc_id = intval($_POST['encounter_id'] ?? 0);
-		if ($enc_id > 0) {
-			/* Read the salvage off the fight BEFORE resolving it, so the
-			   victory screen can name what was taken. The fight row is
-			   the only place that knows. */
-			$gf_closing = gaunt_fight_get($conn, $enc_id);
-			$gf_drop    = (string)($gf_closing['drop'] ?? '');
-			$gf_drop_ico = (string)($gf_closing['drop_icon'] ?? '');
-			$gf_drops   = (isset($gf_closing['drops']) && is_array($gf_closing['drops']))
-			              ? $gf_closing['drops'] : array();
-			/* The fight decided this over a dozen exchanges; this only
-			   records it and pays it out. */
-			$outcome = gauntletResolveFight($conn, $user_id, $enc_id);
-			if ($outcome === 'win') {
-				$run  = gauntletGetActiveRun($conn, $user_id);
-				$rw_r = $conn->query("
-					SELECT ge.run_id, op.currency AS opponent_currency
-					FROM gauntlets_encounters ge
-					INNER JOIN nfts on2       ON on2.id = ge.opponent_nft_id
-					INNER JOIN collections oc ON oc.id  = on2.collection_id
-					INNER JOIN projects op    ON op.id  = oc.project_id
-					WHERE ge.id = $enc_id LIMIT 1
-				");
-				if ($rw_r && $rw_r->num_rows) {
-					$rw      = $rw_r->fetch_assoc();
-					$wnum_r2 = $conn->query("SELECT COUNT(*) AS c FROM gauntlets_encounters WHERE run_id=".intval($rw['run_id'])." AND outcome='win'");
-					$wnum2   = ($wnum_r2 && $wnum_r2->num_rows) ? intval($wnum_r2->fetch_assoc()['c']) : 1;
-					$enc_cons_r  = $conn->query("SELECT consumable_id FROM gauntlets_encounters_consumables WHERE encounter_id=$enc_id");
-					$enc_cons    = [];
-					if ($enc_cons_r) while ($ecr = $enc_cons_r->fetch_assoc()) $enc_cons[] = intval($ecr['consumable_id']);
-					$is_dbl = in_array(GAUNTLET_C_DOUBLE, $enc_cons);
-					$tx_cur_r = $conn->query("SELECT p.currency FROM transactions t INNER JOIN projects p ON p.id = t.project_id WHERE t.gauntlet_encounter_id = $enc_id AND t.user_id = $user_id AND t.type = 'credit' LIMIT 1");
-					$actual_currency = ($tx_cur_r && $tx_cur_r->num_rows) ? $tx_cur_r->fetch_assoc()['currency'] : $rw['opponent_currency'];
-					$_SESSION['gauntlet_last_result'] = [
-						'outcome'    => 'win',
-						/* Read off the fight just closed; '' when nothing
-						   dropped. */
-						'drop'       => $gf_drop,
-						'drop_icon'  => $gf_drop_ico,
-						'drops'      => $gf_drops,
-						'amount'     => ($wnum2 * 100) * ($is_dbl ? 2 : 1),
-						'currency'   => $actual_currency,
-						'win_number' => $wnum2,
-					];
-				}
-				if (!$run) {
-					gauntletFlash('Victory! You swept the gauntlet!', 'win');
-					/*
-					 * TRAIT DROP -- for SURVIVING THE GAUNTLET, not for winning a
-					 * single encounter. A run is three fights; winning the first
-					 * one is not the achievement, and hooking the per-encounter
-					 * outcome paid out three times a run.
-					 *
-					 * No active run left is the game's own test for a sweep --
-					 * the same condition the victory message uses, so the drop
-					 * and the message can never disagree.
-					 *
-					 * Flagged rather than fired: this page is post-redirect-get,
-					 * so a drop claimed here would be lost in the redirect.
-					 */
-					$_SESSION['dhcf_gauntlet_win'] = 1;
-				} else {
-					gauntletFlash('Win! Pick your next card.', 'win');
-				}
-			} elseif ($outcome === 'loss') {
-				$_SESSION['gauntlet_last_result'] = ['outcome' => 'loss'];
-				gauntletFlash('Defeat. Your run ends here.', 'loss');
-			} else {
-				gauntletFlash('Something went wrong. Please try again.', 'error');
-			}
-		}
-	}
-
 	header('Location: gauntlets.php');
 	exit;
 }
@@ -180,77 +45,8 @@ include 'header.php';
 <?php
 if (ob_get_level() > 0) { ob_flush(); flush(); }
 
-// ── Load state ──────────────────────────────────────────────
-$recent_run         = gauntletGetMostRecentRun($conn, $user_id);
-$run_over           = $recent_run ? gauntletIsRunOver($conn, intval($recent_run['id'])) : false;
-$active_run         = ($recent_run && !$run_over) ? $recent_run : null;
-$pending_encounter  = $active_run ? gauntletGetPendingEncounter($conn, intval($active_run['id'])) : null;
-$hand               = $active_run ? gauntletGetHand($conn, intval($active_run['id']))              : [];
-$run_stats          = $recent_run ? gauntletGetRunStats($conn, intval($recent_run['id']))           : null;
-
-// State: no_run | pick_card | encounter | run_over
-if (!$recent_run)           $state = 'no_run';
-elseif ($run_over)          $state = 'run_over';
-elseif ($pending_encounter) $state = 'encounter';
-else                        $state = 'pick_card';
-
-// Collect flash messages
-$flashes = $_SESSION['gauntlet_flash'];
-$_SESSION['gauntlet_flash'] = [];
-
-// Result reveal (set during POST, consumed once on next GET)
-$last_result = $_SESSION['gauntlet_last_result'] ?? null;
-unset($_SESSION['gauntlet_last_result']);
-
-// Gear inventory for encounter resource panel
-$gear_inventory = ($state === 'encounter') ? getGearInventory($conn, $user_id) : [];
-$weapons_inv = array_filter($gear_inventory, fn($g) => $g['type'] === 'weapon' && $g['quantity'] > 0);
-$armor_inv   = array_filter($gear_inventory, fn($g) => $g['type'] === 'armor'  && $g['quantity'] > 0);
-
-// Effect labels shown in resource panel
-$consumable_effects = [
-	GAUNTLET_C_100    => '+4% win chance',
-	GAUNTLET_C_75     => '+3% win chance',
-	GAUNTLET_C_50     => '+2% win chance',
-	GAUNTLET_C_25     => '+1% win chance',
-	GAUNTLET_C_DOUBLE => '2× rewards this fight',
-	GAUNTLET_C_RANDOM => 'reward paid in a random project currency',
-];
-// Odds bonus per consumable (0 = no odds effect)
-$consumable_bonuses = [
-	GAUNTLET_C_100 => 4,
-	GAUNTLET_C_75  => 3,
-	GAUNTLET_C_50  => 2,
-	GAUNTLET_C_25  => 1,
-];
-
-// Consumable inventory for encounter resource panel (exclude Fast Forward)
-$consumables_inv = [];
-if ($state === 'encounter') {
-	$cons_result = $conn->query("
-		SELECT a.consumable_id, a.amount, c.name
-		FROM amounts a
-		INNER JOIN consumables c ON c.id = a.consumable_id
-		WHERE a.user_id = $user_id
-		  AND a.amount > 0
-		  AND a.consumable_id NOT IN (" . GAUNTLET_C_FF . ")
-		ORDER BY a.consumable_id ASC
-	");
-	if ($cons_result) while ($row = $cons_result->fetch_assoc()) $consumables_inv[] = $row;
-}
-
-// Fast Forward availability for encounter state
-$ff_count = ($state === 'encounter') ? getCurrentAmount($conn, $user_id, GAUNTLET_C_FF) : 0;
-$ff_hand  = ($state === 'encounter') ? array_filter($hand, fn($n) => !$n['played'] && intval($n['id']) !== intval($pending_encounter['player_nft_id'])) : [];
-
-// Win chance for display in encounter state
-$win_chance_display = 0;
-if ($state === 'encounter') {
-	$win_chance_display = gauntletCalculateWinChance(
-		intval($pending_encounter['player_effective_project_id']),
-		intval($pending_encounter['opponent_effective_project_id'])
-	);
-}
+define('GAUNTLET_STATE_OK', 1);
+require __DIR__ . '/gauntlets-state.php';
 ?>
 <style>
 /* ── Gauntlet page ── */
@@ -397,438 +193,19 @@ if ($state === 'encounter') {
 <div class="main">
 <div class="gauntlet-wrap">
 
-	<?php /* Over a live fight on a phone the masthead and the how-to-play
-	         line pushed the arena most of a screen down, and neither
-	         tells you anything mid-battle. Desktop has the room, so it
-	         keeps them. */
-	   $gcls = ($state === 'encounter') ? ' hide-in-fight' : ''; ?>
-	<div class="gauntlet-title<?php echo $gcls; ?>">Gauntlet</div>
-	<div class="gauntlet-subtitle<?php echo $gcls; ?>">Draw a hand of <?php echo GAUNTLET_HAND_SIZE; ?> NFTs. Survive 3 opponents to sweep the run.</div>
+	<?php /* Swapped whole between rounds -- see gauntlets-body.php. The
+	         <audio> and the fight's script live OUTSIDE it, in the shell,
+	         so neither is torn down when a round ends. */
+	   define('GAUNTLET_BODY_OK', 1); ?>
+	<?php /* ONCE, IN THE SHELL. The <audio>, the fight's stylesheet and
+	         its script are loaded here and never again: #g-area below is
+	         replaced wholesale between rounds, and anything in there is
+	         torn down with it. */
+	   include __DIR__ . '/gauntlets-fight-ui.php'; ?>
 
-	<?php foreach ($flashes as $f): ?>
-		<div class="flash <?php echo htmlspecialchars($f['type']); ?>"><?php echo htmlspecialchars($f['msg']); ?></div>
-	<?php endforeach; ?>
-
-	<?php if ($last_result): ?>
-	<div id="result-reveal" class="<?php echo $last_result['outcome'] === 'win' ? 'win' : 'loss'; ?>" onclick="dismissResult()">
-		<div class="rr-accent"></div>
-		<?php if ($last_result['outcome'] === 'win'): ?>
-		<div class="rr-icon">⚔️</div>
-		<div class="rr-title">Victory!</div>
-		<div class="rr-reward">
-			+<?php echo number_format($last_result['amount']); ?>
-			<img src="icons/<?php echo htmlspecialchars(strtolower($last_result['currency'])); ?>.png" onerror="this.src='icons/skull.png'" alt="">
-			<?php echo htmlspecialchars($last_result['currency']); ?>
-		</div>
-		<?php
-		/* EVERY item they used, each with the real item's own icon --
-		   chosen where the drop was recorded, so this screen and the
-		   loadout cannot disagree about what was taken. `drops` is the
-		   list; `drop` is the older single field, kept so a fight that
-		   closed before the list existed still names its one item. */
-		$rr_drops = (isset($last_result['drops']) && is_array($last_result['drops']))
-		            ? $last_result['drops'] : array();
-		if (!$rr_drops && !empty($last_result['drop']))
-			$rr_drops = array(array('label' => $last_result['drop'],
-			                        'icon'  => (string)($last_result['drop_icon'] ?? '')));
-		if ($rr_drops): ?>
-			<div class="rr-drop">
-				<?php foreach ($rr_drops as $rd):
-					$rr_ico = (string)($rd['icon'] ?? ''); ?>
-					<span class="rr-took">
-						<?php if ($rr_ico !== ''): ?><img src="icons/<?php echo htmlspecialchars($rr_ico); ?>.png"
-						     alt="" onerror="this.style.display='none'"><?php endif; ?>
-						<?php echo htmlspecialchars((string)($rd['label'] ?? '')); ?>
-					</span>
-				<?php endforeach; ?>
-				<span class="rr-drop-note">Taken off them - added to your inventory</span></div>
-		<?php endif; ?>
-		<div class="rr-win-num">Win <?php echo intval($last_result['win_number']); ?> of <?php echo GAUNTLET_MAX_WINS; ?></div>
-		<?php else: ?>
-		<div class="rr-icon"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="58" height="80"></div>
-		<div class="rr-title">Defeated</div>
-		<?php endif; ?>
-		<div class="rr-dismiss">Tap to continue</div>
-	</div>
-	<?php endif; ?>
-
-	<?php if ($recent_run): ?>
-	<div class="run-progress">
-		<?php for ($i = 0; $i < GAUNTLET_MAX_WINS; $i++):
-			$wins   = intval($run_stats['wins']   ?? 0);
-			$losses = intval($run_stats['losses'] ?? 0);
-			$cls = '';
-			if ($i < $wins)   $cls = 'win';
-			elseif ($losses && $i === $wins) $cls = 'loss';
-		?>
-		<div class="run-pip <?php echo $cls; ?>"></div>
-		<?php endfor; ?>
-	</div>
-	<?php endif; ?>
-
-	<?php
-	// ── State: no run ───────────────────────────────────────
-	if ($state === 'no_run'):
-	?>
-	<div style="text-align:center; padding: 40px 0;">
-		<div style="font-size:3.5rem; margin-bottom:16px;">&#x2694;</div>
-		<div style="color:rgba(255,255,255,.6); margin-bottom:24px; font-size:.9rem;">Enter the Gauntlet and prove your NFTs in battle.</div>
-		<form method="POST">
-			<input type="hidden" name="action" value="start_run">
-			<button type="submit" class="btn-start">Enter the Gauntlet</button>
-		</form>
-	</div>
-
-	<?php
-	// ── State: run over ─────────────────────────────────────
-	elseif ($state === 'run_over'):
-		$wins   = intval($run_stats['wins']);
-		$losses = intval($run_stats['losses']);
-		$swept  = ($wins >= GAUNTLET_MAX_WINS);
-	?>
-	<div class="run-results">
-		<div class="run-result-icon"><?php echo $swept ? '&#x1F3C6;' : '<img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="35" height="48">'; ?></div>
-		<div class="run-result-title"><?php echo $swept ? 'Gauntlet Swept!' : 'Run Over'; ?></div>
-		<div class="run-result-sub"><?php echo $wins; ?> win<?php echo $wins !== 1 ? 's' : ''; ?> &middot; <?php echo $losses; ?> loss</div>
-	</div>
-
-	<?php
-	/*
-	 * THE CHEST, SCALED TO WINS BANKED. Paying only on a sweep is a
-	 * closed loop for the under-equipped -- no items, no win; no win, no
-	 * chest; no chest, no items -- and the run already ends on a squad
-	 * wipe rather than a first loss, so partial success is something the
-	 * system understands. One win pays scraps; only a sweep reaches the
-	 * full heal.
-	 *
-	 * It is also the ONE thing that leaves a run: salvage taken off
-	 * opponents dies with it, but the fact that you took it swells this.
-	 */
-	$chest_got = $_SESSION['gauntlet_chest'] ?? null;
-	unset($_SESSION['gauntlet_chest']);
-	$run_id_over = intval($recent_run['id'] ?? 0);
-	if ($chest_got):
-		/* Named and iconed once, for both the record below and the
-		   reveal that plays over it. */
-		$gchest_rows = array();
-		foreach ($chest_got as $cid => $qty) {
-			$nm = $conn->query("SELECT name FROM consumables WHERE id=" . intval($cid) . " LIMIT 1");
-			$nm = ($nm && $nm->num_rows) ? $nm->fetch_assoc()['name'] : ('Item #' . intval($cid));
-			$sl = gaunt_consumable_slug($cid);
-			$gchest_rows[] = array(
-				'icon' => $sl !== '' ? ('icons/' . $sl . '.png') : '',
-				'name' => $nm,
-				'qty'  => intval($qty),
-			);
-		}
-		?>
-		<div class="gchest open">
-			<img class="gchest-img" src="images/chest/open.webp" alt=""
-			     onerror="this.src='/staking/pwa/skulliance-logo-icon.png'">
-			<div class="gchest-title">Hauled out of the gauntlet</div>
-			<div class="gchest-items">
-				<?php foreach ($gchest_rows as $gr): ?>
-					<span class="gchest-item"><strong>&times;<?php echo $gr['qty']; ?></strong>
-						<?php echo htmlspecialchars($gr['name']); ?></span>
-				<?php endforeach; ?>
-			</div>
-		</div>
-		<?php
-		/*
-		 * THE SAME CHEST THE DAILY REWARD OPENS. missions-claim-modal.php
-		 * is the performance -- rattle, lid, items flying out of the
-		 * mouth -- and it takes a neutral payload now, so this hands it
-		 * one instead of owning a second copy of the animation. The block
-		 * above stays as the record: it is what is still on the page once
-		 * the reveal is dismissed, and what a no-JS player sees.
-		 */
-		$sk_reveal_only = true;
-		include __DIR__ . '/missions-claim-modal.php';
-		?>
-		<script>
-		(function () {
-			var payload = {
-				kicker: 'Gauntlet chest',
-				items: <?php echo json_encode(array_map(function ($r) {
-					/* The real character: the reveal escapes what it is
-					   given, so an HTML entity would print as one. */
-					return array('icon' => $r['icon'], 'label' => "\xc3\x97" . $r['qty'],
-					             'note' => $r['name']);
-				}, $gchest_rows), JSON_UNESCAPED_SLASHES); ?>
-			};
-			function go() { if (window.SK_REVEAL_SHOW) SK_REVEAL_SHOW(payload); }
-			if (document.readyState === 'loading')
-				document.addEventListener('DOMContentLoaded', go);
-			else go();
-		})();
-		</script>
-	<?php elseif ($run_id_over > 0 && gaunt_chest_pending($conn, $run_id_over)): ?>
-		<form method="POST" class="gchest">
-			<input type="hidden" name="action" value="claim_chest">
-			<input type="hidden" name="run_id" value="<?php echo $run_id_over; ?>">
-			<button type="submit" class="gchest-btn" data-sfx="equip">
-				<img class="gchest-img" src="images/chest/closed.webp" alt=""
-				     onerror="this.src='/staking/pwa/skulliance-logo-icon.png'">
-				<span>Open your chest</span>
-			</button>
-		</form>
-	<?php endif; ?>
-	<?php
-	// Show encounter history for completed run
-	$hist_r = $conn->query("
-		SELECT ge.outcome, grn.effective_project_id AS player_effective_project_id, ge.opponent_effective_project_id,
-		       on2.name AS opponent_nft_name, op.name AS opponent_project_name, op.currency AS opponent_currency,
-		       pp.currency AS player_currency,
-		       (SELECT GROUP_CONCAT(gec.consumable_id ORDER BY gec.id) FROM gauntlets_encounters_consumables gec WHERE gec.encounter_id = ge.id) AS consumable_ids,
-		       (SELECT p2.currency FROM transactions t2 INNER JOIN projects p2 ON p2.id = t2.project_id WHERE t2.gauntlet_encounter_id = ge.id AND t2.type = 'credit' LIMIT 1) AS actual_reward_currency,
-		       ge.weapon_id, ge.armor_id,
-		       ww.level AS weapon_level, aa.level AS armor_level,
-		       ou.username AS opponent_username, ou.discord_id AS opponent_discord_id, ou.avatar AS opponent_avatar
-		FROM gauntlets_encounters ge
-		INNER JOIN gauntlets_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
-		INNER JOIN nfts pn       ON pn.id  = ge.player_nft_id
-		INNER JOIN collections pc ON pc.id = pn.collection_id
-		INNER JOIN projects pp   ON pp.id  = pc.project_id
-		INNER JOIN nfts on2      ON on2.id = ge.opponent_nft_id
-		INNER JOIN collections oc ON oc.id = on2.collection_id
-		INNER JOIN projects op   ON op.id  = oc.project_id
-		LEFT JOIN  users ou      ON ou.id  = ge.opponent_user_id
-		LEFT JOIN  weapons ww    ON ww.id  = ge.weapon_id
-		LEFT JOIN  armor aa      ON aa.id  = ge.armor_id
-		WHERE ge.run_id = ".intval($recent_run['id'])." AND ge.outcome != 'pending'
-		ORDER BY ge.id ASC
-	");
-	if ($hist_r && $hist_r->num_rows):
-	?>
-	<div class="section-heading">Run History</div>
-	<div class="history-list">
-	<?php $hist_win_count = 0; while ($hr = $hist_r->fetch_assoc()):
-		$base_wc      = gauntletCalculateWinChance(intval($hr['player_effective_project_id']), intval($hr['opponent_effective_project_id']));
-		$hr_cons      = $hr['consumable_ids'] ? array_map('intval', explode(',', $hr['consumable_ids'])) : [];
-		$is_double    = in_array(GAUNTLET_C_DOUBLE, $hr_cons);
-		if ($hr['outcome'] === 'win') $hist_win_count++;
-		$reward_amt   = ($hist_win_count * 100) * ($is_double ? 2 : 1);
-		$cons_bonus   = 0; foreach ($hr_cons as $hc) $cons_bonus += ($consumable_bonuses[$hc] ?? 0);
-		$effective_wc = min(100, $base_wc + $cons_bonus + intval($hr['weapon_level'] ?? 0) + intval($hr['armor_level'] ?? 0));
-		$actual_currency = $hr['actual_reward_currency'] ?: $hr['opponent_currency'];
-		if ($hr['outcome'] === 'win') {
-			$reward_icon  = 'icons/' . strtolower($actual_currency) . '.png';
-			$reward_label = '+' . $reward_amt;
-			$reward_class = 'win';
-		} else {
-			$reward_icon  = 'icons/' . strtolower($hr['player_currency']) . '.png';
-			$reward_label = 'opp +' . GAUNTLET_WIN_REWARD;
-			$reward_class = 'loss';
-		}
-	?>
-		<div class="history-row">
-			<div class="history-badge <?php echo $hr['outcome']; ?>"><?php echo strtoupper(substr($hr['outcome'], 0, 1)); ?></div>
-			<div class="history-text">vs <?php echo htmlspecialchars($hr['opponent_nft_name']); ?> (<?php echo htmlspecialchars($hr['opponent_project_name']); ?>)<?php if (!empty($hr['opponent_username'])): ?> &middot;<?php if (!empty($hr['opponent_discord_id']) && !empty($hr['opponent_avatar'])): ?><img class="history-avatar" src="<?php echo htmlspecialchars(avatar_url(htmlspecialchars($hr['opponent_discord_id']), htmlspecialchars($hr['opponent_avatar']))); ?>" alt="" onerror="this.src='icons/skull.png'"><?php endif; ?><a href="profile.php?username=<?php echo urlencode($hr['opponent_username']); ?>"><?php echo htmlspecialchars($hr['opponent_username']); ?></a><?php endif; ?></div>
-			<div class="history-meta">
-				<div class="history-reward <?php echo $reward_class; ?>"><?php echo $reward_label; ?><img src="<?php echo htmlspecialchars($reward_icon); ?>" onerror="this.src='icons/skull.png'"></div>
-				<div class="history-odds"><?php echo $effective_wc; ?>%</div>
-			</div>
-		</div>
-	<?php endwhile; ?>
-	</div>
-	<?php endif; ?>
-	<div style="text-align:center; margin-top:24px;">
-		<form method="POST">
-			<input type="hidden" name="action" value="start_run">
-			<button type="submit" class="btn-start">New Run</button>
-		</form>
-	</div>
-
-	<?php
-	// ── State: pick card ────────────────────────────────────
-	elseif ($state === 'pick_card'):
-		$wins = intval($run_stats['wins'] ?? 0);
-	?>
-	<?php if ($last_result && $last_result['outcome'] === 'win'): ?>
-	<div class="win-reward-banner">
-		<span class="win-reward-amount">+<?php echo number_format($last_result['amount']); ?></span>
-		<img src="icons/<?php echo htmlspecialchars(strtolower($last_result['currency'])); ?>.png" onerror="this.src='icons/skull.png'">
-		<span class="win-reward-currency"><?php echo htmlspecialchars($last_result['currency']); ?></span>
-	</div>
-	<?php endif; ?>
-	<div class="section-heading">Your Hand — Pick a Card to Fight</div>
-	<?php
-	/*
-	 * THE HAND CARRIES ITS HEALTH, because picking who to send is the
-	 * same judgement Fast Forward asks for and was just as blind here:
-	 * health persists across a run, so a card that fought and survived
-	 * is not the card it was. A fighter at zero is out for the run and
-	 * cannot be sent at all.
-	 *
-	 * A card can be hurt WITHOUT being "used": Fast Forward swaps the
-	 * fighter without writing an encounter row, so damage and the Used
-	 * label are genuinely different things.
-	 */
-	$hand = gaunt_hand_hp($conn, intval($active_run['id']), $hand);
-	/* The bar's styling lives with the fight. Guarded by GF_UI_DONE, so
-	   including it here as well is free -- and its script boots only
-	   when there is a #gf-area to boot into, so the deck screen gets
-	   the CSS without the fight's audio or key handling. */
-	include __DIR__ . '/gauntlets-fight-ui.php';
-	?>
-	<div class="hand-grid">
-	<?php foreach ($hand as $card):
-		$img  = getIPFS($card['ipfs'], $card['collection_id'], $card['project_id']);
-		$out  = !empty($card['played']) || !empty($card['down']);
-	?>
-		<div class="nft-card <?php echo $out ? 'played' : ''; ?>"
-		     <?php if (!$out): ?>onclick="pickCard(<?php echo intval($card['id']); ?>)"<?php endif; ?>>
-			<?php if (!empty($card['played'])): ?><span class="played-label">Used</span>
-			<?php elseif (!empty($card['down'])): ?><span class="played-label">Down</span><?php endif; ?>
-			<img class="nft-img" src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($card['name']); ?>" loading="lazy" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
-			<div class="nft-card-info">
-				<div class="nft-card-name"><?php echo htmlspecialchars($card['name']); ?></div>
-				<div class="nft-card-project"><?php echo htmlspecialchars($card['project_name']); ?></div>
-				<?php if (isset($card['hp'])) echo gf_bar((int)$card['hp'], (int)$card['max'], 'hand'); ?>
-			</div>
-		</div>
-	<?php endforeach; ?>
-	</div>
-	<form method="POST" id="pick-form">
-		<input type="hidden" name="action" value="start_encounter">
-		<input type="hidden" name="gauntlet_pick_nft_id" id="pick-nft-id" value="0">
-	</form>
-
-	<?php
-	// ── State: encounter ────────────────────────────────────
-	elseif ($state === 'encounter'):
-		$enc = $pending_encounter;
-		$player_img   = getIPFS($enc['player_ipfs'],   $enc['player_collection_id'],   $enc['player_project_id']);
-		$opponent_img = getIPFS($enc['opponent_ipfs'], $enc['opponent_collection_id'], $enc['opponent_project_id_real']);
-		$odds_class   = $win_chance_display >= 50 ? '' : 'danger';
-	?>
-	<?php
-		$player_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : ($_SESSION['userData']['name'] ?? '');
-		$player_discord_id = $_SESSION['userData']['discord_id'] ?? '';
-		$player_avatar     = $_SESSION['userData']['avatar']     ?? '';
-	?>
-	<?php
-	/*
-	 * THE FIGHT REPLACES THE ARENA, THE ODDS BAR AND THE REVEAL OVERLAY.
-	 *
-	 * All three belonged to a coin flip: two portraits, a percentage, and
-	 * a "crossing swords" animation to dramatise a single rand(1,100).
-	 * There is a real fight here now, so the odds bar has nothing to
-	 * describe and the reveal has nothing to reveal -- the exchanges ARE
-	 * the drama. gauntlets-fight-render.php draws the portraits, because
-	 * it is the thing that has to animate them.
-	 */
-	$gf_missing = gaunt_schema_missing($conn);
-	if ($gf_missing): ?>
-	<div class="flash error">
-		<strong>The fight needs three columns that are not there yet.</strong>
-		Missing: <?php echo htmlspecialchars(implode(', ', $gf_missing)); ?>.
-		Run this once, then reload:
-		<pre style="white-space:pre-wrap;margin:8px 0 0;font-size:.75rem;"><?php echo htmlspecialchars(gaunt_schema_sql()); ?></pre>
-	</div>
-	<?php else:
-		$gf_enc = $enc;
-		$gf_enc['player_img']   = $player_img;
-		$gf_enc['opponent_img'] = $opponent_img;
-		$gf_fight = gaunt_fight_start($conn, $user_id, $enc);
-		/*
-		 * FAST FORWARD IS A CHOICE, so it renders with the other
-		 * choices rather than after the battle log. Captured and handed
-		 * to the renderer because the log has to stay inside the
-		 * swapped fragment -- it is what updates every turn -- and
-		 * anything appended after the fight would necessarily sit below
-		 * it.
-		 */
-		/* Annotated with the health each replacement is carrying -- the
-		   swap is a judgement about condition, so it has to be shown. */
-		$gf_extra = gauntletRenderFastForward($enc, $ff_count,
-			gaunt_hand_hp($conn, intval($enc['run_id']), $ff_hand));
-
-		gauntletRenderFight($gf_enc, $gf_fight,
-			gaunt_loadout($conn, $user_id, intval($enc['run_id']), $gf_fight),
-			/* Nothing to animate on a fresh page load -- the turn
-			   endpoint supplies this after each exchange. */
-			array(),
-			gaunt_theme_bg($conn, $enc['opponent_project_name'],
-			               intval($enc['opponent_project_id_real']),
-			               intval($enc['opponent_collection_id'])),
-			$gf_extra);
-		include __DIR__ . '/gauntlets-fight-ui.php';
-	endif; ?>
-
-
-	<?php
-	/*
-	 * THE LOADOUT PANEL IS GONE. It staked items BEFORE a single roll --
-	 * pick a weapon, pick an armour, tick some consumables, watch a
-	 * percentage move by four points, then flip a coin. The fight spends
-	 * them a turn at a time instead, so the choice is made with the
-	 * fight in front of you rather than blind, and the buttons that make
-	 * it live in gauntlets-fight-render.php.
-	 */
-	?>
-
-	<?php
-	// Encounter history for current run (resolved only)
-	$hist_r = $conn->query("
-		SELECT ge.outcome, grn.effective_project_id AS player_effective_project_id, ge.opponent_effective_project_id,
-		       on2.name AS opponent_nft_name, op.name AS opponent_project_name, op.currency AS opponent_currency,
-		       pp.currency AS player_currency,
-		       (SELECT GROUP_CONCAT(gec.consumable_id ORDER BY gec.id) FROM gauntlets_encounters_consumables gec WHERE gec.encounter_id = ge.id) AS consumable_ids,
-		       (SELECT p2.currency FROM transactions t2 INNER JOIN projects p2 ON p2.id = t2.project_id WHERE t2.gauntlet_encounter_id = ge.id AND t2.type = 'credit' LIMIT 1) AS actual_reward_currency,
-		       ge.weapon_id, ge.armor_id,
-		       ww.level AS weapon_level, aa.level AS armor_level,
-		       ou.username AS opponent_username, ou.discord_id AS opponent_discord_id, ou.avatar AS opponent_avatar
-		FROM gauntlets_encounters ge
-		INNER JOIN gauntlets_nfts grn ON grn.run_id = ge.run_id AND grn.nft_id = ge.player_nft_id
-		INNER JOIN nfts pn       ON pn.id  = ge.player_nft_id
-		INNER JOIN collections pc ON pc.id = pn.collection_id
-		INNER JOIN projects pp   ON pp.id  = pc.project_id
-		INNER JOIN nfts on2      ON on2.id = ge.opponent_nft_id
-		INNER JOIN collections oc ON oc.id = on2.collection_id
-		INNER JOIN projects op   ON op.id  = oc.project_id
-		LEFT JOIN  users ou      ON ou.id  = ge.opponent_user_id
-		LEFT JOIN  weapons ww    ON ww.id  = ge.weapon_id
-		LEFT JOIN  armor aa      ON aa.id  = ge.armor_id
-		WHERE ge.run_id = ".intval($active_run['id'])." AND ge.outcome != 'pending'
-		ORDER BY ge.id ASC
-	");
-	if ($hist_r && $hist_r->num_rows):
-	?>
-	<div class="section-heading">This Run</div>
-	<div class="history-list">
-	<?php $hist_win_count = 0; while ($hr = $hist_r->fetch_assoc()):
-		$base_wc      = gauntletCalculateWinChance(intval($hr['player_effective_project_id']), intval($hr['opponent_effective_project_id']));
-		$hr_cons      = $hr['consumable_ids'] ? array_map('intval', explode(',', $hr['consumable_ids'])) : [];
-		$is_double    = in_array(GAUNTLET_C_DOUBLE, $hr_cons);
-		if ($hr['outcome'] === 'win') $hist_win_count++;
-		$reward_amt   = ($hist_win_count * 100) * ($is_double ? 2 : 1);
-		$cons_bonus   = 0; foreach ($hr_cons as $hc) $cons_bonus += ($consumable_bonuses[$hc] ?? 0);
-		$effective_wc = min(100, $base_wc + $cons_bonus + intval($hr['weapon_level'] ?? 0) + intval($hr['armor_level'] ?? 0));
-		$actual_currency = $hr['actual_reward_currency'] ?: $hr['opponent_currency'];
-		if ($hr['outcome'] === 'win') {
-			$reward_icon  = 'icons/' . strtolower($actual_currency) . '.png';
-			$reward_label = '+' . $reward_amt;
-			$reward_class = 'win';
-		} else {
-			$reward_icon  = 'icons/' . strtolower($hr['player_currency']) . '.png';
-			$reward_label = 'opp +' . GAUNTLET_WIN_REWARD;
-			$reward_class = 'loss';
-		}
-	?>
-		<div class="history-row">
-			<div class="history-badge <?php echo $hr['outcome']; ?>"><?php echo strtoupper(substr($hr['outcome'], 0, 1)); ?></div>
-			<div class="history-text">vs <?php echo htmlspecialchars($hr['opponent_nft_name']); ?> (<?php echo htmlspecialchars($hr['opponent_project_name']); ?>)<?php if (!empty($hr['opponent_username'])): ?> &middot;<?php if (!empty($hr['opponent_discord_id']) && !empty($hr['opponent_avatar'])): ?><img class="history-avatar" src="<?php echo htmlspecialchars(avatar_url(htmlspecialchars($hr['opponent_discord_id']), htmlspecialchars($hr['opponent_avatar']))); ?>" alt="" onerror="this.src='icons/skull.png'"><?php endif; ?><a href="profile.php?username=<?php echo urlencode($hr['opponent_username']); ?>"><?php echo htmlspecialchars($hr['opponent_username']); ?></a><?php endif; ?></div>
-			<div class="history-meta">
-				<div class="history-reward <?php echo $reward_class; ?>"><?php echo $reward_label; ?><img src="<?php echo htmlspecialchars($reward_icon); ?>" onerror="this.src='icons/skull.png'"></div>
-				<div class="history-odds"><?php echo $effective_wc; ?>%</div>
-			</div>
-		</div>
-	<?php endwhile; ?>
-	</div>
-	<?php endif; ?>
-
-	<?php endif; // end state switch ?>
+	<div id="g-area" data-mood="<?php echo htmlspecialchars(gaunt_page_mood($state, $run_stats)); ?>">
+	<?php include __DIR__ . '/gauntlets-body.php'; ?>
+	</div><!-- #g-area -->
 
 </div><!-- .gauntlet-wrap -->
 </div><!-- .main -->
@@ -930,25 +307,30 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 	}
 })();
 
-/* Show the loader on every form submission. The old exclusion for
-   #fight-form went with it: that form staked a loadout and rolled once,
-   and the fight posts a turn at a time through ajax/gauntlet-fight.php. */
-document.querySelectorAll('form[method="POST"]').forEach(function(f) {
-	if (f.id === 'gf-form') return;   /* the fight swaps a fragment, not a page */
-	f.addEventListener('submit', function() {
-		var action = (f.querySelector('[name="action"]') || {}).value || '';
-		var msg = action === 'fast_forward' ? 'Swapping Card…' : 'Loading Gauntlet';
-		showLoader(msg);
-	});
-});
+/* The loader's message. Chosen in GAUNT_POST now rather than bound to
+   each form at load: the forms are replaced on every swap, and a
+   listener attached to the old ones would be gone with them. */
+function gauntletLoaderMsg(form) {
+	var a = (form.querySelector('[name="action"]') || {}).value || '';
+	return a === 'fast_forward' ? 'Swapping Card…' : 'Loading Gauntlet';
+}
 
-// Result reveal — auto-dismiss after 4s or on tap
-(function(){
+/*
+ * Result reveal -- auto-dismiss after 4s or on tap.
+ *
+ * THIS HAS TO BE RE-ARMED AFTER A SWAP. It used to be a one-shot IIFE,
+ * which was correct while every round was a fresh page load. A reveal
+ * that arrives in a swapped body would otherwise never time out and
+ * would sit over the page until it was tapped.
+ */
+function armResultReveal() {
 	var rr = document.getElementById('result-reveal');
-	if (!rr) return;
-	var t = setTimeout(dismissResult, 4000);
-	rr._autoTimer = t;
-})();
+	if (!rr || rr._armed) return;
+	rr._armed = true;
+	lockForOverlay();
+	rr._autoTimer = setTimeout(dismissResult, 4000);
+}
+armResultReveal();
 function dismissResult() {
 	var rr = document.getElementById('result-reveal');
 	if (!rr || rr.classList.contains('hiding')) return;
@@ -965,7 +347,85 @@ function pickCard(nftId) {
 	event.currentTarget.classList.add('selected');
 	document.getElementById('pick-nft-id').value = nftId;
 	showLoader('Loading Gauntlet');
-	setTimeout(() => document.getElementById('pick-form').submit(), 120);
+	/* Through the swap, not a navigation -- and NOT via .submit(), which
+	   fires no submit event and would sail straight past the handler
+	   below. Falls back to a real post if the swap is unavailable. */
+	setTimeout(function () {
+		var f = document.getElementById('pick-form');
+		if (!window.GAUNT_POST || !GAUNT_POST(f)) f.submit();
+	}, 120);
+}
+
+/*
+ * THE ROUND CHANGE, WITHOUT A PAGE LOAD.
+ *
+ * Every action here was a POST and a redirect, so finishing a fight and
+ * picking the next card reloaded the document twice -- and each reload
+ * destroyed the <audio> element and started the soundtrack over. The
+ * shell (this file) is now loaded once and #g-area is swapped in place,
+ * so the player, the track and its position all survive a round.
+ *
+ * ajax/gauntlet-page.php runs the SAME gauntlets-actions.php this page
+ * runs, so the two cannot drift. Any failure falls back to the ordinary
+ * post, which still works on its own.
+ */
+(function () {
+	var AREA = 'g-area';
+	function area() { return document.getElementById(AREA); }
+
+	window.GAUNT_POST = function (form) {
+		var el = area();
+		if (!el || !form || !window.fetch || !window.FormData) return false;
+		var body = new URLSearchParams(new FormData(form));
+		showLoader(gauntletLoaderMsg(form));
+		fetch('ajax/gauntlet-page.php', {
+			method: 'POST', credentials: 'same-origin',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: body.toString()
+		}).then(function (r) {
+			if (!r.ok) throw new Error('http');
+			return r.text();
+		}).then(function (html) {
+			var holder = document.createElement('div');
+			holder.innerHTML = html;
+			var next = holder.querySelector('#' + AREA);
+			var cur  = area();
+			if (!next || !cur) throw new Error('fragment');
+			cur.replaceWith(next);
+			hideGauntletLoader();
+			/* The fight's script is in the shell and outlived the swap,
+			   so the new arena has to be handed to it. It also re-reads
+			   the mood off the new #g-area. */
+			if (window.GF_BOOT) GF_BOOT();
+			/* Both of these were bound once at load, which was fine when
+			   a round was a page load. */
+			armResultReveal();
+			window.scrollTo(0, 0);
+		}).catch(function () { form.submit(); });
+		return true;
+	};
+
+	/* Capture phase, so this runs before anything a fragment binds. The
+	   fight's own form is not ours: it posts single turns to its own
+	   endpoint and swaps only the arena. */
+	document.addEventListener('submit', function (ev) {
+		var f = ev.target;
+		if (!f || f.id === 'gf-form') return;
+		var el = area();
+		if (!el || !el.contains(f)) return;
+		ev.preventDefault();
+		if (!GAUNT_POST(f)) f.submit();
+	}, true);
+})();
+
+function hideGauntletLoader() {
+	var loader = document.getElementById('gauntlet-loader');
+	if (!loader) return;
+	loader.classList.add('fade-out');
+	setTimeout(function () {
+		loader.style.display = 'none';
+		if (!document.getElementById('result-reveal')) unlockAfterOverlay();
+	}, 260);
 }
 
 
