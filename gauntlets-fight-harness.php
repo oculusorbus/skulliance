@@ -236,6 +236,52 @@ $mine = null; foreach ($entries as $x) if ($x['who'] === 'you' && $x['kind'] ===
 ok($mine !== null && isset($mine['big']),
    "the player's own hit carries no big flag, so every hit animates identically");
 
+echo "\nbeating someone armed takes what they were carrying\n";
+/*
+ * Uncapped, a stocked opponent is pure downside -- a harder fight for
+ * the same reward, which is what makes an unlucky draw feel wasted.
+ * Dropping what they SWUNG inverts that.
+ */
+function fought($kit, $seed, $turns = 60) {
+	$f = gaunt_begin(array('hp' => 99999, 'max' => 99999), 50, $kit, $seed);
+	$g = 0;
+	while (empty($f['over']) && $g++ < $turns) gaunt_act($f, bare());
+	return $f;
+}
+$armed = fought(kit(6, 4, true), 11);
+$sp = gaunt_spoils($armed);
+$kinds = array(); foreach ($sp as $x) $kinds[] = $x['kind'];
+ok(in_array('weapon', $kinds, true), 'an opponent who swung a weapon offers no weapon: ' . json_encode($kinds));
+ok(in_array('armor', $kinds, true), 'an opponent who wore armour offers no armour');
+/* FROM WHAT THEY PLAYED, NOT WHAT THEY HOLD. An opponent with a weapon
+   who never got to use it has nothing to take. */
+$never = gaunt_begin(array('hp' => 99999, 'max' => 99999), 50, kit(9, 0, false), 3);
+ok(gaunt_spoils($never) === array(),
+   'an opponent who never acted still drops their inventory, so the drop is not earned');
+/* AND THE PLAYER'S OWN ACTIONS ARE NOT SPOILS. A bare-handed opponent
+   must yield nothing however much the player swung, armoured or
+   healed -- otherwise you loot yourself. */
+$mine = gaunt_begin(array('hp' => 99999, 'max' => 99999), 50, kit(0), 5);
+gaunt_act($mine, weapon(9)); gaunt_act($mine, armour(5)); gaunt_act($mine, heal(50));
+ok(gaunt_spoils($mine) === array(),
+   'the player\'s own weapon, armour and heal are being counted as spoils: '
+ . json_encode(gaunt_spoils($mine)));
+/* A chance, not a certainty. */
+$hits = 0;
+for ($i = 0; $i < 200; $i++) if (gaunt_roll_drop(fought(kit(6, 4, true), $i))) $hits++;
+$rate = round(100 * $hits / 200);
+ok($rate > 25 && $rate < 85, "drops land $rate% of the time, which is a certainty or a rarity, not a chance");
+/* Replayable like everything else -- a reload must not re-roll a better one. */
+/* Several pairs: with only two or three possible spoils, one pair
+   matches by luck often enough to pass an unseeded roll. */
+$same = true;
+for ($i = 0; $i < 25; $i++) {
+	$a = gaunt_roll_drop(fought(kit(6, 4, true), 100 + $i));
+	$b = gaunt_roll_drop(fought(kit(6, 4, true), 100 + $i));
+	if (json_encode($a) !== json_encode($b)) { $same = false; break; }
+}
+ok($same, 'the drop is not seeded from the fight, so reloading re-rolls it');
+
 /* ====================================================================
  * THE PERSISTENCE LAYER. Pure parts driven; the rest asserted from
  * source, because they need a database and this harness must not.
@@ -447,6 +493,27 @@ ok(strpos($REN, 'data-bg=') !== false,
    'the fragment does not say why it has no backdrop, so the next report needs a bisect');
 ok(strpos($REN, 'gf-has-bg') !== false, 'the renderer never applies the backdrop class');
 ok(strpos($UI, '.gf-has-bg::before') !== false, 'the backdrop has no styling, so it will not show');
+
+echo "\nsalvage is run-scoped, and reads as temporary\n";
+/* It must never reach the real inventory -- that is the line between
+   relief and income, and the whole reason only the chest leaves a run. */
+ok(strpos($LIB, "\$gs['loot'][] = array(") !== false, 'a won fight stores no salvage');
+ok(preg_match("~if \\(\\\$item_id < 0\\) \\\$gs\\['loot'\\]~", $LIB) === 1,
+   'spending salvage does not come out of the run state');
+ok(strpos($LIB, "if (\$item_id < 0) {
+			/* Salvage, so nothing leaves the inventory. */") !== false,
+   'a salvaged heal is deducted from the player\'s real consumables');
+ok(preg_match("~if \\(!empty\\(\\\$it\\['loot'\\]\\)\\).{0,80}gf-loot~s", $REN) === 1,
+   'salvage is not marked, so it looks like owned gear the player keeps');
+
+echo "\nthe log sits under the choices, and the result is one button\n";
+/* Above them the log pushed the buttons down the page as it filled, and
+   the control a player reaches for every turn should not move. */
+ok(strpos($REN, '<ul class="gf-log">') > strpos($REN, 'id="gf-form"'),
+   'the log is back above the action buttons, so they move as it fills');
+ok(strpos($REN, 'class="gf-done"') !== false,
+   'the result form uses the grouped-action layout again, which stretches one button full width');
+ok(strpos($UI, '.gf-done .gf-btn { min-width') !== false, 'the Continue button has no width of its own');
 
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all fight checks passed\n");
 

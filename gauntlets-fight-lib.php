@@ -120,6 +120,9 @@ function gaunt_gear_state($conn, $run_id) {
 	if (!is_array($j)) $j = array();
 	if (!isset($j['wpn']) || !is_array($j['wpn'])) $j['wpn'] = array();
 	if (!isset($j['arm']) || !is_array($j['arm'])) $j['arm'] = array();
+	/* Salvage taken off slain opponents. RUN-SCOPED: it lives here, dies
+	   with the run, and never touches the player's real inventory. */
+	if (!isset($j['loot']) || !is_array($j['loot'])) $j['loot'] = array();
 	return $j;
 }
 function gaunt_gear_state_save($conn, $run_id, $state) {
@@ -234,6 +237,29 @@ function gaunt_loadout($conn, $user_id, $run_id) {
 			);
 		}
 	}
+	/*
+	 * SALVAGE IS OFFERED ALONGSIDE OWNED GEAR, under a NEGATIVE id so the
+	 * two can never be confused: a positive id is something the player
+	 * owns and whose wear is tracked against their inventory, a negative
+	 * one is loot that exists only for this run.
+	 */
+	foreach ($gs['loot'] as $i => $lt) {
+		$left = max(0, (int)($lt['left'] ?? 0));
+		$id   = -($i + 1);
+		if ($lt['kind'] === 'weapon') {
+			$out['weapons'][] = array('type' => 'weapon', 'id' => $id, 'loot' => true,
+				'name' => 'Salvaged weapon', 'level' => (int)$lt['level'], 'left' => $left,
+				'slug' => 'fist', 'sfx' => 'melee');
+		} elseif ($lt['kind'] === 'armor') {
+			$out['armor'][] = array('type' => 'armor', 'id' => $id, 'loot' => true,
+				'name' => 'Salvaged armour', 'level' => (int)$lt['level'], 'left' => $left,
+				'sfx' => 'equip');
+		} elseif ($lt['kind'] === 'heal' && $left > 0) {
+			$out['heals'][] = array('type' => 'heal', 'id' => $id, 'loot' => true,
+				'pct' => (int)$lt['pct'], 'have' => $left, 'sfx' => 'heal');
+		}
+	}
+
 	foreach (array(GAUNTLET_C_100, GAUNTLET_C_75, GAUNTLET_C_50, GAUNTLET_C_25) as $cid) {
 		$n = getCurrentAmount($conn, $uid, $cid);
 		if ($n < 1) continue;
@@ -295,18 +321,25 @@ function gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item_id = 0) {
 	if ($kind === 'weapon') {
 		foreach ($load['weapons'] as $w) if ($w['id'] === $item_id && $w['left'] > 0) $act = $w;
 		if (!$act) return array('ok' => false, 'why' => 'no swings left with that weapon');
-		$gs['wpn'][$item_id] = (int)($gs['wpn'][$item_id] ?? 0) + 1;
+		if ($item_id < 0) $gs['loot'][-$item_id - 1]['left']--;
+		else $gs['wpn'][$item_id] = (int)($gs['wpn'][$item_id] ?? 0) + 1;
 
 	} elseif ($kind === 'armor') {
 		foreach ($load['armor'] as $a) if ($a['id'] === $item_id && $a['left'] > 0) $act = $a;
 		if (!$act) return array('ok' => false, 'why' => 'that armour is spent');
-		$gs['arm'][$item_id] = (int)($gs['arm'][$item_id] ?? 0) + 1;
+		if ($item_id < 0) $gs['loot'][-$item_id - 1]['left']--;
+		else $gs['arm'][$item_id] = (int)($gs['arm'][$item_id] ?? 0) + 1;
 
 	} elseif ($kind === 'heal') {
 		foreach ($load['heals'] as $h) if ($h['id'] === $item_id) $act = $h;
 		if (!$act) return array('ok' => false, 'why' => 'you have none of those');
-		/* Genuinely consumed, unlike gear. */
-		updateAmount($conn, $uid, $item_id, -1);
+		if ($item_id < 0) {
+			/* Salvage, so nothing leaves the inventory. */
+			$gs['loot'][-$item_id - 1]['left']--;
+		} else {
+			/* Genuinely consumed, unlike gear. */
+			updateAmount($conn, $uid, $item_id, -1);
+		}
 
 	} else {
 		$act = $load['bare'];
@@ -314,12 +347,32 @@ function gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item_id = 0) {
 
 	$timeline = gaunt_act($fight, $act);
 	gaunt_fight_save($conn, $e, $fight);
-	if ($kind === 'weapon' || $kind === 'armor') gaunt_gear_state_save($conn, $run_id, $gs);
+	if ($kind === 'weapon' || $kind === 'armor' || $item_id < 0)
+		gaunt_gear_state_save($conn, $run_id, $gs);
 
 	/* The carried pool is written every turn, not just at the end: a
 	   player who closes the tab mid-fight should come back to the damage
 	   they actually took. */
 	gaunt_nft_hp_save($conn, $run_id, (int)$enc['player_nft_id'], (int)$fight['you']['hp']);
+
+	/*
+	 * SPOILS, when the fight is won. Taken from what the opponent
+	 * actually played, usable immediately, and gone when the run ends --
+	 * relief that keeps a bad run alive, not income. Project points for
+	 * the slaying are paid separately and are untouched.
+	 */
+	if (!empty($fight['over']) && ($fight['win'] ?? '') === 'you') {
+		$drop = gaunt_roll_drop($fight);
+		if ($drop) {
+			$gs['loot'][] = array('kind' => $drop['kind'],
+				'level' => (int)($drop['level'] ?? 0), 'pct' => (int)($drop['pct'] ?? 0),
+				'left'  => (int)$drop['uses']);
+			gaunt_gear_state_save($conn, $run_id, $gs);
+			$timeline[] = array('who' => 'you', 'kind' => 'loot', 'sfx' => 'equip',
+				'text' => 'Salvaged their ' . ($drop['kind'] === 'heal' ? 'medkit'
+				          : ($drop['kind'] === 'armor' ? 'armour' : 'weapon')));
+		}
+	}
 
 	return array('ok' => true, 'why' => '', 'timeline' => $timeline, 'fight' => $fight);
 }

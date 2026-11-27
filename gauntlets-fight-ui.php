@@ -88,7 +88,7 @@ define('GF_UI_DONE', 1);
 .gf-shield       { color: #4fa3d9; }
 
 /* ── the exchange log ──────────────────────────────────────────────── */
-.gf-log          { list-style: none; margin: 0 0 14px; padding: 10px 12px; background: #002f44;
+.gf-log          { list-style: none; margin: 0; padding: 10px 12px; background: #002f44;
                    border: 1px solid rgba(255,255,255,.07); border-radius: 8px;
                    max-height: 118px; overflow-y: auto; }
 .gf-li           { font-size: .78rem; color: rgba(255,255,255,.75); margin: 3px 0; }
@@ -120,6 +120,15 @@ define('GF_UI_DONE', 1);
 .gf-heal         { border-color: rgba(92,232,176,.4); }
 .gf-go           { background: #00c8a0; color: #07111d; border-color: #2ee3bf; }
 .gf-go:hover     { background: #00e6b8; color: #07111d; }
+/* The result is ONE control, so it is not laid out like the stack of
+   grouped choices -- as a column child it stretched full width with its
+   label hard left, which reads as a broken row rather than a button. */
+.gf-done         { display: flex; justify-content: center; margin-top: 4px; }
+.gf-done .gf-btn { min-width: 180px; justify-content: center; }
+.gf-loot         { font-style: normal; font-size: .6rem; text-transform: uppercase;
+                   letter-spacing: .08em; color: #ffc800; background: rgba(255,200,0,.12);
+                   border: 1px solid rgba(255,200,0,.35); border-radius: 3px; padding: 1px 4px; }
+.gf-log          { margin-top: 14px; }
 .gf-hint         { font-size: .72rem; color: rgba(255,255,255,.4); margin: 10px 0 0; }
 .gf-result       { font-size: 1.1rem; font-weight: 700; text-align: center; padding: 12px;
                    border-radius: 8px; margin-bottom: 12px; }

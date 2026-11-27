@@ -139,6 +139,11 @@ if (!defined('GAUNT_MAX_TURNS'))      define('GAUNT_MAX_TURNS',      60);
  */
 if (!defined('GAUNT_FOE_CAP_MARGIN')) define('GAUNT_FOE_CAP_MARGIN', 0);
 
+/* How often a slain opponent gives up something they used. Not a
+   certainty: three encounters each handing over everything would flood a
+   run and make the player's own inventory beside the point. */
+if (!defined('GAUNT_DROP_CHANCE'))    define('GAUNT_DROP_CHANCE',    0.55);
+
 /* ===================== PRNG ===========================================
  * The fight carries its own seed so a resolution can be replayed exactly.
  * Same generator as dhca_rand() in dhcarena-engine.php -- duplicated
@@ -435,4 +440,54 @@ function gaunt_foe_turn(&$f) {
 	gaunt_say($f, 'foe', 'hit', '-' . $r['dealt'],
 		array('sfx' => $sfx, 'amount' => $r['dealt'], 'soaked' => $r['soaked'],
 		      'big' => ($r['dealt'] >= 25)));
+}
+
+/* ===================== WHAT THEY WERE CARRYING ========================
+ * Pure, so the drop can be tested without a database.
+ * ===================================================================== */
+
+/**
+ * What the opponent actually PLAYED in this fight, as droppable salvage.
+ *
+ * From what they played, not from their inventory: the drop is earned
+ * against the thing that hurt you, and an opponent who never got to
+ * swing drops nothing. That is also what makes a well-armed rival worth
+ * fighting -- uncapped, a stocked opponent is pure downside, a harder
+ * fight for the same reward. Beating them should arm you.
+ */
+function gaunt_spoils($fight) {
+	$out = array();
+	$kit = $fight['foe']['kit'] ?? array();
+	$used = array('weapon' => false, 'armor' => false, 'heal' => false);
+	foreach (($fight['log'] ?? array()) as $e) {
+		if (($e['who'] ?? '') !== 'foe') continue;
+		if ($e['kind'] === 'hit' && !empty($kit['weapon_level'])
+		    && ($e['sfx'] ?? '') !== 'fist') $used['weapon'] = true;
+		if ($e['kind'] === 'armor') $used['armor'] = true;
+		if ($e['kind'] === 'heal')  $used['heal']  = true;
+	}
+	if ($used['weapon'] && !empty($kit['weapon_level']))
+		$out[] = array('kind' => 'weapon', 'level' => (int)$kit['weapon_level'],
+		               'uses' => max(1, (int)round(gaunt_weapon_uses($kit['weapon_level']) / 2)));
+	if ($used['armor'] && !empty($kit['armor_level']))
+		$out[] = array('kind' => 'armor', 'level' => (int)$kit['armor_level'], 'uses' => 1);
+	if ($used['heal'])
+		$out[] = array('kind' => 'heal', 'pct' => GAUNT_FOE_HEAL_PCT, 'uses' => 1);
+	return $out;
+}
+
+/**
+ * Which of the spoils actually drops. A chance, not a certainty -- three
+ * encounters each handing over everything would flood a run and make the
+ * player's own inventory beside the point.
+ *
+ * Seeded from the fight, so it is replayable like everything else and a
+ * reload cannot re-roll a better drop.
+ */
+function gaunt_roll_drop($fight) {
+	$spoils = gaunt_spoils($fight);
+	if (!$spoils) return null;
+	$f = array('seed' => (int)(($fight['seed'] ?? 1) ^ 0x5EED));
+	if (gaunt_rand($f) > GAUNT_DROP_CHANCE) return null;
+	return $spoils[gaunt_rint($f, 0, count($spoils) - 1)];
 }

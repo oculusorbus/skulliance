@@ -108,24 +108,12 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '') 
     </div>
   </div>
 
-  <ul class="gf-log">
-    <?php foreach (array_reverse($tail) as $e): ?>
-      <li class="gf-li gf-<?php echo htmlspecialchars($e['who']); ?> gf-k-<?php echo htmlspecialchars($e['kind']); ?>">
-        <span class="gf-who"><?php echo $e['who'] === 'you' ? 'You' : 'Them'; ?></span>
-        <?php echo htmlspecialchars(($e['name'] ?? '') !== '' ? $e['name'] . ' ' : ''); ?>
-        <strong><?php echo htmlspecialchars($e['text']); ?></strong>
-        <?php if (!empty($e['soaked'])): ?>
-          <span class="gf-soak">(<?php echo (int)$e['soaked']; ?> soaked)</span>
-        <?php endif; ?>
-      </li>
-    <?php endforeach; ?>
-  </ul>
 
   <?php if ($over): ?>
     <div class="gf-result <?php echo $won ? 'win' : 'loss'; ?>">
       <?php echo $won ? 'Opponent down' : 'Your fighter is down'; ?>
     </div>
-    <form method="post" class="gf-actions">
+    <form method="post" class="gf-done">
       <input type="hidden" name="action" value="close_fight">
       <input type="hidden" name="encounter_id" value="<?php echo (int)$enc['id']; ?>">
       <button type="submit" class="gf-btn gf-go">Continue</button>
@@ -168,6 +156,7 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '') 
                 <img src="icons/<?php echo htmlspecialchars($it['slug']); ?>.png" alt=""
                      onerror="this.style.display='none'">
                 <span><?php echo htmlspecialchars($it['name']); ?></span>
+                <?php if (!empty($it['loot'])): ?><em class="gf-loot" title="taken off an opponent; gone when the run ends">salvage</em><?php endif; ?>
                 <em class="gf-left" title="swings left this run"><?php echo (int)$it['left']; ?></em>
               </button>
             <?php elseif ($t === 'armor'): $dis = $it['left'] < 1; ?>
@@ -192,6 +181,21 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '') 
     <p class="gf-hint">Armour and healing cost you the turn. Weapon swings are
        rationed for the whole run, not this fight.</p>
   <?php endif; ?>
+<?php /* THE LOG SITS UNDER THE CHOICES. Above them it pushed the
+           buttons down the page as it filled, and the thing a player
+           reaches for every turn should not move. */ ?>
+  <ul class="gf-log">
+    <?php foreach (array_reverse($tail) as $e): ?>
+      <li class="gf-li gf-<?php echo htmlspecialchars($e['who']); ?> gf-k-<?php echo htmlspecialchars($e['kind']); ?>">
+        <span class="gf-who"><?php echo $e['who'] === 'you' ? 'You' : 'Them'; ?></span>
+        <?php echo htmlspecialchars(($e['name'] ?? '') !== '' ? $e['name'] . ' ' : ''); ?>
+        <strong><?php echo htmlspecialchars($e['text']); ?></strong>
+        <?php if (!empty($e['soaked'])): ?>
+          <span class="gf-soak">(<?php echo (int)$e['soaked']; ?> soaked)</span>
+        <?php endif; ?>
+      </li>
+    <?php endforeach; ?>
+  </ul>
 </div>
 <?php
 }
