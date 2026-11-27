@@ -507,20 +507,61 @@ if ($state === 'encounter') {
 	$chest_got = $_SESSION['gauntlet_chest'] ?? null;
 	unset($_SESSION['gauntlet_chest']);
 	$run_id_over = intval($recent_run['id'] ?? 0);
-	if ($chest_got): ?>
+	if ($chest_got):
+		/* Named and iconed once, for both the record below and the
+		   reveal that plays over it. */
+		$gchest_rows = array();
+		foreach ($chest_got as $cid => $qty) {
+			$nm = $conn->query("SELECT name FROM consumables WHERE id=" . intval($cid) . " LIMIT 1");
+			$nm = ($nm && $nm->num_rows) ? $nm->fetch_assoc()['name'] : ('Item #' . intval($cid));
+			$sl = gaunt_consumable_slug($cid);
+			$gchest_rows[] = array(
+				'icon' => $sl !== '' ? ('icons/' . $sl . '.png') : '',
+				'name' => $nm,
+				'qty'  => intval($qty),
+			);
+		}
+		?>
 		<div class="gchest open">
 			<img class="gchest-img" src="images/chest/open.webp" alt=""
 			     onerror="this.src='/staking/pwa/skulliance-logo-icon.png'">
 			<div class="gchest-title">Hauled out of the gauntlet</div>
 			<div class="gchest-items">
-				<?php foreach ($chest_got as $cid => $qty):
-					$nm = $conn->query("SELECT name FROM consumables WHERE id=" . intval($cid) . " LIMIT 1");
-					$nm = ($nm && $nm->num_rows) ? $nm->fetch_assoc()['name'] : ('Item #' . intval($cid)); ?>
-					<span class="gchest-item"><strong>&times;<?php echo intval($qty); ?></strong>
-						<?php echo htmlspecialchars($nm); ?></span>
+				<?php foreach ($gchest_rows as $gr): ?>
+					<span class="gchest-item"><strong>&times;<?php echo $gr['qty']; ?></strong>
+						<?php echo htmlspecialchars($gr['name']); ?></span>
 				<?php endforeach; ?>
 			</div>
 		</div>
+		<?php
+		/*
+		 * THE SAME CHEST THE DAILY REWARD OPENS. missions-claim-modal.php
+		 * is the performance -- rattle, lid, items flying out of the
+		 * mouth -- and it takes a neutral payload now, so this hands it
+		 * one instead of owning a second copy of the animation. The block
+		 * above stays as the record: it is what is still on the page once
+		 * the reveal is dismissed, and what a no-JS player sees.
+		 */
+		$sk_reveal_only = true;
+		include __DIR__ . '/missions-claim-modal.php';
+		?>
+		<script>
+		(function () {
+			var payload = {
+				kicker: 'Gauntlet chest',
+				items: <?php echo json_encode(array_map(function ($r) {
+					/* The real character: the reveal escapes what it is
+					   given, so an HTML entity would print as one. */
+					return array('icon' => $r['icon'], 'label' => "\xc3\x97" . $r['qty'],
+					             'note' => $r['name']);
+				}, $gchest_rows), JSON_UNESCAPED_SLASHES); ?>
+			};
+			function go() { if (window.SK_REVEAL_SHOW) SK_REVEAL_SHOW(payload); }
+			if (document.readyState === 'loading')
+				document.addEventListener('DOMContentLoaded', go);
+			else go();
+		})();
+		</script>
 	<?php elseif ($run_id_over > 0 && gaunt_chest_pending($conn, $run_id_over)): ?>
 		<form method="POST" class="gchest">
 			<input type="hidden" name="action" value="claim_chest">

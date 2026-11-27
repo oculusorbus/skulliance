@@ -306,8 +306,26 @@ ok(strpos($jsCode, 'obj.dhc_drop && window.DHC_SHOW_DROP && !window.SK_CLAIM_SHO
 /* IN close(), not in show(): handing it over on open is the collision. */
 $closeFn = substr($modalCode, strpos($modalCode, 'function close()'));
 $closeFn = substr($closeFn, 0, strpos($closeFn, "\n\t}"));
-ok(strpos($closeFn, 'DHC_SHOW_DROP') !== false,
-   'the trait is revealed somewhere other than on close, which is the collision this fixes');
+/* The handoff is a callback now, so close() runs whatever was deferred
+   rather than naming the trait modal itself. The collision guard is the
+   same one: it must fire HERE and nowhere else. */
+ok(strpos($closeFn, 'pending') !== false && strpos($closeFn, 'd();') !== false,
+   'close() no longer runs the deferred handoff, so the trait is revealed somewhere else');
+$revealFn = substr($modalCode, strpos($modalCode, 'function reveal(p) {'));
+$revealFn = substr($revealFn, 0, strpos($revealFn, "\n\t}"));
+ok(strpos($revealFn, 'DHC_SHOW_DROP') === false,
+   'the reveal hands the trait over as it opens, which is the collision this fixes');
+ok(strpos($show, 'onClose: drop ? function () { DHC_SHOW_DROP(drop); } : null') !== false,
+   'the daily claim does not defer its trait, so it fires during the reveal');
+/* The two server-rendered blocks the claim hands over. They were read
+   straight off `obj` before the split; now they travel in the payload,
+   which is exactly where a refactor can quietly drop them. */
+ok(strpos($show, "foot:   obj.progress_bar || ''") !== false,
+   'the claim stops handing over its streak bar, so the reveal shows no progress');
+ok(strpos($show, "meta:   obj.remaining || ''") !== false,
+   'the claim stops handing over its countdown, so the reveal cannot say when the next one lands');
+ok(strpos($revealFn, "p.foot || ''") !== false && strpos($revealFn, "p.meta || ''") !== false,
+   'the reveal ignores the payload\'s foot and meta, so nothing a caller passes is drawn');
 ok(strpos($show, 'window.DHC_SHOW_DROP) ? obj.dhc_drop : null') !== false,
    'the reveal takes the drop without checking the trait modal is even there');
 
@@ -1024,6 +1042,32 @@ ok(strpos($modal, 'at(MCM_OPEN + MCM_KIDS_AT,') !== false,
  */
 ok(strpos($modal, 'MCM_KIDS_AT  = MCM_CALM ? 190') !== false,
    'reduced motion inherits the sound-synced timing, so it waits on an animation it is not getting');
+
+echo "\nthe reveal is shared, not copied\n";
+/*
+ * Gauntlets opens the same chest the daily reward does. The point of
+ * the split is that there is ONE performance: a second copy would
+ * drift the moment either was tuned.
+ */
+$gau = (string) file_get_contents(__DIR__ . '/gauntlets.php');
+ok(strpos($gau, "include __DIR__ . '/missions-claim-modal.php';") !== false,
+   'Gauntlets does not include the reveal partial, so it has nowhere to put its chest');
+ok(strpos($gau, '$sk_reveal_only = true;') !== false,
+   'Gauntlets does not opt in, so the partial returns early and SK_REVEAL_SHOW never exists');
+ok(strpos($gau, 'SK_REVEAL_SHOW(payload)') !== false,
+   'Gauntlets does not drive the shared reveal');
+ok(strpos($modalCode, 'window.SK_REVEAL_SHOW = reveal;') !== false,
+   'the reveal engine is not exported, so nothing outside the partial can drive it');
+ok(strpos($gau, 'if (window.SK_REVEAL_SHOW)') !== false,
+   'Gauntlets calls the reveal without checking it loaded, the one guard every other hook here keeps');
+/* No second chest animation anywhere. */
+ok(strpos($gau, 'is-shaking') === false && strpos($gau, 'mcm-veil') === false,
+   'Gauntlets carries its own copy of the chest animation, which will drift from this one');
+/* The partial must still refuse to render for a page with neither. */
+ok(strpos($modalCode, "if (empty(\$ms_daily) && empty(\$sk_reveal_only)) return;") !== false,
+   'the partial renders for any page that includes it, daily reward or not');
+ok(strpos($modalCode, "? \$ms_daily['days'] : array();") !== false,
+   'the day map still reads $ms_daily unguarded, so a page without a claim fatals on include');
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

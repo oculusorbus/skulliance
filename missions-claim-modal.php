@@ -31,15 +31,25 @@
  * modal would open on top of this one. SK_CLAIM_SHOW takes the drop and
  * reveals it after this modal closes.
  */
-if (!isset($ms_daily) || !$ms_daily) return;
+/*
+ * TWO WAYS IN. The daily page includes this because it has a claim to
+ * show, and the gate below is unchanged for it: no $ms_daily, nothing
+ * rendered. A page that only wants the reveal -- Gauntlets and its
+ * chest -- sets $sk_reveal_only before including, and gets the dialog
+ * and window.SK_REVEAL_SHOW without pretending to have a daily reward.
+ */
+if (empty($ms_daily) && empty($sk_reveal_only)) return;
 if (defined('MS_CLAIM_MODAL')) return;
 define('MS_CLAIM_MODAL', 1);
 
 /* The day -> consumable map comes from mission_daily(), which is where it
    is defined. skulliance.js builds the reward line from its own hardcoded
-   copy of the same list; this does not add a third one. */
+   copy of the same list; this does not add a third one. Empty when the
+   including page has no daily claim; only SK_CLAIM_SHOW reads it. */
 $mcm_days = array();
-foreach ($ms_daily['days'] as $mcm_d) {
+$mcm_src  = (isset($ms_daily['days']) && is_array($ms_daily['days']))
+          ? $ms_daily['days'] : array();
+foreach ($mcm_src as $mcm_d) {
 	$mcm_days[(int) $mcm_d['day']] = array(
 		'name' => (string) $mcm_d['item'],
 		'icon' => (string) $mcm_d['item_icon'],
@@ -732,46 +742,82 @@ foreach ($ms_daily['days'] as $mcm_d) {
 	 */
 	window.SK_CLAIM_SHOW = function (obj) {
 		if (!obj) return;
-		reset();
 
 		var day  = parseInt(obj.day, 10) || 0;
 		var cur  = String(obj.currency || '').replace(/[0-9]+/g, '');
 		var amt  = Number(obj.amount);
 		var shown = isFinite(amt) ? amt.toLocaleString() : String(obj.amount || '');
 
-		document.getElementById('mcm-kicker').textContent = day ? 'Day ' + day + ' of 7' : 'Daily reward';
-
 		/* The consumable, then the currency: the same order, and the same
 		   two pictures, as the reward line beneath the strip. */
+		var list = [];
 		var info = DAYS[day];
-		if (info) items.appendChild(item(info.icon, info.name, 'Consumable'));
+		if (info) list.push({ icon: info.icon, label: info.name, note: 'Consumable' });
 		if (cur !== '') {
-			items.appendChild(item('icons/' + String(obj.currency).toLowerCase() + '.png',
-				'+' + shown, cur));
+			list.push({ icon: 'icons/' + String(obj.currency).toLowerCase() + '.png',
+				label: '+' + shown, note: cur });
 		} else if (shown !== '') {
-			items.appendChild(item('', '+' + shown, 'Points'));
+			list.push({ icon: '', label: '+' + shown, note: 'Points' });
 		}
 
-		/* Server-rendered markup, written into the strip by dailyReward()
-		   in the same breath. The countdown span inside #mcm-remaining is
-		   static text: the ticker binds on page load and this arrives
-		   after, so it shows the time the claim landed. */
-		document.getElementById('mcm-streak').innerHTML    = obj.progress_bar || '';
-		document.getElementById('mcm-remaining').innerHTML = obj.remaining || '';
+		var drop = (obj.dhc_drop && window.DHC_SHOW_DROP) ? obj.dhc_drop : null;
 
-		pending = (obj.dhc_drop && window.DHC_SHOW_DROP) ? obj.dhc_drop : null;
-		var tr = document.getElementById('mcm-trait');
-		tr.hidden = !pending;
-		if (pending) {
+		reveal({
+			kicker: day ? 'Day ' + day + ' of 7' : 'Daily reward',
+			items:  list,
+			/* Server-rendered markup, written into the strip by
+			   dailyReward() in the same breath. The countdown span inside
+			   #mcm-remaining is static text: the ticker binds on page load
+			   and this arrives after, so it shows the time the claim
+			   landed. */
+			foot:   obj.progress_bar || '',
+			meta:   obj.remaining || '',
 			/*
 			 * NAME THE LADDER, because the whole point of paying every day
 			 * is that the player can see it climbing. Day seven says so
 			 * outright; the others say what is coming.
 			 */
-			tr.textContent = day >= 7
+			note:   !drop ? '' : (day >= 7
 				? 'Full streak. Your trait is drawn from the best table on the platform.'
-				: 'A DHC Fighters trait is yours. Day ' + (day + 1) + ' draws from a better table.';
-		}
+				: 'A DHC Fighters trait is yours. Day ' + (day + 1) + ' draws from a better table.'),
+			/* Deferred, never called here -- see close(). */
+			onClose: drop ? function () { DHC_SHOW_DROP(drop); } : null
+		});
+	};
+
+	/*
+	 * THE REVEAL ITSELF, which knows nothing about daily rewards.
+	 *
+	 * Everything above this line is the daily claim translated into the
+	 * payload below; everything under it is the chest. Any feature with
+	 * something to hand a player calls window.SK_REVEAL_SHOW with the
+	 * same shape and gets the same rattle, lid and burst.
+	 *
+	 *   kicker   one line above the chest
+	 *   items    [{ icon, label, note }] -- what flies out of its mouth
+	 *   foot     HTML under the items (the daily streak bar)
+	 *   meta     HTML under that (the daily countdown)
+	 *   note     one line under that, hidden when empty
+	 *   onClose  run once, after the dialog closes, never before
+	 */
+	function reveal(p) {
+		if (!p) return;
+		reset();
+
+		document.getElementById('mcm-kicker').textContent = p.kicker || '';
+
+		(p.items || []).forEach(function (it) {
+			items.appendChild(item(it.icon, it.label, it.note));
+		});
+
+		document.getElementById('mcm-streak').innerHTML    = p.foot || '';
+		document.getElementById('mcm-remaining').innerHTML = p.meta || '';
+
+		pending = (typeof p.onClose === 'function') ? p.onClose : null;
+		var tr = document.getElementById('mcm-trait');
+		var note = p.note || '';
+		tr.hidden = (note === '');
+		if (note !== '') tr.textContent = note;
 
 		veil.classList.add('on');
 		veil.setAttribute('aria-hidden', 'false');
@@ -820,7 +866,8 @@ foreach ($ms_daily['days'] as $mcm_d) {
 			k.style.transitionDelay = (i * 0.11) + 's, 0s';
 			at(MCM_OPEN + MCM_KIDS_AT, function () { k.classList.add('in'); });
 		});
-	};
+	}
+	window.SK_REVEAL_SHOW = reveal;
 
 	function reset() {
 		timers.forEach(clearTimeout);
@@ -845,7 +892,9 @@ foreach ($ms_daily['days'] as $mcm_d) {
 		if (pending) {
 			var d = pending;
 			pending = null;
-			setTimeout(function () { DHC_SHOW_DROP(d); }, 260);
+			/* DHC_SHOW_DROP for a daily claim; whatever the caller
+			   deferred for anything else. Run here and nowhere else. */
+			setTimeout(function () { d(); }, 260);
 		}
 	}
 	window.SK_CLAIM_CLOSE = close;

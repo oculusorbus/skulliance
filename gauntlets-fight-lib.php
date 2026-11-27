@@ -234,6 +234,20 @@ function gaunt_grant_drop($conn, $user_id, $drop) {
  * The fight log, the victory screen and the loadout all read this, so
  * the three cannot drift apart.
  */
+/**
+ * The icon slug for any of the seven consumables, matching the files
+ * mission_daily_items() names -- so a Gauntlet chest draws the same
+ * picture the daily reward does for the same item.
+ */
+function gaunt_consumable_slug($consumable_id) {
+	switch ((int)$consumable_id) {
+		case GAUNTLET_C_FF:     return 'fast-forward';
+		case GAUNTLET_C_DOUBLE: return 'double-rewards';
+		case GAUNTLET_C_RANDOM: return 'random-reward';
+	}
+	return gaunt_heal_slug($consumable_id);
+}
+
 function gaunt_heal_slug($consumable_id) {
 	$pct = gaunt_heal_pct($consumable_id);
 	return $pct > 0 ? ($pct . '-success') : '';
