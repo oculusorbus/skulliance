@@ -293,7 +293,10 @@ if ($state === 'encounter') {
 /* Action buttons */
 .btn-fight            { width: 100%; padding: 14px; font-size: 1rem; font-weight: 700; background: #00c8a0; color: #000; border: none; border-radius: 8px; cursor: pointer; letter-spacing: .05em; transition: opacity .15s; margin-bottom: 16px; }
 .btn-fight:hover      { opacity: .85; }
-.btn-ff               { width: 100%; padding: 10px; font-size: .82rem; background: rgba(255,255,255,.07); color: rgba(255,255,255,.65); border: 1px solid rgba(255,255,255,.15); border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: all .15s; }
+/* Auto width and centred, like every other control in the fight. It
+   was full-bleed, which made a run-level action look like a page
+   section rather than a button. */
+.btn-ff               { display: block; margin: 0 auto 10px; width: auto; min-width: 260px; max-width: 100%; padding: 10px; font-size: .82rem; background: rgba(255,255,255,.07); color: rgba(255,255,255,.65); border: 1px solid rgba(255,255,255,.15); border-radius: 8px; cursor: pointer; transition: all .15s; }
 .btn-ff:hover         { background: rgba(255,255,255,.12); }
 .btn-ff:disabled      { opacity: .3; cursor: default; }
 .btn-start            { padding: 14px 40px; font-size: 1rem; font-weight: 700; background: #00c8a0; color: #000; border: none; border-radius: 8px; cursor: pointer; letter-spacing: .05em; transition: opacity .15s; }
@@ -604,6 +607,16 @@ if ($state === 'encounter') {
 		$gf_enc['player_img']   = $player_img;
 		$gf_enc['opponent_img'] = $opponent_img;
 		$gf_fight = gaunt_fight_start($conn, $user_id, $enc);
+		/*
+		 * FAST FORWARD IS A CHOICE, so it renders with the other
+		 * choices rather than after the battle log. Captured and handed
+		 * to the renderer because the log has to stay inside the
+		 * swapped fragment -- it is what updates every turn -- and
+		 * anything appended after the fight would necessarily sit below
+		 * it.
+		 */
+		$gf_extra = gauntletRenderFastForward($enc, $ff_count, $ff_hand);
+
 		gauntletRenderFight($gf_enc, $gf_fight,
 			gaunt_loadout($conn, $user_id, intval($enc['run_id']), $gf_fight),
 			/* Nothing to animate on a fresh page load -- the turn
@@ -611,34 +624,11 @@ if ($state === 'encounter') {
 			array(),
 			gaunt_theme_bg($conn, $enc['opponent_project_name'],
 			               intval($enc['opponent_project_id_real']),
-			               intval($enc['opponent_collection_id'])));
+			               intval($enc['opponent_collection_id'])),
+			$gf_extra);
 		include __DIR__ . '/gauntlets-fight-ui.php';
 	endif; ?>
 
-	<?php if ($ff_count > 0 && count($ff_hand) > 0): ?>
-	<button class="btn-ff" onclick="toggleFF()" type="button"><img src="icons/fast-forward.png" onerror="this.style.display='none'" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px;">Fast Forward — Swap Card (<?php echo $ff_count; ?> available)</button>
-	<div class="ff-overlay" id="ff-overlay">
-		<div class="ff-overlay-title">Pick a replacement card from your hand</div>
-		<div class="ff-hand-grid">
-		<?php foreach ($ff_hand as $card):
-			$img = getIPFS($card['ipfs'], $card['collection_id'], $card['project_id']);
-		?>
-			<div class="nft-card" onclick="submitFF(<?php echo intval($enc['id']); ?>, <?php echo intval($card['id']); ?>)">
-				<img class="nft-img" src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($card['name']); ?>" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
-				<div class="nft-card-info">
-					<div class="nft-card-name"><?php echo htmlspecialchars($card['name']); ?></div>
-					<div class="nft-card-project"><?php echo htmlspecialchars($card['project_name']); ?></div>
-				</div>
-			</div>
-		<?php endforeach; ?>
-		</div>
-	</div>
-	<form method="POST" id="ff-form">
-		<input type="hidden" name="action" value="fast_forward">
-		<input type="hidden" name="encounter_id" value="<?php echo intval($enc['id']); ?>">
-		<input type="hidden" name="new_nft_id" id="ff-new-nft-id" value="0">
-	</form>
-	<?php endif; ?>
 
 	<?php
 	/*

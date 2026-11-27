@@ -19,6 +19,46 @@
  * animates and sounds exactly what the server decided and nothing else.
  */
 
+/**
+ * Fast Forward: swap the fighter you were dealt.
+ *
+ * A RUN CONCERN RENDERED INSIDE THE FIGHT, because it is still a thing
+ * the player can DO and belongs beside the other choices rather than
+ * below the battle log. Extracted so both callers emit it -- without
+ * that, the AJAX fragment would drop it and Fast Forward would vanish
+ * after the first swing.
+ */
+function gauntletRenderFastForward($enc, $ff_count, $ff_hand) {
+	if ((int)$ff_count < 1 || !count($ff_hand)) return '';
+	ob_start(); ?>
+	<?php if ($ff_count > 0 && count($ff_hand) > 0): ?>
+	<button class="btn-ff" onclick="toggleFF()" type="button"><img src="icons/fast-forward.png" onerror="this.style.display='none'" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px;">Fast Forward — Swap Card (<?php echo $ff_count; ?> available)</button>
+	<div class="ff-overlay" id="ff-overlay">
+		<div class="ff-overlay-title">Pick a replacement card from your hand</div>
+		<div class="ff-hand-grid">
+		<?php foreach ($ff_hand as $card):
+			$img = getIPFS($card['ipfs'], $card['collection_id'], $card['project_id']);
+		?>
+			<div class="nft-card" onclick="submitFF(<?php echo intval($enc['id']); ?>, <?php echo intval($card['id']); ?>)">
+				<img class="nft-img" src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($card['name']); ?>" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
+				<div class="nft-card-info">
+					<div class="nft-card-name"><?php echo htmlspecialchars($card['name']); ?></div>
+					<div class="nft-card-project"><?php echo htmlspecialchars($card['project_name']); ?></div>
+				</div>
+			</div>
+		<?php endforeach; ?>
+		</div>
+	</div>
+	<form method="POST" id="ff-form">
+		<input type="hidden" name="action" value="fast_forward">
+		<input type="hidden" name="encounter_id" value="<?php echo intval($enc['id']); ?>">
+		<input type="hidden" name="new_nft_id" id="ff-new-nft-id" value="0">
+	</form>
+	<?php endif; ?>
+	<?php
+	return ob_get_clean();
+}
+
 /** Health bar with a damage trail and the figure on the bar itself. */
 function gf_bar($hp, $max, $side) {
 	$max = max(1, (int)$max);
@@ -54,7 +94,13 @@ function gf_bar($hp, $max, $side) {
  *        shake and every sound on every turn, so a fight got noisier
  *        and noisier as it went.
  */
-function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '') {
+/**
+ * $extra  markup to place with the CHOICES rather than after them --
+ *         Fast Forward lives in gauntlets.php (it swaps the fighter,
+ *         which is a run concern, not a fight one) but belongs beside
+ *         the other things a player can do, not below the battle log.
+ */
+function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '', $extra = '') {
 	$over = !empty($fight['over']);
 	$won  = ($fight['win'] ?? '') === 'you';
 
@@ -192,7 +238,9 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '') 
     </form>
     <p class="gf-hint">Armour, healing and staking all cost you the turn.
        Weapon swings are rationed for the whole run, not this fight.</p>
+    <?php if ($extra !== '') echo $extra; ?>
   <?php endif; ?>
+
 <?php /* THE LOG SITS UNDER THE CHOICES. Above them it pushed the
            buttons down the page as it filled, and the thing a player
            reaches for every turn should not move. */ ?>

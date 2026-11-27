@@ -616,6 +616,27 @@ ok(strpos($LIB, "if (\$item_id < 0) {
 ok(preg_match("~if \\(!empty\\(\\\$it\\['loot'\\]\\)\\).{0,80}gf-loot~s", $REN) === 1,
    'salvage is not marked, so it looks like owned gear the player keeps');
 
+echo "\nFast Forward is a choice, not a footnote\n";
+/*
+ * It swaps the fighter you were dealt, which is a run concern -- but it
+ * is still a thing the player DOES, so it belongs with the other
+ * choices rather than below the battle log. Extracted into its own
+ * renderer because both callers have to emit it: without that the AJAX
+ * fragment drops it and Fast Forward vanishes after the first swing.
+ */
+ok(strpos($REN, 'function gauntletRenderFastForward') !== false,
+   'Fast Forward is not a shared renderer, so the fragment will lose it after one turn');
+ok(strpos($AJX, 'gauntletRenderFastForward(') !== false,
+   'the turn endpoint does not re-render Fast Forward, so it disappears mid-fight');
+ok(strpos($PG, 'gauntletRenderFastForward(') !== false, 'the page does not render Fast Forward');
+ok(strpos($REN, 'if ($extra !== ' . "''" . ') echo $extra;') < strpos($REN, '<ul class="gf-log">'),
+   'Fast Forward renders below the battle log again');
+/* And only while there is a fight to swap out of. */
+ok(strpos($REN, 'if ($extra !== ' . "''" . ') echo $extra;') > strpos($REN, 'id="gf-form"'),
+   'Fast Forward renders above the action buttons rather than beside them');
+ok(strpos($REN, 'if ((int)$ff_count < 1 || !count($ff_hand)) return \'\';') !== false,
+   'Fast Forward renders with nothing to swap to');
+
 echo "\nthe log sits under the choices, and the result is one button\n";
 /* Above them the log pushed the buttons down the page as it filled, and
    the control a player reaches for every turn should not move. */

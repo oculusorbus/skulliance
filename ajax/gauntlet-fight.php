@@ -69,8 +69,31 @@ $enc = $q->fetch_assoc();
 $enc['player_img']   = getIPFS($enc['player_ipfs'],   $enc['player_cid'],   $enc['player_pid']);
 $enc['opponent_img'] = getIPFS($enc['opponent_ipfs'], $enc['opponent_cid'], $enc['opponent_pid']);
 
+/* The same Fast Forward the page renders, or it would vanish from the
+   fragment after the first swing. */
+$ff_count = getCurrentAmount($conn, $user_id, GAUNTLET_C_FF);
+$ff_hand  = array();
+if ($ff_count > 0) {
+	$hq = $conn->query("SELECT n.id, n.name, n.ipfs, n.collection_id, c.project_id,
+	                           p.name AS project_name
+	                      FROM gauntlets_nfts grn
+	                      INNER JOIN nfts n        ON n.id = grn.nft_id
+	                      INNER JOIN collections c ON c.id = n.collection_id
+	                      INNER JOIN projects p    ON p.id = c.project_id
+	                     WHERE grn.run_id = " . (int)$enc['run_id'] . "
+	                       AND n.id <> " . (int)$enc['player_nft_id']);
+	if ($hq) while ($hr = $hq->fetch_assoc()) {
+		$played = $conn->query("SELECT id FROM gauntlets_encounters
+		                         WHERE run_id=" . (int)$enc['run_id'] . "
+		                           AND player_nft_id=" . (int)$hr['id'] . " LIMIT 1");
+		if ($played && $played->num_rows) continue;
+		$ff_hand[] = $hr;
+	}
+}
+
 gauntletRenderFight($enc, $res['fight'],
 	gaunt_loadout($conn, $user_id, (int)$enc['run_id'], $res['fight']),
 	$res['timeline'],
 	gaunt_theme_bg($conn, $enc['opponent_project_name'],
-	                      (int)$enc['opponent_pid'], (int)$enc['opponent_cid']));
+	                      (int)$enc['opponent_pid'], (int)$enc['opponent_cid']),
+	gauntletRenderFastForward($enc, $ff_count, $ff_hand));
