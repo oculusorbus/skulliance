@@ -638,6 +638,31 @@ ok($gsr !== false && preg_match('~if \\(\\$gn_id\\) @\\$conn->query\\("UPDATE ga
         substr($DB, $gsr, $gsr_end - $gsr)) === 1,
    'a dealt hand is not seeded at full health, so every card is ambiguous until it fights');
 
+echo "\nthe deck shows what each card is carrying\n";
+/*
+ * Picking who to send is the same judgement Fast Forward asks for, and
+ * was just as blind: health persists across a run, so a card that
+ * fought and survived is not the card it was.
+ */
+ok(strpos($PG, 'gaunt_hand_hp($conn, intval($active_run[') !== false,
+   'the hand is not annotated with health, so the deck is picked blind');
+ok(strpos($PG, "gf_bar((int)" . '$' . "card['hp'], (int)" . '$' . "card['max'], 'hand')") !== false,
+   'the hand cards show no health bar');
+/*
+ * USED AND DOWN ARE DIFFERENT THINGS. Fast Forward swaps the fighter
+ * WITHOUT writing an encounter row, so a card can be hurt -- even
+ * killed -- without ever being marked used.
+ */
+ok(strpos($PG, "<span class=\"played-label\">Down</span>") !== false,
+   'a downed card is not distinguished from a used one');
+ok(strpos($PG, '$out  = !empty($card[' . "'played'" . ']) || !empty($card[' . "'down'" . ']);') !== false,
+   'a downed card is still selectable, and sending one loses the encounter instantly');
+/* The bar's CSS lives with the fight, so the deck has to pull it in. */
+ok(substr_count($PG, "include __DIR__ . '/gauntlets-fight-ui.php';") === 2,
+   'the deck does not include the fight UI, so its health bars render unstyled');
+ok(strpos($UI, "if (defined('GF_UI_DONE')) return;") !== false,
+   'the fight UI is not guarded, so including it twice duplicates the audio element');
+
 echo "\na swapped fighter brings its own health\n";
 /*
  * REPORTED: health stayed depleted after a swap. gauntletFastForward()

@@ -559,16 +559,39 @@ if ($state === 'encounter') {
 	</div>
 	<?php endif; ?>
 	<div class="section-heading">Your Hand — Pick a Card to Fight</div>
+	<?php
+	/*
+	 * THE HAND CARRIES ITS HEALTH, because picking who to send is the
+	 * same judgement Fast Forward asks for and was just as blind here:
+	 * health persists across a run, so a card that fought and survived
+	 * is not the card it was. A fighter at zero is out for the run and
+	 * cannot be sent at all.
+	 *
+	 * A card can be hurt WITHOUT being "used": Fast Forward swaps the
+	 * fighter without writing an encounter row, so damage and the Used
+	 * label are genuinely different things.
+	 */
+	$hand = gaunt_hand_hp($conn, intval($active_run['id']), $hand);
+	/* The bar's styling lives with the fight. Guarded by GF_UI_DONE, so
+	   including it here as well is free -- and its script boots only
+	   when there is a #gf-area to boot into, so the deck screen gets
+	   the CSS without the fight's audio or key handling. */
+	include __DIR__ . '/gauntlets-fight-ui.php';
+	?>
 	<div class="hand-grid">
 	<?php foreach ($hand as $card):
-		$img = getIPFS($card['ipfs'], $card['collection_id'], $card['project_id']);
+		$img  = getIPFS($card['ipfs'], $card['collection_id'], $card['project_id']);
+		$out  = !empty($card['played']) || !empty($card['down']);
 	?>
-		<div class="nft-card <?php echo $card['played'] ? 'played' : ''; ?>" onclick="pickCard(<?php echo intval($card['id']); ?>)">
-			<?php if ($card['played']): ?><span class="played-label">Used</span><?php endif; ?>
+		<div class="nft-card <?php echo $out ? 'played' : ''; ?>"
+		     <?php if (!$out): ?>onclick="pickCard(<?php echo intval($card['id']); ?>)"<?php endif; ?>>
+			<?php if (!empty($card['played'])): ?><span class="played-label">Used</span>
+			<?php elseif (!empty($card['down'])): ?><span class="played-label">Down</span><?php endif; ?>
 			<img class="nft-img" src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($card['name']); ?>" loading="lazy" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
 			<div class="nft-card-info">
 				<div class="nft-card-name"><?php echo htmlspecialchars($card['name']); ?></div>
 				<div class="nft-card-project"><?php echo htmlspecialchars($card['project_name']); ?></div>
+				<?php if (isset($card['hp'])) echo gf_bar((int)$card['hp'], (int)$card['max'], 'hand'); ?>
 			</div>
 		</div>
 	<?php endforeach; ?>
