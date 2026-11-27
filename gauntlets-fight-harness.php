@@ -14,7 +14,14 @@ $fail = 0;
 function ok($c, $w) { global $fail; if (!$c) { $fail++; echo "  FAIL  $w\n"; } }
 
 function kit($w = 0, $a = 0, $h = false) {
-	return array('weapon_level' => $w, 'armor_level' => $a, 'can_heal' => $h);
+	/* A heal is a REAL consumable now, so a kit that can heal names
+	   which one -- that is what gaunt_kit_for() builds and what the
+	   spoils hand over. */
+	/* The id guard keeps this usable in the pure section, which runs
+	   before db.php's consumable constants are in scope. */
+	$c75 = defined('GAUNTLET_C_75') ? GAUNTLET_C_75 : 2;
+	return array('weapon_level' => $w, 'armor_level' => $a, 'can_heal' => (bool)$h,
+	             'heal_cid' => $h ? $c75 : 0, 'heal_pct' => $h ? 75 : 0);
 }
 function bare()        { return array('type' => 'bare'); }
 function weapon($lv)   { return array('type' => 'weapon', 'level' => $lv, 'name' => 'W', 'sfx' => 'pistol'); }
@@ -289,21 +296,24 @@ gaunt_act($mine, weapon(9)); gaunt_act($mine, armour(5)); gaunt_act($mine, heal(
 ok(gaunt_spoils($mine) === array(),
    'the player\'s own weapon, armour and heal are being counted as spoils: '
  . json_encode(gaunt_spoils($mine)));
-/* A chance, not a certainty. */
-$hits = 0;
-for ($i = 0; $i < 200; $i++) if (gaunt_roll_drop(fought(kit(6, 4, true), $i))) $hits++;
-$rate = round(100 * $hits / 200);
-ok($rate > 25 && $rate < 85, "drops land $rate% of the time, which is a certainty or a rarity, not a chance");
-/* Replayable like everything else -- a reload must not re-roll a better one. */
-/* Several pairs: with only two or three possible spoils, one pair
-   matches by luck often enough to pass an unseeded roll. */
-$same = true;
-for ($i = 0; $i < 25; $i++) {
-	$a = gaunt_roll_drop(fought(kit(6, 4, true), 100 + $i));
-	$b = gaunt_roll_drop(fought(kit(6, 4, true), 100 + $i));
-	if (json_encode($a) !== json_encode($b)) { $same = false; break; }
-}
-ok($same, 'the drop is not seeded from the fight, so reloading re-rolls it');
+/*
+ * A CERTAINTY, and all of it. This used to be a 0.55 roll that then
+ * picked ONE of the things the opponent had used, so a fight where
+ * they healed themselves in front of you paid nothing 44% of the time
+ * and said nothing about why. REPORTED twice as missing items.
+ */
+$missed = 0;
+for ($i = 0; $i < 200; $i++) if (!gaunt_take_spoils(fought(kit(6, 4, true), $i))) $missed++;
+ok($missed === 0,
+   "a won fight paid no spoils $missed times in 200, so slaying an opponent who used items can still pay nothing");
+/* All of it: a foe that swung, armoured up AND healed loses all three. */
+$all = gaunt_take_spoils(fought(kit(6, 4, true), 3));
+$kinds = array(); foreach ($all as $sp) $kinds[$sp['kind']] = true;
+ok(count($kinds) === 3,
+   'only some of what the opponent used is taken: ' . implode(',', array_keys($kinds)));
+/* Nothing used, nothing taken -- the one case that pays zero. */
+ok(gaunt_take_spoils(gaunt_begin(array('hp' => 120, 'max' => 120), 50, kit(0), 5)) === array(),
+   'an opponent that used nothing still drops something');
 
 /* ====================================================================
  * THE PERSISTENCE LAYER. Pure parts driven; the rest asserted from
@@ -690,10 +700,12 @@ ok(strpos($dropblk, 'gaunt_fight_save($conn, $e, $fight);') !== false,
    'the drop is not persisted after it is added, so it is lost on the next read');
 ok(strpos($PG, "'drop'       => " . '$gf_drop,') !== false,
    'the victory screen is not told what dropped');
-ok(strpos($PG, 'Took their <?php echo htmlspecialchars($last_result[') !== false,
-   'the victory screen does not show the salvage');
+ok(strpos($PG, 'foreach ($rr_drops as $rd):') !== false,
+   'the victory screen does not list the salvage');
+ok(strpos($LIB, '$fight[\'drops\'][] = array(\'label\' => $word, \'icon\' => $dico);') !== false,
+   'the fight records no list of what was taken, so the victory screen can only name one item');
 /* With a picture, the same one the salvage wears in the loadout. */
-ok(strpos($PG, 'icons/<?php echo $rr_ico; ?>.png') !== false,
+ok(strpos($PG, 'icons/<?php echo htmlspecialchars($rr_ico); ?>.png') !== false,
    'the salvage line is words only, where every other reward on that screen has an icon');
 /* Chosen once, where the drop is recorded, so the victory screen and
    the loadout cannot disagree about what was taken. */

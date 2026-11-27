@@ -84,6 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$gf_closing = gaunt_fight_get($conn, $enc_id);
 			$gf_drop    = (string)($gf_closing['drop'] ?? '');
 			$gf_drop_ico = (string)($gf_closing['drop_icon'] ?? '');
+			$gf_drops   = (isset($gf_closing['drops']) && is_array($gf_closing['drops']))
+			              ? $gf_closing['drops'] : array();
 			/* The fight decided this over a dozen exchanges; this only
 			   records it and pays it out. */
 			$outcome = gauntletResolveFight($conn, $user_id, $enc_id);
@@ -113,6 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						   dropped. */
 						'drop'       => $gf_drop,
 						'drop_icon'  => $gf_drop_ico,
+						'drops'      => $gf_drops,
 						'amount'     => ($wnum2 * 100) * ($is_dbl ? 2 : 1),
 						'currency'   => $actual_currency,
 						'win_number' => $wnum2,
@@ -370,6 +373,7 @@ if ($state === 'encounter') {
 .rr-drop    { margin-top: 10px; font-size: .95rem; font-weight: 700; color: #ffc800;
               letter-spacing: .04em; display: flex; flex-wrap: wrap;
               align-items: center; justify-content: center; gap: 8px; }
+.rr-took    { display: inline-flex; align-items: center; gap: 7px; }
 .rr-drop img { width: 24px; height: 24px; object-fit: contain; }
 /* Its own full-width row under the icon and the words, which is what
    the block display did before this line became a flex row. */
@@ -416,16 +420,28 @@ if ($state === 'encounter') {
 			<img src="icons/<?php echo htmlspecialchars(strtolower($last_result['currency'])); ?>.png" onerror="this.src='icons/skull.png'" alt="">
 			<?php echo htmlspecialchars($last_result['currency']); ?>
 		</div>
-		<?php if (!empty($last_result['drop'])): ?>
-			<?php /* The real item's own icon, chosen where the drop was
-			         recorded so this screen and the loadout cannot
-			         disagree about what was taken. */
-			   $rr_ico = (string)($last_result['drop_icon'] ?? ''); ?>
+		<?php
+		/* EVERY item they used, each with the real item's own icon --
+		   chosen where the drop was recorded, so this screen and the
+		   loadout cannot disagree about what was taken. `drops` is the
+		   list; `drop` is the older single field, kept so a fight that
+		   closed before the list existed still names its one item. */
+		$rr_drops = (isset($last_result['drops']) && is_array($last_result['drops']))
+		            ? $last_result['drops'] : array();
+		if (!$rr_drops && !empty($last_result['drop']))
+			$rr_drops = array(array('label' => $last_result['drop'],
+			                        'icon'  => (string)($last_result['drop_icon'] ?? '')));
+		if ($rr_drops): ?>
 			<div class="rr-drop">
-				<?php if ($rr_ico !== ''): ?><img src="icons/<?php echo $rr_ico; ?>.png"
-				     alt="" onerror="this.style.display='none'"><?php endif; ?>
-				<span>Took their <?php echo htmlspecialchars($last_result['drop']); ?></span>
-				<span class="rr-drop-note">yours for this run</span></div>
+				<?php foreach ($rr_drops as $rd):
+					$rr_ico = (string)($rd['icon'] ?? ''); ?>
+					<span class="rr-took">
+						<?php if ($rr_ico !== ''): ?><img src="icons/<?php echo htmlspecialchars($rr_ico); ?>.png"
+						     alt="" onerror="this.style.display='none'"><?php endif; ?>
+						<?php echo htmlspecialchars((string)($rd['label'] ?? '')); ?>
+					</span>
+				<?php endforeach; ?>
+				<span class="rr-drop-note">Taken off them - yours for this run</span></div>
 		<?php endif; ?>
 		<div class="rr-win-num">Win <?php echo intval($last_result['win_number']); ?> of <?php echo GAUNTLET_MAX_WINS; ?></div>
 		<?php else: ?>

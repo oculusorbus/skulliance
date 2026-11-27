@@ -146,7 +146,14 @@ if (!defined('GAUNT_FOE_CAP_MARGIN')) define('GAUNT_FOE_CAP_MARGIN', 0);
 /* How often a slain opponent gives up something they used. Not a
    certainty: three encounters each handing over everything would flood a
    run and make the player's own inventory beside the point. */
-if (!defined('GAUNT_DROP_CHANCE'))    define('GAUNT_DROP_CHANCE',    0.55);
+/*
+ * NO DROP CHANCE ANY MORE. This was 0.55, and one spoil was then picked
+ * at random out of everything the opponent had used -- so a fight where
+ * they healed themselves in front of you paid nothing 44% of the time,
+ * with the victory screen saying nothing about why. REPORTED twice as
+ * missing items. The rule is now the one a player can actually predict:
+ * whatever they used against you, you take off them.
+ */
 
 /* How much salvage taken during a run can swell its chest. Capped so a
    long run of lucky drops cannot mint consumables without limit. */
@@ -565,12 +572,8 @@ function gaunt_spoils($fight) {
  * Seeded from the fight, so it is replayable like everything else and a
  * reload cannot re-roll a better drop.
  */
-function gaunt_roll_drop($fight) {
-	$spoils = gaunt_spoils($fight);
-	if (!$spoils) return null;
-	$f = array('seed' => (int)(($fight['seed'] ?? 1) ^ 0x5EED));
-	if (gaunt_rand($f) > GAUNT_DROP_CHANCE) return null;
-	return $spoils[gaunt_rint($f, 0, count($spoils) - 1)];
+function gaunt_take_spoils($fight) {
+	return gaunt_spoils($fight);
 }
 
 /* ===================== THE CHEST =====================================

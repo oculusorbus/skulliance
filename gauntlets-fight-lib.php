@@ -519,8 +519,10 @@ function gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item_id = 0) {
 	 * the slaying are paid separately and are untouched.
 	 */
 	if (!empty($fight['over']) && ($fight['win'] ?? '') === 'you') {
-		$drop = gaunt_roll_drop($fight);
-		if ($drop) {
+		/* EVERYTHING they used, not one of them at a 55% chance. */
+		$taken = gaunt_take_spoils($fight);
+		$fight['drops'] = array();
+		foreach ($taken as $drop) {
 			$gs['loot'][] = array('kind' => $drop['kind'],
 				'level' => (int)($drop['level'] ?? 0), 'pct' => (int)($drop['pct'] ?? 0),
 				/* The real row it came off, so the loadout can show the
@@ -529,7 +531,6 @@ function gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item_id = 0) {
 				'cid'     => (int)($drop['cid'] ?? 0),
 				'name'    => (string)($drop['name'] ?? ''),
 				'left'  => (int)$drop['uses']);
-			gaunt_gear_state_save($conn, $run_id, $gs);
 			$word = gaunt_drop_label($drop);
 			$dico = gaunt_drop_icon($drop);
 			$entry = array('who' => 'you', 'kind' => 'loot', 'sfx' => 'equip',
@@ -548,6 +549,10 @@ function gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item_id = 0) {
 			   the encounter closes, and knew nothing about salvage. */
 			$fight['drop'] = $word;
 			$fight['drop_icon'] = $dico;
+			$fight['drops'][] = array('label' => $word, 'icon' => $dico);
+		}
+		if ($taken) {
+			gaunt_gear_state_save($conn, $run_id, $gs);
 			gaunt_fight_save($conn, $e, $fight);
 		}
 	}
