@@ -369,6 +369,66 @@ these items DO inside a gauntlet can change without touching anything else.
 Their display NAMES are platform-wide -- they are earned through missions
 -- so the names have to keep making sense in both places.
 
+## Music, and the architecture it forces
+
+### The tracks are already the state machine
+
+`audio/tracks/` holds **Crypt Crawl Theme / Frantic / Doom / Death /
+Triumph / Reprise**. Audio is git-tracked (unlike images, which deploy by
+FTP), so these are already in the repository.
+
+They map onto the run without anything new being written:
+
+  - **Theme** -- an ordinary encounter;
+  - **Frantic** -- health low, or the squad thinning;
+  - **Doom** -- the last NFT standing;
+  - **Death** -- squad wiped;
+  - **Triumph** -- a sweep;
+  - **Reprise** -- spare; the run-over screen is the obvious home.
+
+### THIS FORCES THE TURN LOOP TO BE AN AJAX FRAGMENT SWAP
+
+Not a polish item. Gauntlets today is POST-and-full-reload -- the `$state`
+machine, `$_SESSION['gauntlet_flash']`, the POST handler at the top of
+`gauntlets.php`. A turn-based fight has many more actions than today's
+three clicks, so on the current architecture the music restarts on EVERY
+TURN and the per-action sounds fight the page reload as well.
+
+Crypt Crawl hit this exact wall and solved it. From `cryptcrawl-render.php`:
+
+> every action used to be a full page reload, which tore down and rebuilt
+> the `<audio>` element every single time, audibly stuttering the ambient
+> music player
+
+The fix, to be copied wholesale:
+
+  1. `ajax/cryptcrawl-action.php` returns a RENDERED FRAGMENT, so the
+     client swaps `#cc-game-area` in place with no real navigation;
+  2. the `<audio>` element sits OUTSIDE the swapped region --
+     `cryptcrawl.php:599` calls that out as "what actually keeps the music
+     playing continuously across actions".
+
+And `cryptcrawl-render.php` is shared by BOTH the AJAX path and the no-JS
+POST->redirect->GET fallback, from one copy of the markup, so the game
+still works without JavaScript and only loses continuous audio. That is the
+shape Gauntlets wants.
+
+Note this does not weaken server authority: the fragment endpoint still
+resolves everything server-side and returns rendered state, exactly as
+Crypt Conquest does one AJAX call per turn.
+
+### Volume balance transfers
+
+`cryptcrawl.php:652-662` records that per-sound levels were already tuned
+AGAINST the music -- quieter cues sit under it, with `fist` and `laststand`
+called out as the loud ones. That tuning carries over rather than being
+redone.
+
+### Open: crossfade
+
+Swapping `src` is a hard cut. Moving Theme -> Frantic smoothly needs two
+audio elements and a short gain ramp. Small, but not free.
+
 ## Still to settle
 
   - Damage numbers, HP scale, and what a weapon level is worth.
@@ -378,3 +438,5 @@ Their display NAMES are platform-wide -- they are earned through missions
     gives pacing relief).
   - Whether the opponent template is capped, scaled, or raw.
   - Retuned reward rates for a run that ends on squad wipe.
+  - Exactly which thresholds move Theme -> Frantic -> Doom (health, squad
+    size, or both).
