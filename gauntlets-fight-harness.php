@@ -1,0 +1,264 @@
+<?php
+/* gauntlets-fight-harness.php — CLI only. Pure. No database.
+ *
+ *     php gauntlets-fight-harness.php            assertions
+ *     php gauntlets-fight-harness.php balance    simulate and report
+ *
+ * The engine is pure, so this DRIVES it rather than reading it. Every
+ * claim below is about behaviour that no source search could see.
+ */
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+require_once __DIR__ . '/gauntlets-engine.php';
+
+$fail = 0;
+function ok($c, $w) { global $fail; if (!$c) { $fail++; echo "  FAIL  $w\n"; } }
+
+function kit($w = 0, $a = 0, $h = false) {
+	return array('weapon_level' => $w, 'armor_level' => $a, 'can_heal' => $h);
+}
+function bare()        { return array('type' => 'bare'); }
+function weapon($lv)   { return array('type' => 'weapon', 'level' => $lv, 'name' => 'W', 'sfx' => 'pistol'); }
+function armour($lv)   { return array('type' => 'armor',  'level' => $lv, 'name' => 'A'); }
+function heal($pct)    { return array('type' => 'heal',   'pct'   => $pct); }
+
+/** Play a whole fight with a fixed policy. Returns the finished state. */
+function play($playerHp, $wc, $kit, $seed, $policy) {
+	$f = gaunt_begin(array('hp' => $playerHp, 'max' => GAUNT_HP_BASE), $wc, $kit, $seed);
+	$guard = 0;
+	while (empty($f['over']) && $guard++ < 200) gaunt_act($f, $policy($f));
+	return $f;
+}
+
+/* ------------------------------------------------------------------ */
+echo "it is deterministic\n";
+/* Replayability is what makes a result auditable and a bug reproducible,
+   and it is the whole reason the seed rides on the fight. */
+$p = function ($f) { return bare(); };
+$a = play(GAUNT_HP_BASE, 50, kit(3), 12345, $p);
+$b = play(GAUNT_HP_BASE, 50, kit(3), 12345, $p);
+ok($a['you']['hp'] === $b['you']['hp'] && $a['win'] === $b['win']
+   && count($a['log']) === count($b['log']),
+   'the same seed does not replay the same fight');
+$c = play(GAUNT_HP_BASE, 50, kit(3), 999, $p);
+ok($a['log'] !== $c['log'], 'a different seed produces an identical fight, so the seed is unused');
+
+echo "\nevery fight ends\n";
+/* A fight that cannot end is a bug, not a stalemate -- two bare-handed
+   fighters is the slowest case there is. */
+$slow = play(GAUNT_HP_BASE, 30, kit(0), 7, $p);
+ok(!empty($slow['over']), 'a bare-handed fight against a bare-handed foe never terminates');
+ok($slow['turn'] <= GAUNT_MAX_TURNS, 'the turn cap did not hold');
+ok($slow['win'] === 'you' || $slow['win'] === 'foe', 'a finished fight has no winner');
+
+echo "\nneither side has a structural edge\n";
+/*
+ * TURN ORDER IS WORTH MORE THAN ANY ITEM IF IT IS NOT ROLLED. With the
+ * player always moving first, two identical bare-handed fighters came out
+ * 73/27 -- measured. That bias would swamp the 3% matchup and make every
+ * other number in the engine a fiction.
+ */
+$sym = 0;
+for ($s = 0; $s < 600; $s++) if (play(GAUNT_HP_BASE, 50, kit(0), $s, $p)['win'] === 'you') $sym++;
+$sym = round(100 * $sym / 600);
+ok($sym >= 43 && $sym <= 57,
+   "two identical bare-handed fighters come out $sym/" . (100 - $sym) . ", so something favours a side");
+/*
+ * AND THE OPPONENT'S SWINGS ARE RATIONED LIKE THE PLAYER'S. Unlimited,
+ * it swings its best weapon every turn while the player counts theirs,
+ * and an evenly matched fight stops being even.
+ */
+$fair = 0;
+for ($s = 0; $s < 600; $s++) {
+	$f = gaunt_begin(array('hp' => GAUNT_HP_BASE, 'max' => GAUNT_HP_BASE), 50, kit(6), $s);
+	$left = gaunt_weapon_uses(6); $g = 0;
+	while (empty($f['over']) && $g++ < 300) {
+		if ($left > 0) { $left--; gaunt_act($f, weapon(6)); } else gaunt_act($f, bare());
+	}
+	if ($f['win'] === 'you') $fair++;
+}
+$fair = round(100 * $fair / 600);
+ok($fair >= 40 && $fair <= 60,
+   "two equally armed fighters come out $fair/" . (100 - $fair) . "; the opponent is not rationing its swings");
+
+echo "\na fight that cannot end is capped\n";
+/* Unreachable in normal play, which is exactly why it needs testing
+   directly rather than hoping a slow fight wanders into it. */
+$cap = gaunt_begin(array('hp' => 999999, 'max' => 999999), 50, kit(0), 4);
+$cap['foe']['hp'] = 999999; $cap['foe']['max'] = 999999;
+$g = 0;
+while (empty($cap['over']) && $g++ < 500) gaunt_act($cap, bare());
+ok(!empty($cap['over']) && $cap['turn'] <= GAUNT_MAX_TURNS,
+   'an unwinnable fight ran past the turn cap instead of being decided');
+
+echo "\narmour soaks, wears out, and costs the turn it goes on\n";
+/* READ THE TIMELINE, NOT THE END STATE. gaunt_act() plays the player's
+   action AND the opponent's reply, so the final pool has already been
+   chewed into -- an earlier version of this check asserted the full pool
+   afterwards and failed against a working engine. */
+$f = gaunt_begin(array('hp' => 100, 'max' => 100), 50, kit(0), 5);
+$before = $f['foe']['hp'];
+$tl = gaunt_act($f, armour(5));
+$put = null; foreach ($tl as $e) if ($e['kind'] === 'armor' && $e['who'] === 'you') $put = $e;
+ok($put !== null && (int)$put['pool'] === 5 * GAUNT_ARM_POOL_PER_LEVEL,
+   'armour did not go on, or the pool it reports is wrong');
+ok($f['you']['armLevel'] === 5, 'the armour level did not stick');
+ok($f['foe']['hp'] === $before, 'wearing armour also damaged the opponent, so it costs no turn');
+/* It must actually reduce what lands. */
+$armoured = gaunt_begin(array('hp' => 100, 'max' => 100), 50, kit(8), 5);
+gaunt_act($armoured, armour(5));
+$naked = gaunt_begin(array('hp' => 100, 'max' => 100), 50, kit(8), 5);
+gaunt_act($naked, bare());
+ok($armoured['you']['hp'] > $naked['you']['hp'] - 1,
+   'armour did not reduce incoming damage at all');
+/* And it is finite -- a pool that never empties is a percentage. */
+$g = gaunt_begin(array('hp' => 9999, 'max' => 9999), 50, kit(9), 3);
+gaunt_act($g, armour(1));
+for ($i = 0; $i < 40 && $g['you']['arm'] > 0; $i++) gaunt_act($g, bare());
+ok($g['you']['arm'] === 0 && $g['you']['armLevel'] === 0,
+   'the armour pool never empties, so armour is permanent mitigation');
+
+/*
+ * AND THE OPPONENT MAY ARMOUR ONCE. Re-applying it whenever the pool
+ * emptied is unlimited mitigation -- traced as a mirror match the player
+ * lost 100 times in 100, with hits landing for 0.
+ */
+$rep = gaunt_begin(array('hp' => 99999, 'max' => 99999), 50, kit(0, 4), 8);
+$g = 0;
+while (empty($rep['over']) && $g++ < 120) gaunt_act($rep, weapon(10));
+$puts = 0; foreach ($rep['log'] as $e) if ($e['who'] === 'foe' && $e['kind'] === 'armor') $puts++;
+ok($puts <= 1, "the opponent put armour on $puts times in one fight, which is unlimited mitigation");
+
+echo "\nthe opponent is never better equipped than the player\n";
+/*
+ * THE WHOLE DIFFICULTY CURVE. The kit comes from the rival player's
+ * inventory, so uncapped it is matchmaking luck that decides whether a
+ * run is playable: an empty-handed player against a level-8 template
+ * wins 0% of the time, measured, and cannot bank the single win that
+ * pays the smallest chest.
+ */
+$rich = array('weapon_level' => 9, 'armor_level' => 7, 'can_heal' => true);
+$none = gaunt_cap_kit($rich, 0, 0, false);
+ok($none['weapon_level'] <= GAUNT_FOE_CAP_MARGIN && $none['armor_level'] <= GAUNT_FOE_CAP_MARGIN,
+   'a player holding nothing still faces an armed opponent: ' . json_encode($none));
+ok($none['can_heal'] === false,
+   'the opponent heals against a player who holds no heal, which is the biggest item in the kit');
+$mid = gaunt_cap_kit($rich, 4, 3, true);
+ok($mid['weapon_level'] === 4 + GAUNT_FOE_CAP_MARGIN && $mid['armor_level'] === 3 + GAUNT_FOE_CAP_MARGIN,
+   'the cap does not track the player\'s own gear: ' . json_encode($mid));
+$full = gaunt_cap_kit($rich, 20, 20, true);
+ok($full['weapon_level'] === 9 && $full['armor_level'] === 7,
+   'the cap lowers an opponent below its real template for a well-equipped player');
+
+echo "\nhealing cannot exceed the maximum\n";
+/* Same reason: measure the heal from its own timeline entry, since the
+   opponent swings before gaunt_act() returns. */
+$h = gaunt_begin(array('hp' => 95, 'max' => 100), 50, kit(0), 11);
+$tl = gaunt_act($h, heal(100));
+$got = null; foreach ($tl as $e) if ($e['kind'] === 'heal' && $e['who'] === 'you') $got = $e;
+ok($got !== null && (int)$got['amount'] === 5,
+   'a heal did not stop at the maximum: it restored ' . ($got['amount'] ?? '?') . ' into 5 missing');
+/* And it costs the turn, exactly like armour. */
+$h2 = gaunt_begin(array('hp' => 50, 'max' => 100), 50, kit(0), 11);
+$fb = $h2['foe']['hp'];
+gaunt_act($h2, heal(25));
+ok($h2['foe']['hp'] === $fb, 'healing also damaged the opponent');
+ok($h2['you']['hp'] > 50 - 20, 'the heal did not restore anything meaningful');
+
+echo "\nbigger weapons hit harder\n";
+$tot = array();
+foreach (array(1, 5, 10) as $lv) {
+	$sum = 0;
+	for ($s = 0; $s < 60; $s++) {
+		$f = gaunt_begin(array('hp' => 9999, 'max' => 9999), 50, kit(0), $s);
+		$before = $f['foe']['hp'];
+		gaunt_act($f, weapon($lv));
+		$sum += $before - $f['foe']['hp'];
+	}
+	$tot[$lv] = $sum / 60;
+}
+ok($tot[1] < $tot[5] && $tot[5] < $tot[10],
+   'weapon level does not increase damage: ' . json_encode($tot));
+/* And bare hands are the weakest thing in the game, or a weapon is a
+   downgrade and nobody would ever spend a swing. */
+$bareAvg = 0;
+for ($s = 0; $s < 60; $s++) {
+	$f = gaunt_begin(array('hp' => 9999, 'max' => 9999), 50, kit(0), $s);
+	$before = $f['foe']['hp'];
+	gaunt_act($f, bare());
+	$bareAvg += $before - $f['foe']['hp'];
+}
+$bareAvg /= 60;
+ok($bareAvg < $tot[1], 'bare hands hit at least as hard as the weakest weapon');
+
+echo "\nthe matchup tilts a fight without deciding it\n";
+/*
+ * THE POINT OF SETTING THE OPPONENT'S HEALTH RATHER THAN YOURS. A
+ * favourable matchup should be worth about one good item. If the underdog
+ * never wins, this is more deterministic than the coin flip it replaced,
+ * which would be a worse game and not a better one.
+ */
+/* MEASURED BARE AGAINST BARE, deliberately. The matchup changes the
+   OPPONENT'S health, so its effect is only visible from a position the
+   player can contest -- an earlier version measured it against an
+   uncapped level-4 template, where the player loses almost every fight
+   whatever the matchup, and the tilt was invisible under the floor. */
+$wins = array();
+foreach (array(70, 50, 30) as $wc) {
+	$w = 0;
+	for ($s = 0; $s < 400; $s++)
+		if (play(GAUNT_HP_BASE, $wc, kit(0), $s, $p)['win'] === 'you') $w++;
+	$wins[$wc] = round(100 * $w / 400);
+}
+ok($wins[70] > $wins[50] && $wins[50] > $wins[30],
+   'the matchup does not tilt the result at all: ' . json_encode($wins));
+ok($wins[30] >= 12,
+   'the underdog wins only ' . $wins[30] . '% -- worse than the 30% coin flip this replaced');
+ok($wins[70] <= 92,
+   'a favourable matchup wins ' . $wins[70] . '% of the time, which is a verdict not a tilt');
+
+echo "\nweapon swings are scarce at the top and plentiful at the bottom\n";
+ok(gaunt_weapon_uses(10) === GAUNT_WPN_USES_MIN, 'the heaviest weapon is not the scarcest');
+ok(gaunt_weapon_uses(1) > gaunt_weapon_uses(10), 'swings do not fall as level rises');
+ok(gaunt_weapon_uses(1) <= 10, 'the weakest weapon has more swings than a run could use');
+
+echo "\nthe timeline carries what the client needs to animate\n";
+$f = gaunt_begin(array('hp' => 100, 'max' => 100), 50, kit(6), 42);
+$entries = gaunt_act($f, weapon(9));
+ok(count($entries) >= 1, 'an action produced no timeline at all');
+$e = $entries[0];
+foreach (array('who', 'kind', 'text', 'sfx') as $k)
+	ok(isset($e[$k]), "a timeline entry has no '$k', so the client cannot animate or sound it");
+ok($e['who'] === 'you' && $e['kind'] === 'hit', 'the first entry is not the action just taken');
+/* The big flag is what picks hitBig over hit. */
+/* ON THE PLAYER'S OWN ENTRY. Scanning every entry passed while only the
+   opponent's hits carried the flag. */
+$mine = null; foreach ($entries as $x) if ($x['who'] === 'you' && $x['kind'] === 'hit') $mine = $x;
+ok($mine !== null && isset($mine['big']),
+   "the player's own hit carries no big flag, so every hit animates identically");
+
+echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all fight checks passed\n");
+
+/* ------------------------------------------------------------------ */
+if (($argv[1] ?? '') === 'balance') {
+	echo "\n=== balance ===\n";
+	$greedy = function ($f) { return weapon(6); };
+	$rows = array(
+		'bare vs bare'            => array(kit(0),            $p),
+		'bare vs lv4'             => array(kit(4),            $p),
+		'bare vs lv8+armour+heal' => array(kit(8, 5, true),   $p),
+		'lv6 vs lv4'              => array(kit(4),            $greedy),
+		'lv6 vs lv8+armour+heal'  => array(kit(8, 5, true),   $greedy),
+	);
+	printf("  %-26s %5s %6s %6s\n", '', 'win%', 'turns', 'hp');
+	foreach ($rows as $label => $cfg) {
+		$w = 0; $t = 0; $hp = 0; $N = 400;
+		for ($s = 0; $s < $N; $s++) {
+			$f = play(100, 50, $cfg[0], $s, $cfg[1]);
+			if ($f['win'] === 'you') { $w++; $hp += $f['you']['hp']; }
+			$t += $f['turn'];
+		}
+		printf("  %-26s %4d%% %6.1f %6.1f\n", $label, round(100 * $w / $N),
+		       $t / $N, $w ? $hp / $w : 0);
+	}
+}
+exit($fail ? 1 : 0);
