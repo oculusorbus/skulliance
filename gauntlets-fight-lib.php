@@ -220,20 +220,22 @@ function gaunt_loadout($conn, $user_id, $run_id) {
 		if ($g['type'] === 'weapon') {
 			$lv    = (int)$g['weapon_level'];
 			$spent = (int)($gs['wpn'][$id] ?? 0);
-			$left  = max(0, gaunt_weapon_uses($lv) - $spent);
+			$qty   = (int)$g['quantity'];
+			$left  = max(0, gaunt_weapon_uses($lv, $qty) - $spent);
 			$out['weapons'][] = array(
 				'type' => 'weapon', 'id' => $id, 'name' => $g['weapon_name'],
-				'level' => $lv, 'left' => $left,
+				'level' => $lv, 'left' => $left, 'qty' => $qty,
 				'slug' => gaunt_weapon_slug($g['weapon_name']),
 				'sfx'  => gaunt_weapon_sfx($g['weapon_name']),
 			);
 		} elseif ($g['type'] === 'armor') {
 			$lv    = (int)$g['armor_level'];
+			$qty   = (int)$g['quantity'];
 			$spent = (int)($gs['arm'][$id] ?? 0);
-			$left  = max(0, gaunt_weapon_uses($lv) - $spent);
+			$left  = max(0, gaunt_weapon_uses($lv, $qty) - $spent);
 			$out['armor'][] = array(
 				'type' => 'armor', 'id' => $id, 'name' => $g['armor_name'],
-				'level' => $lv, 'left' => $left, 'sfx' => 'equip',
+				'level' => $lv, 'left' => $left, 'qty' => $qty, 'sfx' => 'equip',
 			);
 		}
 	}

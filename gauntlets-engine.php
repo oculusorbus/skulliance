@@ -92,6 +92,10 @@ if (!defined('GAUNT_WPN_SPREAD'))     define('GAUNT_WPN_SPREAD',     3);
  */
 if (!defined('GAUNT_WPN_USES_BASE'))  define('GAUNT_WPN_USES_BASE',  7);
 if (!defined('GAUNT_WPN_USES_MIN'))   define('GAUNT_WPN_USES_MIN',   2);
+/* How many copies of one item can count. Beyond this a bigger stack is
+   just a bigger stack -- gear is never consumed, so an uncapped count
+   is unlimited ammunition. */
+if (!defined('GAUNT_WPN_STACK_MAX'))  define('GAUNT_WPN_STACK_MAX',  3);
 
 /*
  * ARMOUR IS A POOL THAT SOAKS, NOT A PERCENTAGE.
@@ -172,9 +176,23 @@ function gaunt_rint(&$f, $lo, $hi) {
 /* ===================== SHAPE ==========================================
  * How many swings a weapon of this level gets for a whole run.
  * ===================================================================== */
-function gaunt_weapon_uses($level) {
+/**
+ * How many swings a weapon of this level gets for a whole run.
+ *
+ * HOW MANY YOU HOLD MATTERS, and at first it did not: quantity was only
+ * a "do you have any" gate, so one pistol and twenty pistols granted
+ * identical swings. REPORTED -- a stack that never shrinks and never
+ * helps reads as the run ignoring your inventory altogether.
+ *
+ * Each copy grants another set of swings, CAPPED, because gear is
+ * durable here: it is not consumed, so an uncapped stack would be
+ * effectively unlimited ammunition for anyone who has hoarded.
+ */
+function gaunt_weapon_uses($level, $qty = 1) {
 	$level = max(1, (int)$level);
-	return max(GAUNT_WPN_USES_MIN, GAUNT_WPN_USES_BASE - $level);
+	$base  = max(GAUNT_WPN_USES_MIN, GAUNT_WPN_USES_BASE - $level);
+	$stack = max(1, min((int)$qty, GAUNT_WPN_STACK_MAX));
+	return $base * $stack;
 }
 
 /**

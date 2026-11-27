@@ -216,6 +216,29 @@ ok($wins[30] >= 12,
 ok($wins[70] <= 92,
    'a favourable matchup wins ' . $wins[70] . '% of the time, which is a verdict not a tilt');
 
+echo "\nhow many you hold matters\n";
+/*
+ * REPORTED: the same pistol and katana after every run at the same
+ * quantity, with the runs seeming not to use them. Two things, and only
+ * one was a bug.
+ *
+ * The quantity NOT DROPPING is deliberate -- gear is durable here, it
+ * wears down across a run and resets after, because permanently
+ * destroyed gear is what makes players hoard it and never play one.
+ *
+ * But quantity doing NOTHING was real: it was a "do you have any" gate,
+ * so one pistol and twenty granted identical swings. A stack that
+ * neither shrinks nor helps reads as the run ignoring your inventory.
+ */
+ok(gaunt_weapon_uses(3, 2) > gaunt_weapon_uses(3, 1),
+   'holding a second copy of a weapon grants no extra swings');
+ok(gaunt_weapon_uses(3, 99) === gaunt_weapon_uses(3, GAUNT_WPN_STACK_MAX),
+   'a stack is uncapped, which is unlimited ammunition for gear that is never consumed');
+ok(gaunt_weapon_uses(10, 3) < gaunt_weapon_uses(1, 3),
+   'the heaviest weapon stops being the scarcest once quantity is counted');
+ok(gaunt_weapon_uses(5) === gaunt_weapon_uses(5, 1),
+   'the one-argument form changed meaning, which would silently re-arm every opponent');
+
 echo "\nweapon swings are scarce at the top and plentiful at the bottom\n";
 ok(gaunt_weapon_uses(10) === GAUNT_WPN_USES_MIN, 'the heaviest weapon is not the scarcest');
 ok(gaunt_weapon_uses(1) > gaunt_weapon_uses(10), 'swings do not fall as level rises');
@@ -493,6 +516,13 @@ ok(strpos($REN, 'data-bg=') !== false,
    'the fragment does not say why it has no backdrop, so the next report needs a bisect');
 ok(strpos($REN, 'gf-has-bg') !== false, 'the renderer never applies the backdrop class');
 ok(strpos($UI, '.gf-has-bg::before') !== false, 'the backdrop has no styling, so it will not show');
+
+/* The loadout has to actually pass the count through, or the cap above
+   is arithmetic nothing calls. */
+ok(preg_match_all('~gaunt_weapon_uses\\(\\$lv, \\$qty\\)~', $LIB) === 2,
+   'a loadout branch does not pass how many you hold, so quantity is ignored there');
+ok(substr_count($LIB, "'qty' => \$qty") === 2,
+   'the offered actions do not carry the quantity, so the UI cannot explain it');
 
 echo "\nsalvage is run-scoped, and reads as temporary\n";
 /* It must never reach the real inventory -- that is the line between

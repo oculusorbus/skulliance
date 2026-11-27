@@ -157,14 +157,16 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '') 
                      onerror="this.style.display='none'">
                 <span><?php echo htmlspecialchars($it['name']); ?></span>
                 <?php if (!empty($it['loot'])): ?><em class="gf-loot" title="taken off an opponent; gone when the run ends">salvage</em><?php endif; ?>
-                <em class="gf-left" title="swings left this run"><?php echo (int)$it['left']; ?></em>
+                <em class="gf-left" title="<?php echo (int)$it['left']; ?> swings left this run<?php
+                    if (!empty($it['qty'])) echo ' — you hold ' . (int)$it['qty']; ?>"><?php echo (int)$it['left']; ?></em>
               </button>
             <?php elseif ($t === 'armor'): $dis = $it['left'] < 1; ?>
               <button type="submit" name="turn" value="armor:<?php echo (int)$it['id']; ?>"
                       class="gf-btn gf-arm<?php echo $dis ? ' is-spent' : ''; ?>"
                       <?php echo $dis ? 'disabled' : ''; ?> data-sfx="equip">
                 <span><?php echo htmlspecialchars($it['name']); ?></span>
-                <em class="gf-left" title="uses left this run"><?php echo (int)$it['left']; ?></em>
+                <em class="gf-left" title="<?php echo (int)$it['left']; ?> uses left this run<?php
+                    if (!empty($it['qty'])) echo ' — you hold ' . (int)$it['qty']; ?>"><?php echo (int)$it['left']; ?></em>
               </button>
             <?php else: ?>
               <button type="submit" name="turn" value="heal:<?php echo (int)$it['id']; ?>"
