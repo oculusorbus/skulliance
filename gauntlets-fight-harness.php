@@ -754,8 +754,26 @@ ok(strpos($REN, '> swings</em>') === false && strpos($REN, 'swings left this run
 ok(substr_count($REN, '<i class="gf-qty">') === 2 && strpos($UI, '.gf-qty ') !== false,
    'how many of a weapon you hold is not shown, so the swing total looks arbitrary');
 /* Heals and stakes genuinely ARE counts, so they keep the x. */
-ok(substr_count($REN, 'title="how many you hold">&times;') === 2,
+ok(substr_count($REN, '>&times;<?php echo (int)$it[\'have\']') === 2,
    'the heal or stake badge no longer reads as a count');
+/* Salvage is not something you hold -- it ends with the run. */
+ok(strpos($REN, "'how many you hold' : 'salvaged this run'") !== false,
+   'a salvaged medkit claims to be something you own, when it dies with the run');
+
+echo "\nsalvaged medkits stack instead of multiplying into rows\n";
+/* Two 40% medkits rendered two identical "Heal 40% x1" buttons, which
+   reads as items being minted. REPORTED exactly that way. */
+ok(strpos($LIB, 'if (isset($loot_heal[$pct])) { $out[\'heals\'][$loot_heal[$pct]][\'have\']++; continue; }') !== false,
+   'each salvaged medkit still gets its own button, so two of a kind read as duplicates');
+ok(strpos($LIB, '\'pct\' => $pct, \'have\' => 1,') !== false,
+   'the stacked medkit does not start its count at one');
+/* Weapons must NOT be folded together: each carries its own uses. */
+ok(strpos($LIB, '\'name\' => \'Salvaged weapon\', \'level\' => (int)$lt[\'level\'], \'left\' => $left,') !== false,
+   'salvaged weapons were stacked too, which sums pools of uses that are not interchangeable');
+/* TWO of them: the weapon branch and the heal branch. Matching the
+   markup alone passes on the weapon's tag whatever the heal does. */
+ok(substr_count($REN, 'class="gf-loot"') === 2,
+   'a salvaged heal carries no salvage tag, so it is indistinguishable from an owned consumable');
 
 echo "\nthe deck shows what each card is carrying\n";
 /*

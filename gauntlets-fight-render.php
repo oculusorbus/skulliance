@@ -249,7 +249,14 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '', 
               <button type="submit" name="turn" value="heal:<?php echo (int)$it['id']; ?>"
                       class="gf-btn gf-heal" data-sfx="heal">
                 <span>Heal <?php echo (int)$it['pct']; ?>%</span>
-                <em class="gf-left" title="how many you hold">&times;<?php echo (int)$it['have']; ?></em>
+                <?php /* "Heal 40%" is not a consumable anyone owns -- it is
+                         always salvage -- but unlabelled it read as a new
+                         item appearing in the inventory. Same tag the
+                         salvaged weapons carry. */
+                   if (!empty($it['loot'])): ?><em class="gf-loot"
+                     title="taken off an opponent; gone when the run ends">salvage</em><?php endif; ?>
+                <em class="gf-left" title="<?php echo empty($it['loot'])
+                     ? 'how many you hold' : 'salvaged this run'; ?>">&times;<?php echo (int)$it['have']; ?></em>
               </button>
             <?php endif;
           endforeach; ?>

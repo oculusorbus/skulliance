@@ -266,6 +266,14 @@ function gaunt_loadout($conn, $user_id, $run_id, $fight = null) {
 	 * owns and whose wear is tracked against their inventory, a negative
 	 * one is loot that exists only for this run.
 	 */
+	/* Salvaged medkits STACK. Each one is its own entry in the run state
+	   -- it has to be, they are spent one at a time -- but rendering one
+	   button per entry put two identical "Heal 40% x1" rows side by side
+	   and made salvage look like items being minted. REPORTED that way.
+	   Keyed by percentage, counted, and spent off the first unspent
+	   entry; weapons are NOT stacked because each carries its own
+	   independent pool of uses that cannot be summed. */
+	$loot_heal = array();
 	foreach ($gs['loot'] as $i => $lt) {
 		$left = max(0, (int)($lt['left'] ?? 0));
 		$id   = -($i + 1);
@@ -278,8 +286,11 @@ function gaunt_loadout($conn, $user_id, $run_id, $fight = null) {
 				'name' => 'Salvaged armour', 'level' => (int)$lt['level'], 'left' => $left,
 				'sfx' => 'equip');
 		} elseif ($lt['kind'] === 'heal' && $left > 0) {
+			$pct = (int)$lt['pct'];
+			if (isset($loot_heal[$pct])) { $out['heals'][$loot_heal[$pct]]['have']++; continue; }
+			$loot_heal[$pct] = count($out['heals']);
 			$out['heals'][] = array('type' => 'heal', 'id' => $id, 'loot' => true,
-				'pct' => (int)$lt['pct'], 'have' => $left, 'sfx' => 'heal');
+				'pct' => $pct, 'have' => 1, 'sfx' => 'heal');
 		}
 	}
 
