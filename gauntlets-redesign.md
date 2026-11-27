@@ -513,6 +513,39 @@ and not only newcomers.
 1, and one action closes both loops: you take your cache, and your NFTs go
 back into the pool for the next draw.
 
+## Slain opponents drop what they used
+
+OWNER'S FRAMING, and it settles the design question: the drops are there
+"to help them through the gauntlet". That makes them SUSTAIN, not income,
+which puts them on the same side of the line as the mid-run find --
+RUN-SCOPED. One rule still holds: only the end-of-run chest leaves the
+run. Project points for a slaying are already paid and are unaffected.
+
+### Why tether them to what the opponent USED
+
+Not for variety. Today a stocked opponent is pure downside -- a harder
+fight for the same reward -- which is what makes an unlucky draw feel
+like a wasted run. If beating them drops what they swung at you, THE
+SCARY DRAW BECOMES THE VALUABLE ONE, and the complaint inverts: the whale
+stops being a punishment and becomes the prize.
+
+It also composes with the cap already built into the engine
+(`gaunt_cap_kit()`): an opponent is never armed above the player's own
+best, so drops pull a player UP toward the next tier rather than handing
+a newcomer artillery on their first run.
+
+### Shape
+
+  - Dropped from what the opponent actually PLAYED in that fight, not
+    from their inventory -- so the drop is earned against the thing that
+    hurt you, and an opponent who never got to swing drops nothing.
+  - A chance, not a certainty, or three encounters would flood a run.
+  - Usable immediately, gone at the end of the run.
+  - What was taken during the run should feed the END CHEST, so a run
+    spent beating well-armed opponents pays better. That keeps all three
+    income ideas -- find, drop, chest -- inside one loop instead of three
+    separate taps.
+
 ## Still to settle
 
   - Damage numbers, HP scale, and what a weapon level is worth.
