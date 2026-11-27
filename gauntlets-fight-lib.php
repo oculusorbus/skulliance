@@ -573,3 +573,33 @@ function gaunt_hand_hp($conn, $run_id, $cards) {
 	}
 	return $out;
 }
+
+/**
+ * Swap the fighter in a fight already under way.
+ *
+ * gauntletFastForward() only rewrites gauntlets_encounters.player_nft_id
+ * -- the live fight is a JSON blob on the same row and it kept the OLD
+ * fighter's health, so a swap appeared to change nothing. REPORTED:
+ * "health stays depleted despite changing to a different NFT".
+ *
+ * THE OPPONENT KEEPS ITS DAMAGE, deliberately. Rebuilding the whole
+ * fight would heal them, and that turns Fast Forward into "reset the
+ * enemy": chip them down, swap, repeat, for the price of an item that
+ * exists to fix a bad draw. Only the player's side is replaced.
+ *
+ * The armour goes with the old fighter too -- a fresh body is not
+ * wearing the vest someone else put on.
+ */
+function gaunt_fight_swap($conn, $enc_id, $run_id, $new_nft_id) {
+	$f = gaunt_fight_get($conn, (int)$enc_id);
+	if (!$f || !empty($f['over'])) return false;
+	$hp = gaunt_nft_hp($conn, (int)$run_id, (int)$new_nft_id);
+	$f['you']['hp']       = max(0, (int)$hp);
+	$f['you']['max']      = GAUNT_HP_BASE;
+	$f['you']['arm']      = 0;
+	$f['you']['armLevel'] = 0;
+	$f['log'][] = array('who' => 'you', 'kind' => 'swap', 'sfx' => 'equip',
+		'text' => 'Fresh fighter in');
+	gaunt_fight_save($conn, (int)$enc_id, $f);
+	return true;
+}

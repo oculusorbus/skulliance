@@ -36,7 +36,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		$new_nft_id = intval($_POST['new_nft_id'] ?? 0);
 		if ($enc_id > 0 && $new_nft_id > 0) {
 			$ok = gauntletFastForward($conn, $user_id, $enc_id, $new_nft_id);
-			if (!$ok) gauntletFlash('Could not swap card. Make sure you have a Fast Forward item.', 'error');
+			if (!$ok) {
+				gauntletFlash('Could not swap card. Make sure you have a Fast Forward item.', 'error');
+			} else {
+				/* The live fight is a blob on the same row and
+				   gauntletFastForward() does not touch it, so without
+				   this the new fighter inherits the old one's health. */
+				$ff_run = gauntletGetActiveRun($conn, $user_id);
+				if ($ff_run) gaunt_fight_swap($conn, $enc_id, intval($ff_run['id']), $new_nft_id);
+			}
 		}
 
 	} elseif ($action === 'fight_turn') {

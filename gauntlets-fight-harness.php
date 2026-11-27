@@ -638,6 +638,32 @@ ok($gsr !== false && preg_match('~if \\(\\$gn_id\\) @\\$conn->query\\("UPDATE ga
         substr($DB, $gsr, $gsr_end - $gsr)) === 1,
    'a dealt hand is not seeded at full health, so every card is ambiguous until it fights');
 
+echo "\na swapped fighter brings its own health\n";
+/*
+ * REPORTED: health stayed depleted after a swap. gauntletFastForward()
+ * rewrites gauntlets_encounters.player_nft_id and nothing else -- the
+ * live fight is a JSON blob on the SAME ROW and kept the old fighter's
+ * pool, so the swap appeared to do nothing at all.
+ */
+ok(strpos($LIB, 'function gaunt_fight_swap') !== false,
+   'nothing replaces the fighter in a live fight, so a swap keeps the old health');
+ok(strpos($PG, 'gaunt_fight_swap($conn, $enc_id,') !== false,
+   'the page does not swap the fighter after a successful Fast Forward');
+/*
+ * AND THE OPPONENT KEEPS ITS DAMAGE. Rebuilding the fight would heal
+ * them, which turns Fast Forward into "reset the enemy" -- chip down,
+ * swap, repeat, for the price of an item that exists to fix a bad
+ * draw. Only the player's side may be touched.
+ */
+$swapfn = substr($LIB, strpos($LIB, 'function gaunt_fight_swap'));
+$swapfn = substr($swapfn, 0, strpos($swapfn, "\n}\n") + 2);
+ok(strpos($swapfn, "\$f['foe']") === false,
+   'the swap writes the opponent\'s side, so Fast Forward heals them and can be farmed');
+ok(strpos($swapfn, "\$f['you']['arm']      = 0;") !== false,
+   'a fresh fighter inherits the previous one\'s armour');
+ok(strpos($swapfn, "if (!\$f || !empty(\$f['over'])) return false;") !== false,
+   'a finished fight can be swapped into');
+
 echo "\nFast Forward shows what it is swapping to\n";
 /* Health carries, so the swap is entirely a judgement about the
    replacement's condition -- offering it blind offers nothing. */
