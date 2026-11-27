@@ -12,7 +12,20 @@ define('GF_UI_DONE', 1);
 ?>
 <style>
 /* ── the fight ─────────────────────────────────────────────────────── */
-.gf              { margin-bottom: 24px; }
+.gf              { margin-bottom: 24px; position: relative; }
+/*
+ * THE OPPONENT'S WORLD. The encounter is staged in the theme of the
+ * project their NFT comes from, reusing the Monstrocity theme art that
+ * already exists per project. Heavily dimmed on purpose: it is a
+ * backdrop, and a busy picture behind a health bar is just noise.
+ */
+.gf-has-bg::before { content: ''; position: absolute; inset: -14px -14px 0;
+                     background-image: var(--gf-bg); background-size: cover;
+                     background-position: center; opacity: .22; border-radius: 10px;
+                     pointer-events: none; z-index: 0;
+                     mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+                     -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%); }
+.gf-has-bg > *   { position: relative; z-index: 1; }
 .gf-arena        { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px;
                    align-items: start; margin-bottom: 14px; }
 .gf-vs           { align-self: center; font-size: 1.1rem; font-weight: 800;
@@ -88,7 +101,10 @@ define('GF_UI_DONE', 1);
 .gf-soak         { color: rgba(159,216,255,.7); font-size: .7rem; }
 
 /* ── the choices ───────────────────────────────────────────────────── */
-.gf-actions      { display: flex; flex-wrap: wrap; gap: 8px; }
+.gf-actions      { display: flex; flex-direction: column; gap: 10px; }
+.gf-group-label  { font-size: .62rem; text-transform: uppercase; letter-spacing: .12em;
+                   color: rgba(255,255,255,.35); margin-bottom: 5px; }
+.gf-group-row    { display: flex; flex-wrap: wrap; gap: 8px; }
 .gf-btn          { display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
                    background: #123349; color: #e8eaed; border: 1px solid rgba(0,200,160,.28);
                    border-radius: 8px; padding: 10px 13px; font: 600 .82rem/1 inherit;
@@ -167,7 +183,9 @@ define('GF_UI_DONE', 1);
 <script>
 (function () {
   var AREA = 'gf-area';
-  var SND  = '/staking/sounds/';
+  /* audio/sounds/, NOT sounds/. Everything 404'd silently on the first
+     build because the path was read off the tail of a grep hit. */
+  var SND  = '/staking/audio/sounds/';
   var TRK  = '/staking/audio/tracks/';
   /* The tracks already ARE the state machine; nothing new was composed. */
   var MUSIC = { theme: 'Crypt Crawl Theme.mp3', frantic: 'Crypt Crawl Frantic.mp3',

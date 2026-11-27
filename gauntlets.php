@@ -553,7 +553,11 @@ if ($state === 'encounter') {
 		$gf_enc['opponent_img'] = $opponent_img;
 		$gf_fight = gaunt_fight_start($conn, $user_id, $enc);
 		gauntletRenderFight($gf_enc, $gf_fight,
-			gaunt_loadout($conn, $user_id, intval($enc['run_id'])));
+			gaunt_loadout($conn, $user_id, intval($enc['run_id'])),
+			/* Nothing to animate on a fresh page load -- the turn
+			   endpoint supplies this after each exchange. */
+			array(),
+			gaunt_theme_bg($conn, $enc['opponent_project_name']));
 		include __DIR__ . '/gauntlets-fight-ui.php';
 	endif; ?>
 

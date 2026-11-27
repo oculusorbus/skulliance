@@ -47,26 +47,29 @@ function gf_bar($hp, $max, $side) {
  * $loadout  gaunt_loadout() -- the SAME list the turn endpoint validates
  *           against, so what is offered and what is allowed cannot differ
  */
-function gauntletRenderFight($enc, $fight, $loadout, $csrf = '') {
+/**
+ * $just  the entries from THIS turn only, as returned by
+ *        gaunt_fight_turn(). data-tl carries these and nothing else:
+ *        handing the client the whole six-entry tail replayed every
+ *        shake and every sound on every turn, so a fight got noisier
+ *        and noisier as it went.
+ */
+function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '') {
 	$over = !empty($fight['over']);
 	$won  = ($fight['win'] ?? '') === 'you';
 
-	/* Cues for this turn, in order, read off the timeline the engine
-	   produced. The client plays them; the no-JS path simply ignores them. */
+	/* Cues for THIS turn only. */
 	$sfx = array();
-	foreach (($fight['log'] ?? array()) as $e)
-		if (!empty($e['sfx'])) $sfx[] = $e['sfx'];
-	$sfx = array_slice($sfx, -4);
+	foreach ($just as $e) if (!empty($e['sfx'])) $sfx[] = $e['sfx'];
 
-	/* Only the tail is handed over -- the whole log would grow without
-	   bound across a long fight and the client only animates what just
-	   happened. */
+	/* The visible log is the tail; what the client animates is $just. */
 	$tail = array_slice($fight['log'] ?? array(), -6);
 	?>
 <div id="gf-area"
-     class="gf<?php echo $over ? ($won ? ' gf-won' : ' gf-lost') : ''; ?>"
+     class="gf<?php echo $over ? ($won ? ' gf-won' : ' gf-lost') : ''; ?><?php echo $bg !== '' ? ' gf-has-bg' : ''; ?>"
+     <?php if ($bg !== ''): ?>style="--gf-bg:url('<?php echo htmlspecialchars($bg); ?>')"<?php endif; ?>
      data-sfx="<?php echo htmlspecialchars(implode(' ', $sfx)); ?>"
-     data-tl="<?php echo htmlspecialchars(json_encode($tail)); ?>"
+     data-tl="<?php echo htmlspecialchars(json_encode(array_values($just))); ?>"
      data-hp="<?php echo (int)$fight['you']['hp']; ?>"
      data-hpmax="<?php echo (int)$fight['you']['max']; ?>">
 
@@ -129,40 +132,58 @@ function gauntletRenderFight($enc, $fight, $loadout, $csrf = '') {
       <input type="hidden" name="action" value="fight_turn">
       <input type="hidden" name="encounter_id" value="<?php echo (int)$enc['id']; ?>">
 
-      <button type="submit" name="turn" value="bare" class="gf-btn gf-bare" data-sfx="fist">
-        <img src="icons/fist.png" alt="" onerror="this.style.display='none'">
-        <span>Bare hands</span>
-      </button>
-
-      <?php foreach ($loadout['weapons'] as $w):
-        $dis = $w['left'] < 1; ?>
-        <button type="submit" name="turn" value="weapon:<?php echo (int)$w['id']; ?>"
-                class="gf-btn gf-wpn<?php echo $dis ? ' is-spent' : ''; ?>"
-                <?php echo $dis ? 'disabled' : ''; ?>
-                data-sfx="<?php echo htmlspecialchars($w['sfx'] ?: 'melee'); ?>">
-          <img src="icons/<?php echo htmlspecialchars($w['slug']); ?>.png" alt=""
-               onerror="this.style.display='none'">
-          <span><?php echo htmlspecialchars($w['name']); ?></span>
-          <em class="gf-left"><?php echo (int)$w['left']; ?></em>
-        </button>
-      <?php endforeach; ?>
-
-      <?php foreach ($loadout['armor'] as $a):
-        $dis = $a['left'] < 1; ?>
-        <button type="submit" name="turn" value="armor:<?php echo (int)$a['id']; ?>"
-                class="gf-btn gf-arm<?php echo $dis ? ' is-spent' : ''; ?>"
-                <?php echo $dis ? 'disabled' : ''; ?> data-sfx="equip">
-          <span><?php echo htmlspecialchars($a['name']); ?></span>
-          <em class="gf-left"><?php echo (int)$a['left']; ?></em>
-        </button>
-      <?php endforeach; ?>
-
-      <?php foreach ($loadout['heals'] as $h): ?>
-        <button type="submit" name="turn" value="heal:<?php echo (int)$h['id']; ?>"
-                class="gf-btn gf-heal" data-sfx="heal">
-          <span>Heal <?php echo (int)$h['pct']; ?>%</span>
-          <em class="gf-left"><?php echo (int)$h['have']; ?></em>
-        </button>
+      <?php
+      /*
+       * GROUPED, NOT A HEAP. Everything a player owns in one flex row is
+       * a wall of buttons they have to read every turn -- and the three
+       * kinds do completely different things: one spends a swing, one
+       * spends a turn to prevent damage, one spends a turn to undo it.
+       * Labelling them is what makes the decision legible.
+       */
+      $gf_groups = array(
+        'Attack'  => array_merge(array($loadout['bare']), $loadout['weapons']),
+        'Defend'  => $loadout['armor'],
+        'Recover' => $loadout['heals'],
+      );
+      foreach ($gf_groups as $label => $items):
+        if (!$items) continue; ?>
+        <div class="gf-group">
+          <div class="gf-group-label"><?php echo htmlspecialchars($label); ?></div>
+          <div class="gf-group-row">
+          <?php foreach ($items as $it):
+            $t = $it['type'];
+            if ($t === 'bare'): ?>
+              <button type="submit" name="turn" value="bare" class="gf-btn gf-bare" data-sfx="fist">
+                <img src="icons/fist.png" alt="" onerror="this.style.display='none'">
+                <span>Bare hands</span>
+              </button>
+            <?php elseif ($t === 'weapon'): $dis = $it['left'] < 1; ?>
+              <button type="submit" name="turn" value="weapon:<?php echo (int)$it['id']; ?>"
+                      class="gf-btn gf-wpn<?php echo $dis ? ' is-spent' : ''; ?>"
+                      <?php echo $dis ? 'disabled' : ''; ?>
+                      data-sfx="<?php echo htmlspecialchars($it['sfx'] ?: 'melee'); ?>">
+                <img src="icons/<?php echo htmlspecialchars($it['slug']); ?>.png" alt=""
+                     onerror="this.style.display='none'">
+                <span><?php echo htmlspecialchars($it['name']); ?></span>
+                <em class="gf-left" title="swings left this run"><?php echo (int)$it['left']; ?></em>
+              </button>
+            <?php elseif ($t === 'armor'): $dis = $it['left'] < 1; ?>
+              <button type="submit" name="turn" value="armor:<?php echo (int)$it['id']; ?>"
+                      class="gf-btn gf-arm<?php echo $dis ? ' is-spent' : ''; ?>"
+                      <?php echo $dis ? 'disabled' : ''; ?> data-sfx="equip">
+                <span><?php echo htmlspecialchars($it['name']); ?></span>
+                <em class="gf-left" title="uses left this run"><?php echo (int)$it['left']; ?></em>
+              </button>
+            <?php else: ?>
+              <button type="submit" name="turn" value="heal:<?php echo (int)$it['id']; ?>"
+                      class="gf-btn gf-heal" data-sfx="heal">
+                <span>Heal <?php echo (int)$it['pct']; ?>%</span>
+                <em class="gf-left" title="in your inventory"><?php echo (int)$it['have']; ?></em>
+              </button>
+            <?php endif;
+          endforeach; ?>
+          </div>
+        </div>
       <?php endforeach; ?>
     </form>
     <p class="gf-hint">Armour and healing cost you the turn. Weapon swings are

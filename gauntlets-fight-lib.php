@@ -340,3 +340,31 @@ function gauntletResolveFight($conn, $user_id, $enc_id) {
 	return gauntletResolveEncounter($conn, (int)$user_id, (int)$enc_id,
 		array(), 0, 0, $won ? 'win' : 'loss');
 }
+
+/**
+ * The backdrop for an encounter: the Monstrocity theme art for the
+ * OPPONENT's project, so the fight is staged in their world.
+ *
+ * Reuses art that already exists rather than commissioning any --
+ * monstrocity_themes carries a per-theme `background` flag, and that
+ * flag is what says the image is actually there. No flag, no backdrop,
+ * and the fight simply renders on the page ground.
+ *
+ * Matched on project NAME because that is what both tables agree on;
+ * the themes table also carries policy ids, but plenty of its rows are
+ * for projects that are not on the platform at all.
+ */
+function gaunt_theme_bg($conn, $project_name) {
+	$name = trim((string)$project_name);
+	if ($name === '') return '';
+	static $memo = array();
+	if (isset($memo[$name])) return $memo[$name];
+	$esc = $conn->real_escape_string($name);
+	$r = @$conn->query("SELECT slug FROM monstrocity_themes
+	                     WHERE active = 1 AND background = 1
+	                       AND project_name = '$esc' LIMIT 1");
+	$slug = ($r && $r->num_rows) ? (string)$r->fetch_assoc()['slug'] : '';
+	$memo[$name] = $slug === '' ? ''
+		: '/staking/images/monstrocity/' . rawurlencode($slug) . '/monstrocity.png';
+	return $memo[$name];
+}

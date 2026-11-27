@@ -386,6 +386,54 @@ ok(strpos($UI, 'prefers-reduced-motion') !== false, 'the shake and the floating 
 ok(strpos($UI, "catch (e) {}") !== false || strpos($UI, 'catch(function(){})') !== false,
    'audio failures are not swallowed, so a blocked autoplay could break the turn');
 
+echo "\nthe cues point at files that exist\n";
+/*
+ * REPORTED: no punch or weapon sounds. The path was /staking/sounds/,
+ * which 404s -- the files are under audio/sounds/, and the wrong prefix
+ * came from reading the tail of a grep hit rather than the line. Every
+ * cue failed silently, because a missing Audio src throws nothing.
+ *
+ * Checked against where Crypt Crawl actually loads them from, so this
+ * cannot be "fixed" back to a path that does not exist.
+ */
+$CC2 = (string) file_get_contents(__DIR__ . '/cryptcrawl.php');
+preg_match('~src="([a-z/]*sounds/)fist\.mp3"~', $CC2, $cm);
+ok(isset($cm[1]), 'could not find where Crypt Crawl loads its sounds from');
+ok(isset($cm[1]) && strpos($UI, '/staking/' . $cm[1]) !== false,
+   'the fight loads sounds from a different directory than Crypt Crawl does: expected '
+ . ($cm[1] ?? '?'));
+ok(strpos($UI, "var SND  = '/staking/sounds/'") === false,
+   'the sound path is back to /staking/sounds/, which 404s on every cue');
+
+echo "\nonly this turn is animated\n";
+/*
+ * data-tl used to carry the whole six-entry tail, so every turn
+ * replayed the previous five shakes and sounds and a fight grew
+ * steadily noisier. It carries the entries from THIS exchange only.
+ */
+ok(strpos($REN, 'json_encode(array_values($just))') !== false,
+   'data-tl carries the log tail again, so each turn replays the last five');
+ok(strpos($REN, 'foreach ($just as $e) if (!empty($e[\'sfx\']))') !== false,
+   'the cue list is built from the tail rather than this turn');
+ok(strpos($AJX, "\$res['timeline']") !== false,
+   'the endpoint does not hand the turn\'s own timeline to the renderer');
+
+echo "\nthe choices are grouped\n";
+/* One flex row of everything a player owns is a wall to re-read every
+   turn, and the three kinds do different things. */
+foreach (array('Attack', 'Defend', 'Recover') as $g)
+	ok(strpos($REN, "'" . $g . "'") !== false, "the $g group is gone from the action list");
+ok(strpos($REN, 'gf-group-label') !== false, 'the groups render without labels');
+
+echo "\nthe backdrop is the opponent\'s world, when there is art for it\n";
+ok(strpos($LIB, 'function gaunt_theme_bg') !== false, 'there is no backdrop lookup');
+/* The flag is what says the image exists -- without it the fight would
+   point at a 404 and show nothing, which is worse than no backdrop. */
+ok(preg_match('~monstrocity_themes.*?background = 1~s', $LIB) === 1,
+   'the backdrop is chosen without checking the theme actually has one');
+ok(strpos($REN, 'gf-has-bg') !== false, 'the renderer never applies the backdrop class');
+ok(strpos($UI, '.gf-has-bg::before') !== false, 'the backdrop has no styling, so it will not show');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all fight checks passed\n");
 
 /* ------------------------------------------------------------------ */
