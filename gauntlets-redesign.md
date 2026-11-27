@@ -546,6 +546,36 @@ a newcomer artillery on their first run.
     income ideas -- find, drop, chest -- inside one loop instead of three
     separate taps.
 
+## PARKED: reuse the daily reward's reveal
+
+The Gauntlet chest currently has its own small reveal. It SHOULD use
+the daily reward's, which is the better animation and already exists --
+parked on 2026-11-27 until the fight itself is settled, because the
+refactor is surgery on the path every player touches every day.
+
+WHAT STANDS IN THE WAY, measured rather than assumed:
+
+  - `missions-claim-modal.php` opens with
+    `if (!isset($ms_daily) || !$ms_daily) return;` -- it is gated on the
+    daily payload and renders nothing without it;
+  - it reads the day -> consumable map from `mission_daily()`;
+  - its timings are measured against the daily SOUND
+    (`MCM_SFX_HIT1 = 2340`, `MCM_SFX_HIT2 = 2930`, "the wreath's peak --
+    measured"), so the sequence is tuned to one specific cue;
+  - 877 lines, with ~400 lines of `missions-chest-harness.php` pinning
+    its behaviour;
+  - and there is NO public entry point -- it self-initialises, so
+    nothing can currently open it with a different payload.
+
+The refactor is to parameterise the payload: missions keeps calling it
+with the daily data, Gauntlets calls it with the chest contents, and
+the timings stay with whichever cue is playing. The existing harness is
+good cover for doing it safely.
+
+Worth noting the smaller win available first: `missions-chest.php` is
+only a two-state status icon and was already (wrongly) recorded here as
+the reveal. The reveal is the modal.
+
 ## Still to settle
 
   - Damage numbers, HP scale, and what a weapon level is worth.
