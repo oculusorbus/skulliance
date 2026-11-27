@@ -634,6 +634,21 @@ ok(strpos($REN, 'if ($extra !== ' . "''" . ') echo $extra;') < strpos($REN, '<ul
 /* And only while there is a fight to swap out of. */
 ok(strpos($REN, 'if ($extra !== ' . "''" . ') echo $extra;') > strpos($REN, 'id="gf-form"'),
    'Fast Forward renders above the action buttons rather than beside them');
+/*
+ * AND ONLY WHILE THERE IS A FIGHT. The slot has to sit INSIDE the
+ * not-over branch: outside it, a finished encounter still offers a
+ * card swap for a fight that is already decided. Checked by position
+ * against the branch's own end, because "is it above the log" is true
+ * either way.
+ */
+/* Anchored on the hint, which is the last thing inside the branch --
+   searching for the next `endif` found one belonging to the group
+   loop instead. */
+$gf_hint  = strpos($REN, 'class="gf-hint"');
+$gf_endif = $gf_hint === false ? false : strpos($REN, '<?php endif; ?>', $gf_hint);
+$gf_extra_at = strpos($REN, 'if ($extra !== ' . "''" . ') echo $extra;');
+ok($gf_endif !== false && $gf_extra_at > $gf_hint && $gf_extra_at < $gf_endif,
+   'Fast Forward renders outside the live-fight branch, so a finished encounter still offers a swap');
 ok(strpos($REN, 'if ((int)$ff_count < 1 || !count($ff_hand)) return \'\';') !== false,
    'Fast Forward renders with nothing to swap to');
 
