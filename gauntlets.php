@@ -56,6 +56,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			if (empty($res['ok'])) gauntletFlash($res['why'] ?: 'That move is not available.', 'error');
 		}
 
+	} elseif ($action === 'claim_chest') {
+		$run_id = intval($_POST['run_id'] ?? 0);
+		if ($run_id > 0) {
+			$got = gaunt_chest_claim($conn, $user_id, $run_id);
+			if ($got) {
+				$_SESSION['gauntlet_chest'] = $got;
+			} else {
+				gauntletFlash('That chest has already been opened.', 'error');
+			}
+		}
+
 	} elseif ($action === 'close_fight') {
 		$enc_id = intval($_POST['encounter_id'] ?? 0);
 		if ($enc_id > 0) {
@@ -417,6 +428,47 @@ if ($state === 'encounter') {
 		<div class="run-result-title"><?php echo $swept ? 'Gauntlet Swept!' : 'Run Over'; ?></div>
 		<div class="run-result-sub"><?php echo $wins; ?> win<?php echo $wins !== 1 ? 's' : ''; ?> &middot; <?php echo $losses; ?> loss</div>
 	</div>
+
+	<?php
+	/*
+	 * THE CHEST, SCALED TO WINS BANKED. Paying only on a sweep is a
+	 * closed loop for the under-equipped -- no items, no win; no win, no
+	 * chest; no chest, no items -- and the run already ends on a squad
+	 * wipe rather than a first loss, so partial success is something the
+	 * system understands. One win pays scraps; only a sweep reaches the
+	 * full heal.
+	 *
+	 * It is also the ONE thing that leaves a run: salvage taken off
+	 * opponents dies with it, but the fact that you took it swells this.
+	 */
+	$chest_got = $_SESSION['gauntlet_chest'] ?? null;
+	unset($_SESSION['gauntlet_chest']);
+	$run_id_over = intval($recent_run['id'] ?? 0);
+	if ($chest_got): ?>
+		<div class="gchest open">
+			<img class="gchest-img" src="images/chest/open.webp" alt=""
+			     onerror="this.src='/staking/pwa/skulliance-logo-icon.png'">
+			<div class="gchest-title">Hauled out of the gauntlet</div>
+			<div class="gchest-items">
+				<?php foreach ($chest_got as $cid => $qty):
+					$nm = $conn->query("SELECT name FROM consumables WHERE id=" . intval($cid) . " LIMIT 1");
+					$nm = ($nm && $nm->num_rows) ? $nm->fetch_assoc()['name'] : ('Item #' . intval($cid)); ?>
+					<span class="gchest-item"><strong>&times;<?php echo intval($qty); ?></strong>
+						<?php echo htmlspecialchars($nm); ?></span>
+				<?php endforeach; ?>
+			</div>
+		</div>
+	<?php elseif ($run_id_over > 0 && gaunt_chest_pending($conn, $run_id_over)): ?>
+		<form method="POST" class="gchest">
+			<input type="hidden" name="action" value="claim_chest">
+			<input type="hidden" name="run_id" value="<?php echo $run_id_over; ?>">
+			<button type="submit" class="gchest-btn" data-sfx="equip">
+				<img class="gchest-img" src="images/chest/closed.webp" alt=""
+				     onerror="this.src='/staking/pwa/skulliance-logo-icon.png'">
+				<span>Open your chest</span>
+			</button>
+		</form>
+	<?php endif; ?>
 	<?php
 	// Show encounter history for completed run
 	$hist_r = $conn->query("
@@ -553,7 +605,7 @@ if ($state === 'encounter') {
 		$gf_enc['opponent_img'] = $opponent_img;
 		$gf_fight = gaunt_fight_start($conn, $user_id, $enc);
 		gauntletRenderFight($gf_enc, $gf_fight,
-			gaunt_loadout($conn, $user_id, intval($enc['run_id'])),
+			gaunt_loadout($conn, $user_id, intval($enc['run_id']), $gf_fight),
 			/* Nothing to animate on a fresh page load -- the turn
 			   endpoint supplies this after each exchange. */
 			array(),

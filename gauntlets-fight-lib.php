@@ -39,13 +39,17 @@ require_once __DIR__ . '/gauntlets-engine.php';
    can say exactly what is missing instead of fataling -- same approach as
    guardians-lib.php. */
 function gaunt_schema_missing($conn) {
+	/* A LIST OF PAIRS, not a map: two of these are on the same table and
+	   a map would silently keep only the last. */
 	$want = array(
-		'gauntlets_nfts'       => 'hp',
-		'gauntlets'            => 'gear_state',
-		'gauntlets_encounters' => 'fight',
+		array('gauntlets_nfts',       'hp'),
+		array('gauntlets',            'gear_state'),
+		array('gauntlets',            'chest'),
+		array('gauntlets_encounters', 'fight'),
 	);
 	$missing = array();
-	foreach ($want as $tbl => $col) {
+	foreach ($want as $pair) {
+		list($tbl, $col) = $pair;
 		$r = @$conn->query("SHOW COLUMNS FROM `$tbl` LIKE '" . $conn->real_escape_string($col) . "'");
 		if (!$r || !$r->num_rows) $missing[] = "$tbl.$col";
 	}
@@ -62,6 +66,7 @@ function gaunt_schema_missing($conn) {
 function gaunt_schema_sql() {
 	return "ALTER TABLE gauntlets_nfts       ADD COLUMN hp INT NOT NULL DEFAULT 0;\n"
 	     . "ALTER TABLE gauntlets            ADD COLUMN gear_state TEXT NULL;\n"
+	     . "ALTER TABLE gauntlets            ADD COLUMN chest TINYINT NOT NULL DEFAULT 0;\n"
 	     . "ALTER TABLE gauntlets_encounters ADD COLUMN fight MEDIUMTEXT NULL;";
 }
 
@@ -205,7 +210,7 @@ function gaunt_kit_for($conn, $opponent_user_id, $player_user_id) {
  * The UI renders exactly this, and gaunt_fight_turn() validates against
  * it -- one list, so what is shown and what is allowed cannot disagree.
  */
-function gaunt_loadout($conn, $user_id, $run_id) {
+function gaunt_loadout($conn, $user_id, $run_id, $fight = null) {
 	$uid = (int)$user_id;
 	$gs  = gaunt_gear_state($conn, $run_id);
 	$out = array(
@@ -213,6 +218,7 @@ function gaunt_loadout($conn, $user_id, $run_id) {
 		'weapons' => array(),
 		'armor'   => array(),
 		'heals'   => array(),
+		'stakes'  => array(),
 	);
 	foreach (getGearInventory($conn, $uid) as $g) {
 		if ((int)$g['quantity'] < 1) continue;
@@ -260,6 +266,23 @@ function gaunt_loadout($conn, $user_id, $run_id) {
 			$out['heals'][] = array('type' => 'heal', 'id' => $id, 'loot' => true,
 				'pct' => (int)$lt['pct'], 'have' => $left, 'sfx' => 'heal');
 		}
+	}
+
+	/*
+	 * THE TWO REWARD ITEMS. They change the PAYOUT, not the fight, and
+	 * they are the only economic decision in the game -- turning them
+	 * into combat effects would leave every item a combat button.
+	 * Offered mid-fight on purpose: committing one while you can see how
+	 * it is going is a read, where the old loadout screen made it a
+	 * blind bet.
+	 */
+	$staked = isset($fight['staked']) && is_array($fight['staked']) ? $fight['staked'] : array();
+	foreach (array(GAUNTLET_C_DOUBLE => 'Double rewards',
+	               GAUNTLET_C_RANDOM => 'Random currency') as $cid => $label) {
+		$n = getCurrentAmount($conn, $uid, $cid);
+		if ($n < 1 || in_array($cid, $staked, true)) continue;
+		$out['stakes'][] = array('type' => 'stake', 'id' => $cid, 'name' => $label,
+			'have' => (int)$n, 'sfx' => 'equip');
 	}
 
 	foreach (array(GAUNTLET_C_100, GAUNTLET_C_75, GAUNTLET_C_50, GAUNTLET_C_25) as $cid) {
@@ -316,7 +339,7 @@ function gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item_id = 0) {
 	if (!empty($fight['over'])) return array('ok' => false, 'why' => 'this fight is over');
 
 	$run_id = (int)$enc['run_id'];
-	$load   = gaunt_loadout($conn, $uid, $run_id);
+	$load   = gaunt_loadout($conn, $uid, $run_id, $fight);
 	$gs     = gaunt_gear_state($conn, $run_id);
 	$act    = null;
 
@@ -342,6 +365,10 @@ function gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item_id = 0) {
 			/* Genuinely consumed, unlike gear. */
 			updateAmount($conn, $uid, $item_id, -1);
 		}
+
+	} elseif ($kind === 'stake') {
+		foreach ($load['stakes'] as $k) if ($k['id'] === $item_id) $act = $k;
+		if (!$act) return array('ok' => false, 'why' => 'you have none of those, or it is already staked');
 
 	} else {
 		$act = $load['bare'];
@@ -392,8 +419,13 @@ function gauntletResolveFight($conn, $user_id, $enc_id) {
 	$f = gaunt_fight_get($conn, (int)$enc_id);
 	if (!$f || empty($f['over'])) return false;
 	$won = (($f['win'] ?? '') === 'you');
+	/* The reward items committed during the fight. Passed rather than
+	   spent here: gauntletResolveEncounter() checks the player still
+	   holds each one, deducts it and applies its rule, exactly as it did
+	   when they were staked up front on the old loadout screen. */
+	$staked = isset($f['staked']) && is_array($f['staked']) ? $f['staked'] : array();
 	return gauntletResolveEncounter($conn, (int)$user_id, (int)$enc_id,
-		array(), 0, 0, $won ? 'win' : 'loss');
+		$staked, 0, 0, $won ? 'win' : 'loss');
 }
 
 /**
@@ -449,4 +481,59 @@ function gaunt_theme_bg($conn, $project_name, $project_id = 0, $collection_id = 
 	$memo[$key] = $slug === '' ? ''
 		: '/staking/images/monstrocity/' . rawurlencode($slug) . '/monstrocity.png';
 	return $memo[$key];
+}
+
+/* ---------------------------------------------------------- the chest */
+
+/** How much salvage this run took off opponents. */
+function gaunt_run_haul($conn, $run_id) {
+	$gs = gaunt_gear_state($conn, $run_id);
+	return count($gs['loot']);
+}
+
+/** Wins banked in a run. */
+function gaunt_run_wins($conn, $run_id) {
+	$rid = (int)$run_id;
+	$r = @$conn->query("SELECT COUNT(*) AS c FROM gauntlets_encounters
+	                     WHERE run_id=$rid AND outcome='win' AND resolved_date IS NOT NULL");
+	return ($r && $r->num_rows) ? (int)$r->fetch_assoc()['c'] : 0;
+}
+
+/** Is there a chest waiting on this run? */
+function gaunt_chest_pending($conn, $run_id) {
+	$rid = (int)$run_id;
+	$r = @$conn->query("SELECT chest FROM gauntlets WHERE id=$rid LIMIT 1");
+	if (!$r || !$r->num_rows) return false;
+	if ((int)$r->fetch_assoc()['chest'] !== 0) return false;
+	return gaunt_run_wins($conn, $rid) > 0;
+}
+
+/**
+ * Open it. Grants real consumables -- the ONE thing that leaves a run.
+ *
+ * NOT `gauntlets.reward`. That column is the batch payout's own flag
+ * (db.php: "UPDATE gauntlets SET reward = 1 WHERE reward = 0"), so
+ * flipping it here would make the cron skip paying the run out. The
+ * chest gets its own.
+ *
+ * Returns consumable_id => quantity granted, or array() if there was
+ * nothing to open.
+ */
+function gaunt_chest_claim($conn, $user_id, $run_id) {
+	$uid = (int)$user_id; $rid = (int)$run_id;
+	$r = @$conn->query("SELECT id FROM gauntlets WHERE id=$rid AND user_id=$uid LIMIT 1");
+	if (!$r || !$r->num_rows) return array();
+	if (!gaunt_chest_pending($conn, $rid)) return array();
+
+	$got = gaunt_chest_contents(gaunt_run_wins($conn, $rid), gaunt_run_haul($conn, $rid),
+		crc32('gauntlet-chest:' . $rid));
+
+	/* CLAIMED FIRST, and only then granted. The other order lets a
+	   double submit pay twice; this one can at worst pay nothing, which
+	   is recoverable by hand and is not someone minting consumables. */
+	$upd = @$conn->query("UPDATE gauntlets SET chest=1 WHERE id=$rid AND chest=0");
+	if (!$upd || $conn->affected_rows < 1) return array();
+
+	foreach ($got as $cid => $qty) updateAmount($conn, $uid, (int)$cid, (int)$qty);
+	return $got;
 }

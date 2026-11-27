@@ -77,7 +77,7 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '') 
      data-hpmax="<?php echo (int)$fight['you']['max']; ?>">
 
   <div class="gf-arena">
-    <div class="gf-side gf-you">
+    <div class="gf-side gf-you<?php echo (int)$fight['you']['hp'] <= 0 ? ' is-down' : ''; ?>">
       <div class="gf-portrait">
         <img src="<?php echo htmlspecialchars($enc['player_img']); ?>" alt=""
              onerror="this.src='icons/skull.png'">
@@ -94,7 +94,7 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '') 
 
     <div class="gf-vs">VS</div>
 
-    <div class="gf-side gf-foe">
+    <div class="gf-side gf-foe<?php echo (int)$fight['foe']['hp'] <= 0 ? ' is-down' : ''; ?>">
       <div class="gf-portrait">
         <img src="<?php echo htmlspecialchars($enc['opponent_img']); ?>" alt=""
              onerror="this.src='icons/skull.png'">
@@ -135,6 +135,10 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '') 
         'Attack'  => array_merge(array($loadout['bare']), $loadout['weapons']),
         'Defend'  => $loadout['armor'],
         'Recover' => $loadout['heals'],
+        /* Payout, not combat -- the only economic decision in the game,
+           and kept visually last so it reads as a different kind of
+           choice from the three that resolve the fight. */
+        'Stake'   => isset($loadout['stakes']) ? $loadout['stakes'] : array(),
       );
       foreach ($gf_groups as $label => $items):
         if (!$items) continue; ?>
@@ -168,6 +172,12 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '') 
                 <em class="gf-left" title="<?php echo (int)$it['left']; ?> uses left this run<?php
                     if (!empty($it['qty'])) echo ' — you hold ' . (int)$it['qty']; ?>"><?php echo (int)$it['left']; ?></em>
               </button>
+            <?php elseif ($t === 'stake'): ?>
+              <button type="submit" name="turn" value="stake:<?php echo (int)$it['id']; ?>"
+                      class="gf-btn gf-stake" data-sfx="equip">
+                <span><?php echo htmlspecialchars($it['name']); ?></span>
+                <em class="gf-left" title="in your inventory"><?php echo (int)$it['have']; ?></em>
+              </button>
             <?php else: ?>
               <button type="submit" name="turn" value="heal:<?php echo (int)$it['id']; ?>"
                       class="gf-btn gf-heal" data-sfx="heal">
@@ -180,8 +190,8 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '') 
         </div>
       <?php endforeach; ?>
     </form>
-    <p class="gf-hint">Armour and healing cost you the turn. Weapon swings are
-       rationed for the whole run, not this fight.</p>
+    <p class="gf-hint">Armour, healing and staking all cost you the turn.
+       Weapon swings are rationed for the whole run, not this fight.</p>
   <?php endif; ?>
 <?php /* THE LOG SITS UNDER THE CHOICES. Above them it pushed the
            buttons down the page as it filled, and the thing a player

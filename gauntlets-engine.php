@@ -148,6 +148,10 @@ if (!defined('GAUNT_FOE_CAP_MARGIN')) define('GAUNT_FOE_CAP_MARGIN', 0);
    run and make the player's own inventory beside the point. */
 if (!defined('GAUNT_DROP_CHANCE'))    define('GAUNT_DROP_CHANCE',    0.55);
 
+/* How much salvage taken during a run can swell its chest. Capped so a
+   long run of lucky drops cannot mint consumables without limit. */
+if (!defined('GAUNT_CHEST_HAUL_CAP')) define('GAUNT_CHEST_HAUL_CAP', 6);
+
 /* ===================== PRNG ===========================================
  * The fight carries its own seed so a resolution can be replayed exactly.
  * Same generator as dhca_rand() in dhcarena-engine.php -- duplicated
@@ -282,6 +286,11 @@ function gaunt_begin($player, $win_chance, $kit, $seed) {
 			),
 		),
 		'log'   => array(),
+		/* Reward items the player has committed DURING the fight. Not
+		   deducted here -- gauntletResolveEncounter() validates and
+		   spends them when the fight closes, so the payout rules stay
+		   in the one place they already lived. */
+		'staked' => array(),
 		'over'  => false,
 		'win'   => null,
 	);
@@ -339,8 +348,20 @@ function gaunt_damage(&$f, $side, $amount) {
 }
 
 function gaunt_check_over(&$f) {
-	if ($f['you']['hp'] <= 0) { $f['over'] = true; $f['win'] = 'foe'; }
-	elseif ($f['foe']['hp'] <= 0) { $f['over'] = true; $f['win'] = 'you'; }
+	/*
+	 * THE FALL IS AN EVENT, not just a state. Without an entry on the
+	 * timeline the client has nothing to hang the death on -- the
+	 * portrait would simply be grey on the next render with no moment
+	 * of it happening, and no cue.
+	 */
+	if ($f['you']['hp'] <= 0) {
+		$f['over'] = true; $f['win'] = 'foe';
+		gaunt_say($f, 'you', 'down', 'is down', array('sfx' => 'ko'));
+	}
+	elseif ($f['foe']['hp'] <= 0) {
+		$f['over'] = true; $f['win'] = 'you';
+		gaunt_say($f, 'foe', 'down', 'is down', array('sfx' => 'ko'));
+	}
 	elseif ($f['turn'] >= GAUNT_MAX_TURNS) {
 		/* Whoever is further ahead on remaining share takes it. A draw is
 		   not a state the run can hold, and a fight that never ends is a
@@ -370,7 +391,21 @@ function gaunt_act(&$f, $act) {
 	$type = (string)($act['type'] ?? 'bare');
 	$name = (string)($act['name'] ?? '');
 
-	if ($type === 'armor') {
+	if ($type === 'stake') {
+		/*
+		 * COMMITTING A REWARD ITEM, and it costs the turn like anything
+		 * else. That cost is the whole decision: free, you would always
+		 * play the doubler the moment a fight looked won and there would
+		 * be nothing to weigh. Paid for in tempo, staking while ahead can
+		 * still lose you the fight -- which is what makes being ahead
+		 * worth something.
+		 */
+		$cid = (int)($act['id'] ?? 0);
+		if ($cid > 0 && !in_array($cid, $f['staked'], true)) $f['staked'][] = $cid;
+		gaunt_say($f, 'you', 'stake', ($name !== '' ? $name : 'Staked'),
+			array('sfx' => 'equip'));
+
+	} elseif ($type === 'armor') {
 		$lv = max(1, (int)($act['level'] ?? 1));
 		$f['you']['arm']      = $lv * GAUNT_ARM_POOL_PER_LEVEL;
 		$f['you']['armLevel'] = $lv;
@@ -508,4 +543,51 @@ function gaunt_roll_drop($fight) {
 	$f = array('seed' => (int)(($fight['seed'] ?? 1) ^ 0x5EED));
 	if (gaunt_rand($f) > GAUNT_DROP_CHANCE) return null;
 	return $spoils[gaunt_rint($f, 0, count($spoils) - 1)];
+}
+
+/* ===================== THE CHEST =====================================
+ * Pure, so what a run pays can be tested without a database.
+ * ===================================================================== */
+
+/**
+ * What a finished run's chest holds.
+ *
+ * SCALED TO WINS BANKED, NOT TO SWEEPING. Paying only on three wins is
+ * a closed loop for the under-equipped: no items, so no win; no win, so
+ * no chest; no chest, so no items. The run ends on a squad wipe rather
+ * than a first loss, so partial success is already something the system
+ * understands -- the chest just has to honour it. It also turns the
+ * three-win target from a cliff into a gradient, so a two-win run reads
+ * as progress.
+ *
+ * AND WHAT YOU TOOK OFF OPPONENTS COUNTS. Salvage itself dies with the
+ * run; the fact that you took it does not. A run spent beating armed
+ * rivals pays better than one spent beating empty ones, which is the
+ * other half of making a dangerous draw worth having.
+ *
+ * Returns consumable_id => quantity.
+ */
+function gaunt_chest_contents($wins, $haul, $seed) {
+	$wins = max(0, (int)$wins);
+	if ($wins < 1) return array();          /* no win, no chest */
+	$haul = max(0, min(GAUNT_CHEST_HAUL_CAP, (int)$haul));
+
+	$f = array('seed' => (int)$seed ^ 0xC4E57);
+	$n = $wins + (int)floor($haul / 2);     /* how many items */
+
+	/*
+	 * The tier a run can reach is bought with wins. One win pays the
+	 * common filler; only a sweep can produce the full heal, which is
+	 * what keeps three wins worth chasing once the cliff is gone.
+	 */
+	$pool = array(GAUNTLET_C_25);
+	if ($wins >= 2) $pool[] = GAUNTLET_C_50;
+	if ($wins >= 3) { $pool[] = GAUNTLET_C_75; $pool[] = GAUNTLET_C_100; }
+
+	$out = array();
+	for ($i = 0; $i < $n; $i++) {
+		$cid = $pool[gaunt_rint($f, 0, count($pool) - 1)];
+		$out[$cid] = (int)($out[$cid] ?? 0) + 1;
+	}
+	return $out;
 }

@@ -102,9 +102,12 @@ define('GF_UI_DONE', 1);
 
 /* ── the choices ───────────────────────────────────────────────────── */
 .gf-actions      { display: flex; flex-direction: column; gap: 10px; }
-.gf-group-label  { font-size: .62rem; text-transform: uppercase; letter-spacing: .12em;
+.gf-group-label  { text-align: center; font-size: .62rem; text-transform: uppercase; letter-spacing: .12em;
                    color: rgba(255,255,255,.35); margin-bottom: 5px; }
-.gf-group-row    { display: flex; flex-wrap: wrap; gap: 8px; }
+/* CENTRED. Left-aligned, a short row like Defend sat hard against the
+   edge under a long Attack row and read as a ragged column rather than
+   a set of choices. */
+.gf-group-row    { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .gf-btn          { display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
                    background: #123349; color: #e8eaed; border: 1px solid rgba(0,200,160,.28);
                    border-radius: 8px; padding: 10px 13px; font: 600 .82rem/1 inherit;
@@ -118,6 +121,8 @@ define('GF_UI_DONE', 1);
                    background: rgba(0,0,0,.35); border-radius: 4px; padding: 2px 5px; }
 .gf-btn.is-spent .gf-left { color: rgba(255,255,255,.4); }
 .gf-heal         { border-color: rgba(92,232,176,.4); }
+.gf-stake        { border-color: rgba(255,200,0,.4); color: #ffe08a; }
+.gf-stake:hover:not(:disabled) { border-color: #ffc800; background: #2a2a18; }
 .gf-go           { background: #00c8a0; color: #07111d; border-color: #2ee3bf; }
 .gf-go:hover     { background: #00e6b8; color: #07111d; }
 /* The result is ONE control, so it is not laid out like the stack of
@@ -134,6 +139,33 @@ define('GF_UI_DONE', 1);
                    border-radius: 8px; margin-bottom: 12px; }
 .gf-result.win   { background: rgba(0,200,160,.14); border: 1px solid #00c8a0; color: #00c8a0; }
 .gf-result.loss  { background: rgba(224,85,85,.14); border: 1px solid #e05555; color: #e05555; }
+.gchest          { text-align: center; margin: 18px 0 8px; }
+.gchest-btn      { background: none; border: 0; cursor: pointer; display: inline-flex;
+                   flex-direction: column; align-items: center; gap: 8px; color: #ffc800;
+                   font: 700 .85rem/1 inherit; text-transform: uppercase; letter-spacing: .08em;
+                   user-select: none; -webkit-user-select: none; }
+.gchest-img      { width: 150px; max-width: 46vw; height: auto; display: block;
+                   filter: drop-shadow(0 6px 18px rgba(0,0,0,.55)); }
+.gchest-btn:hover .gchest-img { transform: translateY(-3px); }
+.gchest-btn .gchest-img { transition: transform .18s ease; animation: gchestBreathe 2.6s ease-in-out infinite; }
+@keyframes gchestBreathe { 0%,100% { filter: drop-shadow(0 6px 18px rgba(0,0,0,.55)); }
+                           50% { filter: drop-shadow(0 6px 22px rgba(255,200,0,.45)); } }
+.gchest-title    { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em;
+                   color: rgba(255,255,255,.45); margin: 10px 0 8px; }
+.gchest-items    { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.gchest-item     { background: rgba(255,200,0,.1); border: 1px solid rgba(255,200,0,.35);
+                   border-radius: 6px; padding: 6px 10px; font-size: .8rem; color: #ffe08a;
+                   animation: gchestPop .45s cubic-bezier(.2,.8,.3,1) backwards; }
+.gchest-item:nth-child(2) { animation-delay: .09s; }
+.gchest-item:nth-child(3) { animation-delay: .18s; }
+.gchest-item:nth-child(4) { animation-delay: .27s; }
+.gchest-item:nth-child(n+5) { animation-delay: .36s; }
+@keyframes gchestPop { from { opacity: 0; transform: translateY(10px) scale(.9); }
+                       to   { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .gchest-btn .gchest-img { animation: none; }
+  .gchest-item { animation: none; }
+}
 .gf-err          { background: rgba(224,85,85,.12); border: 1px solid rgba(224,85,85,.5);
                    color: #ffb3b3; padding: 10px 12px; border-radius: 6px; font-size: .82rem; }
 
@@ -157,6 +189,22 @@ define('GF_UI_DONE', 1);
 .gf-fx.c-hit     { color: #ff5c5c; }
 .gf-fx.c-heal    { color: #5ce8b0; }
 .gf-fx.c-armor   { color: #4fa3d9; }
+.gf-fx.c-down    { color: #ff2b2b; }
+/*
+ * THE FALLEN. Grey, dimmed and slumped -- a fighter that is out should
+ * read as out at a glance, without the result text. The transition is
+ * long enough to watch rather than a cut.
+ */
+.gf-side .gf-portrait img { transition: filter .7s ease, opacity .7s ease, transform .7s ease; }
+.gf-side.is-down .gf-portrait img { filter: grayscale(1) brightness(.42)
+                                            drop-shadow(0 3px 8px rgba(0,0,0,.5));
+                                    opacity: .55; transform: scale(.96) rotate(-2deg); }
+.gf-side.is-down .gf-portrait { border-color: rgba(255,255,255,.12) !important; }
+.gf-side.is-down .gf-name { color: rgba(255,255,255,.4); }
+.gf-side.is-down .gf-portrait::after {
+  content: ''; position: absolute; inset: 0; background: rgba(7,17,29,.35); pointer-events: none; }
+@keyframes gfSlump { 0% { transform: none; } 100% { transform: scale(.96) rotate(-2deg); } }
+.gf-k-down strong { color: #ff2b2b; }
 /* The number, out of flow so it cannot push the card around. */
 .gf-float        { position: absolute; left: 50%; top: 36%; transform: translate(-50%,0);
                    font: 900 26px/1 Arial, Helvetica, sans-serif; font-variant-numeric: tabular-nums;
@@ -204,9 +252,18 @@ define('GF_UI_DONE', 1);
 
   try { muted = localStorage.getItem('gfMute') === '1'; } catch (e) {}
 
+  /*
+   * TWO SOUND LIBRARIES, and they are not interchangeable. The .mp3 set
+   * Crypt Crawl uses lives under audio/sounds/; the .ogg set DHC Arena
+   * and Monstrocity use lives under sounds/. skullcoinlose is in the
+   * second -- it is the cue DHC plays when a fighter is knocked out, and
+   * the one a player already associates with something falling.
+   */
+  var OGG = { ko: 'skullcoinlose' };
   function play(name) {
     if (!name || muted) return;
-    try { var a = new Audio(SND + name + '.mp3'); a.volume = 0.55; a.play().catch(function(){}); } catch (e) {}
+    var url = OGG[name] ? '/staking/sounds/' + OGG[name] + '.ogg' : SND + name + '.mp3';
+    try { var a = new Audio(url); a.volume = OGG[name] ? 0.55 : 0.5; a.play().catch(function(){}); } catch (e) {}
   }
   function music(key) {
     if (cur === key) return;
@@ -237,6 +294,20 @@ define('GF_UI_DONE', 1);
         if (e.kind === 'heal' || e.kind === 'armor') side = area.querySelector(e.who === 'you' ? '.gf-you' : '.gf-foe');
         if (!side) return;
         var fx = side.querySelector('.gf-fx');
+        /* A FALL NAMES ITS OWN SIDE. Every other entry names the ACTOR,
+           so the target is the other one -- `down` is the exception and
+           has to short-circuit, or the slump and the red glow land on
+           whoever is still standing. */
+        if (e.kind === 'down') {
+          var dead = area.querySelector(e.who === 'you' ? '.gf-you' : '.gf-foe');
+          if (dead) {
+            dead.classList.add('is-down');
+            var dfx = dead.querySelector('.gf-fx');
+            if (dfx) { dfx.className = 'gf-fx c-down'; void dfx.offsetWidth; dfx.classList.add('show'); }
+          }
+          play(e.sfx);
+          return;
+        }
         if (e.kind === 'hit') {
           side.classList.remove('is-hit', 'is-hitbig');
           void side.offsetWidth;                /* re-adding a class does not restart a CSS animation */

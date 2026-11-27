@@ -390,10 +390,12 @@ ok(strpos($LIB, "crc32('gauntlet:' . \$enc_id)") !== false,
    'the fight seed is not fixed to the encounter, so a reload re-rolls it');
 
 echo "\nthe migration is named, not guessed\n";
-foreach (array('gauntlets_nfts', 'gear_state', 'fight') as $bit)
+foreach (array('gauntlets_nfts', 'gear_state', 'chest', 'fight') as $bit)
 	ok(strpos(gaunt_schema_sql(), $bit) !== false, "the printed migration does not mention $bit");
-ok(substr_count(gaunt_schema_sql(), 'ALTER TABLE') === 3,
-   'the migration does not cover all three columns gaunt_schema_missing() looks for');
+/* Counted off what the checker looks for rather than hard-coded, so
+   adding a column cannot leave the printed migration behind. */
+ok(substr_count(gaunt_schema_sql(), 'ALTER TABLE') === 4,
+   'the migration does not cover every column gaunt_schema_missing() looks for');
 
 /* ====================================================================
  * THE UI LAYER: one renderer, two callers, and the audio outside it.
@@ -523,6 +525,84 @@ ok(preg_match_all('~gaunt_weapon_uses\\(\\$lv, \\$qty\\)~', $LIB) === 2,
    'a loadout branch does not pass how many you hold, so quantity is ignored there');
 ok(substr_count($LIB, "'qty' => \$qty") === 2,
    'the offered actions do not carry the quantity, so the UI cannot explain it');
+
+echo "\nthe reward items are usable again\n";
+/*
+ * REPORTED as a question -- are consumables actually used? Heals and
+ * Fast Forward always were. Double Rewards and Random Reward were NOT:
+ * their only entry point was the loadout screen, and I deleted it with
+ * the coin flip. They change the PAYOUT, not the fight, so they are
+ * staked mid-fight now -- which is better than the screen they lost,
+ * because committing one while you can see how it is going is a read
+ * rather than a blind bet.
+ */
+$st = gaunt_begin(array('hp' => 100, 'max' => 120), 50, kit(0), 9);
+$before = $st['foe']['hp'];
+gaunt_act($st, array('type' => 'stake', 'id' => GAUNTLET_C_DOUBLE, 'name' => 'Double'));
+ok(in_array(GAUNTLET_C_DOUBLE, $st['staked'], true), 'staking records nothing');
+ok($st['foe']['hp'] === $before, 'staking also damaged the opponent, so it costs no turn');
+gaunt_act($st, array('type' => 'stake', 'id' => GAUNTLET_C_DOUBLE, 'name' => 'Double'));
+ok(count($st['staked']) === 1, 'the same reward item can be staked twice');
+/* And the payout has to actually receive them. */
+ok(strpos($LIB, '$staked = isset($f[' . "'staked'" . '])') !== false
+   && preg_match('~gauntletResolveEncounter\\(\\$conn, \\(int\\)\\$user_id, \\(int\\)\\$enc_id,\\s*\\$staked~', $LIB) === 1,
+   'what was staked never reaches gauntletResolveEncounter(), so doubling does nothing');
+
+echo "\na fallen fighter falls visibly\n";
+$dead = gaunt_begin(array('hp' => 1, 'max' => 120), 50, kit(9), 4);
+$g = 0; while (empty($dead['over']) && $g++ < 40) gaunt_act($dead, bare());
+$downs = array();
+foreach ($dead['log'] as $e) if ($e['kind'] === 'down') $downs[] = $e;
+ok(count($downs) === 1, 'a fight ends without a single down event, so nothing cues the death');
+ok(($downs[0]['sfx'] ?? '') === 'ko', 'the fall has no cue');
+ok(($downs[0]['who'] ?? '') === 'you', 'the down event names the wrong side');
+/* BOTH SIDES. Testing only the one that happened to fall left the
+   other branch uncovered, and deleting it passed. */
+$kill = gaunt_begin(array('hp' => 9999, 'max' => 9999), 50, kit(0), 6);
+$g = 0; while (empty($kill['over']) && $g++ < 200) gaunt_act($kill, weapon(10));
+$fd = array(); foreach ($kill['log'] as $e) if ($e['kind'] === 'down') $fd[] = $e;
+ok(count($fd) === 1 && $fd[0]['who'] === 'foe',
+   'a slain opponent produces no down event, so nothing greys them out');
+/* The cue lives in the OTHER sound library -- .ogg under sounds/, not
+   .mp3 under audio/sounds/ -- and is the one DHC Arena plays on a KO. */
+ok(strpos($UI, "OGG = { ko: 'skullcoinlose' }") !== false,
+   'the fall cue is not DHC Arena\'s knockout sound, or is being looked for in the mp3 library');
+ok(strpos($UI, ".gf-side.is-down .gf-portrait img") !== false,
+   'a fallen fighter is not greyed out');
+/* `down` names the side that FELL; every other entry names the actor.
+   Without the short-circuit the slump lands on whoever is standing. */
+ok(preg_match("~e\\.kind === 'down'[\\s\\S]{0,420}return;~", $UI) === 1,
+   'the down entry does not short-circuit, so the death animates on the wrong side');
+
+echo "\nthe chest scales with wins and only opens once\n";
+ok(gaunt_chest_contents(0, 0, 1) === array(), 'a run with no wins still pays a chest');
+/* WITH A HAUL, which is the case the guard actually exists for: at
+   zero wins and zero haul the loop runs zero times anyway, so testing
+   only that passes with the guard deleted. */
+ok(gaunt_chest_contents(0, 6, 1) === array(),
+   'a run that won nothing still pays for the salvage it took');
+$one = array_sum(gaunt_chest_contents(1, 0, 5));
+$three = array_sum(gaunt_chest_contents(3, 0, 5));
+ok($one >= 1, 'a single win pays nothing, which is the closed loop the chest exists to break');
+ok($three > $one, 'three wins pays no more than one, so the sweep is not worth chasing');
+/* Only a sweep reaches the full heal; one win pays the common filler. */
+/* Across many seeds: one draw from a pool misses the rare tier by luck
+   often enough to pass a pool that wrongly contains it. */
+$leaked = false;
+for ($i = 0; $i < 300; $i++) {
+	$c = gaunt_chest_contents(1, 0, $i);
+	if (isset($c[GAUNTLET_C_100]) || isset($c[GAUNTLET_C_75])) { $leaked = true; break; }
+}
+ok(!$leaked, 'a one-win chest can pay a rare heal, so wins buy quantity but not quality');
+ok(array_sum(gaunt_chest_contents(3, 6, 5)) > $three,
+   'salvage taken during the run does not swell the chest');
+ok(array_sum(gaunt_chest_contents(3, 999, 5)) === array_sum(gaunt_chest_contents(3, GAUNT_CHEST_HAUL_CAP, 5)),
+   'the haul bonus is uncapped, which mints consumables without limit');
+/* NOT the payout flag. */
+ok(strpos($LIB, "UPDATE gauntlets SET chest=1 WHERE id=\$rid AND chest=0") !== false,
+   'the chest does not claim atomically, so a double submit pays twice');
+ok(strpos(preg_replace('~/\\*.*?\\*/~s', '', $LIB), 'SET reward') === false,
+   'the chest writes gauntlets.reward, which is the batch payout\'s flag -- the cron would skip the run');
 
 echo "\nsalvage is run-scoped, and reads as temporary\n";
 /* It must never reach the real inventory -- that is the line between
