@@ -302,11 +302,78 @@ the WHOLE declaration invalid, so neither property transitions. It was fixed
 once and the fix was reverted along with the impact layer, so the typo is
 live. Do not copy it.
 
+## The item economy
+
+The turn loop: the two NFTs trade attacks until one falls, with healing,
+armour and weapons played as the player judges.
+
+### DURABLE VERSUS SPENT -- the decision that makes or breaks it
+
+Armour degrades as it takes hits; a weapon degrades after a number of
+swings. THE QUESTION THAT MATTERS IS WHETHER THAT DESTROYS THE ITEM OR ONLY
+WEARS IT OUT FOR THE RUN.
+
+If gear is permanently consumed, players hoard it and never use it. It is
+the oldest problem in RPG inventories -- everyone finishes with 99 unused
+elixirs, because there is always a worse fight later. That returns the game
+to having no decisions in it, which is the thing being fixed.
+
+So: **degrade within the run, restore at the end.** The decision becomes
+tactical (when, in this run) rather than economic (whether, ever). It maps
+onto the existing tables exactly:
+
+  - `gear` (weapons, armour; quantity-based) -- **durable**. Wears down
+    across a run, resets after.
+  - `amounts` (consumables) -- **spent**. Genuinely gone.
+
+One rule, easy to explain and easy to balance: GEAR IS TACTICAL,
+CONSUMABLES ARE ECONOMIC.
+
+### The heals are already named for it
+
+`GAUNTLET_C_100` / `_75` / `_50` / `_25` are the mission consumables "100%
+Success" through "25% Success". As heals they should read as **heal BY that
+percentage of max HP**, not restore TO it -- restore-to makes a 25% potion
+useless above 25% health, while heal-by gives a clean ladder with 25% as
+common filler and 100% as the rare full heal.
+
+### Keep the two reward items as REWARD items
+
+`GAUNTLET_C_DOUBLE` (Double Rewards) and `GAUNTLET_C_RANDOM` (Random
+Reward) are the only two items that touch the PAYOUT rather than the
+OUTCOME. Converting Double Rewards into double damage for a turn would make
+every item a combat button and leave the game with no economic decision at
+all.
+
+It also improves under the new design rather than needing changing: with a
+multi-turn fight, let the doubler be played MID-FIGHT, once the player can
+see it going well. A blind bet becomes a read on the fight in front of
+them, at no new concept cost, and the risk stays real because a won-looking
+fight can still be lost.
+
+`GAUNTLET_C_RANDOM` should be tied to the setting already chosen: the
+encounter is staged in the OPPONENT NFT's project theme, so pay the reward
+in **the opponent's project currency**. You fought in their world, you take
+their coin. It stops being arbitrary and gives the backdrop a mechanical
+reason to exist.
+
+### Fast Forward stays a card swap
+
+Unchanged, and covered above: it rerolls an NFT you do not want, and under
+a squad it can also swap out a beaten body mid-run.
+
+### Safe to redefine
+
+`GAUNTLET_C_*` is referenced only in `db.php` and `gauntlets.php`, so what
+these items DO inside a gauntlet can change without touching anything else.
+Their display NAMES are platform-wide -- they are earned through missions
+-- so the names have to keep making sense in both places.
+
 ## Still to settle
 
   - Damage numbers, HP scale, and what a weapon level is worth.
   - Whether armour gets its own sound set, or reuses `equip` for all of it.
-  - How many uses per run a weapon gets, and whether armour is consumed.
+  - How many swings a weapon gets per run, and how fast armour wears.
   - Whether the chest replaces an encounter or is extra (replacing it also
     gives pacing relief).
   - Whether the opponent template is capped, scaled, or raw.
