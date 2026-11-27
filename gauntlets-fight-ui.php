@@ -115,7 +115,15 @@ define('GF_UI_DONE', 1);
                    /* a tap on the label must fire the button, not start a
                       selection -- the missions button taught us that */
                    user-select: none; -webkit-user-select: none; }
-.gf-btn:hover:not(:disabled), .gf-btn:focus-visible { background: #1a4663; border-color: #00c8a0; }
+/* HOVER ONLY WHERE THERE IS A POINTER. A tap leaves :hover stuck on a
+   phone, and this rule outranks .gf-go's own colours (0-3-0 against
+   0-1-0), so after one tap Continue sat at the generic hover fill
+   while keeping .gf-go's dark ink: black on navy, which reads as
+   disabled. REPORTED exactly that way. */
+@media (hover: hover) {
+  .gf-btn:hover:not(:disabled) { background: #1a4663; border-color: #00c8a0; }
+}
+.gf-btn:focus-visible { background: #1a4663; border-color: #00c8a0; }
 .gf-btn:disabled { opacity: .35; cursor: default; }
 .gf-btn img      { width: 18px; height: 18px; object-fit: contain; }
 .gf-left         { font-style: normal; font-size: .68rem; color: #00c8a0;
@@ -123,9 +131,15 @@ define('GF_UI_DONE', 1);
 .gf-btn.is-spent .gf-left { color: rgba(255,255,255,.4); }
 .gf-heal         { border-color: rgba(92,232,176,.4); }
 .gf-stake        { border-color: rgba(255,200,0,.4); color: #ffe08a; }
-.gf-stake:hover:not(:disabled) { border-color: #ffc800; background: #2a2a18; }
+@media (hover: hover) {
+  .gf-stake:hover:not(:disabled) { border-color: #ffc800; background: #2a2a18; }
+}
 .gf-go           { background: #00c8a0; color: #07111d; border-color: #2ee3bf; }
-.gf-go:hover     { background: #00e6b8; color: #07111d; }
+/* Matched to the generic hover's specificity so the primary button
+   cannot be repainted by it. */
+@media (hover: hover) {
+  .gf-go:hover:not(:disabled) { background: #00e6b8; color: #07111d; }
+}
 /* The result is ONE control, so it is not laid out like the stack of
    grouped choices -- as a column child it stretched full width with its
    label hard left, which reads as a broken row rather than a button. */
@@ -158,7 +172,9 @@ define('GF_UI_DONE', 1);
                    user-select: none; -webkit-user-select: none; }
 .gchest-img      { width: 150px; max-width: 46vw; height: auto; display: block;
                    filter: drop-shadow(0 6px 18px rgba(0,0,0,.55)); }
-.gchest-btn:hover .gchest-img { transform: translateY(-3px); }
+@media (hover: hover) {
+  .gchest-btn:hover .gchest-img { transform: translateY(-3px); }
+}
 .gchest-btn .gchest-img { transition: transform .18s ease; animation: gchestBreathe 2.6s ease-in-out infinite; }
 @keyframes gchestBreathe { 0%,100% { filter: drop-shadow(0 6px 18px rgba(0,0,0,.55)); }
                            50% { filter: drop-shadow(0 6px 22px rgba(255,200,0,.45)); } }
@@ -260,7 +276,7 @@ define('GF_UI_DONE', 1);
   var MUSIC = { theme: 'Crypt Crawl Theme.mp3', frantic: 'Crypt Crawl Frantic.mp3',
                 doom: 'Crypt Crawl Doom.mp3', win: 'Crypt Crawl Triumph.mp3',
                 lose: 'Crypt Crawl Death.mp3' };
-  var cur = null, muted = false;
+  var cur = null, muted = false, playing = false;
 
   try { muted = localStorage.getItem('gfMute') === '1'; } catch (e) {}
 
@@ -277,16 +293,45 @@ define('GF_UI_DONE', 1);
     var url = OGG[name] ? '/staking/sounds/' + OGG[name] + '.ogg' : SND + name + '.mp3';
     try { var a = new Audio(url); a.volume = OGG[name] ? 0.55 : 0.5; a.play().catch(function(){}); } catch (e) {}
   }
+  /*
+   * THE FIRST play() IS ALWAYS REFUSED. Nothing has been tapped when the
+   * page loads, so autoplay is blocked -- and `cur = key` was committed
+   * BEFORE that refusal, so every later call for the same mood hit the
+   * `cur === key` guard and returned. The track never started for the
+   * whole fight unless the health band happened to change. REPORTED as
+   * no music on battle.
+   *
+   * `cur` now only records which track is loaded; whether it is audible
+   * is `playing`, and a call that finds it silent retries.
+   */
   function music(key) {
-    if (cur === key) return;
-    cur = key;
     var el = document.getElementById('gf-music');
     if (!el || muted) return;
-    el.loop = (key === 'theme' || key === 'frantic' || key === 'doom');
-    el.src  = TRK + encodeURIComponent(MUSIC[key]);
-    el.volume = 0.32;
-    el.play().catch(function () {});   /* blocked until a gesture; fine */
+    if (cur === key && playing && !el.paused) return;
+    if (cur !== key) {
+      cur = key;
+      el.loop = (key === 'theme' || key === 'frantic' || key === 'doom');
+      el.src  = TRK + encodeURIComponent(MUSIC[key]);
+      el.volume = 0.32;
+    }
+    var pr = el.play();
+    if (pr && pr.then) pr.then(function () { playing = true; },
+                               function () { playing = false; });
+    else playing = true;
   }
+  /*
+   * And the retry has to happen ON the gesture. animate() calls music()
+   * from inside the fetch .then(), which is a task of its own: iOS has
+   * already spent the tap's gesture token by then and refuses there too.
+   * This fires synchronously on the first touch anywhere on the page.
+   */
+  function unlock() {
+    if (playing || muted) return;
+    var area = document.getElementById(AREA);
+    if (area) music(moodFrom(area));
+  }
+  document.addEventListener('pointerdown', unlock, true);
+  document.addEventListener('touchstart',  unlock, true);
   function moodFrom(area) {
     var hp = parseInt(area.getAttribute('data-hp') || '0', 10);
     var mx = parseInt(area.getAttribute('data-hpmax') || '1', 10) || 1;

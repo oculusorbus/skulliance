@@ -285,6 +285,7 @@ if ($state === 'encounter') {
 .arena                { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 24px; }
 .arena-vs             { display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 800; color: rgba(255,255,255,.3); padding-top: 40px; }
 @media (max-width: 600px) {
+	.hide-in-fight { display: none; }
 	.arena { gap: 8px; }
 	.arena-vs { font-size: 1rem; padding-top: 30px; }
 	.arena-card-label { font-size: .6rem; padding: 6px 6px 2px; }
@@ -365,7 +366,12 @@ if ($state === 'encounter') {
 #result-reveal.win  .rr-accent { box-shadow: inset 0 0 120px rgba(0,200,160,.18); }
 #result-reveal.loss .rr-accent { box-shadow: inset 0 0 120px rgba(224,85,85,.18); }
 .rr-drop    { margin-top: 10px; font-size: .95rem; font-weight: 700; color: #ffc800;
-              letter-spacing: .04em; }
+              letter-spacing: .04em; display: flex; flex-wrap: wrap;
+              align-items: center; justify-content: center; gap: 8px; }
+.rr-drop img { width: 24px; height: 24px; object-fit: contain; }
+/* Its own full-width row under the icon and the words, which is what
+   the block display did before this line became a flex row. */
+.rr-drop .rr-drop-note { flex: 0 0 100%; }
 .rr-drop-note { display: block; font-size: .65rem; font-weight: 400; letter-spacing: .1em;
                 text-transform: uppercase; color: rgba(255,200,0,.55); margin-top: 3px; }
 .rr-icon    { font-size: 5rem; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .15s both; }
@@ -385,8 +391,13 @@ if ($state === 'encounter') {
 <div class="main">
 <div class="gauntlet-wrap">
 
-	<div class="gauntlet-title">Gauntlet</div>
-	<div class="gauntlet-subtitle">Draw a hand of <?php echo GAUNTLET_HAND_SIZE; ?> NFTs. Survive 3 opponents to sweep the run.</div>
+	<?php /* Over a live fight on a phone the masthead and the how-to-play
+	         line pushed the arena most of a screen down, and neither
+	         tells you anything mid-battle. Desktop has the room, so it
+	         keeps them. */
+	   $gcls = ($state === 'encounter') ? ' hide-in-fight' : ''; ?>
+	<div class="gauntlet-title<?php echo $gcls; ?>">Gauntlet</div>
+	<div class="gauntlet-subtitle<?php echo $gcls; ?>">Draw a hand of <?php echo GAUNTLET_HAND_SIZE; ?> NFTs. Survive 3 opponents to sweep the run.</div>
 
 	<?php foreach ($flashes as $f): ?>
 		<div class="flash <?php echo htmlspecialchars($f['type']); ?>"><?php echo htmlspecialchars($f['msg']); ?></div>
@@ -404,7 +415,16 @@ if ($state === 'encounter') {
 			<?php echo htmlspecialchars($last_result['currency']); ?>
 		</div>
 		<?php if (!empty($last_result['drop'])): ?>
-			<div class="rr-drop">Took their <?php echo htmlspecialchars($last_result['drop']); ?>
+			<?php /* Same picture the salvage wears in the loadout, so the
+			         thing you were just given is recognisable when you
+			         go to spend it. Salvaged weapons show the fist. */
+			   $rr_ico = array('weapon' => 'fist', 'armour' => 'shield',
+			                   'medkit' => 'medkit');
+			   $rr_ico = $rr_ico[$last_result['drop']] ?? ''; ?>
+			<div class="rr-drop">
+				<?php if ($rr_ico !== ''): ?><img src="icons/<?php echo $rr_ico; ?>.png"
+				     alt="" onerror="this.style.display='none'"><?php endif; ?>
+				<span>Took their <?php echo htmlspecialchars($last_result['drop']); ?></span>
 				<span class="rr-drop-note">yours for this run</span></div>
 		<?php endif; ?>
 		<div class="rr-win-num">Win <?php echo intval($last_result['win_number']); ?> of <?php echo GAUNTLET_MAX_WINS; ?></div>

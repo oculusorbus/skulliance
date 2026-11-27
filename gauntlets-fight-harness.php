@@ -692,6 +692,44 @@ ok(strpos($PG, "'drop'       => " . '$gf_drop,') !== false,
    'the victory screen is not told what dropped');
 ok(strpos($PG, 'Took their <?php echo htmlspecialchars($last_result[') !== false,
    'the victory screen does not show the salvage');
+/* With a picture, the same one the salvage wears in the loadout. */
+ok(strpos($PG, 'icons/<?php echo $rr_ico; ?>.png') !== false,
+   'the salvage line is words only, where every other reward on that screen has an icon');
+ok(strpos($PG, "'weapon' => 'fist', 'armour' => 'shield'") !== false,
+   'the drop icons no longer match the loadout, so salvage looks like a different item there');
+$rrico = preg_match('~\$rr_ico = array\((.*?)\);~s', $PG, $m) ? $m[1] : '';
+ok(strpos($rrico, "'medkit' => 'medkit'") !== false,
+   'a salvaged medkit has no icon, so the one drop kind in three falls back to nothing');
+
+echo "\nno control is left looking disabled by a stale hover\n";
+/* A tap leaves :hover stuck on a phone. .gf-btn:hover:not(:disabled) is
+   0-3-0 and outranked .gf-go (0-1-0) AND .gf-go:hover (0-2-0), so after
+   one tap Continue wore the generic hover fill with .gf-go's dark ink:
+   measured #1a4663 behind #07111d on the reported screenshot. */
+$uiNoHover = preg_replace(array('~/\*.*?\*/~s', '~@media \(hover: hover\) \{.*?\n\}~s'),
+                          array('', ''), $UI);
+ok(strpos($uiNoHover, ':hover') === false,
+   'a :hover rule sits outside @media (hover: hover), so one tap leaves it stuck on a phone');
+ok(strpos($UI, '.gf-go:hover:not(:disabled)') !== false,
+   'the primary button hover is less specific than the generic one, so the generic fill repaints it');
+
+echo "\nthe music survives the first refused play\n";
+/* play() is always refused on load -- nothing has been tapped yet. */
+ok(strpos($UI, 'if (cur === key && playing && !el.paused) return;') !== false,
+   'the track guard trusts `cur` alone, so a refused first play silences the whole fight');
+ok(strpos($UI, 'pr.then(function () { playing = true; },') !== false,
+   'nothing records whether the track actually started, so a refusal cannot be retried');
+ok(strpos($UI, "document.addEventListener('pointerdown', unlock, true);") !== false,
+   'the only retry is inside the fetch .then(), where the tap\'s gesture token is already spent');
+
+echo "\nthe masthead gets out of the way of a phone fight\n";
+/* Desktop has the room and keeps them -- 'It's fine on browser'. */
+ok(strpos($PG, '($state === \'encounter\') ? \' hide-in-fight\' : \'\'') !== false,
+   'the masthead is hidden outside a live fight too, so the page loses its title');
+$mq = preg_match_all('~@media \(max-width: 600px\) \{(.*?)\n\}~s', $PG, $mm)
+	? implode("\n", $mm[1]) : '';
+ok(strpos($mq, '.hide-in-fight { display: none; }') !== false,
+   'the masthead is hidden at every width, not just on a phone where the room is short');
 /* Read BEFORE resolving -- resolving is what closes the encounter. */
 ok(strpos($PG, '$gf_closing = gaunt_fight_get($conn, $enc_id);')
    < strpos($PG, '$outcome = gauntletResolveFight($conn, $user_id, $enc_id);'),
