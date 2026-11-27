@@ -685,7 +685,7 @@ ok(strpos($LIB, '$fight[' . "'drop'" . '] = $word;') !== false,
 /* Saved immediately: the drop happens AFTER the turn's normal save, so
    without a second write it is lost on the next read. */
 $dropblk = substr($LIB, strpos($LIB, 'if (!empty($fight[' . "'over'" . ']) && ($fight['));
-$dropblk = substr($dropblk, 0, 1200);
+$dropblk = substr($dropblk, 0, 1900);
 ok(strpos($dropblk, 'gaunt_fight_save($conn, $e, $fight);') !== false,
    'the drop is not persisted after it is added, so it is lost on the next read');
 ok(strpos($PG, "'drop'       => " . '$gf_drop,') !== false,
@@ -695,11 +695,14 @@ ok(strpos($PG, 'Took their <?php echo htmlspecialchars($last_result[') !== false
 /* With a picture, the same one the salvage wears in the loadout. */
 ok(strpos($PG, 'icons/<?php echo $rr_ico; ?>.png') !== false,
    'the salvage line is words only, where every other reward on that screen has an icon');
-ok(strpos($PG, "'weapon' => 'fist', 'armour' => 'shield'") !== false,
-   'the drop icons no longer match the loadout, so salvage looks like a different item there');
-$rrico = preg_match('~\$rr_ico = array\((.*?)\);~s', $PG, $m) ? $m[1] : '';
-ok(strpos($rrico, "'medkit' => 'medkit'") !== false,
-   'a salvaged medkit has no icon, so the one drop kind in three falls back to nothing');
+/* Chosen once, where the drop is recorded, so the victory screen and
+   the loadout cannot disagree about what was taken. */
+ok(strpos($PG, "\$last_result['drop_icon']") !== false,
+   'the victory screen picks its own icon again, which can disagree with the loadout');
+ok(strpos($LIB, '$fight[\'drop_icon\'] = $dico;') !== false,
+   'the drop is stored without an icon, so the victory screen has nothing real to draw');
+ok(strpos($LIB, "return \$pct > 0 ? (\$pct . '-success') : '';") !== false,
+   'a salvaged heal has no real consumable icon');
 
 echo "\nno control is left looking disabled by a stale hover\n";
 /* A tap leaves :hover stuck on a phone. .gf-btn:hover:not(:disabled) is
@@ -760,15 +763,73 @@ ok(substr_count($REN, '>&times;<?php echo (int)$it[\'have\']') === 2,
 ok(strpos($REN, "'how many you hold' : 'salvaged this run'") !== false,
    'a salvaged medkit claims to be something you own, when it dies with the run');
 
+echo "\nthe opponent fights out of its own real inventory\n";
+/*
+ * The opponent's actions come from the rival player's REAL items, and
+ * those same items are what you take off them. The fight used to carry
+ * tiers only, which left the spoils nothing to name -- so they came out
+ * as an invented "medkit" healing an invented 40%. REPORTED as "where
+ * the heck are you getting medkits from".
+ */
+function gf_kit($pct, $cid) {
+	return array('weapon_level' => 0, 'armor_level' => 0, 'can_heal' => $cid > 0,
+	             'heal_cid' => $cid, 'heal_pct' => $pct);
+}
+function gf_heal_gain($pct, $cid) {
+	$f = gaunt_begin(array('hp' => 120, 'max' => 120), 50, gf_kit($pct, $cid), 7);
+	$f['foe']['hp'] = (int)round($f['foe']['max'] * 0.2);   /* below the heal gate */
+	$before = $f['foe']['hp'];
+	gaunt_foe_turn($f);
+	return $f['foe']['hp'] - $before;
+}
+$g75  = gf_heal_gain(75,  GAUNTLET_C_75);
+$g100 = gf_heal_gain(100, GAUNTLET_C_100);
+ok($g75 > 0 && $g100 > $g75,
+   'the opponent heals the same amount whatever consumable it holds, so the number is invented');
+/* 75% of a 120 pool is 90, and from 24hp that does not clip the cap --
+   so this is the raw figure the consumable is worth, not a clamp. */
+ok($g75 === (int)round(120 * 75 * GAUNT_HEAL_FRACTION),
+   'a 75% Success in the opponent\'s hands does not heal what a 75% Success is worth');
+
+/* No real consumable behind it means no heal spoil at all, rather than
+   a stand-in. Old fights saved before the kit carried one land here. */
+$fs = gaunt_begin(array('hp' => 120, 'max' => 120), 50, gf_kit(0, 0), 7);
+$fs['log'] = array(array('who' => 'foe', 'kind' => 'heal'));
+$heals = 0;
+foreach (gaunt_spoils($fs) as $sp) if ($sp['kind'] === 'heal') $heals++;
+ok($heals === 0, 'a heal with no real consumable behind it still drops something invented');
+
+$fr = gaunt_begin(array('hp' => 120, 'max' => 120), 50,
+	array('weapon_level' => 3, 'armor_level' => 0, 'can_heal' => true,
+	      'weapon_id' => 12, 'weapon_name' => 'Tactical Katana',
+	      'heal_cid' => GAUNTLET_C_75, 'heal_pct' => 75), 7);
+$fr['log'] = array(array('who' => 'foe', 'kind' => 'hit', 'sfx' => 'tacticalkatana'),
+                   array('who' => 'foe', 'kind' => 'heal'));
+$byKind = array();
+foreach (gaunt_spoils($fr) as $sp) $byKind[$sp['kind']] = $sp;
+ok(($byKind['weapon']['name'] ?? '') === 'Tactical Katana'
+   && (int)($byKind['weapon']['item_id'] ?? 0) === 12,
+   'the salvaged weapon does not name the real row it came off');
+ok((int)($byKind['heal']['cid'] ?? 0) === GAUNTLET_C_75,
+   'the salvaged heal is not a real consumable the player could own');
+
+/* The cap decides the TIER; the pick must then be a row the opponent
+   actually owns at or below it, not their best one relabelled. */
+ok(strpos($LIB, 'AND t.level <= $lv') !== false,
+   'gaunt_best_item ignores the cap, so the opponent fields gear it is not allowed to');
+ok(strpos($LIB, 'if (getCurrentAmount($conn, (int)$user_id, $cid) > 0) return (int)$cid;') !== false,
+   'gaunt_best_heal does not return the consumable actually owned');
+
 echo "\nsalvaged medkits stack instead of multiplying into rows\n";
 /* Two 40% medkits rendered two identical "Heal 40% x1" buttons, which
    reads as items being minted. REPORTED exactly that way. */
-ok(strpos($LIB, 'if (isset($loot_heal[$pct])) { $out[\'heals\'][$loot_heal[$pct]][\'have\']++; continue; }') !== false,
+ok(strpos($LIB, 'if (isset($loot_heal[$key])) { $out[\'heals\'][$loot_heal[$key]][\'have\']++; continue; }') !== false,
    'each salvaged medkit still gets its own button, so two of a kind read as duplicates');
-ok(strpos($LIB, '\'pct\' => $pct, \'have\' => 1,') !== false,
+ok(strpos($LIB, '\'cid\' => $cid, \'pct\' => $pct, \'have\' => 1,') !== false,
    'the stacked medkit does not start its count at one');
 /* Weapons must NOT be folded together: each carries its own uses. */
-ok(strpos($LIB, '\'name\' => \'Salvaged weapon\', \'level\' => (int)$lt[\'level\'], \'left\' => $left,') !== false,
+ok(strpos($LIB, '$out[\'weapons\'][] = array(\'type\' => \'weapon\', \'id\' => $id, \'loot\' => true,') !== false
+   && strpos($LIB, '$loot_wpn') === false,
    'salvaged weapons were stacked too, which sums pools of uses that are not interchangeable');
 /* TWO of them: the weapon branch and the heal branch. Matching the
    markup alone passes on the weapon's tag whatever the heal does. */

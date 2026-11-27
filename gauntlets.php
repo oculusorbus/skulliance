@@ -83,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			   the only place that knows. */
 			$gf_closing = gaunt_fight_get($conn, $enc_id);
 			$gf_drop    = (string)($gf_closing['drop'] ?? '');
+			$gf_drop_ico = (string)($gf_closing['drop_icon'] ?? '');
 			/* The fight decided this over a dozen exchanges; this only
 			   records it and pays it out. */
 			$outcome = gauntletResolveFight($conn, $user_id, $enc_id);
@@ -111,6 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						/* Read off the fight just closed; '' when nothing
 						   dropped. */
 						'drop'       => $gf_drop,
+						'drop_icon'  => $gf_drop_ico,
 						'amount'     => ($wnum2 * 100) * ($is_dbl ? 2 : 1),
 						'currency'   => $actual_currency,
 						'win_number' => $wnum2,
@@ -415,12 +417,10 @@ if ($state === 'encounter') {
 			<?php echo htmlspecialchars($last_result['currency']); ?>
 		</div>
 		<?php if (!empty($last_result['drop'])): ?>
-			<?php /* Same picture the salvage wears in the loadout, so the
-			         thing you were just given is recognisable when you
-			         go to spend it. Salvaged weapons show the fist. */
-			   $rr_ico = array('weapon' => 'fist', 'armour' => 'shield',
-			                   'medkit' => 'medkit');
-			   $rr_ico = $rr_ico[$last_result['drop']] ?? ''; ?>
+			<?php /* The real item's own icon, chosen where the drop was
+			         recorded so this screen and the loadout cannot
+			         disagree about what was taken. */
+			   $rr_ico = (string)($last_result['drop_icon'] ?? ''); ?>
 			<div class="rr-drop">
 				<?php if ($rr_ico !== ''): ?><img src="icons/<?php echo $rr_ico; ?>.png"
 				     alt="" onerror="this.style.display='none'"><?php endif; ?>

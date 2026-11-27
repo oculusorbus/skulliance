@@ -266,6 +266,22 @@ function gaunt_begin($player, $win_chance, $kit, $seed) {
 				'weapon_level' => max(0, (int)($kit['weapon_level'] ?? 0)),
 				'armor_level'  => max(0, (int)($kit['armor_level']  ?? 0)),
 				'can_heal'     => !empty($kit['can_heal']),
+				/*
+				 * WHICH REAL ITEMS, not just what tier. The opponent
+				 * acts out of the rival player's actual inventory
+				 * (consuming nothing of theirs), so the thing you
+				 * salvage off them has to be that same real item --
+				 * a weapon row, an armour row, a consumable id. The
+				 * fight used to carry levels only, which left the
+				 * spoils with nothing to name and is why they came
+				 * out as an invented "medkit" at a made-up 40%.
+				 */
+				'weapon_id'    => (int)($kit['weapon_id']   ?? 0),
+				'weapon_name'  => (string)($kit['weapon_name'] ?? ''),
+				'armor_id'     => (int)($kit['armor_id']    ?? 0),
+				'armor_name'   => (string)($kit['armor_name']  ?? ''),
+				'heal_cid'     => (int)($kit['heal_cid']    ?? 0),
+				'heal_pct'     => (int)($kit['heal_pct']    ?? 0),
 				'healed'       => 0,
 				/* ONCE. Without this the opponent re-applied armour
 				   every time its pool emptied, which is unlimited
@@ -470,7 +486,11 @@ function gaunt_foe_turn(&$f) {
 
 	if ($kit['can_heal'] && $kit['healed'] < 1
 	    && $f['foe']['hp'] < $f['foe']['max'] * GAUNT_FOE_HEAL_AT) {
-		$gain = (int)round($f['foe']['max'] * GAUNT_FOE_HEAL_PCT * GAUNT_HEAL_FRACTION);
+		/* The real consumable's percentage. GAUNT_FOE_HEAL_PCT is only a
+		   floor for a fight saved before the kit carried one. */
+		$hpct = (int)($kit['heal_pct'] ?? 0);
+		if ($hpct < 1) $hpct = GAUNT_FOE_HEAL_PCT;
+		$gain = (int)round($f['foe']['max'] * $hpct * GAUNT_HEAL_FRACTION);
 		$before = $f['foe']['hp'];
 		$f['foe']['hp'] = min($f['foe']['max'], $f['foe']['hp'] + $gain);
 		$f['foe']['kit']['healed'] = 1;
@@ -519,13 +539,21 @@ function gaunt_spoils($fight) {
 		if ($e['kind'] === 'armor') $used['armor'] = true;
 		if ($e['kind'] === 'heal')  $used['heal']  = true;
 	}
+	/* Each spoil names the REAL item it came off: a weapons row, an
+	   armor row, a consumable. Nothing here is invented. */
 	if ($used['weapon'] && !empty($kit['weapon_level']))
 		$out[] = array('kind' => 'weapon', 'level' => (int)$kit['weapon_level'],
+		               'item_id' => (int)($kit['weapon_id'] ?? 0),
+		               'name'    => (string)($kit['weapon_name'] ?? ''),
 		               'uses' => max(1, (int)round(gaunt_weapon_uses($kit['weapon_level']) / 2)));
 	if ($used['armor'] && !empty($kit['armor_level']))
-		$out[] = array('kind' => 'armor', 'level' => (int)$kit['armor_level'], 'uses' => 1);
-	if ($used['heal'])
-		$out[] = array('kind' => 'heal', 'pct' => GAUNT_FOE_HEAL_PCT, 'uses' => 1);
+		$out[] = array('kind' => 'armor', 'level' => (int)$kit['armor_level'],
+		               'item_id' => (int)($kit['armor_id'] ?? 0),
+		               'name'    => (string)($kit['armor_name'] ?? ''),
+		               'uses' => 1);
+	if ($used['heal'] && !empty($kit['heal_cid']))
+		$out[] = array('kind' => 'heal', 'cid' => (int)$kit['heal_cid'],
+		               'pct' => (int)($kit['heal_pct'] ?: GAUNT_FOE_HEAL_PCT), 'uses' => 1);
 	return $out;
 }
 

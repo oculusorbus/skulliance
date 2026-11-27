@@ -194,9 +194,76 @@ function gaunt_best_level($conn, $user_id, $type) {
 	return (int)$r->fetch_assoc()['lv'];
 }
 function gaunt_has_heal($conn, $user_id) {
+	return gaunt_best_heal($conn, $user_id) > 0;
+}
+
+/**
+ * What a dropped item is called -- its REAL name wherever it has one.
+ * The fight log, the victory screen and the loadout all read this, so
+ * the three cannot drift apart.
+ */
+function gaunt_heal_slug($consumable_id) {
+	$pct = gaunt_heal_pct($consumable_id);
+	return $pct > 0 ? ($pct . '-success') : '';
+}
+
+/** The icon a dropped item is drawn with -- the real item's own. */
+function gaunt_drop_icon($drop) {
+	$k = isset($drop['kind']) ? $drop['kind'] : '';
+	if ($k === 'heal')  return gaunt_heal_slug((int)($drop['cid'] ?? 0));
+	if ($k === 'armor') return 'shield';
+	$name = trim((string)($drop['name'] ?? ''));
+	return $name !== '' ? gaunt_weapon_slug($name) : 'fist';
+}
+
+function gaunt_drop_label($drop) {
+	$k = isset($drop['kind']) ? $drop['kind'] : '';
+	if ($k === 'heal') {
+		$pct = (int)($drop['pct'] ?? 0);
+		return $pct > 0 ? ($pct . '% Success') : 'heal';
+	}
+	$name = trim((string)($drop['name'] ?? ''));
+	if ($name !== '') return $name;
+	return $k === 'armor' ? 'armour' : 'weapon';
+}
+
+/**
+ * The strongest heal consumable this player actually owns, or 0.
+ *
+ * WHICH ONE, not whether. The opponent acts out of the rival player's
+ * real inventory, so when it heals it has to heal for what one of their
+ * real consumables is worth -- and that same consumable is what you
+ * take off them. Asking only "do they hold a heal" is what left the
+ * spoils with nothing real to name.
+ */
+function gaunt_best_heal($conn, $user_id) {
 	foreach (array(GAUNTLET_C_100, GAUNTLET_C_75, GAUNTLET_C_50, GAUNTLET_C_25) as $cid)
-		if (getCurrentAmount($conn, (int)$user_id, $cid) > 0) return true;
-	return false;
+		if (getCurrentAmount($conn, (int)$user_id, $cid) > 0) return (int)$cid;
+	return 0;
+}
+
+/**
+ * The best weapon or armour this player owns at or below $max_level.
+ *
+ * The cap is applied BEFORE the pick, not after, so the opponent fields
+ * a real item it genuinely owns rather than a real item's name pinned
+ * to someone else's level.
+ */
+function gaunt_best_item($conn, $user_id, $type, $max_level) {
+	$uid = (int)$user_id; $lv = (int)$max_level;
+	$none = array('id' => 0, 'name' => '', 'level' => 0);
+	if ($uid < 1 || $lv < 1) return $none;
+	$tbl = ($type === 'armor') ? 'armor' : 'weapons';
+	$kind = ($type === 'armor') ? 'armor' : 'weapon';
+	$r = @$conn->query("SELECT t.id, t.name, t.level FROM gear g
+	                    INNER JOIN `$tbl` t ON t.id = g.item_id
+	                    WHERE g.user_id=$uid AND g.type='$kind' AND g.quantity > 0
+	                      AND t.level <= $lv
+	                    ORDER BY t.level DESC LIMIT 1");
+	if (!$r || !$r->num_rows) return $none;
+	$row = $r->fetch_assoc();
+	return array('id' => (int)$row['id'], 'name' => (string)$row['name'],
+	             'level' => (int)$row['level']);
 }
 
 /**
@@ -212,10 +279,32 @@ function gaunt_kit_for($conn, $opponent_user_id, $player_user_id) {
 		$raw['armor_level']  = gaunt_best_level($conn, $opponent_user_id, 'armor');
 		$raw['can_heal']     = gaunt_has_heal($conn, $opponent_user_id);
 	}
-	return gaunt_cap_kit($raw,
+	$kit = gaunt_cap_kit($raw,
 		gaunt_best_level($conn, $player_user_id, 'weapon'),
 		gaunt_best_level($conn, $player_user_id, 'armor'),
 		gaunt_has_heal($conn, $player_user_id));
+
+	/*
+	 * NAME THE REAL ITEMS behind the capped tiers. gaunt_cap_kit stays
+	 * pure and still decides what tier the opponent may field; this
+	 * then picks the actual row it owns at or below that tier, so the
+	 * weapon it swings and the armour it straps on are items that
+	 * genuinely sit in that player's gear -- and so the spoils can hand
+	 * the very same item over instead of an invented stand-in.
+	 */
+	$oid = (int)$opponent_user_id;
+	$w = gaunt_best_item($conn, $oid, 'weapon', $kit['weapon_level']);
+	$a = gaunt_best_item($conn, $oid, 'armor',  $kit['armor_level']);
+	$kit['weapon_id']   = $w['id'];
+	$kit['weapon_name'] = $w['name'];
+	$kit['weapon_level'] = $w['level'];     /* the real row's level */
+	$kit['armor_id']    = $a['id'];
+	$kit['armor_name']  = $a['name'];
+	$kit['armor_level'] = $a['level'];
+	$kit['heal_cid']    = $kit['can_heal'] ? gaunt_best_heal($conn, $oid) : 0;
+	$kit['heal_pct']    = gaunt_heal_pct($kit['heal_cid']);
+	$kit['can_heal']    = $kit['heal_cid'] > 0;
+	return $kit;
 }
 
 /* -------------------------------------------------------- the loadout */
@@ -266,11 +355,11 @@ function gaunt_loadout($conn, $user_id, $run_id, $fight = null) {
 	 * owns and whose wear is tracked against their inventory, a negative
 	 * one is loot that exists only for this run.
 	 */
-	/* Salvaged medkits STACK. Each one is its own entry in the run state
+	/* Salvaged heals STACK. Each one is its own entry in the run state
 	   -- it has to be, they are spent one at a time -- but rendering one
-	   button per entry put two identical "Heal 40% x1" rows side by side
-	   and made salvage look like items being minted. REPORTED that way.
-	   Keyed by percentage, counted, and spent off the first unspent
+	   button per entry put two identical rows side by side and made
+	   salvage look like items being minted. REPORTED that way. Keyed by
+	   the real consumable id, counted, and spent off the first unspent
 	   entry; weapons are NOT stacked because each carries its own
 	   independent pool of uses that cannot be summed. */
 	$loot_heal = array();
@@ -278,19 +367,32 @@ function gaunt_loadout($conn, $user_id, $run_id, $fight = null) {
 		$left = max(0, (int)($lt['left'] ?? 0));
 		$id   = -($i + 1);
 		if ($lt['kind'] === 'weapon') {
+			/* ITS REAL NAME, and therefore its real icon and its real
+			   swing sound. "Salvaged weapon" with a fist icon told the
+			   player nothing about what they had just taken. */
+			$wn = trim((string)($lt['name'] ?? ''));
 			$out['weapons'][] = array('type' => 'weapon', 'id' => $id, 'loot' => true,
-				'name' => 'Salvaged weapon', 'level' => (int)$lt['level'], 'left' => $left,
-				'slug' => 'fist', 'sfx' => 'melee');
+				'name' => $wn !== '' ? $wn : 'Salvaged weapon',
+				'level' => (int)$lt['level'], 'left' => $left,
+				'slug' => $wn !== '' ? gaunt_weapon_slug($wn) : 'fist',
+				'sfx'  => $wn !== '' ? (gaunt_weapon_sfx($wn) ?: 'melee') : 'melee');
 		} elseif ($lt['kind'] === 'armor') {
+			$an = trim((string)($lt['name'] ?? ''));
 			$out['armor'][] = array('type' => 'armor', 'id' => $id, 'loot' => true,
-				'name' => 'Salvaged armour', 'level' => (int)$lt['level'], 'left' => $left,
+				'name' => $an !== '' ? $an : 'Salvaged armour',
+				'level' => (int)$lt['level'], 'left' => $left,
 				'sfx' => 'equip');
 		} elseif ($lt['kind'] === 'heal' && $left > 0) {
-			$pct = (int)$lt['pct'];
-			if (isset($loot_heal[$pct])) { $out['heals'][$loot_heal[$pct]]['have']++; continue; }
-			$loot_heal[$pct] = count($out['heals']);
+			/* A REAL consumable id, so this is one of the four Success
+			   items a player can actually own -- not an invented
+			   percentage. Stacked by that id. */
+			$cid = (int)($lt['cid'] ?? 0);
+			$pct = $cid > 0 ? gaunt_heal_pct($cid) : (int)$lt['pct'];
+			$key = $cid > 0 ? ('c' . $cid) : ('p' . $pct);
+			if (isset($loot_heal[$key])) { $out['heals'][$loot_heal[$key]]['have']++; continue; }
+			$loot_heal[$key] = count($out['heals']);
 			$out['heals'][] = array('type' => 'heal', 'id' => $id, 'loot' => true,
-				'pct' => $pct, 'have' => 1, 'sfx' => 'heal');
+				'cid' => $cid, 'pct' => $pct, 'have' => 1, 'sfx' => 'heal');
 		}
 	}
 
@@ -421,10 +523,15 @@ function gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item_id = 0) {
 		if ($drop) {
 			$gs['loot'][] = array('kind' => $drop['kind'],
 				'level' => (int)($drop['level'] ?? 0), 'pct' => (int)($drop['pct'] ?? 0),
+				/* The real row it came off, so the loadout can show the
+				   opponent's actual item rather than a stand-in. */
+				'item_id' => (int)($drop['item_id'] ?? 0),
+				'cid'     => (int)($drop['cid'] ?? 0),
+				'name'    => (string)($drop['name'] ?? ''),
 				'left'  => (int)$drop['uses']);
 			gaunt_gear_state_save($conn, $run_id, $gs);
-			$word = ($drop['kind'] === 'heal' ? 'medkit'
-			         : ($drop['kind'] === 'armor' ? 'armour' : 'weapon'));
+			$word = gaunt_drop_label($drop);
+			$dico = gaunt_drop_icon($drop);
 			$entry = array('who' => 'you', 'kind' => 'loot', 'sfx' => 'equip',
 				'text' => 'Salvaged their ' . $word);
 			$timeline[] = $entry;
@@ -440,6 +547,7 @@ function gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item_id = 0) {
 			   that screen is built from a session payload written when
 			   the encounter closes, and knew nothing about salvage. */
 			$fight['drop'] = $word;
+			$fight['drop_icon'] = $dico;
 			gaunt_fight_save($conn, $e, $fight);
 		}
 	}
