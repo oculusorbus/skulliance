@@ -441,7 +441,7 @@ if ($state === 'encounter') {
 						<?php echo htmlspecialchars((string)($rd['label'] ?? '')); ?>
 					</span>
 				<?php endforeach; ?>
-				<span class="rr-drop-note">Taken off them - yours for this run</span></div>
+				<span class="rr-drop-note">Taken off them - added to your inventory</span></div>
 		<?php endif; ?>
 		<div class="rr-win-num">Win <?php echo intval($last_result['win_number']); ?> of <?php echo GAUNTLET_MAX_WINS; ?></div>
 		<?php else: ?>

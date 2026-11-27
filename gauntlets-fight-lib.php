@@ -125,9 +125,16 @@ function gaunt_gear_state($conn, $run_id) {
 	if (!is_array($j)) $j = array();
 	if (!isset($j['wpn']) || !is_array($j['wpn'])) $j['wpn'] = array();
 	if (!isset($j['arm']) || !is_array($j['arm'])) $j['arm'] = array();
-	/* Salvage taken off slain opponents. RUN-SCOPED: it lives here, dies
-	   with the run, and never touches the player's real inventory. */
+	/*
+	 * LEGACY. Spoils used to live here, run-scoped, and were offered as
+	 * a separate "salvage" category that died with the run. They are
+	 * granted straight into the real inventory now, so nothing new is
+	 * ever appended -- this stays so a run that was already carrying
+	 * salvage when that changed can still spend it.
+	 */
 	if (!isset($j['loot']) || !is_array($j['loot'])) $j['loot'] = array();
+	/* How many items this run has taken off opponents; sizes the chest. */
+	if (!isset($j['haul'])) $j['haul'] = 0;
 	return $j;
 }
 function gaunt_gear_state_save($conn, $run_id, $state) {
@@ -195,6 +202,31 @@ function gaunt_best_level($conn, $user_id, $type) {
 }
 function gaunt_has_heal($conn, $user_id) {
 	return gaunt_best_heal($conn, $user_id) > 0;
+}
+
+/**
+ * Hand a slain opponent's item to the player, for real.
+ *
+ * Consumables go through updateAmount() and gear through updateGear(),
+ * the same two the rest of the platform uses -- a weapon taken here is
+ * indistinguishable from one earned anywhere else, which is the point.
+ * Returns false when there is no real row behind the drop (a fight
+ * saved before the kit carried item ids), so nothing invented can
+ * reach an inventory.
+ */
+function gaunt_grant_drop($conn, $user_id, $drop) {
+	$uid  = (int)$user_id;
+	$kind = isset($drop['kind']) ? $drop['kind'] : '';
+	if ($kind === 'heal') {
+		$cid = (int)($drop['cid'] ?? 0);
+		if ($cid < 1) return false;
+		updateAmount($conn, $uid, $cid, 1);
+		return true;
+	}
+	$item_id = (int)($drop['item_id'] ?? 0);
+	if ($item_id < 1) return false;
+	updateGear($conn, $uid, $kind === 'armor' ? 'armor' : 'weapon', $item_id, 1);
+	return true;
 }
 
 /**
@@ -522,15 +554,19 @@ function gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item_id = 0) {
 		/* EVERYTHING they used, not one of them at a 55% chance. */
 		$taken = gaunt_take_spoils($fight);
 		$fight['drops'] = array();
+		$got = 0;
 		foreach ($taken as $drop) {
-			$gs['loot'][] = array('kind' => $drop['kind'],
-				'level' => (int)($drop['level'] ?? 0), 'pct' => (int)($drop['pct'] ?? 0),
-				/* The real row it came off, so the loadout can show the
-				   opponent's actual item rather than a stand-in. */
-				'item_id' => (int)($drop['item_id'] ?? 0),
-				'cid'     => (int)($drop['cid'] ?? 0),
-				'name'    => (string)($drop['name'] ?? ''),
-				'left'  => (int)$drop['uses']);
+			/*
+			 * STRAIGHT INTO THE INVENTORY. These were held in the run
+			 * state and offered as a separate "salvage" category that
+			 * vanished when the run ended -- which made a real weapon
+			 * taken off a real player look like a temporary token of
+			 * one. They are the opponent's actual rows, so they go
+			 * where every other item on the platform goes, through the
+			 * same two functions everything else uses.
+			 */
+			if (!gaunt_grant_drop($conn, $uid, $drop)) continue;
+			$got++;
 			$word = gaunt_drop_label($drop);
 			$dico = gaunt_drop_icon($drop);
 			$entry = array('who' => 'you', 'kind' => 'loot', 'sfx' => 'equip',
@@ -551,7 +587,8 @@ function gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item_id = 0) {
 			$fight['drop_icon'] = $dico;
 			$fight['drops'][] = array('label' => $word, 'icon' => $dico);
 		}
-		if ($taken) {
+		if ($got > 0) {
+			$gs['haul'] = (int)($gs['haul'] ?? 0) + $got;
 			gaunt_gear_state_save($conn, $run_id, $gs);
 			gaunt_fight_save($conn, $e, $fight);
 		}
@@ -649,10 +686,12 @@ function gaunt_theme_bg($conn, $project_name, $project_id = 0, $collection_id = 
 
 /* ---------------------------------------------------------- the chest */
 
-/** How much salvage this run took off opponents. */
+/** How many items this run took off opponents; sizes the chest. */
 function gaunt_run_haul($conn, $run_id) {
 	$gs = gaunt_gear_state($conn, $run_id);
-	return count($gs['loot']);
+	/* count($gs['loot']) is how this was measured while spoils were
+	   run-scoped; a run still carrying some is counted the old way. */
+	return (int)($gs['haul'] ?? 0) + count($gs['loot']);
 }
 
 /** Wins banked in a run. */

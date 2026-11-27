@@ -372,8 +372,12 @@ echo "\ngear is durable, consumables are spent\n";
  * decisions in it. The OLD gauntletResolveEncounter() did exactly that,
  * so this is a regression somebody could reintroduce by copying it.
  */
-ok(strpos($LIB, 'updateGear(') === false,
-   'the fight layer calls updateGear(), which destroys gear permanently and makes players hoard it');
+/* Granting is fine -- a slain opponent's weapon is now handed over for
+   real. TAKING AWAY is what the rule forbids. */
+ok(preg_match('~updateGear\([^)]*,\s*-~', $LIB) !== 1,
+   'the fight layer takes gear away with updateGear(), which destroys it permanently and makes players hoard it');
+ok(substr_count(preg_replace('~/\*.*?\*/~s', '', $LIB), 'updateGear(') === 1,
+   'more than one updateGear() call in the fight layer; the spoils grant is meant to be the only one');
 ok(preg_match('~updateAmount\(\$conn, \$uid, \$item_id, -1\)~', $LIB) === 1,
    'heals are not actually consumed, so they are infinite');
 /* Wear is recorded on the RUN, not on the inventory. */
@@ -645,10 +649,31 @@ ok(preg_match('~margin:\s*0\s+auto~', $side) !== 1,
 ok(strpos($side, 'max-width: min(190px, 42vw)') !== false,
    'the side cap is gone, so two half-page portraits push the fight below the fold');
 
-echo "\nsalvage is run-scoped, and reads as temporary\n";
-/* It must never reach the real inventory -- that is the line between
-   relief and income, and the whole reason only the chest leaves a run. */
-ok(strpos($LIB, "\$gs['loot'][] = array(") !== false, 'a won fight stores no salvage');
+echo "\nspoils are real inventory, not a separate salvage pile\n";
+/*
+ * They used to be held in the run state and offered as their own
+ * "salvage" category that vanished with the run, which made a real
+ * weapon taken off a real player look like a temporary token of one.
+ * REPORTED as "why are you categorizing earned items separately as
+ * salvage and not actually adding them to their inventory".
+ */
+ok(strpos($LIB, 'if (!gaunt_grant_drop($conn, $uid, $drop)) continue;') !== false,
+   'a won fight still files its spoils into the run-scoped salvage pile');
+ok(strpos($LIB, "\$gs['loot'][] = array(") === false,
+   'the run state is still being appended to, so spoils die with the run');
+ok(strpos($LIB, 'updateAmount($conn, $uid, $cid, 1);') !== false,
+   'a salvaged consumable is not actually added to the player\'s consumables');
+/* The chest is sized by the haul, which used to be count($gs['loot']).
+   With nothing going into loot any more, that count is always 0 and
+   every chest silently shrinks to its floor. */
+ok(strpos($LIB, "\$gs['haul'] = (int)(\$gs['haul'] ?? 0) + \$got;") !== false,
+   'the run no longer counts what it took, so the chest shrinks to its floor');
+ok(strpos($LIB, "return (int)(\$gs['haul'] ?? 0) + count(\$gs['loot']);") !== false,
+   'gaunt_run_haul does not read the new counter, so the haul bonus is lost');
+/* Nothing invented may reach an inventory. */
+ok(strpos($LIB, 'if ($cid < 1) return false;') !== false
+   && strpos($LIB, 'if ($item_id < 1) return false;') !== false,
+   'a drop with no real row behind it is still granted, which mints an item');
 ok(preg_match("~if \\(\\\$item_id < 0\\) \\\$gs\\['loot'\\]~", $LIB) === 1,
    'spending salvage does not come out of the run state');
 ok(strpos($LIB, "if (\$item_id < 0) {
