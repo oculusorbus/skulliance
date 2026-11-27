@@ -144,8 +144,9 @@ the whole squad model needs ONE new column (`hp`) on a table that exists.
   - Stage the encounter in the theme of the OPPONENT NFT's project.
     `monstrocity_themes()` already carries a `background` flag per theme,
     keyed by project, so this is mostly wiring rather than new art.
-  - The TREASURE CHEST is the reward for a won run, not a mid-run
-    encounter -- see "The chest is the payout" below.
+  - TWO CHESTS, doing different jobs -- a run-scoped find between
+    encounters, and the payout for a won run. See "Two chests, doing
+    different jobs" below.
 
 ### The opponent uses items too, as a template
 
@@ -428,20 +429,52 @@ redone.
 Swapping `src` is a hard cut. Moving Theme -> Frantic smoothly needs two
 audio elements and a short gain ramp. Small, but not free.
 
-## The chest is the payout, not an encounter
+## Two chests, doing different jobs
 
-REVISED. The chest was first sketched as an occasional encounter in place
-of an enemy. It is better as the REWARD FOR WINNING A RUN: a cache that
-restores what the run consumed.
+REVISED TWICE. The chest was first sketched as an occasional encounter in
+place of an enemy, then moved to being the reward for a won run. It ends
+up as BOTH, because they solve different problems -- but only if they are
+kept distinct.
 
-Three reasons it is the better placement:
+  - **The mid-run find** is RELIEF. It keeps a run that is going badly
+    alive.
+  - **The end-of-run chest** is INCOME. It refills what the run consumed.
+
+### The mid-run find
+
+BETWEEN encounters, not instead of one. The original "chest instead of an
+enemy" shortens the run to effectively two fights and puts a gap in the
+tension; as a find between fights it is pure upside and that objection
+goes away.
+
+NO MODAL. `missions-claim-modal.php` is a moment, and a moment that fires
+twice in a run stops being one. The find is a quick grab with the `equip`
+cue; the full reveal belongs to the payout.
+
+RUN-SCOPED. What you find is usable in THIS run and does not survive it.
+That makes the two chests mechanically different rather than merely
+differently sized, it reinforces the "everything is contained in the run"
+principle, and it settles a question that would otherwise come up later:
+find a chest, then get wiped, and you keep nothing. Losing stays a real
+loss, and the find still did its job.
+
+WEIGHTED TOWARD PLAYERS WHO ARE STRUGGLING -- raise the chance when the
+squad is beaten up or the player is out of consumables. That aims relief
+at exactly the people the on-ramp problem is about with no special case
+for "new players", and it is invisible, so nobody feels handled. Keep it
+subtle: rubber-banding a player can FEEL reads as patronising.
+
+### The end-of-run chest
+
+It is the INCOME half, and it is the only chest whose contents leave the
+run:
 
   - **It closes the economy loop.** Consumables drain during a run and a
     win refills them, so the resource cycle sustains itself instead of
     being a one-way drain.
-  - **It stops diluting the arc.** A free encounter in the middle of a run
-    is a gap in the tension, and the run is meant to be one arc.
-  - **A win gets a moment**, which a run does not currently have.
+  - **A win gets a moment**, which a run does not currently have -- and
+    keeping the full reveal for this one is what protects that moment from
+    the mid-run find.
 
 ### WHICH FILE, because the obvious one is wrong
 
