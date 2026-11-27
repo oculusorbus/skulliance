@@ -231,9 +231,81 @@ behaviour the lockout was assumed to have and does not.
 
 ---
 
+## Seeing and hearing the hit -- all of it already exists
+
+VERIFIED 2026-11-27, not assumed. Nothing here needs new art or audio.
+
+### The weapons are ONE shared vocabulary
+
+`getAllWeapons()` reads `weapons (id, name, level)`, and BOTH Crypt Crawl
+and Gauntlets read that same table -- `cryptcrawlWeaponName()` calls
+`getAllWeapons()`, and so does `db.php:13978`. So Crypt Crawl's sound work
+is already keyed to the exact weapon names the Gauntlet hands out.
+
+`cryptcrawlWeaponSfxName()` in `cryptcrawl-render.php` is the map, and its
+comment notes it is "keyed by the SAME hyphenated slug the weapon icon path
+already uses", so icon and sound are derived from one lookup and cannot
+point at different weapons:
+
+    melee, tactical-katana, pistol, grenade, sniper-rifle,
+    machine-gun, demolition, flamethrower, rocket-launcher, artillery
+
+An unmapped name returns null and simply loses the weapon-specific layer,
+keeping the shared `kill` cue -- so a new weapon degrades rather than
+errors.
+
+Icons are live and served: `icons/fist.png`, `icons/pistol.png`,
+`icons/machine-gun.png`, `icons/artillery.png` all return 200.
+
+### Sounds on hand
+
+`sounds/` carries artillery, death, demolition, equip, **fist**,
+flamethrower, flee, grenade, heal, kill, laststand, machinegun, melee,
+pistol, rocketlauncher, sniperrifle, tacticalkatana, victory.
+
+Three of those cover actions beyond the weapons:
+
+  - **fist** -- the bare attack, with `icons/fist.png` already used for
+    Crypt Crawl's "Fist Fight" / "Bare-handed" button;
+  - **heal** -- the heal turn;
+  - **equip** -- putting armour on.
+
+### The firing mechanism is liftable too, not just the files
+
+Crypt Crawl drives audio declaratively: `data-sfx="fist kill"` on a button,
+read at CLICK time by the submit handler (`cryptcrawl.php:879`), plus a
+`data-sfx` queue on `#cc-mood` for sounds the server decides
+(`cryptcrawl-render.php:272`). That is a pattern to copy rather than a
+helper to import, but it means the "play a list of cues for what just
+happened" problem is solved and can be re-solved the same way.
+
+### Hit animations
+
+Two existing sets, and the DHC one is the better base:
+
+  - **DHC Arena** -- `@keyframes hit` and `@keyframes hitBig`
+    (`dhcarena.php:636` and `:678`). Both are percentage-based translateX,
+    so they scale to any element size, and the two tiers map cleanly onto
+    bare attack versus weapon attack.
+  - **Monstrocity** -- `.glow-first-attack` / `-second-attack` /
+    `-special-attack` / `-last-stand` / `-power-up` / `-recoil`, a coloured
+    `box-shadow` per action type, driven by
+    `applyAnimation($img, $shiftX, $glowClass, $duration)` which also does
+    the sideways recoil shift scaled by damage.
+
+Colour-per-action-type is worth keeping: it is how a player reads WHAT hit
+them without text.
+
+CAUTION IF LIFTING MONSTROCITY'S CODE: `.character img` there still carries
+`transition: transform 0.1slinear, filter 0.5sease`. The missing spaces make
+the WHOLE declaration invalid, so neither property transitions. It was fixed
+once and the fix was reverted along with the impact layer, so the typo is
+live. Do not copy it.
+
 ## Still to settle
 
   - Damage numbers, HP scale, and what a weapon level is worth.
+  - Whether armour gets its own sound set, or reuses `equip` for all of it.
   - How many uses per run a weapon gets, and whether armour is consumed.
   - Whether the chest replaces an encounter or is extra (replacing it also
     gives pacing relief).
