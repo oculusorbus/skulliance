@@ -604,6 +604,28 @@ ok(strpos($LIB, "UPDATE gauntlets SET chest=1 WHERE id=\$rid AND chest=0") !== f
 ok(strpos(preg_replace('~/\\*.*?\\*/~s', '', $LIB), 'SET reward') === false,
    'the chest writes gauntlets.reward, which is the batch payout\'s flag -- the cron would skip the run');
 
+/* A chest on a DEFEAT screen is a reward for losing. `> 0` meant any
+   run that took one opponent down before being wiped still showed one. */
+$LIBNC = preg_replace('~/\*.*?\*/~s', '', $LIB);
+$pend  = substr($LIBNC, (int)strpos($LIBNC, 'function gaunt_chest_pending'), 320);
+ok(strpos($pend, '>= GAUNTLET_MAX_WINS') !== false,
+   'the chest opens on any single win, so a wiped run still shows one on the defeat screen');
+ok(strpos($pend, 'gaunt_run_wins($conn, $rid) > 0') === false,
+   'gaunt_chest_pending still falls through to the one-win test');
+
+echo "\nboth fighters are the same size whatever they are called\n";
+/* `margin: 0 auto` makes a grid item fit-content sized, so each side
+   sized off its OWN name: the fighter with the longer name got the
+   bigger portrait. Measured on a 393pt phone at 160.7pt vs 138pt. */
+$side = preg_match('~\.gf-side\s*\{[^}]*\}~', $UI, $m) ? $m[0] : '';
+ok($side !== '', 'the .gf-side rule is gone');
+ok(strpos($side, 'width: 100%') !== false,
+   'the sides are fit-content, so the longer NFT name makes that portrait bigger than the other');
+ok(preg_match('~margin:\s*0\s+auto~', $side) !== 1,
+   'an auto inline margin is back on .gf-side, which re-sizes each side to its own content');
+ok(strpos($side, 'max-width: min(190px, 42vw)') !== false,
+   'the side cap is gone, so two half-page portraits push the fight below the fold');
+
 echo "\nsalvage is run-scoped, and reads as temporary\n";
 /* It must never reach the real inventory -- that is the line between
    relief and income, and the whole reason only the chest leaves a run. */

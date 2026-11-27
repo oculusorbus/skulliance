@@ -32,7 +32,8 @@ define('GF_UI_DONE', 1);
                    color: rgba(255,255,255,.28); letter-spacing: .08em; }
 /* The cap lives on the whole side, not just the portrait, so the bar and
    the name line up with the picture instead of running wider than it. */
-.gf-side         { min-width: 0; max-width: min(190px, 42vw); margin: 0 auto; }
+.gf-side         { min-width: 0; width: 100%; max-width: min(190px, 42vw);
+                   margin: 0; justify-self: center; }
 /* CAPPED, and that matters more than it sounds. Unconstrained these grew
    to fill half the grid column -- on a 900px page two 420px portraits and
    nothing else, with the bars, the log and the choices all below the
