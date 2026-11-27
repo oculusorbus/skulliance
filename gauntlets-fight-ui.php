@@ -139,6 +139,15 @@ define('GF_UI_DONE', 1);
                    border-radius: 8px; margin-bottom: 12px; }
 .gf-result.win   { background: rgba(0,200,160,.14); border: 1px solid #00c8a0; color: #00c8a0; }
 .gf-result.loss  { background: rgba(224,85,85,.14); border: 1px solid #e05555; color: #e05555; }
+/* The replacement cards in the Fast Forward overlay. The bar is the
+   reason the overlay exists, so it gets room; a card already at zero
+   is out for the run and must not be selectable. */
+.ff-hand-grid .gf-bar { height: 14px; margin-top: 6px; }
+.ff-hand-grid .gf-num { font-size: 9px; }
+.nft-card.ff-down { opacity: .45; cursor: not-allowed; pointer-events: none; }
+.nft-card.ff-down .nft-img { filter: grayscale(1) brightness(.5); }
+.ff-down-label   { font-size: .62rem; text-transform: uppercase; letter-spacing: .08em;
+                   color: #e05555; margin-top: 4px; }
 .gchest          { text-align: center; margin: 18px 0 8px; }
 .gchest-btn      { background: none; border: 0; cursor: pointer; display: inline-flex;
                    flex-direction: column; align-items: center; gap: 8px; color: #ffc800;

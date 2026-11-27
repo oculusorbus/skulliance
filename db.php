@@ -13385,7 +13385,14 @@ function gauntletStartRun($conn, $user_id) {
 	foreach ($rows as $row) {
 		$nft_id  = intval($row['id']);
 		$eff_id  = gauntletGetEffectiveProjectId(intval($row['project_id']));
+		/* SEEDED AT FULL, so 0 means down rather than "never set". The
+		   column defaults to 0 and a corpse is indistinguishable from a
+		   fresh card without this; gaunt_nft_hp() carries a fallback for
+		   rows dealt before the fight migration. Written separately so a
+		   database without the column still deals a hand. */
 		$conn->query("INSERT INTO gauntlets_nfts (run_id, nft_id, effective_project_id) VALUES ($run_id, $nft_id, $eff_id)");
+		$gn_id = intval($conn->insert_id);
+		if ($gn_id) @$conn->query("UPDATE gauntlets_nfts SET hp = " . (defined('GAUNT_HP_BASE') ? GAUNT_HP_BASE : 120) . " WHERE id = $gn_id");
 	}
 	return $run_id;
 }
@@ -13528,9 +13535,32 @@ function gauntletFastForward($conn, $user_id, $encounter_id, $new_nft_id) {
 	// Verify user has Fast Forward
 	if (getCurrentAmount($conn, $uid, GAUNTLET_C_FF) < 1) return false;
 	// Verify new NFT is in hand, not already played, and read locked effective_project_id
-	$r3 = $conn->query("SELECT effective_project_id FROM gauntlets_nfts WHERE run_id=$rid AND nft_id=$new_id LIMIT 1");
-	if (!$r3 || !$r3->num_rows) return false;
-	$new_eff = intval($r3->fetch_assoc()['effective_project_id']);
+	$r3 = $conn->query("SELECT effective_project_id, hp FROM gauntlets_nfts WHERE run_id=$rid AND nft_id=$new_id LIMIT 1");
+	if (!$r3 || !$r3->num_rows) {
+		/* The hp column is part of the fight migration. Without it the
+		   SELECT fails outright, so fall back to the original shape
+		   rather than refusing every swap on an un-migrated database. */
+		$r3 = $conn->query("SELECT effective_project_id FROM gauntlets_nfts WHERE run_id=$rid AND nft_id=$new_id LIMIT 1");
+		if (!$r3 || !$r3->num_rows) return false;
+		$row3 = $r3->fetch_assoc();
+	} else {
+		$row3 = $r3->fetch_assoc();
+		/*
+		 * A DOWNED FIGHTER CANNOT BE SWAPPED IN. Health carries across a
+		 * run and a member at zero is out of it; swapping to one would
+		 * lose the encounter the instant it resumed. The overlay greys
+		 * these out, but the client decides nothing -- a posted id has
+		 * to be refused here too.
+		 *
+		 * Zero means "never set" on a fresh row as well as "dead", which
+		 * is why gaunt_nft_hp() seeds it; a row that has never fought is
+		 * only reachable before its first turn and is full health, so
+		 * the ambiguity cannot block a live card.
+		 */
+		if (function_exists('gaunt_nft_hp')
+		    && gaunt_nft_hp($conn, $rid, $new_id) <= 0) return false;
+	}
+	$new_eff = intval($row3['effective_project_id']);
 	$r4 = $conn->query("SELECT id FROM gauntlets_encounters WHERE run_id=$rid AND player_nft_id=$new_id AND id!=$enc_id LIMIT 1");
 	if ($r4 && $r4->num_rows) return false;
 	// Deduct FF consumable and update encounter

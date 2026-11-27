@@ -96,4 +96,5 @@ gauntletRenderFight($enc, $res['fight'],
 	$res['timeline'],
 	gaunt_theme_bg($conn, $enc['opponent_project_name'],
 	                      (int)$enc['opponent_pid'], (int)$enc['opponent_cid']),
-	gauntletRenderFastForward($enc, $ff_count, $ff_hand));
+	gauntletRenderFastForward($enc, $ff_count,
+		gaunt_hand_hp($conn, (int)$enc['run_id'], $ff_hand)));

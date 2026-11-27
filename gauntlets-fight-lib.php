@@ -149,17 +149,32 @@ function gaunt_fight_save($conn, $enc_id, $fight) {
 	@$conn->query("UPDATE gauntlets_encounters SET fight='$js' WHERE id=$e");
 }
 
-/** A squad member's carried health, seeded to full the first time. */
+/**
+ * A squad member's carried health.
+ *
+ * ZERO IS AMBIGUOUS AND THAT WAS A BUG. The column defaults to 0, so a
+ * freshly dealt card and a corpse look identical -- and the first
+ * version resolved that by reading 0 as full health, which RESURRECTED
+ * anything that died. A member killed in encounter one came back whole
+ * for encounter two, which quietly undoes the entire reason health
+ * carries across a run.
+ *
+ * Resolved by asking whether the card has ever fought in this run. It
+ * has not, so 0 means unseeded; it has, so 0 means down. One extra
+ * query, only in the ambiguous case, and only until gauntletStartRun()
+ * has seeded every new run at full.
+ */
 function gaunt_nft_hp($conn, $run_id, $nft_id) {
 	$rid = (int)$run_id; $nid = (int)$nft_id;
 	$r = @$conn->query("SELECT hp FROM gauntlets_nfts WHERE run_id=$rid AND nft_id=$nid LIMIT 1");
 	if (!$r || !$r->num_rows) return GAUNT_HP_BASE;
 	$hp = (int)$r->fetch_assoc()['hp'];
-	/* 0 is "never set" rather than "dead" on a fresh row, which is why the
-	   column defaults to 0 and is seeded here instead of in the schema. A
-	   member that actually dies is recorded as dead separately. */
-	return $hp > 0 ? $hp : GAUNT_HP_BASE;
+	if ($hp > 0) return $hp;
+	$f = @$conn->query("SELECT id FROM gauntlets_encounters
+	                     WHERE run_id=$rid AND player_nft_id=$nid LIMIT 1");
+	return ($f && $f->num_rows) ? 0 : GAUNT_HP_BASE;
 }
+
 function gaunt_nft_hp_save($conn, $run_id, $nft_id, $hp) {
 	$rid = (int)$run_id; $nid = (int)$nft_id; $h = max(0, (int)$hp);
 	@$conn->query("UPDATE gauntlets_nfts SET hp=$h WHERE run_id=$rid AND nft_id=$nid");
@@ -536,4 +551,25 @@ function gaunt_chest_claim($conn, $user_id, $run_id) {
 
 	foreach ($got as $cid => $qty) updateAmount($conn, $uid, (int)$cid, (int)$qty);
 	return $got;
+}
+
+/**
+ * Annotate hand cards with the health they are carrying.
+ *
+ * WITHOUT THIS, FAST FORWARD IS A BLIND SWAP. Health persists across a
+ * run, so "should I swap?" is entirely a question about the
+ * replacement's condition -- offering the choice without showing it is
+ * offering nothing. A card already at zero is marked down: it is out
+ * for the run, and swapping to a corpse would end the fight instantly.
+ */
+function gaunt_hand_hp($conn, $run_id, $cards) {
+	$out = array();
+	foreach ($cards as $c) {
+		$hp = gaunt_nft_hp($conn, $run_id, (int)$c['id']);
+		$c['hp']   = (int)$hp;
+		$c['max']  = GAUNT_HP_BASE;
+		$c['down'] = ((int)$hp <= 0);
+		$out[] = $c;
+	}
+	return $out;
 }

@@ -615,7 +615,10 @@ if ($state === 'encounter') {
 		 * anything appended after the fight would necessarily sit below
 		 * it.
 		 */
-		$gf_extra = gauntletRenderFastForward($enc, $ff_count, $ff_hand);
+		/* Annotated with the health each replacement is carrying -- the
+		   swap is a judgement about condition, so it has to be shown. */
+		$gf_extra = gauntletRenderFastForward($enc, $ff_count,
+			gaunt_hand_hp($conn, intval($enc['run_id']), $ff_hand));
 
 		gauntletRenderFight($gf_enc, $gf_fight,
 			gaunt_loadout($conn, $user_id, intval($enc['run_id']), $gf_fight),

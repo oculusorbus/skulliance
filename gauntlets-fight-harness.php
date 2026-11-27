@@ -616,6 +616,44 @@ ok(strpos($LIB, "if (\$item_id < 0) {
 ok(preg_match("~if \\(!empty\\(\\\$it\\['loot'\\]\\)\\).{0,80}gf-loot~s", $REN) === 1,
    'salvage is not marked, so it looks like owned gear the player keeps');
 
+echo "\na dead fighter stays dead\n";
+/*
+ * THE BUG THIS EXISTS FOR. gauntlets_nfts.hp defaults to 0, so a
+ * freshly dealt card and a corpse look identical. The first version
+ * resolved that by reading 0 as full health -- which RESURRECTED
+ * anything that died: a member killed in encounter one came back whole
+ * for encounter two, undoing the entire reason health carries across a
+ * run.
+ */
+ok(strpos($LIB, 'return ($f && $f->num_rows) ? 0 : GAUNT_HP_BASE;') !== false,
+   'zero health is read as full again, so a fighter killed in one encounter is whole in the next');
+ok(strpos($LIB, 'return $hp > 0 ? $hp : GAUNT_HP_BASE;') === false,
+   'the resurrecting fallback is back');
+/* And new runs are seeded, so the ambiguity stops arising at all. */
+/* Inside gauntletStartRun and actually reachable -- a plain search
+   finds the statement even when it has been branched out. */
+$gsr = strpos($DB, 'function gauntletStartRun');
+$gsr_end = strpos($DB, "\n}", $gsr);
+ok($gsr !== false && preg_match('~if \\(\\$gn_id\\) @\\$conn->query\\("UPDATE gauntlets_nfts SET hp~',
+        substr($DB, $gsr, $gsr_end - $gsr)) === 1,
+   'a dealt hand is not seeded at full health, so every card is ambiguous until it fights');
+
+echo "\nFast Forward shows what it is swapping to\n";
+/* Health carries, so the swap is entirely a judgement about the
+   replacement's condition -- offering it blind offers nothing. */
+ok(strpos($LIB, 'function gaunt_hand_hp(') !== false
+   && strpos($PG, 'gaunt_hand_hp($conn,') !== false
+   && strpos($AJX, 'gaunt_hand_hp($conn,') !== false,
+   'the hand is not annotated with health by both callers, so Fast Forward is a blind swap');
+ok(strpos($REN, 'gf_bar((int)' . '$' . "card['hp']") !== false,
+   'the replacement cards show no health bar');
+ok(strpos($REN, 'ff-down') !== false, 'a downed replacement is not marked');
+ok(strpos($REN, 'if (empty(' . '$' . "card['down'])): ?>onclick=") !== false,
+   'a downed replacement is still clickable, and swapping to one loses the fight instantly');
+/* The client decides nothing: the server has to refuse it too. */
+ok(strpos($DB, 'gaunt_nft_hp($conn, $rid, $new_id) <= 0) return false;') !== false,
+   'gauntletFastForward() accepts a downed fighter, so the greying out is cosmetic');
+
 echo "\nFast Forward is a choice, not a footnote\n";
 /*
  * It swaps the fighter you were dealt, which is a run concern -- but it

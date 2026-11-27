@@ -28,37 +28,6 @@
  * that, the AJAX fragment would drop it and Fast Forward would vanish
  * after the first swing.
  */
-function gauntletRenderFastForward($enc, $ff_count, $ff_hand) {
-	if ((int)$ff_count < 1 || !count($ff_hand)) return '';
-	ob_start(); ?>
-	<?php if ($ff_count > 0 && count($ff_hand) > 0): ?>
-	<button class="btn-ff" onclick="toggleFF()" type="button"><img src="icons/fast-forward.png" onerror="this.style.display='none'" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px;">Fast Forward — Swap Card (<?php echo $ff_count; ?> available)</button>
-	<div class="ff-overlay" id="ff-overlay">
-		<div class="ff-overlay-title">Pick a replacement card from your hand</div>
-		<div class="ff-hand-grid">
-		<?php foreach ($ff_hand as $card):
-			$img = getIPFS($card['ipfs'], $card['collection_id'], $card['project_id']);
-		?>
-			<div class="nft-card" onclick="submitFF(<?php echo intval($enc['id']); ?>, <?php echo intval($card['id']); ?>)">
-				<img class="nft-img" src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($card['name']); ?>" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
-				<div class="nft-card-info">
-					<div class="nft-card-name"><?php echo htmlspecialchars($card['name']); ?></div>
-					<div class="nft-card-project"><?php echo htmlspecialchars($card['project_name']); ?></div>
-				</div>
-			</div>
-		<?php endforeach; ?>
-		</div>
-	</div>
-	<form method="POST" id="ff-form">
-		<input type="hidden" name="action" value="fast_forward">
-		<input type="hidden" name="encounter_id" value="<?php echo intval($enc['id']); ?>">
-		<input type="hidden" name="new_nft_id" id="ff-new-nft-id" value="0">
-	</form>
-	<?php endif; ?>
-	<?php
-	return ob_get_clean();
-}
-
 /** Health bar with a damage trail and the figure on the bar itself. */
 function gf_bar($hp, $max, $side) {
 	$max = max(1, (int)$max);
@@ -79,6 +48,48 @@ function gf_bar($hp, $max, $side) {
 		</span>
 	</div>
 	<?php return ob_get_clean();
+}
+
+function gauntletRenderFastForward($enc, $ff_count, $ff_hand) {
+	if ((int)$ff_count < 1 || !count($ff_hand)) return '';
+	ob_start(); ?>
+	<?php if ($ff_count > 0 && count($ff_hand) > 0): ?>
+	<button class="btn-ff" onclick="toggleFF()" type="button"><img src="icons/fast-forward.png" onerror="this.style.display='none'" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px;">Fast Forward — Swap Card (<?php echo $ff_count; ?> available)</button>
+	<div class="ff-overlay" id="ff-overlay">
+		<div class="ff-overlay-title">Pick a replacement card from your hand</div>
+		<div class="ff-hand-grid">
+		<?php foreach ($ff_hand as $card):
+			$img = getIPFS($card['ipfs'], $card['collection_id'], $card['project_id']);
+		?>
+			<div class="nft-card<?php echo !empty($card['down']) ? ' ff-down' : ''; ?>"
+			     <?php if (empty($card['down'])): ?>onclick="submitFF(<?php echo intval($enc['id']); ?>, <?php echo intval($card['id']); ?>)"<?php endif; ?>>
+				<img class="nft-img" src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($card['name']); ?>" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
+				<div class="nft-card-info">
+					<div class="nft-card-name"><?php echo htmlspecialchars($card['name']); ?></div>
+					<div class="nft-card-project"><?php echo htmlspecialchars($card['project_name']); ?></div>
+					<?php /* THE WHOLE POINT OF THE CHOICE. Health carries across
+					         the run, so a swap is a judgement about the
+					         replacement's condition -- without it showing, the
+					         button offers nothing to decide on. */ ?>
+					<?php if (isset($card['hp'])): ?>
+						<?php echo gf_bar((int)$card['hp'], (int)$card['max'], 'ff'); ?>
+						<?php if (!empty($card['down'])): ?>
+							<div class="ff-down-label">Down for this run</div>
+						<?php endif; ?>
+					<?php endif; ?>
+				</div>
+			</div>
+		<?php endforeach; ?>
+		</div>
+	</div>
+	<form method="POST" id="ff-form">
+		<input type="hidden" name="action" value="fast_forward">
+		<input type="hidden" name="encounter_id" value="<?php echo intval($enc['id']); ?>">
+		<input type="hidden" name="new_nft_id" id="ff-new-nft-id" value="0">
+	</form>
+	<?php endif; ?>
+	<?php
+	return ob_get_clean();
 }
 
 /**
