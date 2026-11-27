@@ -144,9 +144,8 @@ the whole squad model needs ONE new column (`hp`) on a table that exists.
   - Stage the encounter in the theme of the OPPONENT NFT's project.
     `monstrocity_themes()` already carries a `background` flag per theme,
     keyed by project, so this is mostly wiring rather than new art.
-  - Sometimes an encounter is a TREASURE CHEST instead of an enemy, reusing
-    `missions-chest.php` -- its 210px chest, burst animation and real
-    consumables.
+  - The TREASURE CHEST is the reward for a won run, not a mid-run
+    encounter -- see "The chest is the payout" below.
 
 ### The opponent uses items too, as a template
 
@@ -428,6 +427,58 @@ redone.
 
 Swapping `src` is a hard cut. Moving Theme -> Frantic smoothly needs two
 audio elements and a short gain ramp. Small, but not free.
+
+## The chest is the payout, not an encounter
+
+REVISED. The chest was first sketched as an occasional encounter in place
+of an enemy. It is better as the REWARD FOR WINNING A RUN: a cache that
+restores what the run consumed.
+
+Three reasons it is the better placement:
+
+  - **It closes the economy loop.** Consumables drain during a run and a
+    win refills them, so the resource cycle sustains itself instead of
+    being a one-way drain.
+  - **It stops diluting the arc.** A free encounter in the middle of a run
+    is a gap in the tension, and the run is meant to be one arc.
+  - **A win gets a moment**, which a run does not currently have.
+
+### WHICH FILE, because the obvious one is wrong
+
+`missions-chest.php` is NOT the performance -- it is a two-state status
+icon, closed when there is something to take and open once taken,
+deliberately with no idle animation and `aria-hidden`.
+
+`missions-claim-modal.php` owns every moving part: a 240px chest with the
+REAL reward icons flying out of its mouth, plus the currency and amount.
+That is the thing to reuse.
+
+### SCALE IT TO WINS BANKED, or it locks out the people it is for
+
+Paying only on a 3-win sweep is a closed loop for the under-equipped: no
+items, so no win; no win, so no chest; no chest, so no items. That shuts
+out exactly the players the chest exists to help.
+
+The fix falls out of a decision already made -- the run ends on SQUAD WIPE
+rather than first loss, so partial success is already a thing the system
+understands. So the chest scales:
+
+  - 1 win  -- scraps;
+  - 2 wins -- a decent cache;
+  - 3 wins -- the full chest, with the animation.
+
+A struggling player can usually take one win, so the loop never fully
+closes. It also turns the three-win target from a cliff into a gradient: a
+two-win run reads as progress rather than failure, which helps everybody
+and not only newcomers.
+
+### Claiming it should release the lockout
+
+`gauntlets.reward` is what the draw lockout keys off --
+`gauntletGetUsedNFTIds()` returns NFTs played in any run where
+`reward = 0`. So make CLAIMING THE CHEST the thing that flips `reward` to
+1, and one action closes both loops: you take your cache, and your NFTs go
+back into the pool for the next draw.
 
 ## Still to settle
 
