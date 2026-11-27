@@ -323,3 +323,20 @@ function gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item_id = 0) {
 
 	return array('ok' => true, 'why' => '', 'timeline' => $timeline, 'fight' => $fight);
 }
+
+/**
+ * Close a finished fight: record the result and pay it out.
+ *
+ * Delegates to gauntletResolveEncounter() with the outcome FORCED, so
+ * every reward rule -- the currency, the transaction, the doubling --
+ * stays in the one place it already lived. No consumables or gear are
+ * passed: those were spent turn by turn during the fight, not staked
+ * up front the way the old loadout screen did it.
+ */
+function gauntletResolveFight($conn, $user_id, $enc_id) {
+	$f = gaunt_fight_get($conn, (int)$enc_id);
+	if (!$f || empty($f['over'])) return false;
+	$won = (($f['win'] ?? '') === 'you');
+	return gauntletResolveEncounter($conn, (int)$user_id, (int)$enc_id,
+		array(), 0, 0, $won ? 'win' : 'loss');
+}

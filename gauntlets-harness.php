@@ -240,11 +240,14 @@ ok('overlays reset the scroll and pin the page',
    preg_match('~function lockForOverlay\(\)\s*\{\s*window\.scrollTo\(0, 0\);\s*document\.body\.style\.overflow = .hidden.;~', $gt) === 1,
    'lockForOverlay() no longer does both halves -- scrolling alone still lets a touch '
  . 'move the page behind the overlay, locking alone keeps whatever offset it inherited');
-/* Each of the three full-screen overlays has to use it. Named rather than
-   counted: a count passes with the one that was actually reported left out. */
+/* Each full-screen overlay has to use it. Named rather than counted: a
+   count passes with the one that was actually reported left out.
+   startFight() USED TO BE HERE. It threw up a "crossing swords" overlay
+   to dramatise a single rand(1,100); the fight is a turn-based exchange
+   rendered inline now, so there is no full-screen layer to lock and
+   nothing to replace the entry with. */
 foreach (array(
 	'showLoader'  => 'function showLoader(msg) {',
-	'startFight'  => "var overlay = document.getElementById('fight-reveal-overlay');",
 ) as $what => $anchor) {
 	$at = strpos($gt, $anchor);
 	ok("$what locks the page", $at !== false

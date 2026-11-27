@@ -326,6 +326,66 @@ foreach (array('gauntlets_nfts', 'gear_state', 'fight') as $bit)
 ok(substr_count(gaunt_schema_sql(), 'ALTER TABLE') === 3,
    'the migration does not cover all three columns gaunt_schema_missing() looks for');
 
+/* ====================================================================
+ * THE UI LAYER: one renderer, two callers, and the audio outside it.
+ * ==================================================================== */
+$REN = (string) file_get_contents(__DIR__ . '/gauntlets-fight-render.php');
+$UI  = (string) file_get_contents(__DIR__ . '/gauntlets-fight-ui.php');
+$AJX = (string) file_get_contents(__DIR__ . '/ajax/gauntlet-fight.php');
+$PG  = (string) file_get_contents(__DIR__ . '/gauntlets.php');
+
+echo "\nthe music survives a turn\n";
+/*
+ * THE WHOLE REASON THE AJAX PATH EXISTS. A full reload per turn tears
+ * down and rebuilds the <audio> element, restarting the soundtrack on
+ * every swing. Crypt Crawl hit this first; the fix is a fragment swap
+ * with the audio element OUTSIDE the swapped node.
+ */
+ok(strpos($UI, '<audio id="gf-music"') !== false, 'there is no music element at all');
+$aud = strpos($UI, '<audio id="gf-music"');
+$area = strpos($UI, 'gf-area');
+ok(strpos($UI, '<div id="gf-area"') === false,
+   'the UI include draws #gf-area itself, so the audio would be inside the swapped fragment');
+ok(strpos($REN, '<div id="gf-area"') !== false, 'the renderer does not emit #gf-area to swap');
+ok(strpos(preg_replace('~/\*.*?\*/~s','',$REN), '<audio') === false,
+   'the renderer emits an <audio> element, which the next turn would destroy and restart');
+ok(strpos($UI, "old.replaceWith(next)") !== false,
+   'the client does not swap the fragment in place');
+
+echo "\none renderer, both callers\n";
+ok(strpos($AJX, 'gauntletRenderFight(') !== false, 'the AJAX endpoint does not use the shared renderer');
+ok(strpos($PG,  'gauntletRenderFight(') !== false, 'the page does not use the shared renderer');
+/* The no-JS path has to post the SAME shape the endpoint parses, or a
+   browser without JavaScript plays a different game. */
+foreach (array($AJX, $PG) as $i => $src)
+	ok(strpos($src, "strpos(\$turn, ':')") !== false,
+	   ($i ? 'gauntlets.php' : 'the endpoint') . " does not parse the weapon:id turn format");
+ok(strpos($PG, "\$action === 'fight_turn'") !== false,
+   'gauntlets.php has no no-JS fallback for taking a turn');
+ok(strpos($UI, 'form.submit()') !== false,
+   'a failed fetch does not fall back to a real post, so a network blip ends the fight');
+
+echo "\nthe coin flip's furniture is gone\n";
+/* The odds bar described a percentage that no longer exists, and the
+   reveal overlay dramatised a rand(1,100) that is no longer rolled. */
+ok(strpos($PG, 'fight-reveal-overlay') === false,
+   'the crossing-swords reveal overlay is still there, dramatising a roll that no longer happens');
+ok(strpos($PG, "name=\"action\" value=\"resolve_encounter\"") === false,
+   'the old resolve form is still posted, which would roll a result beside the fight');
+ok(strpos($PG, 'odds-bar-fill') === false, 'the odds bar is still rendered');
+
+echo "\nthe endpoint stays light\n";
+/* Payouts, Discord and leaderboards belong to the encounter resolving,
+   not to a swing -- the same rule ajax/cryptcrawl-action.php states. */
+foreach (array('discordmsg', 'checkGauntlet', 'Leaderboard') as $slow)
+	ok(strpos($AJX, $slow) === false, "the turn endpoint does $slow, which does not belong on a swing");
+
+echo "\nthe fight degrades without art or sound\n";
+ok(substr_count($REN, "onerror=") >= 2, 'a missing portrait breaks the fight instead of falling back');
+ok(strpos($UI, 'prefers-reduced-motion') !== false, 'the shake and the floating numbers ignore reduced motion');
+ok(strpos($UI, "catch (e) {}") !== false || strpos($UI, 'catch(function(){})') !== false,
+   'audio failures are not swallowed, so a blocked autoplay could break the turn');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all fight checks passed\n");
 
 /* ------------------------------------------------------------------ */

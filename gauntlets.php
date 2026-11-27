@@ -3,6 +3,8 @@ include_once 'db.php';
 include 'message.php';
 include 'verify.php';
 include 'skulliance.php';
+require_once __DIR__ . '/gauntlets-fight-lib.php';     // the turn-based fight
+require_once __DIR__ . '/gauntlets-fight-render.php';  // shared with ajax/gauntlet-fight.php
 
 $user_id = intval($_SESSION['userData']['user_id']);
 
@@ -37,13 +39,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			if (!$ok) gauntletFlash('Could not swap card. Make sure you have a Fast Forward item.', 'error');
 		}
 
-	} elseif ($action === 'resolve_encounter') {
-		$enc_id         = intval($_POST['encounter_id'] ?? 0);
-		$consumable_ids = array_values(array_unique(array_map('intval', array_filter((array)($_POST['consumable_ids'] ?? [])))));
-		$weapon_id      = intval($_POST['weapon_id']    ?? 0);
-		$armor_id       = intval($_POST['armor_id']     ?? 0);
+	} elseif ($action === 'fight_turn') {
+		/*
+		 * THE NO-JS PATH. ajax/gauntlet-fight.php does this without a
+		 * navigation so the music keeps playing; this is the same turn
+		 * through a plain form post, for a browser that cannot. The game
+		 * is complete either way -- only the continuous soundtrack is
+		 * lost, which is exactly the trade cryptcrawl.php makes.
+		 */
+		$enc_id = intval($_POST['encounter_id'] ?? 0);
+		$turn   = (string)($_POST['turn'] ?? 'bare');
+		$kind = $turn; $item = 0;
+		if (strpos($turn, ':') !== false) { list($kind, $item) = explode(':', $turn, 2); $item = intval($item); }
 		if ($enc_id > 0) {
-			$outcome = gauntletResolveEncounter($conn, $user_id, $enc_id, $consumable_ids, $weapon_id, $armor_id);
+			$res = gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item);
+			if (empty($res['ok'])) gauntletFlash($res['why'] ?: 'That move is not available.', 'error');
+		}
+
+	} elseif ($action === 'close_fight') {
+		$enc_id = intval($_POST['encounter_id'] ?? 0);
+		if ($enc_id > 0) {
+			/* The fight decided this over a dozen exchanges; this only
+			   records it and pays it out. */
+			$outcome = gauntletResolveFight($conn, $user_id, $enc_id);
 			if ($outcome === 'win') {
 				$run  = gauntletGetActiveRun($conn, $user_id);
 				$rw_r = $conn->query("
@@ -258,36 +276,8 @@ if ($state === 'encounter') {
 .arena-card-user a:hover { text-decoration: underline; }
 
 /* Odds display */
-.odds-bar-wrap        { margin-bottom: 20px; }
-.odds-label           { font-size: .8rem; color: rgba(255,255,255,.5); margin-bottom: 6px; }
-.odds-bar             { height: 10px; border-radius: 5px; background: rgba(224,85,85,.35); position: relative; overflow: hidden; }
-.odds-bar-fill        { height: 100%; border-radius: 5px; background: #00c8a0; transition: width .5s ease; }
-.odds-pct             { font-size: 1.5rem; font-weight: 700; color: #00c8a0; margin-bottom: 4px; }
-.odds-pct.danger      { color: #e05555; }
 
 /* Resource panel */
-.resource-panel       { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 8px; padding: 14px; margin-top: 14px; margin-bottom: 20px; }
-.resource-title       { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.35); margin-bottom: 10px; }
-.resource-tabs        { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-.resource-tab         { padding: 4px 12px; border-radius: 4px; font-size: .78rem; cursor: pointer; background: rgba(255,255,255,.06); color: rgba(255,255,255,.5); border: 1px solid transparent; transition: all .15s; position: relative; }
-.resource-tab.active  { background: rgba(0,200,160,.15); color: #00c8a0; border-color: #00c8a0; }
-.resource-tab.has-selection::after { content: ''; position: absolute; top: 3px; right: 3px; width: 6px; height: 6px; border-radius: 50%; background: #00c8a0; }
-.resource-section     { display: none; }
-.resource-section.active { display: block; }
-.resource-item        { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; margin-bottom: 6px; transition: all .15s; }
-.resource-item:hover  { background: rgba(255,255,255,.05); }
-.resource-item.selected { background: rgba(0,200,160,.1); border-color: #00c8a0; }
-.resource-item img    { width: 28px; height: 28px; object-fit: contain; }
-.resource-item-name   { font-size: .8rem; color: rgba(255,255,255,.8); flex: 1; }
-.resource-item-qty    { font-size: .75rem; color: rgba(255,255,255,.4); }
-.resource-none        { font-size: .8rem; color: rgba(255,255,255,.25); padding: 6px 0; }
-.resource-empty       { padding: 8px 2px 4px; }
-.resource-empty-title { font-size: .8rem; color: rgba(255,255,255,.3); margin-bottom: 5px; }
-.resource-empty-body  { font-size: .78rem; color: rgba(255,255,255,.2); line-height: 1.5; }
-.resource-empty-body a { color: rgba(0,200,160,.6); text-decoration: none; }
-.resource-empty-body a:hover { color: #00c8a0; text-decoration: underline; }
-.resource-effect      { display: block; font-size: .7rem; color: rgba(255,255,255,.35); margin-top: 2px; }
-.resource-item.selected .resource-effect { color: #00c8a0; }
 
 /* Action buttons */
 .btn-fight            { width: 100%; padding: 14px; font-size: 1rem; font-weight: 700; background: #00c8a0; color: #000; border: none; border-radius: 8px; cursor: pointer; letter-spacing: .05em; transition: opacity .15s; margin-bottom: 16px; }
@@ -337,17 +327,6 @@ if ($state === 'encounter') {
 .win-reward-currency  { font-size: .8rem; color: rgba(255,255,255,.4); }
 
 /* Fight animation overlay (pre-submit suspense) */
-#fight-reveal-overlay { position: fixed; inset: 0; background: rgba(7,17,29,.97); z-index: 9998; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; opacity: 0; pointer-events: none; transition: opacity .3s ease; }
-#fight-reveal-overlay.active { opacity: 1; pointer-events: auto; }
-.fr-arena   { display: flex; align-items: center; gap: 28px; }
-.fr-card    { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.fr-card .nft-img { width: 130px; height: 130px; border-radius: 10px; object-fit: cover; }
-.fr-card.shaking  { animation: fr-shake .12s ease-in-out infinite alternate; }
-.fr-label   { font-size: .68rem; color: rgba(255,255,255,.35); letter-spacing: .12em; text-transform: uppercase; }
-.fr-vs      { font-size: 3rem; animation: fr-pulse .9s ease-in-out infinite; }
-.fr-status  { font-size: .82rem; color: rgba(255,255,255,.4); letter-spacing: .08em; }
-@keyframes fr-shake { from { transform: translateX(-4px) rotate(-2deg); } to { transform: translateX(4px) rotate(2deg); } }
-@keyframes fr-pulse { 0%,100% { opacity: .15; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.25); } }
 
 /* Result reveal overlay (post-fight modal) */
 #result-reveal { position: fixed; inset: 0; z-index: 9998; background: rgba(7,17,29,.97); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; cursor: pointer; animation: rr-in .3s ease forwards; }
@@ -549,64 +528,34 @@ if ($state === 'encounter') {
 		$player_discord_id = $_SESSION['userData']['discord_id'] ?? '';
 		$player_avatar     = $_SESSION['userData']['avatar']     ?? '';
 	?>
-	<div class="arena">
-		<div class="arena-card player">
-			<div class="arena-card-label">Your Card</div>
-			<img class="nft-img" src="<?php echo htmlspecialchars($player_img); ?>" alt="<?php echo htmlspecialchars($enc['player_nft_name']); ?>" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
-			<div class="arena-card-name"><?php echo htmlspecialchars($enc['player_nft_name']); ?></div>
-			<div class="arena-card-project"><?php echo htmlspecialchars($enc['player_project_name']); ?></div>
-			<div class="arena-card-user">
-				<?php if (!empty($player_discord_id) && !empty($player_avatar)): ?>
-				<img src="<?php echo htmlspecialchars(avatar_url(htmlspecialchars($player_discord_id), htmlspecialchars($player_avatar))); ?>" alt="" onerror="this.src='icons/skull.png'">
-				<?php endif; ?>
-				<a href="profile.php?username=<?php echo urlencode($player_username); ?>"><?php echo htmlspecialchars($player_username); ?></a>
-			</div>
-		</div>
-		<div class="arena-vs">VS</div>
-		<div class="arena-card">
-			<div class="arena-card-label">Opponent</div>
-			<img class="nft-img" src="<?php echo htmlspecialchars($opponent_img); ?>" alt="<?php echo htmlspecialchars($enc['opponent_nft_name']); ?>" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
-			<div class="arena-card-name"><?php echo htmlspecialchars($enc['opponent_nft_name']); ?></div>
-			<div class="arena-card-project"><?php echo htmlspecialchars($enc['opponent_project_name']); ?></div>
-			<div class="arena-card-user">
-				<?php if (!empty($enc['opponent_discord_id']) && !empty($enc['opponent_avatar'])): ?>
-				<img src="<?php echo htmlspecialchars(avatar_url(htmlspecialchars($enc['opponent_discord_id']), htmlspecialchars($enc['opponent_avatar']))); ?>" alt="" onerror="this.src='icons/skull.png'">
-				<?php endif; ?>
-				<?php if (!empty($enc['opponent_username'])): ?>
-				<a href="profile.php?username=<?php echo urlencode($enc['opponent_username']); ?>"><?php echo htmlspecialchars($enc['opponent_username']); ?></a>
-				<?php endif; ?>
-			</div>
-		</div>
+	<?php
+	/*
+	 * THE FIGHT REPLACES THE ARENA, THE ODDS BAR AND THE REVEAL OVERLAY.
+	 *
+	 * All three belonged to a coin flip: two portraits, a percentage, and
+	 * a "crossing swords" animation to dramatise a single rand(1,100).
+	 * There is a real fight here now, so the odds bar has nothing to
+	 * describe and the reveal has nothing to reveal -- the exchanges ARE
+	 * the drama. gauntlets-fight-render.php draws the portraits, because
+	 * it is the thing that has to animate them.
+	 */
+	$gf_missing = gaunt_schema_missing($conn);
+	if ($gf_missing): ?>
+	<div class="flash error">
+		<strong>The fight needs three columns that are not there yet.</strong>
+		Missing: <?php echo htmlspecialchars(implode(', ', $gf_missing)); ?>.
+		Run this once, then reload:
+		<pre style="white-space:pre-wrap;margin:8px 0 0;font-size:.75rem;"><?php echo htmlspecialchars(gaunt_schema_sql()); ?></pre>
 	</div>
-
-	<div class="odds-bar-wrap">
-		<div class="odds-pct <?php echo $odds_class; ?>" id="odds-pct"><?php echo $win_chance_display; ?>% win chance</div>
-		<div class="odds-label" id="odds-label">Base odds — select a resource to see its effect</div>
-		<div class="odds-bar"><div class="odds-bar-fill" id="odds-fill" style="width:<?php echo $win_chance_display; ?>%"></div></div>
-	</div>
-
-	<form method="POST" id="fight-form">
-		<input type="hidden" name="action" value="resolve_encounter">
-		<input type="hidden" name="encounter_id" value="<?php echo intval($enc['id']); ?>">
-		<input type="hidden" name="weapon_id" id="fight-weapon" value="0">
-		<input type="hidden" name="armor_id"  id="fight-armor"  value="0">
-		<button type="button" class="btn-fight" onclick="startFight()">&#x2694; Fight!</button>
-	</form>
-
-	<div id="fight-reveal-overlay">
-		<div class="fr-arena">
-			<div class="fr-card" id="fr-player-card">
-				<img class="nft-img" id="fr-player-img" src="<?php echo htmlspecialchars($player_img); ?>" alt="" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
-				<div class="fr-label">You</div>
-			</div>
-			<div class="fr-vs">⚔️</div>
-			<div class="fr-card" id="fr-opp-card">
-				<img class="nft-img" id="fr-opp-img" src="<?php echo htmlspecialchars($opponent_img); ?>" alt="" onload="this.style.background='none'" onerror="this.src='icons/skull.png';this.style.background='none'">
-				<div class="fr-label">Opponent</div>
-			</div>
-		</div>
-		<div class="fr-status" id="fr-status">Crossing swords…</div>
-	</div>
+	<?php else:
+		$gf_enc = $enc;
+		$gf_enc['player_img']   = $player_img;
+		$gf_enc['opponent_img'] = $opponent_img;
+		$gf_fight = gaunt_fight_start($conn, $user_id, $enc);
+		gauntletRenderFight($gf_enc, $gf_fight,
+			gaunt_loadout($conn, $user_id, intval($enc['run_id'])));
+		include __DIR__ . '/gauntlets-fight-ui.php';
+	endif; ?>
 
 	<?php if ($ff_count > 0 && count($ff_hand) > 0): ?>
 	<button class="btn-ff" onclick="toggleFF()" type="button"><img src="icons/fast-forward.png" onerror="this.style.display='none'" style="width:16px;height:16px;object-fit:contain;vertical-align:middle;margin-right:6px;">Fast Forward — Swap Card (<?php echo $ff_count; ?> available)</button>
@@ -633,83 +582,16 @@ if ($state === 'encounter') {
 	</form>
 	<?php endif; ?>
 
-	<div class="resource-panel">
-			<div class="resource-title">Deploy Resources (optional — stack items, 1 weapon &amp; 1 armor)</div>
-			<div class="resource-tabs">
-				<div class="resource-tab active" id="tab-btn-consumable" onclick="switchTab('consumable', this)">Items</div>
-				<div class="resource-tab" id="tab-btn-weapon" onclick="switchTab('weapon', this)">Weapons</div>
-				<div class="resource-tab" id="tab-btn-armor" onclick="switchTab('armor', this)">Armor</div>
-			</div>
-
-			<div class="resource-section active" id="tab-consumable">
-				<?php if (!empty($consumables_inv)): ?>
-				<?php foreach ($consumables_inv as $ci):
-					$icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $ci['name'])) . '.png';
-					$c_bonus = $consumable_bonuses[intval($ci['consumable_id'])] ?? 0;
-				?>
-				<div class="resource-item" onclick="selectResource('consumable', <?php echo intval($ci['consumable_id']); ?>, this)" data-type="consumable" data-id="<?php echo intval($ci['consumable_id']); ?>" data-bonus="<?php echo $c_bonus; ?>">
-					<img src="<?php echo htmlspecialchars($icon); ?>" onerror="this.style.display='none'">
-					<span class="resource-item-name">
-						<?php echo htmlspecialchars($ci['name']); ?>
-						<?php if (isset($consumable_effects[intval($ci['consumable_id'])])): ?>
-						<span class="resource-effect"><?php echo $consumable_effects[intval($ci['consumable_id'])]; ?></span>
-						<?php endif; ?>
-					</span>
-					<span class="resource-item-qty">x<?php echo intval($ci['amount']); ?></span>
-				</div>
-				<?php endforeach; ?>
-				<?php else: ?>
-				<div class="resource-empty">
-					<div class="resource-empty-title">No consumables in your inventory.</div>
-					<div class="resource-empty-body">Earn consumables by claiming your daily rewards, embarking on <a href="missions.php">Missions</a>, or claiming from the Factory in your <a href="realms.php">Realm</a>.</div>
-				</div>
-				<?php endif; ?>
-			</div>
-
-			<div class="resource-section" id="tab-weapon">
-				<?php if (!empty($weapons_inv)): ?>
-				<?php foreach ($weapons_inv as $wi):
-					$w_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $wi['weapon_name'])) . '.png';
-				?>
-				<div class="resource-item" onclick="selectResource('weapon', <?php echo intval($wi['item_id']); ?>, this)" data-type="weapon" data-id="<?php echo intval($wi['item_id']); ?>" data-bonus="<?php echo intval($wi['weapon_level']); ?>">
-					<img src="<?php echo htmlspecialchars($w_icon); ?>" onerror="this.style.display='none'">
-					<span class="resource-item-name">
-						<?php echo htmlspecialchars($wi['weapon_name']); ?> (Lv <?php echo intval($wi['weapon_level']); ?>)
-						<span class="resource-effect">+<?php echo intval($wi['weapon_level']); ?>% win chance — consumed on use</span>
-					</span>
-					<span class="resource-item-qty">x<?php echo intval($wi['quantity']); ?></span>
-				</div>
-				<?php endforeach; ?>
-				<?php else: ?>
-				<div class="resource-empty">
-					<div class="resource-empty-title">No weapons in your inventory.</div>
-					<div class="resource-empty-body">Claim weapons from the Armory in your <a href="realms.php">Realm</a>. Tip: equip gear to your Gauntlet cards first — once soldiers are auto-equipped, that gear is no longer available here.</div>
-				</div>
-				<?php endif; ?>
-			</div>
-
-			<div class="resource-section" id="tab-armor">
-				<?php if (!empty($armor_inv)): ?>
-				<?php foreach ($armor_inv as $ai):
-					$a_icon = 'icons/' . strtolower(str_replace(['%', ' '], ['', '-'], $ai['armor_name'])) . '.png';
-				?>
-				<div class="resource-item" onclick="selectResource('armor', <?php echo intval($ai['item_id']); ?>, this)" data-type="armor" data-id="<?php echo intval($ai['item_id']); ?>" data-bonus="<?php echo intval($ai['armor_level']); ?>">
-					<img src="<?php echo htmlspecialchars($a_icon); ?>" onerror="this.style.display='none'">
-					<span class="resource-item-name">
-						<?php echo htmlspecialchars($ai['armor_name']); ?> (Lv <?php echo intval($ai['armor_level']); ?>)
-						<span class="resource-effect">+<?php echo intval($ai['armor_level']); ?>% win chance — consumed on use</span>
-					</span>
-					<span class="resource-item-qty">x<?php echo intval($ai['quantity']); ?></span>
-				</div>
-				<?php endforeach; ?>
-				<?php else: ?>
-				<div class="resource-empty">
-					<div class="resource-empty-title">No armor in your inventory.</div>
-					<div class="resource-empty-body">Claim armor from the Armory in your <a href="realms.php">Realm</a>. Tip: equip gear to your Gauntlet cards first — once soldiers are auto-equipped, that gear is no longer available here.</div>
-				</div>
-				<?php endif; ?>
-			</div>
-		</div>
+	<?php
+	/*
+	 * THE LOADOUT PANEL IS GONE. It staked items BEFORE a single roll --
+	 * pick a weapon, pick an armour, tick some consumables, watch a
+	 * percentage move by four points, then flip a coin. The fight spends
+	 * them a turn at a time instead, so the choice is made with the
+	 * fight in front of you rather than blind, and the buttons that make
+	 * it live in gauntlets-fight-render.php.
+	 */
+	?>
 
 	<?php
 	// Encounter history for current run (resolved only)
@@ -873,9 +755,11 @@ if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 	}
 })();
 
-// Show loader on every form submission (fight-form excluded — handled by startFight animation)
+/* Show the loader on every form submission. The old exclusion for
+   #fight-form went with it: that form staked a loadout and rolled once,
+   and the fight posts a turn at a time through ajax/gauntlet-fight.php. */
 document.querySelectorAll('form[method="POST"]').forEach(function(f) {
-	if (f.id === 'fight-form') return;
+	if (f.id === 'gf-form') return;   /* the fight swaps a fragment, not a page */
 	f.addEventListener('submit', function() {
 		var action = (f.querySelector('[name="action"]') || {}).value || '';
 		var msg = action === 'fast_forward' ? 'Swapping Card…' : 'Loading Gauntlet';
@@ -899,39 +783,6 @@ function dismissResult() {
 }
 
 // Fight animation — show suspense overlay, then submit
-function startFight() {
-	// Inject consumable_ids[] hidden inputs for all selected consumables
-	var form = document.getElementById('fight-form');
-	form.querySelectorAll('input[name="consumable_ids[]"]').forEach(function(el) { el.remove(); });
-	document.querySelectorAll('.resource-item[data-type="consumable"][data-selected="1"]').forEach(function(el) {
-		var inp = document.createElement('input');
-		inp.type = 'hidden'; inp.name = 'consumable_ids[]'; inp.value = el.dataset.id;
-		form.appendChild(inp);
-	});
-	var overlay = document.getElementById('fight-reveal-overlay');
-	if (!overlay) { form.submit(); return; }
-	lockForOverlay();
-	overlay.classList.add('active');
-	// Shake both cards after a short beat
-	var timer1 = setTimeout(function() {
-		document.getElementById('fr-player-card').classList.add('shaking');
-		document.getElementById('fr-opp-card').classList.add('shaking');
-	}, 350);
-	// Cycle status text
-	var statuses = ['Crossing swords…', 'Rolling the dice…', 'The outcome is sealed…', 'Wait for it…'];
-	var statusEl = document.getElementById('fr-status');
-	var i = 0;
-	var interval = setInterval(function() {
-		i++;
-		if (statusEl && i < statuses.length) statusEl.textContent = statuses[i];
-	}, 750);
-	// Submit after animation completes — overlay stays visible during server wait
-	setTimeout(function() {
-		clearInterval(interval);
-		clearTimeout(timer1);
-		document.getElementById('fight-form').submit();
-	}, 2400);
-}
 
 // Pick card from hand
 function pickCard(nftId) {
@@ -942,65 +793,11 @@ function pickCard(nftId) {
 	setTimeout(() => document.getElementById('pick-form').submit(), 120);
 }
 
-var gauntletBaseOdds = <?php echo isset($win_chance_display) ? intval($win_chance_display) : 0; ?>;
 
 // Resource selection — consumables are multi-select (toggle); weapon/armor are single-select
-function selectResource(type, id, el) {
-	const alreadySelected = el.dataset.selected === '1';
-	if (type === 'consumable') {
-		// Toggle this consumable independently
-		el.classList.toggle('selected', !alreadySelected);
-		el.dataset.selected = alreadySelected ? '0' : '1';
-	} else {
-		// Weapon/armor: radio-style (1 per type)
-		document.querySelectorAll('.resource-item[data-type="' + type + '"]').forEach(i => { i.classList.remove('selected'); i.dataset.selected = '0'; });
-		if (!alreadySelected) {
-			el.classList.add('selected');
-			el.dataset.selected = '1';
-			if (type === 'weapon') document.getElementById('fight-weapon').value = id;
-			if (type === 'armor')  document.getElementById('fight-armor').value  = id;
-		} else {
-			if (type === 'weapon') document.getElementById('fight-weapon').value = 0;
-			if (type === 'armor')  document.getElementById('fight-armor').value  = 0;
-		}
-	}
-	// Update tab dot indicator — lit if any item of this type is selected
-	var tabBtn = document.getElementById('tab-btn-' + type);
-	if (tabBtn) tabBtn.classList.toggle('has-selection', document.querySelectorAll('.resource-item[data-type="' + type + '"][data-selected="1"]').length > 0);
-	updateOddsDisplay();
-}
 
-function updateOddsDisplay() {
-	var bonus = 0;
-	var anySelected = false;
-	document.querySelectorAll('.resource-item[data-selected="1"]').forEach(function(sel) {
-		bonus += parseInt(sel.dataset.bonus || '0', 10);
-		anySelected = true;
-	});
-	var total = Math.min(100, gauntletBaseOdds + bonus);
-	var pct   = document.getElementById('odds-pct');
-	var fill  = document.getElementById('odds-fill');
-	var lbl   = document.getElementById('odds-label');
-	if (pct) {
-		pct.textContent = total + '% win chance';
-		pct.className   = 'odds-pct' + (total < 50 ? ' danger' : '');
-	}
-	if (fill) fill.style.width = total + '%';
-	if (lbl) {
-		if (bonus > 0)      lbl.textContent = 'Base ' + gauntletBaseOdds + '% + ' + bonus + '% from resources = ' + total + '%';
-		else if (anySelected) lbl.textContent = 'Base ' + gauntletBaseOdds + '% — selected items do not affect odds';
-		else                lbl.textContent = 'Base odds — select resources to see their effect';
-	}
-}
 
 // Resource tab switching
-function switchTab(tab, el) {
-	document.querySelectorAll('.resource-tab').forEach(t => t.classList.remove('active'));
-	document.querySelectorAll('.resource-section').forEach(s => s.classList.remove('active'));
-	el.classList.add('active');
-	const sec = document.getElementById('tab-' + tab);
-	if (sec) sec.classList.add('active');
-}
 
 // Fast Forward overlay
 function toggleFF() {

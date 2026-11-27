@@ -13540,7 +13540,16 @@ function gauntletFastForward($conn, $user_id, $encounter_id, $new_nft_id) {
 }
 
 // Apply resources, roll the dice, record outcome, award points
-function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_ids = [], $weapon_id = 0, $armor_id = 0) {
+/**
+ * $force_outcome -- 'win' or 'loss' to SKIP THE ROLL.
+ *
+ * The turn-based fight (gauntlets-fight-lib.php) has already decided who
+ * won over a dozen exchanges; it calls this only to record the result and
+ * pay it out. Everything below the roll -- the transaction, the currency
+ * choice, the junction rows -- is the same either way, which is why this
+ * takes a parameter instead of growing a second copy of the payout.
+ */
+function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_ids = [], $weapon_id = 0, $armor_id = 0, $force_outcome = null) {
 	$uid       = intval($user_id);
 	$enc_id    = intval($encounter_id);
 	$weapon_id = intval($weapon_id);
@@ -13594,9 +13603,13 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 	} else {
 		$armor_id = 0;
 	}
-	// Roll
-	$roll    = rand(1, 100);
-	$outcome = ($roll <= $win_chance) ? 'win' : 'loss';
+	// Roll -- unless the fight already decided it.
+	if ($force_outcome === 'win' || $force_outcome === 'loss') {
+		$outcome = $force_outcome;
+	} else {
+		$roll    = rand(1, 100);
+		$outcome = ($roll <= $win_chance) ? 'win' : 'loss';
+	}
 	// Build SET clause for nullable IDs
 	$w_sql = $weapon_id ? $weapon_id : 'NULL';
 	$a_sql = $armor_id  ? $armor_id  : 'NULL';
