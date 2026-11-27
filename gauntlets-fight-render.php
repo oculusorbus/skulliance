@@ -216,30 +216,37 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '', 
                       data-sfx="<?php echo htmlspecialchars($it['sfx'] ?: 'melee'); ?>">
                 <img src="icons/<?php echo htmlspecialchars($it['slug']); ?>.png" alt=""
                      onerror="this.style.display='none'">
-                <span><?php echo htmlspecialchars($it['name']); ?></span>
+                <span><?php echo htmlspecialchars($it['name']); ?><?php
+                    if (!empty($it['qty']) && (int)$it['qty'] > 1) echo ' <i class="gf-qty">&times;' . (int)$it['qty'] . '</i>'; ?></span>
                 <?php if (!empty($it['loot'])): ?><em class="gf-loot" title="taken off an opponent; gone when the run ends">salvage</em><?php endif; ?>
+                <?php /* WORDED, because a bare number beside an item reads as
+                         how many you own -- reported exactly that way: two
+                         pistols showing 8. The 8 is swings; the x2 is the
+                         pistols. A count is always an x, a remaining action
+                         is always a word. */ ?>
                 <em class="gf-left" title="<?php echo (int)$it['left']; ?> swings left this run<?php
-                    if (!empty($it['qty'])) echo ' — you hold ' . (int)$it['qty']; ?>"><?php echo (int)$it['left']; ?></em>
+                    if (!empty($it['qty'])) echo ' — you hold ' . (int)$it['qty']; ?>"><?php echo (int)$it['left']; ?> swing<?php echo (int)$it['left'] === 1 ? '' : 's'; ?></em>
               </button>
             <?php elseif ($t === 'armor'): $dis = $it['left'] < 1; ?>
               <button type="submit" name="turn" value="armor:<?php echo (int)$it['id']; ?>"
                       class="gf-btn gf-arm<?php echo $dis ? ' is-spent' : ''; ?>"
                       <?php echo $dis ? 'disabled' : ''; ?> data-sfx="equip">
-                <span><?php echo htmlspecialchars($it['name']); ?></span>
+                <span><?php echo htmlspecialchars($it['name']); ?><?php
+                    if (!empty($it['qty']) && (int)$it['qty'] > 1) echo ' <i class="gf-qty">&times;' . (int)$it['qty'] . '</i>'; ?></span>
                 <em class="gf-left" title="<?php echo (int)$it['left']; ?> uses left this run<?php
-                    if (!empty($it['qty'])) echo ' — you hold ' . (int)$it['qty']; ?>"><?php echo (int)$it['left']; ?></em>
+                    if (!empty($it['qty'])) echo ' — you hold ' . (int)$it['qty']; ?>"><?php echo (int)$it['left']; ?> use<?php echo (int)$it['left'] === 1 ? '' : 's'; ?></em>
               </button>
             <?php elseif ($t === 'stake'): ?>
               <button type="submit" name="turn" value="stake:<?php echo (int)$it['id']; ?>"
                       class="gf-btn gf-stake" data-sfx="equip">
                 <span><?php echo htmlspecialchars($it['name']); ?></span>
-                <em class="gf-left" title="in your inventory"><?php echo (int)$it['have']; ?></em>
+                <em class="gf-left" title="how many you hold">&times;<?php echo (int)$it['have']; ?></em>
               </button>
             <?php else: ?>
               <button type="submit" name="turn" value="heal:<?php echo (int)$it['id']; ?>"
                       class="gf-btn gf-heal" data-sfx="heal">
                 <span>Heal <?php echo (int)$it['pct']; ?>%</span>
-                <em class="gf-left" title="in your inventory"><?php echo (int)$it['have']; ?></em>
+                <em class="gf-left" title="how many you hold">&times;<?php echo (int)$it['have']; ?></em>
               </button>
             <?php endif;
           endforeach; ?>

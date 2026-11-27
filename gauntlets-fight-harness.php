@@ -638,6 +638,26 @@ ok($gsr !== false && preg_match('~if \\(\\$gn_id\\) @\\$conn->query\\("UPDATE ga
         substr($DB, $gsr, $gsr_end - $gsr)) === 1,
    'a dealt hand is not seeded at full health, so every card is ambiguous until it fights');
 
+echo "\na count and a remaining action cannot be confused\n";
+/*
+ * REPORTED: "I have 2 pistols and 1 tactical katana in realms, why do
+ * I have 8 and 5 in gauntlets?" The arithmetic was right -- a level-3
+ * pistol is 4 swings and two copies is 8 -- but a bare number beside
+ * an item reads as how many you own. The label was the bug.
+ *
+ * So: an x is always a COUNT, a word is always REMAINING ACTIONS, and
+ * never the other way round.
+ */
+ok(strpos($REN, "swing<?php echo (int)" . '$' . "it['left'] === 1 ? '' : 's'") !== false,
+   'the swing badge is a bare number again, which reads as a quantity');
+ok(strpos($REN, "use<?php echo (int)" . '$' . "it['left'] === 1 ? '' : 's'") !== false,
+   'the armour badge is a bare number again');
+ok(substr_count($REN, '<i class="gf-qty">') === 2 && strpos($UI, '.gf-qty ') !== false,
+   'how many of a weapon you hold is not shown, so the swing total looks arbitrary');
+/* Heals and stakes genuinely ARE counts, so they keep the x. */
+ok(substr_count($REN, 'title="how many you hold">&times;') === 2,
+   'the heal or stake badge no longer reads as a count');
+
 echo "\nthe deck shows what each card is carrying\n";
 /*
  * Picking who to send is the same judgement Fast Forward asks for, and

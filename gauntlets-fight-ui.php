@@ -130,6 +130,8 @@ define('GF_UI_DONE', 1);
    label hard left, which reads as a broken row rather than a button. */
 .gf-done         { display: flex; justify-content: center; margin-top: 4px; }
 .gf-done .gf-btn { min-width: 180px; justify-content: center; }
+.gf-qty          { font-style: normal; font-weight: 400; color: rgba(255,255,255,.45);
+                   font-size: .74rem; }
 .gf-loot         { font-style: normal; font-size: .6rem; text-transform: uppercase;
                    letter-spacing: .08em; color: #ffc800; background: rgba(255,200,0,.12);
                    border: 1px solid rgba(255,200,0,.35); border-radius: 3px; padding: 1px 4px; }
