@@ -170,7 +170,11 @@ define('GF_UI_DONE', 1);
                    flex-direction: column; align-items: center; gap: 8px; color: #ffc800;
                    font: 700 .85rem/1 inherit; text-transform: uppercase; letter-spacing: .08em;
                    user-select: none; -webkit-user-select: none; }
+/* A block child is NOT centred by the text-align on .gchest, so the
+   open chest sat hard left while its caption sat in the middle. The
+   button case got away with it by being inline-flex. */
 .gchest-img      { width: 150px; max-width: 46vw; height: auto; display: block;
+                   margin-left: auto; margin-right: auto;
                    filter: drop-shadow(0 6px 18px rgba(0,0,0,.55)); }
 @media (hover: hover) {
   .gchest-btn:hover .gchest-img { transform: translateY(-3px); }
@@ -181,9 +185,11 @@ define('GF_UI_DONE', 1);
 .gchest-title    { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em;
                    color: rgba(255,255,255,.45); margin: 10px 0 8px; }
 .gchest-items    { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-.gchest-item     { background: rgba(255,200,0,.1); border: 1px solid rgba(255,200,0,.35);
+.gchest-item     { display: inline-flex; align-items: center; gap: 7px;
+                   background: rgba(255,200,0,.1); border: 1px solid rgba(255,200,0,.35);
                    border-radius: 6px; padding: 6px 10px; font-size: .8rem; color: #ffe08a;
                    animation: gchestPop .45s cubic-bezier(.2,.8,.3,1) backwards; }
+.gchest-item img { width: 20px; height: 20px; object-fit: contain; }
 .gchest-item:nth-child(2) { animation-delay: .09s; }
 .gchest-item:nth-child(3) { animation-delay: .18s; }
 .gchest-item:nth-child(4) { animation-delay: .27s; }

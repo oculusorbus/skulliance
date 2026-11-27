@@ -147,40 +147,39 @@ if (!defined('GAUNTLET_BODY_OK')) { http_response_code(404); exit; }
 			<div class="gchest-title">Hauled out of the gauntlet</div>
 			<div class="gchest-items">
 				<?php foreach ($gchest_rows as $gr): ?>
-					<span class="gchest-item"><strong>&times;<?php echo $gr['qty']; ?></strong>
+					<span class="gchest-item"><?php if ($gr['icon'] !== ''): ?><img
+						src="<?php echo htmlspecialchars($gr['icon']); ?>" alt=""
+						onerror="this.style.display='none'"><?php endif; ?><strong>&times;<?php
+						echo $gr['qty']; ?></strong>
 						<?php echo htmlspecialchars($gr['name']); ?></span>
 				<?php endforeach; ?>
 			</div>
 		</div>
 		<?php
 		/*
-		 * THE SAME CHEST THE DAILY REWARD OPENS. missions-claim-modal.php
-		 * is the performance -- rattle, lid, items flying out of the
-		 * mouth -- and it takes a neutral payload now, so this hands it
-		 * one instead of owning a second copy of the animation. The block
-		 * above stays as the record: it is what is still on the page once
-		 * the reveal is dismissed, and what a no-JS player sees.
+		 * THE SAME CHEST THE DAILY REWARD OPENS, HANDED OVER AS DATA.
+		 *
+		 * Not as a <script>, and not by including the reveal partial here:
+		 * this file is swapped in with innerHTML between rounds, and a
+		 * <script> that arrives that way NEVER RUNS. The partial lives in
+		 * the shell; this leaves the payload on the page and the shell
+		 * fires it, on a fresh load and after a swap alike.
+		 *
+		 * The block above stays as the record: it is what is still here
+		 * once the reveal is dismissed, and what a no-JS player sees.
 		 */
-		$sk_reveal_only = true;
-		include __DIR__ . '/missions-claim-modal.php';
-		?>
-		<script>
-		(function () {
-			var payload = {
-				kicker: 'Gauntlet chest',
-				items: <?php echo json_encode(array_map(function ($r) {
-					/* The real character: the reveal escapes what it is
-					   given, so an HTML entity would print as one. */
-					return array('icon' => $r['icon'], 'label' => "\xc3\x97" . $r['qty'],
-					             'note' => $r['name']);
-				}, $gchest_rows), JSON_UNESCAPED_SLASHES); ?>
-			};
-			function go() { if (window.SK_REVEAL_SHOW) SK_REVEAL_SHOW(payload); }
-			if (document.readyState === 'loading')
-				document.addEventListener('DOMContentLoaded', go);
-			else go();
-		})();
-		</script>
+		$g_chest_payload = array(
+			'kicker' => 'Gauntlet chest',
+			'items'  => array_map(function ($r) {
+				/* The real character: the reveal escapes what it is given,
+				   so an HTML entity would print as one. */
+				return array('icon' => $r['icon'], 'label' => "\xc3\x97" . $r['qty'],
+				             'note' => $r['name']);
+			}, $gchest_rows),
+		); ?>
+		<div id="g-chest-payload" hidden data-reveal="<?php
+			echo htmlspecialchars(json_encode($g_chest_payload, JSON_UNESCAPED_SLASHES),
+			                      ENT_QUOTES, 'UTF-8'); ?>"></div>
 	<?php elseif ($run_id_over > 0 && gaunt_chest_pending($conn, $run_id_over)): ?>
 		<form method="POST" class="gchest">
 			<input type="hidden" name="action" value="claim_chest">

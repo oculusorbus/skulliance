@@ -953,9 +953,21 @@ ok(strpos($PG, 'if (window.GF_BOOT) GF_BOOT();') !== false,
    'the swapped body is never handed to the fight script');
 ok(strpos($PG, "if (!f || f.id === 'gf-form') return;") !== false,
    'the page swap swallows the fight\'s own turn form');
-/* .submit() fires no submit event, so the card picker must not use it. */
-ok(strpos($PG, 'if (!window.GAUNT_POST || !GAUNT_POST(f)) f.submit();') !== false,
-   'picking a card calls .submit() directly, which fires no submit event and reloads the page');
+/*
+ * .submit() FIRES NO SUBMIT EVENT, so anything using it walks straight
+ * past the delegated handler and reloads the page -- which restarts
+ * the soundtrack. Both of the page's programmatic submits (the card
+ * picker and Fast Forward) must go through GAUNT_POST first. Fast
+ * Forward was missed on the first pass and found by auditing for this.
+ */
+ok(substr_count($PG, 'if (!window.GAUNT_POST || !GAUNT_POST(f))') === 2,
+   'one of the two programmatic submits (card pick, Fast Forward) does not route through the swap');
+ok(preg_match('~getElementById\(.(?:pick|ff)-form.\)\.submit\(\)~', $PG) !== 1,
+   'a form is submitted directly by id, which fires no submit event and reloads the page');
+ok(strpos($PG, "var f = document.getElementById('ff-form');") !== false,
+   'Fast Forward still calls .submit() on the form directly, which reloads the page mid-run');
+ok(preg_match('~getElementById\(.ff-form.\)\.submit\(\)~', $PG) !== 1,
+   'Fast Forward submits the form directly, bypassing the swap');
 /* One implementation of the actions, included by both. */
 ok(strpos($AJP, "require __DIR__ . '/../gauntlets-actions.php';") !== false,
    'the endpoint does not run the page\'s own action code, so the two can drift');

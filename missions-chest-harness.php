@@ -1057,11 +1057,34 @@ ok(strpos($gau, "include __DIR__ . '/missions-claim-modal.php';") !== false,
    'Gauntlets does not include the reveal partial, so it has nowhere to put its chest');
 ok(strpos($gau, '$sk_reveal_only = true;') !== false,
    'Gauntlets does not opt in, so the partial returns early and SK_REVEAL_SHOW never exists');
-ok(strpos($gau, 'SK_REVEAL_SHOW(payload)') !== false,
+ok(strpos($gau, 'if (p && p.items && p.items.length) SK_REVEAL_SHOW(p);') !== false,
    'Gauntlets does not drive the shared reveal');
+/*
+ * AS DATA, NOT AS A SCRIPT. The Gauntlet body is swapped in with
+ * innerHTML between rounds and a <script> that arrives that way NEVER
+ * RUNS -- so the chest would silently not play after an AJAX claim.
+ * The partial is loaded once in the shell and the body leaves a
+ * payload for it on the page.
+ */
+$gshell = (string) file_get_contents(__DIR__ . '/gauntlets.php');
+$gbody  = (string) file_get_contents(__DIR__ . '/gauntlets-body.php');
+ok(strpos($gshell, "include __DIR__ . '/missions-claim-modal.php';") !== false,
+   'the reveal partial is not in the shell, so its script never runs after a swap');
+ok(strpos($gbody, 'missions-claim-modal.php') === false,
+   'the swapped body includes the reveal partial, whose <script> will not execute');
+ok(strpos(preg_replace('~/\*.*?\*/~s', '', $gbody), '<script') === false,
+   'the swapped body carries a <script>, which innerHTML will not execute');
+ok(strpos($gbody, 'id="g-chest-payload"') !== false,
+   'the chest leaves no payload behind, so the shell has nothing to fire');
+ok(strpos($gshell, "n.removeAttribute('id');") !== false,
+   'the payload is not consumed, so a later swap replays the same haul');
+/* And it has to be fired AFTER the swap, not only on a fresh load --
+   the claim itself is a swap, so that is the only path that matters. */
+ok(strpos($gshell, "armResultReveal();\n\t\t\tfireChestReveal();") !== false,
+   'the chest is never fired after a body swap, which is the only way it is ever claimed');
 ok(strpos($modalCode, 'window.SK_REVEAL_SHOW = reveal;') !== false,
    'the reveal engine is not exported, so nothing outside the partial can drive it');
-ok(strpos($gau, 'if (window.SK_REVEAL_SHOW)') !== false,
+ok(strpos($gau, 'if (!n || !window.SK_REVEAL_SHOW) return;') !== false,
    'Gauntlets calls the reveal without checking it loaded, the one guard every other hook here keeps');
 /* No second chest animation anywhere. */
 ok(strpos($gau, 'is-shaking') === false && strpos($gau, 'mcm-veil') === false,

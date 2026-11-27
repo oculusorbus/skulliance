@@ -201,7 +201,13 @@ require __DIR__ . '/gauntlets-state.php';
 	         its script are loaded here and never again: #g-area below is
 	         replaced wholesale between rounds, and anything in there is
 	         torn down with it. */
-	   include __DIR__ . '/gauntlets-fight-ui.php'; ?>
+	   include __DIR__ . '/gauntlets-fight-ui.php';
+
+	   /* The chest reveal, for the same reason: a <script> arriving in a
+	      swapped fragment never runs, so the performance is loaded once
+	      here and the body only leaves it a payload. */
+	   $sk_reveal_only = true;
+	   include __DIR__ . '/missions-claim-modal.php'; ?>
 
 	<div id="g-area" data-mood="<?php echo htmlspecialchars(gaunt_page_mood($state, $run_stats)); ?>">
 	<?php include __DIR__ . '/gauntlets-body.php'; ?>
@@ -331,6 +337,21 @@ function armResultReveal() {
 	rr._autoTimer = setTimeout(dismissResult, 4000);
 }
 armResultReveal();
+
+/*
+ * The chest, fired from the payload the body leaves behind. Runs on a
+ * fresh load and again after every swap; the id is dropped once it has
+ * played so a later swap cannot replay the same haul.
+ */
+function fireChestReveal() {
+	var n = document.getElementById('g-chest-payload');
+	if (!n || !window.SK_REVEAL_SHOW) return;
+	var p;
+	try { p = JSON.parse(n.getAttribute('data-reveal') || 'null'); } catch (e) { return; }
+	n.removeAttribute('id');
+	if (p && p.items && p.items.length) SK_REVEAL_SHOW(p);
+}
+fireChestReveal();
 function dismissResult() {
 	var rr = document.getElementById('result-reveal');
 	if (!rr || rr.classList.contains('hiding')) return;
@@ -400,6 +421,7 @@ function pickCard(nftId) {
 			/* Both of these were bound once at load, which was fine when
 			   a round was a page load. */
 			armResultReveal();
+			fireChestReveal();
 			window.scrollTo(0, 0);
 		}).catch(function () { form.submit(); });
 		return true;
@@ -442,8 +464,11 @@ function toggleFF() {
 
 function submitFF(encId, newNftId) {
 	document.getElementById('ff-new-nft-id').value = newNftId;
-	showLoader('Swapping Card…');
-	document.getElementById('ff-form').submit();
+	/* Same reason as pickCard: .submit() fires no submit event, so it
+	   would walk straight past the delegated handler and reload the
+	   page -- which is the one thing that restarts the soundtrack. */
+	var f = document.getElementById('ff-form');
+	if (!window.GAUNT_POST || !GAUNT_POST(f)) { showLoader('Swapping Card…'); f.submit(); }
 }
 </script>
 
