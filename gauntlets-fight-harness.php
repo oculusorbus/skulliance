@@ -236,6 +236,96 @@ $mine = null; foreach ($entries as $x) if ($x['who'] === 'you' && $x['kind'] ===
 ok($mine !== null && isset($mine['big']),
    "the player's own hit carries no big flag, so every hit animates identically");
 
+/* ====================================================================
+ * THE PERSISTENCE LAYER. Pure parts driven; the rest asserted from
+ * source, because they need a database and this harness must not.
+ * ==================================================================== */
+/* The real ids, pinned against db.php below so the lib and the platform
+   cannot drift apart on what a "75% Success" is. */
+foreach (array('GAUNTLET_C_100' => 1, 'GAUNTLET_C_75' => 2, 'GAUNTLET_C_50' => 3,
+               'GAUNTLET_C_25' => 4, 'GAUNTLET_C_FF' => 5, 'GAUNTLET_C_DOUBLE' => 6,
+               'GAUNTLET_C_RANDOM' => 7) as $k => $v) if (!defined($k)) define($k, $v);
+require_once __DIR__ . '/gauntlets-fight-lib.php';
+$DB  = (string) file_get_contents(__DIR__ . '/db.php');
+$LIB = (string) file_get_contents(__DIR__ . '/gauntlets-fight-lib.php');
+
+echo "\nthe consumable ids match the platform's\n";
+foreach (array('GAUNTLET_C_100' => 1, 'GAUNTLET_C_75' => 2,
+               'GAUNTLET_C_50' => 3, 'GAUNTLET_C_25' => 4) as $k => $v)
+	ok(preg_match("~define\\('" . $k . "',\\s*" . $v . "\\)~", $DB) === 1,
+	   "$k is not $v in db.php, so the heal map is reading the wrong item");
+ok(gaunt_heal_pct(GAUNTLET_C_100) === 100 && gaunt_heal_pct(GAUNTLET_C_25) === 25,
+   'the heal percentages do not follow the consumable names');
+ok(gaunt_heal_pct(GAUNTLET_C_FF) === 0 && gaunt_heal_pct(GAUNTLET_C_DOUBLE) === 0,
+   'Fast Forward or Double Rewards is being treated as a heal');
+
+echo "\nthe weapon sounds match Crypt Crawl's, entry for entry\n";
+/*
+ * BOTH GAMES READ THE SAME `weapons` TABLE through getAllWeapons(), so
+ * the names are already shared. This map is duplicated rather than
+ * imported -- including another game's RENDER file to borrow a lookup
+ * would couple two pages that have nothing else in common -- and
+ * duplication is only safe if it cannot drift, which is what this
+ * checks.
+ */
+$CC = (string) file_get_contents(__DIR__ . '/cryptcrawl-render.php');
+$ccMap = array();
+if (preg_match('~function cryptcrawlWeaponSfxName.*?static \$map = \[(.*?)\];~s', $CC, $m))
+	if (preg_match_all("~'([a-z-]+)'\s*=>\s*'([a-z]+)'~", $m[1], $mm, PREG_SET_ORDER))
+		foreach ($mm as $x) $ccMap[$x[1]] = $x[2];
+ok(count($ccMap) >= 10, 'could not read Crypt Crawl\'s weapon sound map, so drift cannot be detected');
+$drift = array();
+foreach ($ccMap as $slug => $sfx) {
+	$name = str_replace('-', ' ', $slug);
+	if (gaunt_weapon_sfx($name) !== $sfx) $drift[] = $slug;
+}
+ok(count($drift) === 0, 'the weapon sound map has drifted from Crypt Crawl\'s: ' . implode(', ', $drift));
+ok(gaunt_weapon_sfx('Some New Gun') === null,
+   'an unmapped weapon does not fall through to null, so a new weapon would fatal');
+ok(gaunt_weapon_slug('Machine Gun') === 'machine-gun',
+   'the slug does not match the one the icon path uses');
+
+echo "\ngear is durable, consumables are spent\n";
+/*
+ * THE RULE THE WHOLE ITEM ECONOMY RESTS ON. If weapons and armour were
+ * destroyed by use, players would hoard them and never play one -- the
+ * 99-unused-elixirs problem -- and the game would be back to having no
+ * decisions in it. The OLD gauntletResolveEncounter() did exactly that,
+ * so this is a regression somebody could reintroduce by copying it.
+ */
+ok(strpos($LIB, 'updateGear(') === false,
+   'the fight layer calls updateGear(), which destroys gear permanently and makes players hoard it');
+ok(preg_match('~updateAmount\(\$conn, \$uid, \$item_id, -1\)~', $LIB) === 1,
+   'heals are not actually consumed, so they are infinite');
+/* Wear is recorded on the RUN, not on the inventory. */
+ok(strpos($LIB, 'gaunt_gear_state_save($conn, $run_id, $gs)') !== false,
+   'weapon and armour wear is not written to the run, so it resets every turn');
+
+echo "\nthe server decides, the client renders\n";
+ok(strpos($LIB, "if ((int)\$enc['owner'] !== \$uid) return array('ok' => false") !== false,
+   'the turn endpoint does not check the fight belongs to the player');
+/* THE GUARD ITSELF, not the message it prints. Deleting `left > 0` from
+   the match leaves the error string in place and an earlier version of
+   this check passed on a weapon with unlimited swings. */
+ok(preg_match("~foreach \\(\\\$load\\['weapons'\\] as \\\$w\\).*?\\\$w\\['left'\\] > 0~s", $LIB) === 1,
+   'a client can swing a weapon the run has no swings left of');
+ok(preg_match("~foreach \\(\\\$load\\['armor'\\] as \\\$a\\).*?\\\$a\\['left'\\] > 0~s", $LIB) === 1,
+   'a client can wear armour the run has already spent');
+ok(strpos($LIB, "'why' => 'you have none of those'") !== false,
+   'a client can heal with a consumable it does not hold');
+ok(strpos($LIB, "ge.outcome='pending'") !== false,
+   'a resolved encounter can be played again');
+/* The seed is derived from the encounter, so reloading cannot re-roll a
+   fight into a kinder one. */
+ok(strpos($LIB, "crc32('gauntlet:' . \$enc_id)") !== false,
+   'the fight seed is not fixed to the encounter, so a reload re-rolls it');
+
+echo "\nthe migration is named, not guessed\n";
+foreach (array('gauntlets_nfts', 'gear_state', 'fight') as $bit)
+	ok(strpos(gaunt_schema_sql(), $bit) !== false, "the printed migration does not mention $bit");
+ok(substr_count(gaunt_schema_sql(), 'ALTER TABLE') === 3,
+   'the migration does not cover all three columns gaunt_schema_missing() looks for');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all fight checks passed\n");
 
 /* ------------------------------------------------------------------ */
