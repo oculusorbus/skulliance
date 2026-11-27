@@ -429,8 +429,22 @@ echo "\nthe backdrop is the opponent\'s world, when there is art for it\n";
 ok(strpos($LIB, 'function gaunt_theme_bg') !== false, 'there is no backdrop lookup');
 /* The flag is what says the image exists -- without it the fight would
    point at a 404 and show nothing, which is worse than no backdrop. */
-ok(preg_match('~monstrocity_themes.*?background = 1~s', $LIB) === 1,
-   'the backdrop is chosen without checking the theme actually has one');
+ok(substr_count($LIB, 'background = 1') === 3,
+   'a backdrop lookup path skips the background flag, which is what says the image exists');
+/*
+ * THREE LOOKUPS, MOST PRECISE FIRST. monstrocity-schema.md is explicit
+ * that project_id is the real link and is "mostly NULL", while
+ * project_name is the string that stands alone for themes whose project
+ * is not on the platform -- so a name-only match finds the FEWEST of
+ * the themes that actually correspond to something here. That was the
+ * first version, and it found almost nothing.
+ */
+ok(strpos($LIB, 'monstrocity_theme_collections tc') !== false,
+   'the backdrop no longer matches on the collection, which is the most precise link');
+ok(strpos($LIB, 'WHERE project_id = $pid') !== false,
+   'the backdrop no longer matches on project_id, the canonical link');
+ok(strpos($REN, 'data-bg=') !== false,
+   'the fragment does not say why it has no backdrop, so the next report needs a bisect');
 ok(strpos($REN, 'gf-has-bg') !== false, 'the renderer never applies the backdrop class');
 ok(strpos($UI, '.gf-has-bg::before') !== false, 'the backdrop has no styling, so it will not show');
 

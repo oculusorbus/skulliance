@@ -72,4 +72,5 @@ $enc['opponent_img'] = getIPFS($enc['opponent_ipfs'], $enc['opponent_cid'], $enc
 gauntletRenderFight($enc, $res['fight'],
 	gaunt_loadout($conn, $user_id, (int)$enc['run_id']),
 	$res['timeline'],
-	gaunt_theme_bg($conn, $enc['opponent_project_name']));
+	gaunt_theme_bg($conn, $enc['opponent_project_name'],
+	                      (int)$enc['opponent_pid'], (int)$enc['opponent_cid']));

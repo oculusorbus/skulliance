@@ -557,7 +557,9 @@ if ($state === 'encounter') {
 			/* Nothing to animate on a fresh page load -- the turn
 			   endpoint supplies this after each exchange. */
 			array(),
-			gaunt_theme_bg($conn, $enc['opponent_project_name']));
+			gaunt_theme_bg($conn, $enc['opponent_project_name'],
+			               intval($enc['opponent_project_id_real']),
+			               intval($enc['opponent_collection_id'])));
 		include __DIR__ . '/gauntlets-fight-ui.php';
 	endif; ?>
 

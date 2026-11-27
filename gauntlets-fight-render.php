@@ -68,6 +68,9 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '') 
 <div id="gf-area"
      class="gf<?php echo $over ? ($won ? ' gf-won' : ' gf-lost') : ''; ?><?php echo $bg !== '' ? ' gf-has-bg' : ''; ?>"
      <?php if ($bg !== ''): ?>style="--gf-bg:url('<?php echo htmlspecialchars($bg); ?>')"<?php endif; ?>
+     <?php /* So "where is the theme" is answerable from view-source next
+              time instead of by bisecting the lookup. */ ?>
+     data-bg="<?php echo $bg !== '' ? htmlspecialchars($bg) : 'none: no active theme with background=1 for this opponent'; ?>"
      data-sfx="<?php echo htmlspecialchars(implode(' ', $sfx)); ?>"
      data-tl="<?php echo htmlspecialchars(json_encode(array_values($just))); ?>"
      data-hp="<?php echo (int)$fight['you']['hp']; ?>"

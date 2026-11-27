@@ -345,26 +345,53 @@ function gauntletResolveFight($conn, $user_id, $enc_id) {
  * The backdrop for an encounter: the Monstrocity theme art for the
  * OPPONENT's project, so the fight is staged in their world.
  *
- * Reuses art that already exists rather than commissioning any --
- * monstrocity_themes carries a per-theme `background` flag, and that
- * flag is what says the image is actually there. No flag, no backdrop,
- * and the fight simply renders on the page ground.
+ * MATCHED THREE WAYS, MOST PRECISE FIRST, and the first version got
+ * this wrong by matching only on project NAME. monstrocity-schema.md is
+ * explicit: `project_id` is the real link and is "NULLABLE and mostly
+ * NULL", while `project_name` is the string that "stands on its own"
+ * for the many themes whose project is not on Skulliance at all. So the
+ * themes that DO correspond to a real project are exactly the ones a
+ * name match is least likely to find.
  *
- * Matched on project NAME because that is what both tables agree on;
- * the themes table also carries policy ids, but plenty of its rows are
- * for projects that are not on the platform at all.
+ *   1. the collection -- monstrocity_theme_collections is the join a
+ *      theme uses when it covers specific collections, and the
+ *      opponent's NFT belongs to one;
+ *   2. the project id -- the canonical link when the theme has one;
+ *   3. the project name -- the legacy fallback, kept last.
+ *
+ * Gated on the theme's own `background` flag either way, because that
+ * is what says the image is actually there. No flag, no backdrop,
+ * rather than a 404 behind the fight.
  */
-function gaunt_theme_bg($conn, $project_name) {
-	$name = trim((string)$project_name);
-	if ($name === '') return '';
+function gaunt_theme_bg($conn, $project_name, $project_id = 0, $collection_id = 0) {
+	$key = (int)$collection_id . ':' . (int)$project_id . ':' . $project_name;
 	static $memo = array();
-	if (isset($memo[$name])) return $memo[$name];
-	$esc = $conn->real_escape_string($name);
-	$r = @$conn->query("SELECT slug FROM monstrocity_themes
-	                     WHERE active = 1 AND background = 1
-	                       AND project_name = '$esc' LIMIT 1");
-	$slug = ($r && $r->num_rows) ? (string)$r->fetch_assoc()['slug'] : '';
-	$memo[$name] = $slug === '' ? ''
+	if (isset($memo[$key])) return $memo[$key];
+
+	$slug = '';
+	$cid  = (int)$collection_id;
+	$pid  = (int)$project_id;
+
+	if ($cid > 0) {
+		$r = @$conn->query("SELECT t.slug FROM monstrocity_theme_collections tc
+		                    INNER JOIN monstrocity_themes t ON t.id = tc.theme_id
+		                    WHERE tc.collection_id = $cid AND t.active = 1
+		                      AND t.background = 1 LIMIT 1");
+		if ($r && $r->num_rows) $slug = (string)$r->fetch_assoc()['slug'];
+	}
+	if ($slug === '' && $pid > 0) {
+		$r = @$conn->query("SELECT slug FROM monstrocity_themes
+		                    WHERE project_id = $pid AND active = 1 AND background = 1 LIMIT 1");
+		if ($r && $r->num_rows) $slug = (string)$r->fetch_assoc()['slug'];
+	}
+	if ($slug === '' && trim((string)$project_name) !== '') {
+		$esc = $conn->real_escape_string(trim((string)$project_name));
+		$r = @$conn->query("SELECT slug FROM monstrocity_themes
+		                    WHERE project_name = '$esc' AND active = 1 AND background = 1 LIMIT 1");
+		if ($r && $r->num_rows) $slug = (string)$r->fetch_assoc()['slug'];
+	}
+
+	$memo[$key] = $slug === '' ? ''
 		: '/staking/images/monstrocity/' . rawurlencode($slug) . '/monstrocity.png';
-	return $memo[$name];
+	return $memo[$key];
 }
