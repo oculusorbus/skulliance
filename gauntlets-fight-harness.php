@@ -638,6 +638,34 @@ ok($gsr !== false && preg_match('~if \\(\\$gn_id\\) @\\$conn->query\\("UPDATE ga
         substr($DB, $gsr, $gsr_end - $gsr)) === 1,
    'a dealt hand is not seeded at full health, so every card is ambiguous until it fights');
 
+echo "\na drop is visible, not just audible\n";
+/*
+ * REPORTED: "where are the items when slaying an opponent?" They were
+ * dropping. They were invisible. The entry went into the returned
+ * $timeline -- which only feeds data-tl, so the client played a sound
+ * and animated nothing readable -- and never into $fight['log'], which
+ * is what a player can actually see. The victory screen is built from
+ * a separate session payload and knew nothing about salvage at all.
+ */
+ok(strpos($LIB, '$fight[' . "'log'" . '][] = $entry;') !== false,
+   'the drop never reaches the readable log, so it plays a sound and vanishes');
+ok(strpos($LIB, '$fight[' . "'drop'" . '] = $word;') !== false,
+   'the fight does not record what was taken, so the victory screen cannot name it');
+/* Saved immediately: the drop happens AFTER the turn's normal save, so
+   without a second write it is lost on the next read. */
+$dropblk = substr($LIB, strpos($LIB, 'if (!empty($fight[' . "'over'" . ']) && ($fight['));
+$dropblk = substr($dropblk, 0, 1200);
+ok(strpos($dropblk, 'gaunt_fight_save($conn, $e, $fight);') !== false,
+   'the drop is not persisted after it is added, so it is lost on the next read');
+ok(strpos($PG, "'drop'       => " . '$gf_drop,') !== false,
+   'the victory screen is not told what dropped');
+ok(strpos($PG, 'Took their <?php echo htmlspecialchars($last_result[') !== false,
+   'the victory screen does not show the salvage');
+/* Read BEFORE resolving -- resolving is what closes the encounter. */
+ok(strpos($PG, '$gf_closing = gaunt_fight_get($conn, $enc_id);')
+   < strpos($PG, '$outcome = gauntletResolveFight($conn, $user_id, $enc_id);'),
+   'the salvage is read after the encounter resolves rather than before');
+
 echo "\na count and a remaining action cannot be confused\n";
 /*
  * REPORTED: "I have 2 pistols and 1 tactical katana in realms, why do
@@ -771,6 +799,32 @@ ok(strpos($REN, '<ul class="gf-log">') > strpos($REN, 'id="gf-form"'),
 ok(strpos($REN, 'class="gf-done"') !== false,
    'the result form uses the grouped-action layout again, which stretches one button full width');
 ok(strpos($UI, '.gf-done .gf-btn { min-width') !== false, 'the Continue button has no width of its own');
+
+/* ====================================================================
+ * AND THIS FILE CHECKS ITSELF.
+ *
+ * Four times in one sitting I wrote a needle as a PHP DOUBLE-QUOTED
+ * string containing a $variable -- "$fight['log'][] = $entry;" -- which
+ * PHP interpolates away before strpos ever sees it. The needle becomes
+ * a fragment or an empty string, so the check matches nothing, and
+ * because strpos returns false and false == 0 some of those checks
+ * PASSED FOR THE WRONG REASON while reading green.
+ *
+ * A green check that cannot fail is worse than no check, so the shape
+ * is banned mechanically rather than by remembering.
+ * ==================================================================== */
+echo "\nand no check is quietly looking for an empty string\n";
+$self  = (string) file_get_contents(__FILE__);
+$bad   = array();
+foreach (explode("\n", $self) as $ln => $line) {
+	/* A double-quoted literal with an unescaped $ followed by a letter
+	   or { -- \$ is fine, that is a deliberate escape. */
+	if (preg_match('~(?:strpos|substr_count|preg_match|preg_match_all)\s*\([^,]*,\s*"[^"]*(?<!\\\\)\$[A-Za-z_{]~', $line))
+		$bad[] = ($ln + 1);
+}
+ok(count($bad) === 0,
+   'these lines pass a double-quoted needle containing a live $variable, which PHP '
+ . 'interpolates away before the search: line(s) ' . implode(', ', $bad));
 
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all fight checks passed\n");
 

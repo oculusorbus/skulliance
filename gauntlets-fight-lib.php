@@ -412,9 +412,24 @@ function gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item_id = 0) {
 				'level' => (int)($drop['level'] ?? 0), 'pct' => (int)($drop['pct'] ?? 0),
 				'left'  => (int)$drop['uses']);
 			gaunt_gear_state_save($conn, $run_id, $gs);
-			$timeline[] = array('who' => 'you', 'kind' => 'loot', 'sfx' => 'equip',
-				'text' => 'Salvaged their ' . ($drop['kind'] === 'heal' ? 'medkit'
-				          : ($drop['kind'] === 'armor' ? 'armour' : 'weapon')));
+			$word = ($drop['kind'] === 'heal' ? 'medkit'
+			         : ($drop['kind'] === 'armor' ? 'armour' : 'weapon'));
+			$entry = array('who' => 'you', 'kind' => 'loot', 'sfx' => 'equip',
+				'text' => 'Salvaged their ' . $word);
+			$timeline[] = $entry;
+			/*
+			 * AND INTO THE LOG, not only the animation feed. These were
+			 * separate: $timeline drives data-tl, $fight['log'] is what
+			 * the player can actually read. A drop played a sound and
+			 * left no trace anywhere -- REPORTED as "where are the
+			 * items when slaying an opponent".
+			 */
+			$fight['log'][] = $entry;
+			/* Carried on the fight so the victory screen can name it:
+			   that screen is built from a session payload written when
+			   the encounter closes, and knew nothing about salvage. */
+			$fight['drop'] = $word;
+			gaunt_fight_save($conn, $e, $fight);
 		}
 	}
 

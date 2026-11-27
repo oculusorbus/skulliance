@@ -78,6 +78,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	} elseif ($action === 'close_fight') {
 		$enc_id = intval($_POST['encounter_id'] ?? 0);
 		if ($enc_id > 0) {
+			/* Read the salvage off the fight BEFORE resolving it, so the
+			   victory screen can name what was taken. The fight row is
+			   the only place that knows. */
+			$gf_closing = gaunt_fight_get($conn, $enc_id);
+			$gf_drop    = (string)($gf_closing['drop'] ?? '');
 			/* The fight decided this over a dozen exchanges; this only
 			   records it and pays it out. */
 			$outcome = gauntletResolveFight($conn, $user_id, $enc_id);
@@ -103,6 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$actual_currency = ($tx_cur_r && $tx_cur_r->num_rows) ? $tx_cur_r->fetch_assoc()['currency'] : $rw['opponent_currency'];
 					$_SESSION['gauntlet_last_result'] = [
 						'outcome'    => 'win',
+						/* Read off the fight just closed; '' when nothing
+						   dropped. */
+						'drop'       => $gf_drop,
 						'amount'     => ($wnum2 * 100) * ($is_dbl ? 2 : 1),
 						'currency'   => $actual_currency,
 						'win_number' => $wnum2,
@@ -356,6 +364,10 @@ if ($state === 'encounter') {
 .rr-accent  { position: absolute; inset: 0; pointer-events: none; }
 #result-reveal.win  .rr-accent { box-shadow: inset 0 0 120px rgba(0,200,160,.18); }
 #result-reveal.loss .rr-accent { box-shadow: inset 0 0 120px rgba(224,85,85,.18); }
+.rr-drop    { margin-top: 10px; font-size: .95rem; font-weight: 700; color: #ffc800;
+              letter-spacing: .04em; }
+.rr-drop-note { display: block; font-size: .65rem; font-weight: 400; letter-spacing: .1em;
+                text-transform: uppercase; color: rgba(255,200,0,.55); margin-top: 3px; }
 .rr-icon    { font-size: 5rem; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .15s both; }
 .rr-title   { font-size: 2.8rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; animation: rr-pop .45s cubic-bezier(.18,.89,.32,1.28) .25s both; }
 #result-reveal.win  .rr-title { color: #00c8a0; }
@@ -391,6 +403,10 @@ if ($state === 'encounter') {
 			<img src="icons/<?php echo htmlspecialchars(strtolower($last_result['currency'])); ?>.png" onerror="this.src='icons/skull.png'" alt="">
 			<?php echo htmlspecialchars($last_result['currency']); ?>
 		</div>
+		<?php if (!empty($last_result['drop'])): ?>
+			<div class="rr-drop">Took their <?php echo htmlspecialchars($last_result['drop']); ?>
+				<span class="rr-drop-note">yours for this run</span></div>
+		<?php endif; ?>
 		<div class="rr-win-num">Win <?php echo intval($last_result['win_number']); ?> of <?php echo GAUNTLET_MAX_WINS; ?></div>
 		<?php else: ?>
 		<div class="rr-icon"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="58" height="80"></div>
