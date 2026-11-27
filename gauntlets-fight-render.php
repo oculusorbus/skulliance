@@ -221,11 +221,14 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '', 
                 <?php if (!empty($it['loot'])): ?><em class="gf-loot" title="taken off an opponent; gone when the run ends">salvage</em><?php endif; ?>
                 <?php /* WORDED, because a bare number beside an item reads as
                          how many you own -- reported exactly that way: two
-                         pistols showing 8. The 8 is swings; the x2 is the
+                         pistols showing 8. The 8 is uses; the x2 is the
                          pistols. A count is always an x, a remaining action
-                         is always a word. */ ?>
-                <em class="gf-left" title="<?php echo (int)$it['left']; ?> swings left this run<?php
-                    if (!empty($it['qty'])) echo ' — you hold ' . (int)$it['qty']; ?>"><?php echo (int)$it['left']; ?> swing<?php echo (int)$it['left'] === 1 ? '' : 's'; ?></em>
+                         is always a word. "Uses" rather than "swings" so a
+                         weapon and a piece of armour are counted in the
+                         same unit, and because the function that works it
+                         out is gaunt_weapon_uses(). */ ?>
+                <em class="gf-left" title="<?php echo (int)$it['left']; ?> uses left this run<?php
+                    if (!empty($it['qty'])) echo ' — you hold ' . (int)$it['qty']; ?>"><?php echo (int)$it['left']; ?> use<?php echo (int)$it['left'] === 1 ? '' : 's'; ?></em>
               </button>
             <?php elseif ($t === 'armor'): $dis = $it['left'] < 1; ?>
               <button type="submit" name="turn" value="armor:<?php echo (int)$it['id']; ?>"
@@ -255,7 +258,7 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '', 
       <?php endforeach; ?>
     </form>
     <p class="gf-hint">Armour, healing and staking all cost you the turn.
-       Weapon swings are rationed for the whole run, not this fight.</p>
+       Weapon uses are rationed for the whole run, not this fight.</p>
     <?php if ($extra !== '') echo $extra; ?>
   <?php endif; ?>
 

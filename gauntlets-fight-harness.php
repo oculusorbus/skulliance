@@ -648,10 +648,12 @@ echo "\na count and a remaining action cannot be confused\n";
  * So: an x is always a COUNT, a word is always REMAINING ACTIONS, and
  * never the other way round.
  */
-ok(strpos($REN, "swing<?php echo (int)" . '$' . "it['left'] === 1 ? '' : 's'") !== false,
-   'the swing badge is a bare number again, which reads as a quantity');
-ok(strpos($REN, "use<?php echo (int)" . '$' . "it['left'] === 1 ? '' : 's'") !== false,
-   'the armour badge is a bare number again');
+/* Both badges read "uses" -- one unit for weapons and armour alike,
+   and the same word as gaunt_weapon_uses(), which computes it. */
+ok(substr_count($REN, "use<?php echo (int)" . '$' . "it['left'] === 1 ? '' : 's'") === 2,
+   'a weapon or armour badge is a bare number again, which reads as a quantity');
+ok(strpos($REN, '> swings</em>') === false && strpos($REN, 'swings left this run') === false,
+   'the weapon badge says "swings" again, so weapons and armour are counted in different units');
 ok(substr_count($REN, '<i class="gf-qty">') === 2 && strpos($UI, '.gf-qty ') !== false,
    'how many of a weapon you hold is not shown, so the swing total looks arbitrary');
 /* Heals and stakes genuinely ARE counts, so they keep the x. */
