@@ -3085,6 +3085,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <?php /* Practice only -- a ranked opponent is chosen, not dealt. */ ?>
       <button class="btn" id="aReroll" hidden title="Deal two new Crews">New battle</button>
       <button class="btn" id="mute" title="Mute sound">🔊</button>
+      <?php /* REQUESTED BY A PLAYER: a volume slider wherever there are
+               audio controls, not just an on/off. sk-audio.php carries the
+               reason it is not simply a.volume -- iOS ignores that. */
+         include __DIR__ . '/sk-audio.php'; ?>
+      <input type="range" class="ska-vol" id="sfxvol" min="0" max="100" value="80"
+             title="Sound volume" aria-label="Sound volume">
       <!-- Phone only. The title and the blurb cost most of a screen while you
            are playing and neither is needed then, so they hide together and
            come back together. Nothing is deleted. -->
@@ -3357,6 +3363,15 @@ var practice = null;      // the spec while a practice battle is running, else n
 var LIVE_URL = 'ajax/dhcarena-live.php';
 var live = null, livePoll = null, liveTick = null, liveClock = 0;
 try { sfxOn = localStorage.getItem('dhcarena_sfx') !== '0'; } catch (e) {}
+/* A MULTIPLIER over each cue's own level, not a replacement for it: the
+   per-sound def[1] values are a deliberate mix (artillery sits under a
+   fist on purpose), so the slider scales that mix rather than flattening
+   it. */
+var sfxVol = 0.8;
+try {
+  var _sv = localStorage.getItem('dhcarena_vol');
+  if (_sv !== null && _sv !== '' && isFinite(+_sv)) sfxVol = Math.max(0, Math.min(1, +_sv / 100));
+} catch (e) {}
 
 var $ = function(id){ return document.getElementById(id); };
 var setup = $('arenaSetup'), battle = $('arenaBattle'), gridEl = $('grid');
@@ -3448,7 +3463,7 @@ function sfxRez(){
     try {
       var src = actx.createBufferSource(); src.buffer = rb;
       src.playbackRate.value = REZ_RATE;
-      var g = actx.createGain(); g.gain.value = def[1];
+      var g = actx.createGain(); g.gain.value = def[1] * sfxVol;
       src.connect(g); g.connect(actx.destination);
       src.start(actx.currentTime + when, skip);
     } catch (e) {}
@@ -3465,7 +3480,7 @@ function sfx(name){
       if (prev) { try { prev.gain.gain.setTargetAtTime(0, actx.currentTime, .005);
                         prev.src.stop(actx.currentTime + .015); } catch (e) {} }
       var src = actx.createBufferSource(); src.buffer = sfxBuf[name];
-      var g = actx.createGain(); g.gain.value = def[1];
+      var g = actx.createGain(); g.gain.value = def[1] * sfxVol;
       src.connect(g); g.connect(actx.destination);
       sfxCur[name] = {src:src, gain:g};
       src.onended = function(){ if (sfxCur[name] && sfxCur[name].src === src) sfxCur[name] = null; };
@@ -3473,7 +3488,10 @@ function sfx(name){
     } catch (e) {}
   }
   try {
-    var a = sfxEl[name]; if (!a) { a = sfxEl[name] = new Audio(def[0]); a.volume = def[1]; }
+    var a = sfxEl[name]; if (!a) a = sfxEl[name] = new Audio(def[0]);
+    /* Every play, not once at creation -- the level moves with the slider.
+       Through SkAudio because a.volume does nothing on iOS. */
+    if (window.SkAudio) SkAudio.set(a, def[1] * sfxVol); else a.volume = def[1] * sfxVol;
     a.currentTime = 0; var pr = a.play(); if (pr && pr.catch) pr.catch(function(){});
   } catch (e) {}
 }
@@ -5765,6 +5783,26 @@ muteBtn.addEventListener('click', function(){
   paintMute(); if (sfxOn) { sfxInit(); sfx('pick'); }
 });
 paintMute();
+
+/* The slider. Dragging it off zero means "I want sound", so it unmutes --
+   leaving it silent at 60% would read as a broken control. */
+var volEl = $('sfxvol');
+if (volEl) {
+  volEl.value = Math.round(sfxVol * 100);
+  volEl.addEventListener('input', function(){
+    if (window.SkAudio) SkAudio.unlock();
+    sfxVol = Math.max(0, Math.min(1, (parseInt(volEl.value, 10) || 0) / 100));
+    try { localStorage.setItem('dhcarena_vol', String(Math.round(sfxVol * 100))); } catch (e) {}
+    if (sfxVol > 0 && !sfxOn) {
+      sfxOn = true;
+      try { localStorage.setItem('dhcarena_sfx', '1'); } catch (e) {}
+      paintMute(); sfxInit();
+    }
+  });
+  /* On release, not on every pixel of the drag -- a cue per input event
+     is a machine-gun burst while you are still choosing a level. */
+  volEl.addEventListener('change', function(){ if (sfxOn && sfxVol > 0) sfx('pick'); });
+}
 applyView();
 paintPicker();
 

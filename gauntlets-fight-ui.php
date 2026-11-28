@@ -306,6 +306,7 @@ define('GF_UI_DONE', 1);
   .gf-float { animation-duration: .6s; }
   .gf-trail, .gf-fill { transition: none; }
 }
+.gf-audio        { --ska-accent: #00c8a0; margin: 0 0 12px; }
 @media (max-width: 600px) {
   .gf-arena { gap: 8px; }
   .gf-vs { font-size: .85rem; }
@@ -318,6 +319,19 @@ define('GF_UI_DONE', 1);
      an <audio> element inside it would be torn down and rebuilt each time,
      restarting the soundtrack on every swing. -->
 <audio id="gf-music" loop preload="none"></audio>
+
+<?php /* The shared helper, because iOS ignores element.volume outright and
+         a slider wired the obvious way does nothing on a phone. */
+   include __DIR__ . '/sk-audio.php'; ?>
+<!-- Outside #gf-area with the <audio>: the body is swapped between rounds
+     and controls inside it would be rebuilt mid-track. -->
+<div class="ska-player gf-audio" id="gf-audio">
+	<button type="button" class="ska-btn" id="gf-a-play" title="Play or pause the music">&#9654;</button>
+	<span class="ska-name" id="gf-a-name">Music off</span>
+	<button type="button" class="ska-btn" id="gf-a-mute" title="Mute">&#128266;</button>
+	<input type="range" class="ska-vol" id="gf-a-vol" min="0" max="100" value="32"
+	       title="Volume" aria-label="Music volume">
+</div>
 
 <script>
 (function () {
@@ -340,9 +354,22 @@ define('GF_UI_DONE', 1);
   var MUSIC = { theme: 'Crypt Crawl Theme.mp3',
                 win:   'Crypt Crawl Triumph.mp3',
                 lose:  'Crypt Crawl Death.mp3' };
-  var cur = null, muted = false, playing = false;
+  var cur = null, muted = false, playing = false, paused = false;
+  var VOL_DEFAULT = 0.32, vol = VOL_DEFAULT;
 
   try { muted = localStorage.getItem('gfMute') === '1'; } catch (e) {}
+  try {
+    var sv = localStorage.getItem('gfVol');
+    if (sv !== null && sv !== '' && isFinite(+sv)) vol = Math.max(0, Math.min(1, +sv / 100));
+  } catch (e) {}
+
+  /* THROUGH SkAudio, NEVER el.volume -- iOS ignores element volume
+     outright, so the slider would move and nothing would happen. */
+  function applyVol() {
+    var el = document.getElementById('gf-music');
+    if (el && window.SkAudio) SkAudio.set(el, muted ? 0 : vol);
+    else if (el) el.volume = muted ? 0 : vol;
+  }
 
   /*
    * TWO SOUND LIBRARIES, and they are not interchangeable. The .mp3 set
@@ -355,7 +382,16 @@ define('GF_UI_DONE', 1);
   function play(name) {
     if (!name || muted) return;
     var url = OGG[name] ? '/staking/sounds/' + OGG[name] + '.ogg' : SND + name + '.mp3';
-    try { var a = new Audio(url); a.volume = OGG[name] ? 0.55 : 0.5; a.play().catch(function(){}); } catch (e) {}
+    /* SCALED BY THE SLIDER, AND THROUGH SkAudio. These were a flat 0.55
+       / 0.5 straight onto a.volume, so the slider moved the music and
+       left every punch at full -- and on iOS element volume does
+       nothing at all, so they were at full there regardless. The per-cue
+       level is kept as a multiplier so the mix survives. */
+    try {
+      var a = new Audio(url), lvl = (OGG[name] ? 0.55 : 0.5) * vol;
+      if (window.SkAudio) { SkAudio.unlock(); SkAudio.set(a, lvl); } else { a.volume = lvl; }
+      a.play().catch(function(){});
+    } catch (e) {}
   }
   /*
    * THE FIRST play() IS ALWAYS REFUSED. Nothing has been tapped when the
@@ -370,7 +406,7 @@ define('GF_UI_DONE', 1);
    */
   function music(key) {
     var el = document.getElementById('gf-music');
-    if (!el || muted) return;
+    if (!el || muted || paused) return;
     if (cur === key && playing && !el.paused) return;
     if (cur !== key) {
       cur = key;
@@ -378,8 +414,10 @@ define('GF_UI_DONE', 1);
          are meant to finish. */
       el.loop = (key === 'theme');
       el.src  = TRK + encodeURIComponent(MUSIC[key]);
-      el.volume = 0.32;
     }
+    /* Re-applied every call: in the fallback path a new src does not
+       carry the old volume with it. */
+    applyVol();
     var pr = el.play();
     if (pr && pr.then) pr.then(function () { playing = true; },
                                function () { playing = false; });
@@ -500,9 +538,76 @@ define('GF_UI_DONE', 1);
   function boot() {
     var area = document.getElementById(AREA);
     if (area) wire(area);
+    wireAudio();            /* the strip is in the shell, so this is once */
     music(moodFrom());
+    icons();
   }
   window.GF_BOOT = boot;
+
+  /*
+   * THE CONTROLS. Play/pause, mute and a volume slider, the set Crypt
+   * Crawl and Crypt Conquest already carry -- and the slider is the half
+   * that only works because SkAudio routes through a GainNode.
+   *
+   * No prev/next here on purpose: Gauntlets is one track for a whole run
+   * and only changes it when the run ends, so skip buttons would have
+   * nothing to skip to.
+   */
+  var TRACK_NAME = { theme: 'Gauntlet Theme', win: 'Triumph', lose: 'Death' };
+  function label() {
+    var el = document.getElementById('gf-a-name');
+    if (!el) return;
+    el.textContent = muted ? 'Muted'
+                   : (paused ? 'Paused' : (TRACK_NAME[cur] || 'Music'));
+  }
+  function icons() {
+    var pb = document.getElementById('gf-a-play'),
+        mb = document.getElementById('gf-a-mute');
+    if (pb) { pb.innerHTML = (paused || !playing) ? '&#9654;' : '&#10073;&#10073;';
+              pb.classList.toggle('off', paused); }
+    if (mb) { mb.innerHTML = muted ? '&#128263;' : '&#128266;';
+              mb.classList.toggle('off', muted); }
+    label();
+  }
+  function remember(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  function wireAudio() {
+    var pb = document.getElementById('gf-a-play'),
+        mb = document.getElementById('gf-a-mute'),
+        vb = document.getElementById('gf-a-vol'),
+        el = document.getElementById('gf-music');
+    if (!pb || pb._wired) return;
+    pb._wired = true;
+    if (vb) vb.value = Math.round(vol * 100);
+
+    pb.addEventListener('click', function () {
+      if (window.SkAudio) SkAudio.unlock();
+      paused = !paused;
+      if (paused) { if (el) el.pause(); playing = false; }
+      else { muted = false; remember('gfMute', '0'); music(moodFrom()); }
+      icons();
+    });
+    mb.addEventListener('click', function () {
+      if (window.SkAudio) SkAudio.unlock();
+      muted = !muted;
+      remember('gfMute', muted ? '1' : '0');
+      if (muted) { if (el) el.pause(); playing = false; }
+      else { paused = false; music(moodFrom()); }
+      applyVol();
+      icons();
+    });
+    if (vb) vb.addEventListener('input', function () {
+      if (window.SkAudio) SkAudio.unlock();
+      vol = Math.max(0, Math.min(1, (parseInt(vb.value, 10) || 0) / 100));
+      remember('gfVol', String(Math.round(vol * 100)));
+      /* Dragging off zero is the same intent as unmuting, and leaving it
+         muted there would read as a broken slider. */
+      if (vol > 0 && muted) { muted = false; remember('gfMute', '0'); music(moodFrom()); }
+      applyVol();
+      icons();
+    });
+    icons();
+  }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 })();

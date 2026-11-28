@@ -1171,7 +1171,14 @@ ok(strpos($UIF, "var m = page ? page.getAttribute('data-mood') : '';") !== false
    'the player does not read the page mood, so the server\'s decision is ignored');
 
 /* Started on open, not on the first swing. */
-ok(strpos($UIF, "    if (area) wire(area);\n    music(moodFrom());") !== false,
+/* The INTENT, not two adjacent lines: the area guard covers wire() only,
+   and music() runs whether or not a fight is on screen. Pinning the
+   exact pair broke the moment a third call joined boot(). */
+$bootFn = substr($UIF, (int)strpos($UIF, 'function boot() {'), 320);
+$bootFn = substr($bootFn, 0, (int)strpos($bootFn, "\n  }"));
+ok(strpos($bootFn, 'if (area) wire(area);') !== false,
+   'boot() no longer guards wire() on there being an arena');
+ok(preg_match('~^\s*music\(moodFrom\(\)\);~m', $bootFn) === 1,
    'the music only starts once there is a fight on screen');
 ok(strpos($UIF, 'window.GF_BOOT = boot;') !== false,
    'the fight cannot be re-wired after a body swap, so a swapped-in arena is dead');
