@@ -306,7 +306,8 @@ define('GF_UI_DONE', 1);
   .gf-float { animation-duration: .6s; }
   .gf-trail, .gf-fill { transition: none; }
 }
-.gf-audio        { --ska-accent: #00c8a0; margin: 0 0 12px; }
+/* Under the game, so the margin is above it, not below. */
+.gf-audio        { --ska-accent: #00c8a0; margin: 18px 0 0; }
 @media (max-width: 600px) {
   .gf-arena { gap: 8px; }
   .gf-vs { font-size: .85rem; }
@@ -323,15 +324,9 @@ define('GF_UI_DONE', 1);
 <?php /* The shared helper, because iOS ignores element.volume outright and
          a slider wired the obvious way does nothing on a phone. */
    include __DIR__ . '/sk-audio.php'; ?>
-<!-- Outside #gf-area with the <audio>: the body is swapped between rounds
-     and controls inside it would be rebuilt mid-track. -->
-<div class="ska-player gf-audio" id="gf-audio">
-	<button type="button" class="ska-btn" id="gf-a-play" title="Play or pause the music">&#9654;</button>
-	<span class="ska-name" id="gf-a-name">Music off</span>
-	<button type="button" class="ska-btn" id="gf-a-mute" title="Mute">&#128266;</button>
-	<input type="range" class="ska-vol" id="gf-a-vol" min="0" max="100" value="32"
-	       title="Volume" aria-label="Music volume">
-</div>
+<!-- The STRIP itself is not here: it renders under the game, after
+     #g-area, in gauntlets.php. Only the CSS, the helper and the <audio>
+     load up here, so nothing flashes unstyled on the way in. -->
 
 <script>
 (function () {
@@ -419,9 +414,16 @@ define('GF_UI_DONE', 1);
        carry the old volume with it. */
     applyVol();
     var pr = el.play();
-    if (pr && pr.then) pr.then(function () { playing = true; },
-                               function () { playing = false; });
-    else playing = true;
+    /*
+     * REPAINT WHEN IT SETTLES, not when it is asked. `playing` is only
+     * true once play() RESOLVES, which is after the gesture that
+     * unlocks audio -- so without this the button sat on the play icon
+     * while the music was audibly running. Reported as "why is there
+     * only a play button, no pause icon".
+     */
+    if (pr && pr.then) pr.then(function () { playing = true;  icons(); },
+                               function () { playing = false; icons(); });
+    else { playing = true; icons(); }
   }
   /*
    * And the retry has to happen ON the gesture. animate() calls music()
@@ -430,9 +432,16 @@ define('GF_UI_DONE', 1);
    * This fires synchronously on the first touch anywhere on the page.
    */
   function unlock() {
-    if (playing || muted) return;
-    var area = document.getElementById(AREA);
-    if (area) music(moodFrom());
+    if (playing || muted || paused) return;
+    /*
+     * NO ARENA TEST. This used to require #gf-area, the FIGHT fragment,
+     * which only exists during an encounter -- so on the deck screen and
+     * the run-over screen the first tap unlocked nothing and the music
+     * never started, which also left the button stuck on the play icon.
+     * boot() lost the same guard when the theme became page-wide; this
+     * is the copy that was missed. moodFrom() reads #g-area, the page.
+     */
+    music(moodFrom());
   }
   document.addEventListener('pointerdown', unlock, true);
   document.addEventListener('touchstart',  unlock, true);
@@ -596,6 +605,9 @@ define('GF_UI_DONE', 1);
       applyVol();
       icons();
     });
+    /* The win and death tracks do not loop, so the element ends on its
+       own and the button has to come back to play. */
+    if (el) el.addEventListener('ended', function () { playing = false; icons(); });
     if (vb) vb.addEventListener('input', function () {
       if (window.SkAudio) SkAudio.unlock();
       vol = Math.max(0, Math.min(1, (parseInt(vb.value, 10) || 0) / 100));

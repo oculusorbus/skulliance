@@ -213,6 +213,19 @@ require __DIR__ . '/gauntlets-state.php';
 	<?php include __DIR__ . '/gauntlets-body.php'; ?>
 	</div><!-- #g-area -->
 
+	<?php /* UNDER THE GAME, not over it. It is the least urgent control on
+	         the page and it was pushing the fight down a phone screen.
+	         Still OUTSIDE #g-area, which is the part that matters: the
+	         body is swapped between rounds and anything inside it would be
+	         rebuilt mid-track. */ ?>
+	<div class="ska-player gf-audio" id="gf-audio">
+		<button type="button" class="ska-btn" id="gf-a-play" title="Play or pause the music">&#9654;</button>
+		<span class="ska-name" id="gf-a-name">Music off</span>
+		<button type="button" class="ska-btn" id="gf-a-mute" title="Mute">&#128266;</button>
+		<input type="range" class="ska-vol" id="gf-a-vol" min="0" max="100" value="32"
+		       title="Volume" aria-label="Music volume">
+	</div>
+
 </div><!-- .gauntlet-wrap -->
 </div><!-- .main -->
 </div><!-- .row -->

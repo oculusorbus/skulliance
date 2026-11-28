@@ -71,18 +71,45 @@ foreach (array('dhcarena.php', 'gauntlets-fight-ui.php') as $f) {
 }
 
 echo "\nthe Gauntlet strip survives a round\n";
-$gf = src('gauntlets-fight-ui.php');
+$gf    = src('gauntlets-fight-ui.php');
+$shell = src('gauntlets.php');
+$body  = src('gauntlets-body.php');
 /* #g-area is replaced between rounds; controls inside it would be
-   rebuilt mid-track, which is the whole reason the <audio> is outside. */
-ok(strpos($gf, 'id="gf-audio"') !== false, 'Gauntlets has no audio strip');
-$body = src('gauntlets-body.php');
+   rebuilt mid-track, which is the whole reason the <audio> is outside.
+   The strip renders UNDER the game, so it lives in the shell after
+   #g-area rather than with the rest of the audio code. */
+ok(strpos($shell, 'id="gf-audio"') !== false, 'Gauntlets has no audio strip');
+ok(strpos($gf, 'id="gf-audio"') === false,
+   'the strip is emitted with the audio code again, which puts it above the game');
 ok(strpos($body, 'gf-audio') === false,
    'the Gauntlet audio strip is inside the swapped body, so a round change rebuilds it');
+/* Below, not above: anything before #g-area pushes the fight down. */
+ok((int)strpos($shell, 'id="g-area"') < (int)strpos($shell, 'id="gf-audio"'),
+   'the audio strip renders above the game, where it pushes the fight down a phone screen');
 ok(strpos($gf, "remember('gfVol'") !== false
    && strpos($gf, "localStorage.getItem('gfVol')") !== false,
    'the chosen volume is not remembered between visits');
 ok(strpos($gf, 'if (!el || muted || paused) return;') !== false,
    'pausing does not stop the next turn from restarting the track');
+
+/*
+ * THE BUTTON HAS TO FOLLOW THE AUDIO, not the request. `playing` only
+ * becomes true when play() RESOLVES -- after the gesture that unlocks
+ * audio -- so without a repaint there the icon sat on play while the
+ * music was audibly running. Reported as "why is there only a play
+ * button, no pause icon".
+ */
+ok(strpos($gf, 'pr.then(function () { playing = true;  icons(); },') !== false,
+   'the button is not repainted when play() resolves, so it never shows pause');
+ok(strpos($gf, "el.addEventListener('ended', function () { playing = false; icons(); });") !== false,
+   'the button stays on pause after a non-looping track finishes');
+/* And the first tap has to actually start it. */
+$unlockFn = substr($gf, (int)strpos($gf, 'function unlock() {'), 700);
+$unlockFn = substr($unlockFn, 0, (int)strpos($unlockFn, "\n  }"));
+ok(strpos($unlockFn, 'getElementById(AREA)') === false,
+   'the first-tap unlock still requires a live fight, so music never starts on the deck screen');
+ok(strpos($unlockFn, 'music(moodFrom());') !== false,
+   'the first-tap unlock no longer starts the music');
 
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all audio checks passed\n");
 exit($fail ? 1 : 0);
