@@ -326,6 +326,7 @@ foreach (array('GAUNTLET_C_100' => 1, 'GAUNTLET_C_75' => 2, 'GAUNTLET_C_50' => 3
                'GAUNTLET_C_RANDOM' => 7) as $k => $v) if (!defined($k)) define($k, $v);
 require_once __DIR__ . '/gauntlets-fight-lib.php';
 $DB  = (string) file_get_contents(__DIR__ . '/db.php');
+$ENGSRC = (string) file_get_contents(__DIR__ . '/gauntlets-engine.php');
 $LIB = (string) file_get_contents(__DIR__ . '/gauntlets-fight-lib.php');
 
 echo "\nthe consumable ids match the platform's\n";
@@ -647,6 +648,37 @@ for ($i = 0; $i < 300; $i++) {
 	if (isset($c[GAUNTLET_C_100]) || isset($c[GAUNTLET_C_75])) { $leaked = true; break; }
 }
 ok(!$leaked, 'a one-win chest can pay a rare heal, so wins buy quantity but not quality');
+
+/*
+ * AND IT IS NOT ALL HEALS. Every chest ever opened was Success
+ * percentages, because the pool was those four items and nothing else
+ * -- reported as "why are gauntlet chests only ever percent heals".
+ * Across 400 sweeps every consumable a player can hold must appear.
+ */
+$seen = array();
+for ($i = 0; $i < 400; $i++)
+	foreach (gaunt_chest_contents(3, 0, $i) as $cid => $q) $seen[$cid] = true;
+foreach (array(GAUNTLET_C_100 => '100%', GAUNTLET_C_75 => '75%', GAUNTLET_C_50 => '50%',
+               GAUNTLET_C_25 => '25%', GAUNTLET_C_FF => 'Fast Forward',
+               GAUNTLET_C_DOUBLE => 'Double Rewards', GAUNTLET_C_RANDOM => 'Random Reward') as $cid => $nm)
+	ok(isset($seen[$cid]), "a swept run never pays $nm, so the chest is still one kind of item");
+/* The tier rule still holds for the new items too: the stakes are not
+   filler, and Random Reward is the sweep's own. */
+$oneSeen = array();
+for ($i = 0; $i < 400; $i++)
+	foreach (gaunt_chest_contents(1, 0, $i) as $cid => $q) $oneSeen[$cid] = true;
+ok(!isset($oneSeen[GAUNTLET_C_DOUBLE]) && !isset($oneSeen[GAUNTLET_C_RANDOM]),
+   'a one-win chest pays a stake item, so wins no longer buy quality');
+ok(isset($oneSeen[GAUNTLET_C_FF]),
+   'Fast Forward never turns up in a one-win chest, so the common tier is heals only again');
+
+/* GEAR STAYS OUT. Weapons and armour are durable and shared with
+   Realms, so paying them from a thrice-daily activity is an economy
+   change in another game -- and gaunt_cap_kit() arms the opponent to
+   the player's best, so it would partly cancel itself out. */
+$chestFn = substr($ENGSRC, (int)strpos($ENGSRC, 'function gaunt_chest_contents'), 1800);
+ok(strpos($chestFn, 'updateGear') === false && strpos($chestFn, "'weapon'") === false,
+   'the chest mints gear, which is durable and shared with Realms');
 ok(array_sum(gaunt_chest_contents(3, 6, 5)) > $three,
    'salvage taken during the run does not swell the chest');
 ok(array_sum(gaunt_chest_contents(3, 999, 5)) === array_sum(gaunt_chest_contents(3, GAUNT_CHEST_HAUL_CAP, 5)),

@@ -610,10 +610,26 @@ function gaunt_chest_contents($wins, $haul, $seed) {
 	 * The tier a run can reach is bought with wins. One win pays the
 	 * common filler; only a sweep can produce the full heal, which is
 	 * what keeps three wins worth chasing once the cliff is gone.
+	 *
+	 * ALL SEVEN CONSUMABLES, NOT JUST THE FOUR HEALS. The pool was the
+	 * Success items alone, so every chest ever opened was percentages
+	 * -- reported exactly that way. Fast Forward and the two stakes are
+	 * real items a player spends here, and a chest of nothing but heals
+	 * feeds the one thing that already decides fights (see the heal
+	 * cliff in skullpaper/MAINTENANCE.md); variety makes it pay for the
+	 * run rather than just topping up the thing that trivialises it.
+	 *
+	 * GEAR IS DELIBERATELY NOT HERE. Weapons and armour are DURABLE --
+	 * nothing consumes them, and they are shared with Realms -- so
+	 * minting them from an activity run three times a day is an
+	 * economy change in another game, not a tuning change in this one.
+	 * It is also self-defeating: gaunt_cap_kit() caps the OPPONENT at
+	 * the player's best gear, so paying out weapons arms the enemy too.
 	 */
-	$pool = array(GAUNTLET_C_25);
-	if ($wins >= 2) $pool[] = GAUNTLET_C_50;
-	if ($wins >= 3) { $pool[] = GAUNTLET_C_75; $pool[] = GAUNTLET_C_100; }
+	$pool = array(GAUNTLET_C_25, GAUNTLET_C_FF);
+	if ($wins >= 2) { $pool[] = GAUNTLET_C_50; $pool[] = GAUNTLET_C_DOUBLE; }
+	if ($wins >= 3) { $pool[] = GAUNTLET_C_75; $pool[] = GAUNTLET_C_100;
+	                  $pool[] = GAUNTLET_C_RANDOM; }
 
 	$out = array();
 	for ($i = 0; $i < $n; $i++) {
