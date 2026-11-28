@@ -56,13 +56,22 @@ $q = $conn->query("
 	       pn.name AS player_nft_name,   pn.ipfs AS player_ipfs,   pn.collection_id AS player_cid,
 	       on2.name AS opponent_nft_name, on2.ipfs AS opponent_ipfs, on2.collection_id AS opponent_cid,
 	       pc.project_id AS player_pid,  oc.project_id AS opponent_pid,
-	       op.name AS opponent_project_name
+	       op.name AS opponent_project_name,
+	       /* THE SAME COLUMNS THE PAGE'S OWN QUERY CARRIES. This one is
+	          leaner by design, but the renderer is shared -- anything it
+	          reads off $enc has to exist in BOTH or the field silently
+	          empties the moment a turn swaps the arena in. The owner
+	          line vanished on the first swing exactly this way. */
+	       ou.username   AS opponent_username,
+	       ou.discord_id AS opponent_discord_id,
+	       ou.avatar     AS opponent_avatar
 	  FROM gauntlets_encounters ge
 	  INNER JOIN nfts pn        ON pn.id  = ge.player_nft_id
 	  INNER JOIN nfts on2       ON on2.id = ge.opponent_nft_id
 	  INNER JOIN collections pc ON pc.id  = pn.collection_id
 	  INNER JOIN collections oc ON oc.id  = on2.collection_id
 	  INNER JOIN projects op    ON op.id  = oc.project_id
+	  LEFT JOIN  users ou       ON ou.id  = ge.opponent_user_id
 	 WHERE ge.id = " . (int)$enc_id . " LIMIT 1");
 if (!$q || !$q->num_rows) { http_response_code(404); echo '<div class="gf-err">Fight not found.</div>'; exit; }
 $enc = $q->fetch_assoc();

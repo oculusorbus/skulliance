@@ -938,6 +938,44 @@ ok(strpos($BODY, 'gauntlets-fight-ui.php') === false,
 ok(strpos(preg_replace('~/\*.*?\*/~s', '', $BODY), '<audio') === false,
    'there is an <audio> element inside the part of the page that gets replaced');
 
+echo "\nboth encounter queries feed the renderer everything it reads\n";
+/*
+ * TWO QUERIES, ONE RENDERER. gauntletGetPendingEncounter() builds the
+ * first paint and ajax/gauntlet-fight.php builds every turn after it.
+ * The second is leaner on purpose, so a field the renderer reads can
+ * exist on the first paint and vanish the moment a swing swaps the
+ * arena in -- which is exactly what happened to the opponent's avatar
+ * and name: present on load, gone on the first attack.
+ *
+ * Derived rather than listed, so a field added to the renderer
+ * tomorrow is covered without anyone remembering to come back here.
+ */
+$encKeys = array();
+if (preg_match_all('~\$enc\[\'([a-z_]+)\'\]~', $REN, $em)) $encKeys = array_unique($em[1]);
+ok(count($encKeys) >= 8, 'the renderer\'s encounter fields could not be read (' . count($encKeys) . ')');
+
+/* The page's side is the query PLUS the $gf_enc the body builds from
+   it, which is where the two images are attached. */
+$pendSql = substr($DB, (int)strpos($DB, 'function gauntletGetPendingEncounter'), 2000)
+         . (string) file_get_contents(__DIR__ . '/gauntlets-body.php');
+$ajxSql  = substr($AJX, 0, (int)strpos($AJX, '$enc = $q->fetch_assoc();') + 400);
+$missPend = array(); $missAjx = array();
+foreach ($encKeys as $k) {
+	/* Either selected under that alias, or assigned onto $enc after. */
+	if (strpos($pendSql, $k) === false) $missPend[] = $k;
+	if (strpos($ajxSql,  $k) === false) $missAjx[]  = $k;
+}
+ok(!$missPend, 'the page query does not supply: ' . implode(', ', $missPend));
+ok(!$missAjx,  'the turn query does not supply: ' . implode(', ', $missAjx)
+             . ' -- those fields vanish from the arena on the first swing');
+/* Selecting ou.* without joining users is a SQL error on every turn
+   rather than a silent empty, but it is a cheap thing to pin. */
+foreach (array('$AJX' => $AJX, '$DB' => $pendSql) as $what => $sql) {
+	if (strpos($sql, 'ou.username') === false) continue;
+	ok(strpos($sql, 'users ou') !== false,
+	   "$what selects ou.* without joining users, which errors the whole query");
+}
+
 echo "\nevery choice carries its own picture, and names its owner\n";
 /* REPORTED: "icons are not shown under recover and stake on the battle
    screen." Only ATTACK had them; armour, heals and stakes had none. */
