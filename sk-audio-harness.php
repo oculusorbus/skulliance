@@ -70,6 +70,34 @@ foreach (array('dhcarena.php', 'gauntlets-fight-ui.php') as $f) {
 	ok($bare === 0, "$f sets .volume on $bare line(s) with no SkAudio fallback guard");
 }
 
+echo "\nnothing is routed into a graph that is not playing yet\n";
+/*
+ * THE REGRESSION THIS EXISTS FOR. createMediaElementSource takes an
+ * element's audio OUT of the normal output and into the graph -- so
+ * wrapping it while the AudioContext is still suspended makes that
+ * sound SILENT. Music recovers on the next retry; a one-shot cue is a
+ * new element every time and is simply lost. That is what killed the
+ * Gauntlet knockout sound after the volume slider shipped. unlock() is
+ * async, so calling it first does not help.
+ *
+ * Every caller must therefore CHOOSE: the graph when it is running,
+ * element volume otherwise. Audible at the wrong level beats silent.
+ */
+ok(strpos($ska, 'function ready()') !== false && strpos($ska, "c.state === 'running'") !== false,
+   'the helper cannot say whether the graph is audible, so callers cannot choose');
+foreach (array('gauntlets-fight-ui.php', 'dhcarena.php') as $f) {
+	$src = preg_replace('~/\*.*?\*/~s', '', src($f));
+	ok(strpos($src, 'SkAudio.ready()') !== false,
+	   "$f wraps elements without checking the graph is running, which silences them");
+	/* Every ready() test must have an else that still sets a volume. */
+	ok(preg_match('~if \(SkAudio\.ready\(\)\)[^;]*;\s*else[^;]*\.volume\s*=~', $src) === 1,
+	   "$f has no fallback when the graph is not running, so the sound is simply lost");
+}
+/* One element per cue, reused: a fresh Audio() each time also meant a
+   new source node per sound that is never released. */
+ok(strpos(src('gauntlets-fight-ui.php'), 'var a = sfxEl[name] || (sfxEl[name] = new Audio(url));') !== false,
+   'Gauntlets builds a new Audio element per cue, leaking a Web Audio node each time');
+
 echo "\nthe Gauntlet strip survives a round\n";
 $gf    = src('gauntlets-fight-ui.php');
 $shell = src('gauntlets.php');

@@ -92,6 +92,25 @@ window.SkAudio = (function () {
 		var g = gains && gains.get(el);
 		return g ? g.gain.value : el.volume;
 	}
-	return { set: set, get: get, unlock: unlock };
+	/*
+	 * IS THE GRAPH ACTUALLY AUDIBLE YET?
+	 *
+	 * Routing an element through createMediaElementSource takes its
+	 * audio OUT of the normal output and into the graph -- so if the
+	 * context is still suspended, that sound is silent. For long-lived
+	 * music that only delays it until the next retry, but a one-shot
+	 * effect is a new element every time and never gets retried: it is
+	 * simply lost. unlock() is async, so calling it immediately before
+	 * does not help.
+	 *
+	 * Callers use this to choose: wrap it when the graph is running,
+	 * otherwise set element volume and be heard. Audible at the wrong
+	 * level beats correct and silent.
+	 */
+	function ready() {
+		var c = (typeof ctx !== 'undefined' && ctx) ? ctx : null;
+		return !!(c && c.state === 'running');
+	}
+	return { set: set, get: get, unlock: unlock, ready: ready };
 })();
 </script>

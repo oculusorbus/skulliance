@@ -387,8 +387,13 @@ define('GF_UI_DONE', 1);
      outright, so the slider would move and nothing would happen. */
   function applyVol() {
     var el = document.getElementById('gf-music');
-    if (el && window.SkAudio) SkAudio.set(el, muted ? 0 : vol);
-    else if (el) el.volume = muted ? 0 : vol;
+    if (!el) return;
+    var want = muted ? 0 : vol;
+    /* Same rule as the cues: wrapping the element while the context is
+       suspended would route the music into a graph that is not playing.
+       It is long-lived, so a later call picks the graph up. */
+    if (window.SkAudio && SkAudio.ready()) SkAudio.set(el, want);
+    else el.volume = want;
   }
 
   /*
@@ -399,6 +404,7 @@ define('GF_UI_DONE', 1);
    * the one a player already associates with something falling.
    */
   var OGG = { ko: 'skullcoinlose' };
+  var sfxEl = {};
   function play(name) {
     if (!name || muted) return;
     var url = OGG[name] ? '/staking/sounds/' + OGG[name] + '.ogg' : SND + name + '.mp3';
@@ -408,8 +414,25 @@ define('GF_UI_DONE', 1);
        nothing at all, so they were at full there regardless. The per-cue
        level is kept as a multiplier so the mix survives. */
     try {
-      var a = new Audio(url), lvl = (OGG[name] ? 0.55 : 0.5) * vol;
-      if (window.SkAudio) { SkAudio.unlock(); SkAudio.set(a, lvl); } else { a.volume = lvl; }
+      /*
+       * ONE ELEMENT PER CUE, REUSED. A fresh Audio() each time meant a
+       * new Web Audio source node per sound that is never released.
+       */
+      var a = sfxEl[name] || (sfxEl[name] = new Audio(url));
+      var lvl = (OGG[name] ? 0.55 : 0.5) * vol;
+      /*
+       * AND ONLY THROUGH THE GRAPH ONCE IT IS RUNNING. Wrapping an
+       * element routes its audio into the AudioContext, so doing it
+       * while that context is still suspended makes the sound SILENT --
+       * and a one-shot cue never gets retried, it is just lost. That is
+       * what killed the knockout sound. unlock() is async so it cannot
+       * be relied on here; it is called for the NEXT cue's benefit.
+       */
+      if (window.SkAudio) {
+        SkAudio.unlock();
+        if (SkAudio.ready()) SkAudio.set(a, lvl); else a.volume = lvl;
+      } else { a.volume = lvl; }
+      a.currentTime = 0;
       a.play().catch(function(){});
     } catch (e) {}
   }

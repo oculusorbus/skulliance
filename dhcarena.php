@@ -3491,7 +3491,13 @@ function sfx(name){
     var a = sfxEl[name]; if (!a) a = sfxEl[name] = new Audio(def[0]);
     /* Every play, not once at creation -- the level moves with the slider.
        Through SkAudio because a.volume does nothing on iOS. */
-    if (window.SkAudio) SkAudio.set(a, def[1] * sfxVol); else a.volume = def[1] * sfxVol;
+    /* Only once the graph is running: wrapping an element into a
+       SUSPENDED AudioContext silences it outright, and a one-shot cue
+       is never retried. Gauntlets lost its knockout sound that way. */
+    if (window.SkAudio) {
+      SkAudio.unlock();
+      if (SkAudio.ready()) SkAudio.set(a, def[1] * sfxVol); else a.volume = def[1] * sfxVol;
+    } else { a.volume = def[1] * sfxVol; }
     a.currentTime = 0; var pr = a.play(); if (pr && pr.catch) pr.catch(function(){});
   } catch (e) {}
 }
