@@ -84,6 +84,10 @@ if (!$q || !$q->num_rows) { http_response_code(404); echo '<div class="gf-err">F
 $enc = $q->fetch_assoc();
 $enc['player_img']   = getIPFS($enc['player_ipfs'],   $enc['player_cid'],   $enc['player_pid']);
 $enc['opponent_img'] = getIPFS($enc['opponent_ipfs'], $enc['opponent_cid'], $enc['opponent_pid']);
+/* Same as the page does: the renderer has no $conn, so the facing is
+   resolved here and travels on $enc. */
+$enc['player_flip']   = gaunt_flip_for(gaunt_nft_facing($conn, (int)$enc['player_cid']), 'you');
+$enc['opponent_flip'] = gaunt_flip_for(gaunt_nft_facing($conn, (int)$enc['opponent_cid']), 'foe');
 
 /* The same Fast Forward the page renders, or it would vanish from the
    fragment after the first swing. */

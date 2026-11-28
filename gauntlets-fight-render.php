@@ -162,8 +162,14 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '', 
    * transform (scale and rotate) and would otherwise un-flip a fallen
    * fighter; this composes into both.
    */
-  $gf_you_flip = gaunt_flip_for(gaunt_nft_facing($conn, (int)($enc['player_collection_id'] ?? 0)), 'you');
-  $gf_foe_flip = gaunt_flip_for(gaunt_nft_facing($conn, (int)($enc['opponent_collection_id'] ?? 0)), 'foe');
+  /*
+   * RESOLVED BY THE CALLER, not here. This function is a renderer and
+   * has no $conn -- reaching for one was a fatal on the live page the
+   * moment a fight drew. Both callers have the connection; they put
+   * the answer on $enc the same way they already do for the images.
+   */
+  $gf_you_flip = !empty($enc['player_flip']);
+  $gf_foe_flip = !empty($enc['opponent_flip']);
   ?>
   <div class="gf-arena">
     <div class="gf-side gf-you<?php echo (int)$fight['you']['hp'] <= 0 ? ' is-down' : ''; ?>"

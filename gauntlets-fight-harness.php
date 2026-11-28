@@ -1042,7 +1042,9 @@ ok(count($encKeys) >= 8, 'the renderer\'s encounter fields could not be read (' 
    it, which is where the two images are attached. */
 $pendSql = substr($DB, (int)strpos($DB, 'function gauntletGetPendingEncounter'), 2000)
          . (string) file_get_contents(__DIR__ . '/gauntlets-body.php');
-$ajxSql  = substr($AJX, 0, (int)strpos($AJX, '$enc = $q->fetch_assoc();') + 400);
+/* Through the post-fetch assignments too: getIPFS() and the facing are
+   attached to $enc there, not selected. */
+$ajxSql  = substr($AJX, 0, (int)strpos($AJX, '$enc = $q->fetch_assoc();') + 1200);
 $missPend = array(); $missAjx = array();
 foreach ($encKeys as $k) {
 	/* Either selected under that alias, or assigned onto $enc after. */
@@ -1134,12 +1136,22 @@ ok(strpos($UI, '100% { transform: scale(.96) rotate(-2deg) scaleX(var(--gf-flip,
    'the slump keyframes drop the flip, so a fighter spins as it falls');
 ok(substr_count($REN, "echo 'style=\"--gf-flip:-1\"'") === 2,
    'only one side of the arena can be flipped');
-/* Both have to be WORKED OUT, not just printed: hard-coding either to
-   false leaves the echoes in place and the check above passing. */
-ok(strpos($REN, "gaunt_flip_for(gaunt_nft_facing(\$conn, (int)(\$enc['player_collection_id'] ?? 0)), 'you')") !== false,
-   'the player side does not look up its own facing');
-ok(strpos($REN, "gaunt_flip_for(gaunt_nft_facing(\$conn, (int)(\$enc['opponent_collection_id'] ?? 0)), 'foe')") !== false,
-   'the opponent side does not look up its own facing');
+/*
+ * THE RENDERER MUST NOT QUERY. It has no $conn -- it is handed an $enc
+ * and prints it -- and reaching for one was a fatal on the live page
+ * the moment a fight drew: "Call to a member function query() on
+ * null". Both callers have a connection and resolve the facing onto
+ * $enc, the same way they already do for the portraits.
+ */
+ok(strpos(preg_replace('~/\*.*?\*/~s', '', $REN), '$conn') === false,
+   'the renderer reaches for a database connection it does not have');
+$bodySrc = (string) file_get_contents(__DIR__ . '/gauntlets-body.php');
+foreach (array('gauntlets-body.php' => $bodySrc, 'ajax/gauntlet-fight.php' => $AJX) as $f => $src) {
+	ok(preg_match('~gaunt_flip_for\(\s*gaunt_nft_facing\(~', $src) === 1,
+	   "$f does not resolve which way the fighters face");
+	ok(strpos($src, "'you')") !== false && strpos($src, "'foe')") !== false,
+	   "$f resolves the facing for only one side");
+}
 /* Not filtered on background: a theme with no battlefield art still
    knows which way its NFTs look. */
 $facing = substr($LIB, (int)strpos($LIB, 'function gaunt_nft_facing'), 900);

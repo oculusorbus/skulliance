@@ -363,6 +363,13 @@ if (!defined('GAUNTLET_BODY_OK')) { http_response_code(404); exit; }
 		$gf_enc = $enc;
 		$gf_enc['player_img']   = $player_img;
 		$gf_enc['opponent_img'] = $opponent_img;
+		/* Which way each fighter's art looks, so the arena can turn them
+		   to face each other. Resolved HERE because the renderer has no
+		   database connection. */
+		$gf_enc['player_flip']   = gaunt_flip_for(
+			gaunt_nft_facing($conn, (int)$enc['player_collection_id']), 'you');
+		$gf_enc['opponent_flip'] = gaunt_flip_for(
+			gaunt_nft_facing($conn, (int)$enc['opponent_collection_id']), 'foe');
 		$gf_fight = gaunt_fight_start($conn, $user_id, $enc);
 		/*
 		 * FAST FORWARD IS A CHOICE, so it renders with the other
