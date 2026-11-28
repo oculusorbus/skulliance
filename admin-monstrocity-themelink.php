@@ -44,16 +44,28 @@ function mtl_sql() {
 	 * Stripping spaces does not move the commas, so FIND_IN_SET's index --
 	 * and therefore sort_order and the positional orientations -- is intact.
 	 */
-	$csv = "REPLACE(t.policy_ids, ' ', '')";
+	/*
+	 * AND A COLLATION ON BOTH SIDES. collections.policy is
+	 * utf8mb4_unicode_ci and monstrocity_themes.policy_ids is
+	 * utf8mb4_general_ci, and FIND_IN_SET refuses to compare across two
+	 * collations: "Illegal mix of collations ... for operation
+	 * 'find_in_set'". Forced to one rather than changing either column,
+	 * because this is a read -- an ALTER on a live table to make a
+	 * one-time migration run is the wrong trade. _general_ci and not
+	 * _bin: policy ids are hex and the report case-folds them, so the
+	 * two halves must agree on being case-insensitive.
+	 */
+	$coll = 'COLLATE utf8mb4_general_ci';
+	$csv  = "REPLACE(t.policy_ids, ' ', '') $coll";
 	return "INSERT IGNORE INTO monstrocity_theme_collections (theme_id, collection_id, sort_order)\n"
-	     . "SELECT t.id, c.id, FIND_IN_SET(TRIM(c.policy), $csv) - 1\n"
+	     . "SELECT t.id, c.id, FIND_IN_SET(TRIM(c.policy) $coll, $csv) - 1\n"
 	     . "  FROM monstrocity_themes t\n"
-	     . "  JOIN collections c ON FIND_IN_SET(TRIM(c.policy), $csv) > 0\n"
+	     . "  JOIN collections c ON FIND_IN_SET(TRIM(c.policy) $coll, $csv) > 0\n"
 	     . " WHERE TRIM(c.policy) <> ''\n"
 	     . "   AND NOT EXISTS (SELECT 1 FROM monstrocity_theme_collections x\n"
 	     . "                    WHERE x.theme_id = t.id)\n"
 	     . "   AND (SELECT COUNT(*) FROM collections c2\n"
-	     . "         WHERE FIND_IN_SET(TRIM(c2.policy), $csv) > 0 AND TRIM(c2.policy) <> '')\n"
+	     . "         WHERE FIND_IN_SET(TRIM(c2.policy) $coll, $csv) > 0 AND TRIM(c2.policy) <> '')\n"
 	     . "       = (LENGTH($csv) - LENGTH(REPLACE($csv, ',', '')) + 1);";
 }
 
@@ -65,16 +77,6 @@ if (!$have_table) {
 	$msgs['err'][] = 'monstrocity_theme_collections does not exist. Create it first '
 	               . '(the CREATE is in monstrocity-schema.md); until it does, every '
 	               . 'query against it returns false without throwing.';
-}
-
-if ($have_table && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'apply') {
-	if (@$conn->query(mtl_sql())) {
-		$n = $conn->affected_rows;
-		$msgs['ok'][] = "Linked $n collection" . ($n === 1 ? '' : 's') . '.'
-		              . ($n === 0 ? ' Nothing was ready to convert.' : '');
-	} else {
-		$msgs['err'][] = 'The conversion failed: ' . htmlspecialchars($conn->error);
-	}
 }
 
 /*
@@ -91,8 +93,11 @@ if ($cq) while ($c = $cq->fetch_assoc()) {
 	$bypolicy[strtolower(trim($c['policy']))] = $c;
 }
 
-$rows = array();
-if ($have_table) {
+/* A function, because it is read again after the conversion -- otherwise
+   the page would still be showing the verdicts from before it ran. */
+function mtl_report($conn, $have_table, $bypolicy) {
+	$rows = array();
+	if (!$have_table) return $rows;
 	$q = @$conn->query(
 		"SELECT t.id, t.slug, t.title, t.policy_ids, t.orientations,
 		        (SELECT COUNT(*) FROM monstrocity_theme_collections x
@@ -114,11 +119,51 @@ if ($have_table) {
 		$r['verdict']  = monstrocity_link_verdict($r['policy_ids'], count($hit), $r['linked']);
 		$rows[] = $r;
 	}
+	return $rows;
 }
-$total_missing = 0;
-foreach ($rows as $r) $total_missing += count($r['miss']);
-$counts = array();
-foreach ($rows as $r) $counts[$r['verdict']] = ($counts[$r['verdict']] ?? 0) + 1;
+
+$rows = mtl_report($conn, $have_table, $bypolicy);
+
+/*
+ * THE CONVERSION, FROM THE SAME RESOLUTION THE REPORT JUST DID.
+ *
+ * This was one INSERT..SELECT over FIND_IN_SET twice, and it failed on the
+ * live database both times -- FIND_IN_SET does not trim, and the two
+ * columns carry different collations. Neither is a thing you can see by
+ * reading, and neither can be reproduced without that database. Matching
+ * in PHP has no collation to mix and no trimming to forget, it is the
+ * resolution the page is already showing you, and monstrocity_link_plan()
+ * is covered by the harness without a database at all.
+ *
+ * The SQL is still printed below for anyone who would rather run it, with
+ * the collation forced; this no longer depends on it being right.
+ */
+if ($have_table && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'apply') {
+	$plan = monstrocity_link_plan($rows, $bypolicy);
+	$vals = array();
+	foreach ($plan as $tid => $pairs)
+		foreach ($pairs as $pr)
+			$vals[] = '(' . (int)$tid . ',' . (int)$pr[0] . ',' . (int)$pr[1] . ')';
+	if (!$vals) {
+		$msgs['warn'][] = 'Nothing was ready to convert. Any theme below reading '
+		                . '"none" is waiting on a collection that does not exist yet.';
+	} elseif (@$conn->query('INSERT IGNORE INTO monstrocity_theme_collections '
+	                      . '(theme_id, collection_id, sort_order) VALUES ' . implode(',', $vals))) {
+		$n = (int)$conn->affected_rows;
+		$msgs['ok'][] = 'Linked ' . $n . ' collection' . ($n === 1 ? '' : 's')
+		              . ' across ' . count($plan) . ' theme' . (count($plan) === 1 ? '' : 's') . '.';
+		$rows = mtl_report($conn, $have_table, $bypolicy);   /* verdicts move */
+	} else {
+		$msgs['err'][] = 'The conversion failed: ' . $conn->error;
+	}
+}
+
+
+$counts = array(); $total_missing = 0;
+foreach ($rows as $r) {
+	$counts[$r['verdict']] = ($counts[$r['verdict']] ?? 0) + 1;
+	$total_missing += count($r['miss']);
+}
 $ready = (int)($counts['ready'] ?? 0);
 
 include 'header.php';

@@ -174,6 +174,19 @@ collection.
 `sort_order` is `FIND_IN_SET(...) - 1`, the policy's own position in the CSV,
 so the positional orientations still line up afterwards.
 
+**THE PAGE DOES NOT RUN THIS SQL.** It resolves the policies in PHP
+(`monstrocity_link_plan()`) and inserts the rows it planned, which is the same
+resolution the report on screen is showing. Two earlier versions were a single
+`INSERT..SELECT` over `FIND_IN_SET` and both failed against the live database
+for reasons that cannot be reproduced without it -- first no trimming, then
+mixed collations. The statement below is kept for running by hand, and carries
+the fixes for both; the planner is covered by the harness with no database at
+all.
+
+**TWO TRAPS IF YOU DO RUN IT BY HAND.** `collections.policy` is
+`utf8mb4_unicode_ci` and `monstrocity_themes.policy_ids` is
+`utf8mb4_general_ci`; `FIND_IN_SET` refuses to compare across collations and
+raises *Illegal mix of collations*, so both sides are forced to one. And
 **`FIND_IN_SET` DOES NOT TRIM.** The stored CSVs have spaces after the
 commas, and nothing noticed because every reader of them has always run
 `array_map('trim', explode(',', ...))` (see `ajax/get-nft-assets.php`). Match
@@ -184,17 +197,20 @@ collection's own policy. Stripping spaces does not move the commas, so
 `FIND_IN_SET`'s index -- and therefore `sort_order` -- is unaffected.
 
 ```sql
-SET @csv := NULL;  -- for reference only; the statement inlines it below
 INSERT IGNORE INTO monstrocity_theme_collections (theme_id, collection_id, sort_order)
-SELECT t.id, c.id, FIND_IN_SET(TRIM(c.policy), REPLACE(t.policy_ids, ' ', '')) - 1
+SELECT t.id, c.id,
+       FIND_IN_SET(TRIM(c.policy) COLLATE utf8mb4_general_ci,
+                   REPLACE(t.policy_ids, ' ', '') COLLATE utf8mb4_general_ci) - 1
   FROM monstrocity_themes t
   JOIN collections c
-    ON FIND_IN_SET(TRIM(c.policy), REPLACE(t.policy_ids, ' ', '')) > 0
+    ON FIND_IN_SET(TRIM(c.policy) COLLATE utf8mb4_general_ci,
+                   REPLACE(t.policy_ids, ' ', '') COLLATE utf8mb4_general_ci) > 0
  WHERE TRIM(c.policy) <> ''
    AND NOT EXISTS (SELECT 1 FROM monstrocity_theme_collections x
                     WHERE x.theme_id = t.id)
    AND (SELECT COUNT(*) FROM collections c2
-         WHERE FIND_IN_SET(TRIM(c2.policy), REPLACE(t.policy_ids, ' ', '')) > 0
+         WHERE FIND_IN_SET(TRIM(c2.policy) COLLATE utf8mb4_general_ci,
+                           REPLACE(t.policy_ids, ' ', '') COLLATE utf8mb4_general_ci) > 0
            AND TRIM(c2.policy) <> '')
        = (LENGTH(REPLACE(t.policy_ids, ' ', ''))
           - LENGTH(REPLACE(REPLACE(t.policy_ids, ' ', ''), ',', '')) + 1);

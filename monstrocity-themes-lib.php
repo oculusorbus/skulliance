@@ -573,3 +573,37 @@ function monstrocity_link_reason($verdict) {
 	}
 	return '';
 }
+
+/**
+ * What the conversion would write: theme id => list of [collection_id, sort_order].
+ *
+ * PURE, AND IT IS THE ONLY PLANNER. The first two versions of this were a
+ * single INSERT..SELECT over FIND_IN_SET, and both failed on the live
+ * database for reasons no amount of reading caught -- FIND_IN_SET does not
+ * trim, and the two columns carry different collations. Matching in PHP has
+ * neither problem, is the same resolution the report already does, and can
+ * be tested without a database, which is why it is here.
+ *
+ *   $themes       rows with id, policy_ids, and `linked` (existing link count)
+ *   $by_policy    lowercased, trimmed collection policy => collection row
+ *
+ * sort_order is the policy's own position in the CSV, so the positional
+ * `orientations` still line up afterwards. Only themes that map one for one
+ * are planned; see monstrocity_link_verdict() for why.
+ */
+function monstrocity_link_plan($themes, $by_policy) {
+	$plan = array();
+	foreach ($themes as $t) {
+		$pols = array_values(array_filter(array_map('trim',
+			explode(',', (string)(isset($t['policy_ids']) ? $t['policy_ids'] : ''))), 'strlen'));
+		$hit = array();
+		foreach ($pols as $i => $pol) {
+			$k = strtolower($pol);
+			if (isset($by_policy[$k])) $hit[] = array((int)$by_policy[$k]['id'], $i);
+		}
+		$verdict = monstrocity_link_verdict(
+			implode(',', $pols), count($hit), isset($t['linked']) ? (int)$t['linked'] : 0);
+		if ($verdict === 'ready') $plan[(int)$t['id']] = $hit;
+	}
+	return $plan;
+}

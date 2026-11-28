@@ -950,8 +950,16 @@ ok(strpos($mtl, "WHERE TRIM(c.policy) <> ''") !== false,
 ok(strpos($mtl, "LENGTH(\$csv) - LENGTH(REPLACE(\$csv, ',', '')) + 1") !== false,
    'the conversion does not compare matches against the number of policies, so it links partial themes and drops the rest');
 /* Position preserved, or the orientations shift. */
-ok(strpos($mtl, 'FIND_IN_SET(TRIM(c.policy), $csv) - 1') !== false,
+ok(strpos($mtl, 'FIND_IN_SET(TRIM(c.policy) $coll, $csv) - 1') !== false,
    'sort_order is not the policy position, so the positional orientations are reassigned');
+/* The two columns carry DIFFERENT COLLATIONS -- collections.policy is
+   utf8mb4_unicode_ci, monstrocity_themes.policy_ids is _general_ci --
+   and FIND_IN_SET refuses to compare across them. Forced on both sides
+   rather than altering a live column for a one-time read. */
+ok(strpos($mtl, "\$coll = 'COLLATE utf8mb4_general_ci';") !== false,
+   'the printed SQL does not force a collation, so FIND_IN_SET throws Illegal mix of collations');
+ok(substr_count($mtl, '$coll, $csv') === 3,
+   'a FIND_IN_SET is left without the collation on both sides');
 /*
  * FIND_IN_SET DOES NOT TRIM, and the stored CSVs have spaces after the
  * commas -- ajax/get-nft-assets.php has always run trim() over them,
@@ -960,7 +968,7 @@ ok(strpos($mtl, 'FIND_IN_SET(TRIM(c.policy), $csv) - 1') !== false,
  * above fails for it and the whole conversion reports nothing to do.
  * That is exactly what it did report.
  */
-ok(strpos($mtl, "\$csv = \"REPLACE(t.policy_ids, ' ', '')\";") !== false,
+ok(strpos($mtl, "REPLACE(t.policy_ids, ' ', '') \$coll") !== false,
    'the conversion does not strip spaces from policy_ids, so FIND_IN_SET misses every policy after the first');
 /* Three: the sort_order, the join, and the count subquery on c2. */
 ok(substr_count($mtl, 'FIND_IN_SET(TRIM(c') === 3
@@ -973,6 +981,40 @@ ok(strpos($mtl, "strtolower(trim(\$c['policy']))") !== false
    'the report matches policies differently from the conversion, so the verdicts can lie');
 ok(strpos($mtl, "No collection holds:") !== false,
    'the page says a theme is not ready without naming the policies that have no collection');
+
+/*
+ * THE PLANNER IS WHAT RUNS, not the printed SQL. Two INSERT..SELECTs
+ * over FIND_IN_SET failed on the live database -- no trimming, then
+ * mixed collations -- and neither could be reproduced here. PHP
+ * matching has no collation to mix and is testable without a database,
+ * which is the point of moving it.
+ */
+ok(strpos($mtl, 'monstrocity_link_plan($rows, $bypolicy)') !== false,
+   'the page still converts by running the raw SQL, which cannot be tested here');
+ok(strpos($mtl, 'INSERT IGNORE INTO monstrocity_theme_collections ') !== false,
+   'the conversion insert is not idempotent');
+ok(strpos($mtl, '$rows = mtl_report($conn, $have_table, $bypolicy);   /* verdicts move */') !== false,
+   'the page shows the verdicts from before the conversion ran');
+
+$cols = array('aaa' => array('id' => 10), 'bbb' => array('id' => 11), 'ccc' => array('id' => 12));
+$plan = monstrocity_link_plan(array(
+	array('id' => 1, 'policy_ids' => 'aaa, bbb',      'linked' => 0),
+	array('id' => 2, 'policy_ids' => 'aaa,zzz',       'linked' => 0),
+	array('id' => 3, 'policy_ids' => 'AAA',           'linked' => 0),
+	array('id' => 4, 'policy_ids' => 'aaa,bbb',       'linked' => 2),
+	array('id' => 5, 'policy_ids' => '',              'linked' => 0),
+	array('id' => 6, 'policy_ids' => 'ccc, bbb, aaa', 'linked' => 0),
+), $cols);
+ok(array_keys($plan) === array(1, 3, 6),
+   'the planner converts the wrong themes: ' . implode(',', array_keys($plan)));
+/* Spaces after the commas are the whole reason the first attempt found
+   nothing, so this is the case that matters most. */
+ok($plan[1] === array(array(10, 0), array(11, 1)),
+   'a policy list written with spaces does not resolve, or loses its order');
+ok($plan[3] === array(array(10, 0)), 'policy matching is case-sensitive');
+/* sort_order is the CSV position, which is what orientations index on. */
+ok($plan[6] === array(array(12, 0), array(11, 1), array(10, 2)),
+   'sort_order does not follow the policy order, so the orientations shift');
 ok(strpos($mtl, "SHOW TABLES LIKE 'monstrocity_theme_collections'") !== false,
    'the page does not check the table exists, and mysqli returns false for a missing table without throwing');
 
