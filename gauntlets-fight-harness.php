@@ -867,7 +867,10 @@ echo "\nthe music survives the first refused play\n";
 /* play() is always refused on load -- nothing has been tapped yet. */
 ok(strpos($UI, 'if (cur === key && playing && !el.paused) return;') !== false,
    'the track guard trusts `cur` alone, so a refused first play silences the whole fight');
-ok(strpos($UI, 'pr.then(function () { playing = true; },') !== false,
+/* The handler also repaints the button now; what this pins is that the
+   flag is set from the RESOLUTION, not from the request. */
+ok(preg_match('~pr\.then\(function \(\) \{ playing = true;~', $UI) === 1
+   && preg_match('~function \(\) \{ playing = false;~', $UI) === 1,
    'nothing records whether the track actually started, so a refusal cannot be retried');
 ok(strpos($UI, "document.addEventListener('pointerdown', unlock, true);") !== false,
    'the only retry is inside the fetch .then(), where the tap\'s gesture token is already spent');
