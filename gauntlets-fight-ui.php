@@ -182,6 +182,32 @@ define('GF_UI_DONE', 1);
 .gchest-btn .gchest-img { transition: transform .18s ease; animation: gchestBreathe 2.6s ease-in-out infinite; }
 @keyframes gchestBreathe { 0%,100% { filter: drop-shadow(0 6px 18px rgba(0,0,0,.55)); }
                            50% { filter: drop-shadow(0 6px 22px rgba(255,200,0,.45)); } }
+/*
+ * THE OPEN CHEST, SEATED. Three layers, as in missions-claim-modal.php:
+ * the art, its own glow over it, and a pool of light on the floor under
+ * it. The pool is what stops it floating -- a glowing object seats
+ * itself by lighting what it stands on. Its box is sized and centred on
+ * the chest's own footprint rather than stretched over the block, so
+ * nothing clips it into a hard edge.
+ */
+.gchest-art      { position: relative; width: 150px; max-width: 46vw;
+                   aspect-ratio: 480 / 497; margin: 0 auto; }
+.gchest-art::before { content: ""; position: absolute; z-index: 0;
+                   left: 50%; bottom: 2%; width: 108%; height: 24%;
+                   transform: translateX(-50%) rotate(-1.8deg);
+                   pointer-events: none;
+                   background: radial-gradient(ellipse at 50% 50%,
+                       rgba(0,200,160,.46) 0%, rgba(0,200,160,.26) 32%,
+                       rgba(0,200,160,.12) 52%, rgba(0,200,160,.04) 72%,
+                       rgba(0,200,160,0) 100%); }
+.gchest-l        { position: absolute; inset: 0; width: 100%; height: 100%;
+                   object-fit: contain; pointer-events: none; z-index: 1;
+                   filter: drop-shadow(0 6px 18px rgba(0,0,0,.55)); }
+/* Scaled and anchored where the modal anchors it, so the light sits in
+   the mouth rather than over the whole box. */
+.gchest-glow     { transform-origin: 50% 62%; filter: none; z-index: 2;
+                   animation: gchestPulse 3.6s ease-in-out infinite; }
+@keyframes gchestPulse { 0%, 100% { opacity: 1; } 50% { opacity: .82; } }
 .gchest-title    { font-size: .72rem; text-transform: uppercase; letter-spacing: .12em;
                    color: rgba(255,255,255,.45); margin: 10px 0 8px; }
 .gchest-items    { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
@@ -198,6 +224,7 @@ define('GF_UI_DONE', 1);
                        to   { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .gchest-btn .gchest-img { animation: none; }
+  .gchest-glow { animation: none; }
   .gchest-item { animation: none; }
 }
 .gf-err          { background: rgba(224,85,85,.12); border: 1px solid rgba(224,85,85,.5);

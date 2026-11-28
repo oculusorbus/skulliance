@@ -931,6 +931,29 @@ ok(strpos($BODY, 'gauntlets-fight-ui.php') === false,
 ok(strpos(preg_replace('~/\*.*?\*/~s', '', $BODY), '<audio') === false,
    'there is an <audio> element inside the part of the page that gets replaced');
 
+echo "\nthe opened chest is lit, not a cut-out\n";
+/*
+ * REPORTED: "the chest open doesn't look good because it doesn't have
+ * the glow". It was one open.webp with a drop shadow. The daily
+ * reward settles on three layers and so does this: the art, the
+ * chest's own light over it, and a pool on the floor underneath --
+ * which is what stops it floating, since a glowing object seats
+ * itself by lighting what it stands on.
+ */
+ok(strpos($BODY, 'images/chest/glow.webp') !== false,
+   'the opened chest has no glow layer, so it is a flat cut-out');
+ok(strpos($UI, '.gchest-art::before') !== false,
+   'the opened chest casts no light on the floor, so it floats');
+ok(strpos($UI, 'aspect-ratio: 480 / 497') !== false,
+   'the chest layers are not held to the art\'s own shape, so they stretch');
+/* The pool must be its OWN sized box: a full-bleed layer gets clipped
+   to the block and reads as a hard edge. missions-claim-modal.php has
+   the same note for the same reason. */
+ok(preg_match('~\.gchest-art::before\s*\{[^}]*width:\s*\d+%~s', $UI) === 1,
+   'the floor pool is not sized to the chest, so it clips at a hard edge');
+ok(strpos($UI, '.gchest-glow { animation: none; }') !== false,
+   'the chest glow keeps pulsing for a player who asked for reduced motion');
+
 echo "\nthe soundtrack survives a round\n";
 /*
  * REPORTED: "the music should play when opening gauntlets and not get

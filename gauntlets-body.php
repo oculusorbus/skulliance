@@ -142,8 +142,19 @@ if (!defined('GAUNTLET_BODY_OK')) { http_response_code(404); exit; }
 		}
 		?>
 		<div class="gchest open">
-			<img class="gchest-img" src="images/chest/open.webp" alt=""
-			     onerror="this.src='/staking/pwa/skulliance-logo-icon.png'">
+			<?php /* THE SAME THREE LAYERS THE DAILY REWARD SETTLES ON:
+			         the open chest, its own light over it, and a pool on
+			         the floor underneath. A lone open.webp with a drop
+			         shadow reads as a cut-out floating on the page --
+			         reported as "doesn't have the glow". */ ?>
+			<div class="gchest-art">
+				<img class="gchest-l" src="images/chest/open.webp" alt=""
+				     width="480" height="497" decoding="async"
+				     onerror="this.src='/staking/pwa/skulliance-logo-icon.png'">
+				<img class="gchest-l gchest-glow" src="images/chest/glow.webp" alt=""
+				     width="480" height="497" decoding="async" aria-hidden="true"
+				     onerror="this.style.display='none'">
+			</div>
 			<div class="gchest-title">Hauled out of the gauntlet</div>
 			<div class="gchest-items">
 				<?php foreach ($gchest_rows as $gr): ?>
