@@ -529,3 +529,47 @@ function monstrocity_slot_folder($slot) {
 	$map = array('base' => 'base', 'leader' => 'leader', 'damaged' => 'battle-damaged');
 	return isset($map[$slot]) ? $map[$slot] : '';
 }
+
+/**
+ * Can this theme's legacy policy string be turned into collection links?
+ *
+ * WHY IT IS NOT JUST "LINK EVERYTHING THAT MATCHES". Attaching collections
+ * replaces the policy string WHOLESALE (see monstrocity-schema.md), so a
+ * theme whose five policies map to three collections would quietly stop
+ * matching the other two the moment it is linked. And `orientations` is
+ * POSITIONAL against the policy list, so a derived list of a different
+ * length silently reassigns which way each collection faces.
+ *
+ * Only a theme whose policies map one-for-one onto collections is safe to
+ * convert without a human looking at it. Everything else is reported and
+ * left exactly as it is.
+ *
+ *   $policy_csv  monstrocity_themes.policy_ids, as stored
+ *   $matched     how many collections matched those policies (policy <> '')
+ *   $linked      how many rows the theme already has in the link table
+ *
+ * Returns 'linked' | 'empty' | 'none' | 'partial' | 'ambiguous' | 'ready'.
+ */
+function monstrocity_link_verdict($policy_csv, $matched, $linked) {
+	if ((int)$linked > 0) return 'linked';
+	$policies = array_filter(array_map('trim', explode(',', (string)$policy_csv)), 'strlen');
+	$n = count($policies);
+	if ($n === 0)             return 'empty';
+	if ((int)$matched === 0)  return 'none';
+	if ((int)$matched < $n)   return 'partial';
+	if ((int)$matched > $n)   return 'ambiguous';
+	return 'ready';
+}
+
+/** One line of plain English for each verdict. */
+function monstrocity_link_reason($verdict) {
+	switch ($verdict) {
+		case 'linked':    return 'Already linked to collections; the policy string is ignored.';
+		case 'empty':     return 'No policy ids to convert.';
+		case 'none':      return 'None of its policies exist as a collection yet. Add the collection first.';
+		case 'partial':   return 'Only some policies exist as collections. Linking would DROP the rest.';
+		case 'ambiguous': return 'A policy matches more than one collection. Pick one by hand.';
+		case 'ready':     return 'Every policy maps to exactly one collection. Safe to link.';
+	}
+	return '';
+}

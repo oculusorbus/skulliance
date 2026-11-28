@@ -913,5 +913,47 @@ ok(strpos(monstrocity_themes_js($conn, true, true), 'ipfsPrefixes') === false,
 $tabs = admin_tabs_src();
 ok(strpos($tabs, 'admin-monstrocity.php') !== false, 'the Monstrocity tab is not in admin_tabs()');
 
+
+echo "\nthe legacy policy strings convert only where it is lossless\n";
+/*
+ * Attaching collections replaces the policy string WHOLESALE, and
+ * `orientations` is positional against it (monstrocity-schema.md). So a
+ * theme whose five policies map to three collections must NOT be
+ * converted: it would silently stop matching the other two and the
+ * orientations would shift under it. Only a one-for-one mapping is safe.
+ */
+foreach (array(
+	array('p1,p2,p3', 3, 0, 'ready'),
+	array('p1,p2,p3', 2, 0, 'partial'),
+	array('p1,p2,p3', 4, 0, 'ambiguous'),
+	array('p1,p2,p3', 0, 0, 'none'),
+	array('p1,p2,p3', 3, 2, 'linked'),
+	array('',         0, 0, 'empty'),
+	array(' p1 , p2 ',2, 0, 'ready'),
+) as $c) {
+	$got = monstrocity_link_verdict($c[0], $c[1], $c[2]);
+	ok($got === $c[3], "policy_ids '$c[0]' with $c[1] matched and $c[2] linked reads as '$got', not '$c[3]'");
+}
+foreach (array('ready','partial','ambiguous','none','linked','empty') as $v)
+	ok(monstrocity_link_reason($v) !== '', "the '$v' verdict has no explanation on the page");
+
+/* THE CONVERSION ITSELF. It refuses in SQL what the verdict refuses in
+   PHP, or the page and the statement would disagree about what is safe. */
+$mtl = (string) file_get_contents(__DIR__ . '/admin-monstrocity-themelink.php');
+ok(strpos($mtl, 'INSERT IGNORE INTO monstrocity_theme_collections') !== false,
+   'the conversion is not idempotent, so running it twice duplicates links');
+ok(strpos($mtl, 'NOT EXISTS (SELECT 1 FROM monstrocity_theme_collections x') !== false,
+   'the conversion touches themes that are already linked');
+ok(strpos($mtl, "WHERE c.policy <> ''") !== false,
+   'a policy-less collection can be linked, which matches no NFT at all');
+/* The one-for-one rule, as the count of CSV entries. */
+ok(strpos($mtl, "LENGTH(t.policy_ids) - LENGTH(REPLACE(t.policy_ids, ',', '')) + 1") !== false,
+   'the conversion does not compare matches against the number of policies, so it links partial themes and drops the rest');
+/* Position preserved, or the orientations shift. */
+ok(strpos($mtl, 'FIND_IN_SET(c.policy, t.policy_ids) - 1') !== false,
+   'sort_order is not the policy position, so the positional orientations are reassigned');
+ok(strpos($mtl, "SHOW TABLES LIKE 'monstrocity_theme_collections'") !== false,
+   'the page does not check the table exists, and mysqli returns false for a missing table without throwing');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall theme checks passed\n");
 exit($fail ? 1 : 0);

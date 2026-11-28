@@ -152,6 +152,45 @@ SELECT t.slug, t.title, c.id AS collection_id, c.name AS collection_name, c.poli
  ORDER BY t.sort_order, c.name;
 ```
 
+### Doing the conversion
+
+**Admin > Games > Theme Links** (`admin-monstrocity-themelink.php`) reports
+every theme with a verdict and runs the conversion. Read it there rather than
+running SQL blind: it says what each theme would do and why.
+
+GAUNTLETS IS WHY THIS MATTERS. `gaunt_theme_bg()` asks the LINK TABLE for an
+arena backdrop, because a Monstrocity background belongs to a collection, not
+to a project. A theme still on its legacy `policy_ids` string has no rows
+there, so its collections fight on the Realms tile instead of their own art.
+
+ONLY A ONE-FOR-ONE MAPPING IS CONVERTED, and the reason is the two traps
+above: attaching collections replaces the policy string wholesale, and
+`orientations` is positional against it. A theme whose five policies map to
+three collections would silently stop matching the other two and shift the
+orientations of the three that remain. Those are reported as **partial** and
+left alone. So are **ambiguous** ones, where a policy matches more than one
+collection.
+
+`sort_order` is `FIND_IN_SET(...) - 1`, the policy's own position in the CSV,
+so the positional orientations still line up afterwards.
+
+```sql
+INSERT IGNORE INTO monstrocity_theme_collections (theme_id, collection_id, sort_order)
+SELECT t.id, c.id, FIND_IN_SET(c.policy, t.policy_ids) - 1
+  FROM monstrocity_themes t
+  JOIN collections c ON FIND_IN_SET(c.policy, t.policy_ids) > 0
+ WHERE c.policy <> ''
+   AND NOT EXISTS (SELECT 1 FROM monstrocity_theme_collections x
+                    WHERE x.theme_id = t.id)
+   AND (SELECT COUNT(*) FROM collections c2
+         WHERE FIND_IN_SET(c2.policy, t.policy_ids) > 0 AND c2.policy <> '')
+       = (LENGTH(t.policy_ids) - LENGTH(REPLACE(t.policy_ids, ',', '')) + 1);
+```
+
+It is idempotent: a theme that already has links is skipped by the
+`NOT EXISTS`, and the insert ignores duplicates on the primary key. Run it
+twice and the second run reports zero.
+
 ## Boss collections
 
 `bosses.collection_id` is a single column, so a boss drew its roster from

@@ -1180,6 +1180,12 @@ function admin_tab_groups() {
 			   between them the eye had to cross three unrelated tools to
 			   get from one to the other. */
 			'dhcbosses'   => array('admin-dhcbosses.php',   'DHC Bosses'),
+			/* AFTER the two boss tabs, not between them -- they are
+			   required to stay adjacent and the harness enforces it.
+			   One-time conversion, but it stays: a theme added tomorrow
+			   lands on the legacy policy string too, and Gauntlets reads
+			   the link table. */
+			'themelink'   => array('admin-monstrocity-themelink.php', 'Theme Links'),
 			/* Targets, and the pending count. */
 			'infiltration' => array('admin-infiltration.php', 'Infiltration'),
 		),
