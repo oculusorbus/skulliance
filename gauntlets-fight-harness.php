@@ -752,8 +752,15 @@ ok(strpos($PG, 'foreach ($rr_drops as $rd):') !== false,
 ok(strpos($LIB, '$fight[\'drops\'][] = array(\'label\' => $word, \'icon\' => $dico);') !== false,
    'the fight records no list of what was taken, so the victory screen can only name one item');
 /* With a picture, the same one the salvage wears in the loadout. */
-ok(strpos($PG, 'icons/<?php echo htmlspecialchars($rr_ico); ?>.png') !== false,
+ok(strpos($PG, "htmlspecialchars(\$rr_ico !== '' ? \$rr_ico : 'skull')") !== false,
    'the salvage line is words only, where every other reward on that screen has an icon');
+/* A MISSING FILE MUST SHOW SOMETHING. Hiding the img turned a bad path
+   into "no icon" with nothing to chase; the currency beside it has
+   always fallen back to the skull. */
+$rrBody = (string) file_get_contents(__DIR__ . '/gauntlets-body.php');
+$rrBlk  = substr($rrBody, (int)strpos($rrBody, '$rr_drops as $rd'), 1100);
+ok(strpos($rrBlk, 'onerror="this.src=\'icons/skull.png\'"') !== false,
+   'a drop icon that fails to load hides itself instead of falling back');
 /* Chosen once, where the drop is recorded, so the victory screen and
    the loadout cannot disagree about what was taken. */
 ok(strpos($PG, "\$last_result['drop_icon']") !== false,

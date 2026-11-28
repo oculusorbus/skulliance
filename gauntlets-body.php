@@ -55,8 +55,13 @@ if (!defined('GAUNTLET_BODY_OK')) { http_response_code(404); exit; }
 				<?php foreach ($rr_drops as $rd):
 					$rr_ico = (string)($rd['icon'] ?? ''); ?>
 					<span class="rr-took">
-						<?php if ($rr_ico !== ''): ?><img src="icons/<?php echo htmlspecialchars($rr_ico); ?>.png"
-						     alt="" onerror="this.style.display='none'"><?php endif; ?>
+						<?php /* A FALLBACK, NOT A VANISHING ACT. The currency
+						         line beside this one swaps in the skull when its
+						         file is missing; this hid itself instead, so a
+						         bad path looked like "no icon" with nothing to
+						         chase. Same behaviour as the rest of the screen. */ ?>
+						<img src="icons/<?php echo htmlspecialchars($rr_ico !== '' ? $rr_ico : 'skull'); ?>.png"
+						     alt="" onerror="this.src='icons/skull.png'">
 						<?php echo htmlspecialchars((string)($rd['label'] ?? '')); ?>
 					</span>
 				<?php endforeach; ?>
