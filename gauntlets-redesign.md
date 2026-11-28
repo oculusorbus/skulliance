@@ -116,6 +116,31 @@ best weapon on encounter one means not having it on encounter three. That is
 resource management across the arc, it is the dungeon-crawler feel being
 chased, and it uses the three-encounter structure already in place.
 
+### A relay against the same opponent: considered and rejected
+
+Once a loss costs only a fighter, the obvious next idea is to keep the
+INJURED opponent for your next card, so a loss does not discard the damage
+you did. Do not build it without reading this.
+
+Measured (gauntlets-balance-sim.php, same engine): against an UNARMED
+opponent one bare-knuckle fighter removes 80 of 120 health, so two bodies
+kill one and six bodies sweep the run -- 99.9% of the time, with no items
+used at all. Against a geared opponent it is 0%, because each new fighter
+starts a new fight and the opponent's heal, armour and weapon allowance all
+reset; six fighters deal about 318 damage against the 360 needed.
+
+THAT ASYMMETRY IS THE PROBLEM, not a saving grace. gaunt_cap_kit() caps the
+opponent at the PLAYER'S OWN gear, so the players who face unarmed
+opponents are the ones who own nothing -- exactly the players the
+squad-wipe change already helps. A relay would hand them a free sweep and
+give a geared player nothing.
+
+A relay is only interesting rather than degenerate if the opponent's SPENT
+RESOURCES carry over too: the heal it already used, the armour already
+strapped on, the swings already taken. Carrying health alone produces the
+version above. The fresh opponent is what makes items matter instead of
+bodies.
+
 ### Losing
 
 Today one loss ends the run. With long fights that is brutal -- ten minutes
