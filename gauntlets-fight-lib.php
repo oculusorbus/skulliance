@@ -782,7 +782,7 @@ function gaunt_chest_pending($conn, $run_id) {
 	if (!$r || !$r->num_rows) return false;
 	if ((int)$r->fetch_assoc()['chest'] !== 0) return false;
 	/* A SWEEP, not a win. `> 0` put a chest on the defeat screen of any
-	   run that took a single opponent down before being wiped, which
+	   run that took a single opponent down and then lost, which
 	   reads as a reward for losing. The chest is the payout for
 	   clearing the gauntlet; the mid-run find is a separate thing. */
 	return gaunt_run_wins($conn, $rid) >= GAUNTLET_MAX_WINS;

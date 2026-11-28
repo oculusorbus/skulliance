@@ -586,7 +586,7 @@ function gaunt_take_spoils($fight) {
  * ONLY A SWEEP OPENS ONE. gaunt_chest_pending() requires
  * `wins >= GAUNTLET_MAX_WINS`, and gaunt_chest_claim() refuses before
  * it ever reaches here, so a run that took one opponent down and was
- * then wiped pays nothing. It used to pay on any single win, which put
+ * then lost pays nothing. It used to pay on any single win, which put
  * a chest on the defeat screen -- a reward for losing -- and that was
  * reported and fixed.
  *
