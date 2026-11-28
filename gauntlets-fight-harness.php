@@ -938,6 +938,38 @@ ok(strpos($BODY, 'gauntlets-fight-ui.php') === false,
 ok(strpos(preg_replace('~/\*.*?\*/~s', '', $BODY), '<audio') === false,
    'there is an <audio> element inside the part of the page that gets replaced');
 
+echo "\nevery choice carries its own picture, and names its owner\n";
+/* REPORTED: "icons are not shown under recover and stake on the battle
+   screen." Only ATTACK had them; armour, heals and stakes had none. */
+ok(substr_count($REN, "icons/<?php echo htmlspecialchars(\$it['slug']); ?>.png") === 4,
+   'armour, heals or stakes are still drawn without their icon');
+ok(substr_count($LIB, "'slug' => 'shield'") === 2,
+   'an armour entry (owned or salvaged) carries no icon slug');
+/* Three: the owned heals, the salvaged heals and the two stakes. */
+ok(substr_count($LIB, "'slug' => gaunt_consumable_slug(\$cid)") === 3,
+   'a heal or stake entry carries no icon slug for the button to draw');
+/* Every one of the seven consumables resolves, not just the heals. */
+foreach (array(GAUNTLET_C_100 => '100-success', GAUNTLET_C_75 => '75-success',
+               GAUNTLET_C_50 => '50-success', GAUNTLET_C_25 => '25-success',
+               GAUNTLET_C_FF => 'fast-forward', GAUNTLET_C_DOUBLE => 'double-rewards',
+               GAUNTLET_C_RANDOM => 'random-reward') as $cid => $want) {
+	ok(gaunt_consumable_slug($cid) === $want,
+	   "consumable $cid resolves to '" . gaunt_consumable_slug($cid) . "', not '$want'");
+}
+/* Points, not currency -- that is what the stake actually pays. */
+ok(strpos($LIB, "GAUNTLET_C_RANDOM => 'Random points'") !== false,
+   'the random stake still says "currency", which is not what it pays');
+
+/* WHO you are fighting, in the arena rather than only in the history. */
+ok(strpos($REN, 'function gf_owner(') !== false,
+   'there is no owner line, so a fight does not say who is behind the card');
+ok(substr_count($REN, 'gf_owner(') === 3,
+   'the owner line is drawn for only one side of the fight');
+ok(strpos($REN, "\$enc['opponent_username']") !== false,
+   'the opponent owner is not read from the encounter');
+ok(preg_match('~\.gf-owner span\s*\{[^}]*text-overflow:\s*ellipsis~s', $UI) === 1,
+   'the owner name can wrap, which pushes the arena down a phone screen');
+
 echo "\nthe matchup is on screen, and is worth what it says\n";
 /*
  * REPORTED: "all the health is the same at 120, so I don't know if the

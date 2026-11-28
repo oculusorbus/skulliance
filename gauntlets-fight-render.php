@@ -50,6 +50,23 @@ function gf_bar($hp, $max, $side) {
 	<?php return ob_get_clean();
 }
 
+/**
+ * Who is behind a fighter: their avatar and name, under the NFT's.
+ *
+ * REPORTED: "it's not really apparent who you are battling during a
+ * battle because there's no avatars or usernames associated with the
+ * NFTs." The run history has always shown this afterwards; the arena
+ * is where it matters, because that is the person you are fighting.
+ */
+function gf_owner($username, $discord_id, $avatar) {
+	$u = trim((string)$username);
+	if ($u === '') return '';
+	$img = ($discord_id && $avatar) ? avatar_url($discord_id, $avatar) : 'icons/skull.png';
+	return '<div class="gf-owner"><img src="' . htmlspecialchars($img) . '" alt=""'
+	     . ' onerror="this.src=\'icons/skull.png\'"><span>'
+	     . htmlspecialchars($u) . '</span></div>';
+}
+
 function gauntletRenderFastForward($enc, $ff_count, $ff_hand) {
 	if ((int)$ff_count < 1 || !count($ff_hand)) return '';
 	ob_start(); ?>
@@ -141,6 +158,9 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '', 
         <div class="gf-fx"></div>
       </div>
       <div class="gf-name"><?php echo htmlspecialchars($enc['player_nft_name']); ?></div>
+      <?php echo gf_owner($_SESSION['userData']['username'] ?? ($_SESSION['userData']['name'] ?? ''),
+                          $_SESSION['userData']['discord_id'] ?? '',
+                          $_SESSION['userData']['avatar'] ?? ''); ?>
       <?php echo gf_bar($fight['you']['hp'], $fight['you']['max'], 'you'); ?>
       <?php if ((int)$fight['you']['arm'] > 0): ?>
         <div class="gf-armour" title="Armour soak remaining">
@@ -158,6 +178,8 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '', 
         <div class="gf-fx"></div>
       </div>
       <div class="gf-name"><?php echo htmlspecialchars($enc['opponent_nft_name']); ?></div>
+      <?php echo gf_owner($enc['opponent_username'] ?? '', $enc['opponent_discord_id'] ?? '',
+                          $enc['opponent_avatar'] ?? ''); ?>
       <?php echo gf_bar($fight['foe']['hp'], $fight['foe']['max'], 'foe'); ?>
       <?php if ((int)$fight['foe']['arm'] > 0): ?>
         <div class="gf-armour"><span class="gf-shield">&#9679;</span> <?php echo (int)$fight['foe']['arm']; ?></div>
@@ -254,6 +276,8 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '', 
               <button type="submit" name="turn" value="armor:<?php echo (int)$it['id']; ?>"
                       class="gf-btn gf-arm<?php echo $dis ? ' is-spent' : ''; ?>"
                       <?php echo $dis ? 'disabled' : ''; ?> data-sfx="equip">
+                <?php if (!empty($it['slug'])): ?><img src="icons/<?php echo htmlspecialchars($it['slug']); ?>.png"
+                     alt="" onerror="this.style.display='none'"><?php endif; ?>
                 <span><?php echo htmlspecialchars($it['name']); ?><?php
                     if (!empty($it['qty']) && (int)$it['qty'] > 1) echo ' <i class="gf-qty">&times;' . (int)$it['qty'] . '</i>'; ?></span>
                 <em class="gf-left" title="<?php echo (int)$it['left']; ?> uses left this run<?php
@@ -262,12 +286,16 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '', 
             <?php elseif ($t === 'stake'): ?>
               <button type="submit" name="turn" value="stake:<?php echo (int)$it['id']; ?>"
                       class="gf-btn gf-stake" data-sfx="equip">
+                <?php if (!empty($it['slug'])): ?><img src="icons/<?php echo htmlspecialchars($it['slug']); ?>.png"
+                     alt="" onerror="this.style.display='none'"><?php endif; ?>
                 <span><?php echo htmlspecialchars($it['name']); ?></span>
                 <em class="gf-left" title="how many you hold">&times;<?php echo (int)$it['have']; ?></em>
               </button>
             <?php else: ?>
               <button type="submit" name="turn" value="heal:<?php echo (int)$it['id']; ?>"
                       class="gf-btn gf-heal" data-sfx="heal">
+                <?php if (!empty($it['slug'])): ?><img src="icons/<?php echo htmlspecialchars($it['slug']); ?>.png"
+                     alt="" onerror="this.style.display='none'"><?php endif; ?>
                 <span>Heal <?php echo (int)$it['pct']; ?>%</span>
                 <?php /* "Heal 40%" is not a consumable anyone owns -- it is
                          always salvage -- but unlabelled it read as a new

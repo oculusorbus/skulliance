@@ -392,6 +392,9 @@ function gaunt_loadout($conn, $user_id, $run_id, $fight = null) {
 			$out['armor'][] = array(
 				'type' => 'armor', 'id' => $id, 'name' => $g['armor_name'],
 				'level' => $lv, 'left' => $left, 'qty' => $qty, 'sfx' => 'equip',
+				/* Armour has no art of its own, so every piece wears the
+				   shield -- the same one the spoils line uses for it. */
+				'slug' => 'shield',
 			);
 		}
 	}
@@ -427,7 +430,7 @@ function gaunt_loadout($conn, $user_id, $run_id, $fight = null) {
 			$out['armor'][] = array('type' => 'armor', 'id' => $id, 'loot' => true,
 				'name' => $an !== '' ? $an : 'Salvaged armour',
 				'level' => (int)$lt['level'], 'left' => $left,
-				'sfx' => 'equip');
+				'sfx' => 'equip', 'slug' => 'shield');
 		} elseif ($lt['kind'] === 'heal' && $left > 0) {
 			/* A REAL consumable id, so this is one of the four Success
 			   items a player can actually own -- not an invented
@@ -438,7 +441,8 @@ function gaunt_loadout($conn, $user_id, $run_id, $fight = null) {
 			if (isset($loot_heal[$key])) { $out['heals'][$loot_heal[$key]]['have']++; continue; }
 			$loot_heal[$key] = count($out['heals']);
 			$out['heals'][] = array('type' => 'heal', 'id' => $id, 'loot' => true,
-				'cid' => $cid, 'pct' => $pct, 'have' => 1, 'sfx' => 'heal');
+				'cid' => $cid, 'pct' => $pct, 'have' => 1, 'sfx' => 'heal',
+				'slug' => gaunt_consumable_slug($cid));
 		}
 	}
 
@@ -452,18 +456,20 @@ function gaunt_loadout($conn, $user_id, $run_id, $fight = null) {
 	 */
 	$staked = isset($fight['staked']) && is_array($fight['staked']) ? $fight['staked'] : array();
 	foreach (array(GAUNTLET_C_DOUBLE => 'Double rewards',
-	               GAUNTLET_C_RANDOM => 'Random currency') as $cid => $label) {
+	               GAUNTLET_C_RANDOM => 'Random points') as $cid => $label) {
 		$n = getCurrentAmount($conn, $uid, $cid);
 		if ($n < 1 || in_array($cid, $staked, true)) continue;
 		$out['stakes'][] = array('type' => 'stake', 'id' => $cid, 'name' => $label,
-			'have' => (int)$n, 'sfx' => 'equip');
+			'have' => (int)$n, 'sfx' => 'equip',
+			'slug' => gaunt_consumable_slug($cid));
 	}
 
 	foreach (array(GAUNTLET_C_100, GAUNTLET_C_75, GAUNTLET_C_50, GAUNTLET_C_25) as $cid) {
 		$n = getCurrentAmount($conn, $uid, $cid);
 		if ($n < 1) continue;
 		$out['heals'][] = array('type' => 'heal', 'id' => $cid,
-			'pct' => gaunt_heal_pct($cid), 'have' => (int)$n, 'sfx' => 'heal');
+			'pct' => gaunt_heal_pct($cid), 'have' => (int)$n, 'sfx' => 'heal',
+			'slug' => gaunt_consumable_slug($cid));
 	}
 	return $out;
 }

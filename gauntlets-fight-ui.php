@@ -60,6 +60,16 @@ define('GF_UI_DONE', 1);
    an exchange without looking at the log. */
 .gf-fx           { position: absolute; inset: 0; pointer-events: none; opacity: 0;
                    box-shadow: inset 0 0 26px 8px currentColor; color: transparent; }
+/* Under the NFT's name, smaller: the card is the fighter, the person
+   is who sent it. Kept to one line with the name clipped rather than
+   wrapped, so adding it cannot push the arena down a phone screen. */
+.gf-owner        { display: flex; align-items: center; justify-content: center; gap: 5px;
+                   margin: -1px 0 6px; min-width: 0; }
+.gf-owner img    { width: 15px; height: 15px; border-radius: 50%; object-fit: cover;
+                   flex: 0 0 auto; }
+.gf-owner span   { font-size: .66rem; color: rgba(255,255,255,.5);
+                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gf-side.is-down .gf-owner { opacity: .45; }
 .gf-name         { font-size: .8rem; font-weight: 600; color: #fff; margin: 7px 0 5px;
                    text-align: center; white-space: nowrap; overflow: hidden;
                    text-overflow: ellipsis; }
