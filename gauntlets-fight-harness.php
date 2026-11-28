@@ -525,24 +525,48 @@ ok(strpos($LIB, 'function gaunt_theme_bg') !== false, 'there is no backdrop look
 $tb = substr($LIB, (int)strpos($LIB, 'function gaunt_theme_bg'), 2200);
 ok(strpos($tb, '/staking/images/themes/\' . $pid . \'.jpg') !== false,
    'a project with no Monstrocity background falls through to no backdrop at all');
-ok((int)strpos($tb, "monstrocity_theme_collections") < (int)strpos($tb, "images/themes/"),
-   'the realms tile is consulted before the Monstrocity art, which drops the battlefield backdrops');
 /* The flag is what says the image exists -- without it the fight would
    point at a 404 and show nothing, which is worse than no backdrop. */
-ok(substr_count($LIB, 'background = 1') === 3,
-   'a backdrop lookup path skips the background flag, which is what says the image exists');
+ok(substr_count($LIB, 'background = 1') === 1,
+   'the one backdrop lookup skips the background flag, which is what says the image exists');
 /*
- * THREE LOOKUPS, MOST PRECISE FIRST. monstrocity-schema.md is explicit
- * that project_id is the real link and is "mostly NULL", while
- * project_name is the string that stands alone for themes whose project
- * is not on the platform -- so a name-only match finds the FEWEST of
- * the themes that actually correspond to something here. That was the
- * first version, and it found almost nothing.
+ * ONE LOOKUP, AND IT IS THE COLLECTION'S. Monstrocity backgrounds are
+ * drawn per COLLECTION. Matching on project_id or project_name as well
+ * -- which this used to do -- hands a collection with no art of its
+ * own whatever a SIBLING collection in the same project happens to
+ * have, which is why Monstrocity art kept appearing where the Realms
+ * tile was wanted. Reported exactly that way.
  */
 ok(strpos($LIB, 'monstrocity_theme_collections tc') !== false,
-   'the backdrop no longer matches on the collection, which is the most precise link');
-ok(strpos($LIB, 'WHERE project_id = $pid') !== false,
-   'the backdrop no longer matches on project_id, the canonical link');
+   'the backdrop no longer matches on the collection, which is the only link that is the NFT\'s own');
+ok(strpos($LIB, 'WHERE project_id = $pid') === false
+   && strpos($LIB, "WHERE project_name = '\$esc'") === false,
+   'the backdrop matches a Monstrocity theme by project again, so one collection\'s art leaks onto another\'s');
+/*
+ * DRIVEN, NOT MATCHED. The checks above prove the SQL is present; they
+ * cannot prove it is reached. A stub connection answers the one query
+ * this function makes, so the three real outcomes are exercised.
+ */
+class GfThemeConn {
+	public $hit;                      /* does the collection have art? */
+	public function __construct($hit) { $this->hit = $hit; }
+	public function query($sql)        { return $this->hit ? new GfThemeRes() : new GfThemeNone(); }
+	public function real_escape_string($s) { return $s; }
+}
+class GfThemeRes  { public $num_rows = 1; public function fetch_assoc() { return array('slug' => 'hellknights'); } }
+class GfThemeNone { public $num_rows = 0; public function fetch_assoc() { return array(); } }
+
+ok(gaunt_theme_bg(new GfThemeConn(true), 'Any', 11, 101)
+   === '/staking/images/monstrocity/hellknights/monstrocity.png',
+   'a collection WITH Monstrocity art does not get it');
+ok(gaunt_theme_bg(new GfThemeConn(false), 'Any', 12, 102) === '/staking/images/themes/12.jpg',
+   'a collection with NO Monstrocity art does not fall back to the Realms tile');
+ok(gaunt_theme_bg(new GfThemeConn(false), 'Any', 0, 103) === '',
+   'a backdrop is invented when there is no project to key one on');
+
+/* And then the Realms tile, for everything with no art of its own. */
+ok((int)strpos($tb, 'monstrocity_theme_collections') < (int)strpos($tb, 'images/themes/'),
+   'the realms tile is consulted before the collection art, which drops the battlefield backdrops');
 ok(strpos($REN, 'data-bg=') !== false,
    'the fragment does not say why it has no backdrop, so the next report needs a bisect');
 ok(strpos($REN, 'gf-has-bg') !== false, 'the renderer never applies the backdrop class');

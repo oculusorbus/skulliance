@@ -666,14 +666,22 @@ function gauntletResolveFight($conn, $user_id, $enc_id) {
  * rather than a 404 behind the fight.
  */
 function gaunt_theme_bg($conn, $project_name, $project_id = 0, $collection_id = 0) {
-	$key = (int)$collection_id . ':' . (int)$project_id . ':' . $project_name;
+	$key = (int)$collection_id . ':' . (int)$project_id;
 	static $memo = array();
 	if (isset($memo[$key])) return $memo[$key];
 
-	$slug = '';
-	$cid  = (int)$collection_id;
-	$pid  = (int)$project_id;
+	$cid = (int)$collection_id;
+	$pid = (int)$project_id;
 
+	/*
+	 * THE NFT'S OWN COLLECTION, OR NOTHING. Monstrocity backgrounds are
+	 * drawn per COLLECTION, and this used to fall through to a theme
+	 * matched on project_id and then on project_name -- which handed a
+	 * collection with no art of its own whatever a sibling collection
+	 * in the same project happened to have. That is why Monstrocity art
+	 * kept turning up where the Realms tile was wanted.
+	 */
+	$slug = '';
 	if ($cid > 0) {
 		$r = @$conn->query("SELECT t.slug FROM monstrocity_theme_collections tc
 		                    INNER JOIN monstrocity_themes t ON t.id = tc.theme_id
@@ -681,30 +689,15 @@ function gaunt_theme_bg($conn, $project_name, $project_id = 0, $collection_id = 
 		                      AND t.background = 1 LIMIT 1");
 		if ($r && $r->num_rows) $slug = (string)$r->fetch_assoc()['slug'];
 	}
-	if ($slug === '' && $pid > 0) {
-		$r = @$conn->query("SELECT slug FROM monstrocity_themes
-		                    WHERE project_id = $pid AND active = 1 AND background = 1 LIMIT 1");
-		if ($r && $r->num_rows) $slug = (string)$r->fetch_assoc()['slug'];
-	}
-	if ($slug === '' && trim((string)$project_name) !== '') {
-		$esc = $conn->real_escape_string(trim((string)$project_name));
-		$r = @$conn->query("SELECT slug FROM monstrocity_themes
-		                    WHERE project_name = '$esc' AND active = 1 AND background = 1 LIMIT 1");
-		if ($r && $r->num_rows) $slug = (string)$r->fetch_assoc()['slug'];
-	}
-
-	/* Realms' theme art is the one that is always there. It is keyed by
-	   project_id and every project has a tile, where a Monstrocity
-	   background only exists for the projects that got battlefield art
-	   drawn -- so half the encounters were fought on a flat dark panel.
-	   Monstrocity art still wins when it exists; this fills the rest. */
-	if ($slug === '' && $pid > 0) {
-		$memo[$key] = '/staking/images/themes/' . $pid . '.jpg';
+	if ($slug !== '') {
+		$memo[$key] = '/staking/images/monstrocity/' . rawurlencode($slug) . '/monstrocity.png';
 		return $memo[$key];
 	}
 
-	$memo[$key] = $slug === '' ? ''
-		: '/staking/images/monstrocity/' . rawurlencode($slug) . '/monstrocity.png';
+	/* Otherwise the Realms tile, keyed by project_id. Every project has
+	   one, where a Monstrocity background only exists for the
+	   collections that got battlefield art drawn. */
+	$memo[$key] = $pid > 0 ? '/staking/images/themes/' . $pid . '.jpg' : '';
 	return $memo[$key];
 }
 
