@@ -174,18 +174,36 @@ collection.
 `sort_order` is `FIND_IN_SET(...) - 1`, the policy's own position in the CSV,
 so the positional orientations still line up afterwards.
 
+**`FIND_IN_SET` DOES NOT TRIM.** The stored CSVs have spaces after the
+commas, and nothing noticed because every reader of them has always run
+`array_map('trim', explode(',', ...))` (see `ajax/get-nft-assets.php`). Match
+them raw and a theme written `p1, p2` matches only its FIRST policy -- so the
+one-for-one test below fails for it and the conversion reports nothing to do.
+Hence `REPLACE(t.policy_ids, ' ', '')` on every side, and `TRIM()` on the
+collection's own policy. Stripping spaces does not move the commas, so
+`FIND_IN_SET`'s index -- and therefore `sort_order` -- is unaffected.
+
 ```sql
+SET @csv := NULL;  -- for reference only; the statement inlines it below
 INSERT IGNORE INTO monstrocity_theme_collections (theme_id, collection_id, sort_order)
-SELECT t.id, c.id, FIND_IN_SET(c.policy, t.policy_ids) - 1
+SELECT t.id, c.id, FIND_IN_SET(TRIM(c.policy), REPLACE(t.policy_ids, ' ', '')) - 1
   FROM monstrocity_themes t
-  JOIN collections c ON FIND_IN_SET(c.policy, t.policy_ids) > 0
- WHERE c.policy <> ''
+  JOIN collections c
+    ON FIND_IN_SET(TRIM(c.policy), REPLACE(t.policy_ids, ' ', '')) > 0
+ WHERE TRIM(c.policy) <> ''
    AND NOT EXISTS (SELECT 1 FROM monstrocity_theme_collections x
                     WHERE x.theme_id = t.id)
    AND (SELECT COUNT(*) FROM collections c2
-         WHERE FIND_IN_SET(c2.policy, t.policy_ids) > 0 AND c2.policy <> '')
-       = (LENGTH(t.policy_ids) - LENGTH(REPLACE(t.policy_ids, ',', '')) + 1);
+         WHERE FIND_IN_SET(TRIM(c2.policy), REPLACE(t.policy_ids, ' ', '')) > 0
+           AND TRIM(c2.policy) <> '')
+       = (LENGTH(REPLACE(t.policy_ids, ' ', ''))
+          - LENGTH(REPLACE(REPLACE(t.policy_ids, ' ', ''), ',', '')) + 1);
 ```
+
+**A theme can be unlinkable for a reason no SQL will fix:** its policy ids
+belong to no collection at all. The admin page names those policies per theme
+rather than just reporting "none", because that is a different job -- add the
+collection under Catalogue > Collections with that exact policy, then convert.
 
 It is idempotent: a theme that already has links is skipped by the
 `NOT EXISTS`, and the insert ignores duplicates on the primary key. Run it

@@ -944,14 +944,35 @@ ok(strpos($mtl, 'INSERT IGNORE INTO monstrocity_theme_collections') !== false,
    'the conversion is not idempotent, so running it twice duplicates links');
 ok(strpos($mtl, 'NOT EXISTS (SELECT 1 FROM monstrocity_theme_collections x') !== false,
    'the conversion touches themes that are already linked');
-ok(strpos($mtl, "WHERE c.policy <> ''") !== false,
+ok(strpos($mtl, "WHERE TRIM(c.policy) <> ''") !== false,
    'a policy-less collection can be linked, which matches no NFT at all');
 /* The one-for-one rule, as the count of CSV entries. */
-ok(strpos($mtl, "LENGTH(t.policy_ids) - LENGTH(REPLACE(t.policy_ids, ',', '')) + 1") !== false,
+ok(strpos($mtl, "LENGTH(\$csv) - LENGTH(REPLACE(\$csv, ',', '')) + 1") !== false,
    'the conversion does not compare matches against the number of policies, so it links partial themes and drops the rest');
 /* Position preserved, or the orientations shift. */
-ok(strpos($mtl, 'FIND_IN_SET(c.policy, t.policy_ids) - 1') !== false,
+ok(strpos($mtl, 'FIND_IN_SET(TRIM(c.policy), $csv) - 1') !== false,
    'sort_order is not the policy position, so the positional orientations are reassigned');
+/*
+ * FIND_IN_SET DOES NOT TRIM, and the stored CSVs have spaces after the
+ * commas -- ajax/get-nft-assets.php has always run trim() over them,
+ * which is why that went unnoticed. Without stripping them, a theme
+ * written "p1, p2" matches only its FIRST policy, so the count test
+ * above fails for it and the whole conversion reports nothing to do.
+ * That is exactly what it did report.
+ */
+ok(strpos($mtl, "\$csv = \"REPLACE(t.policy_ids, ' ', '')\";") !== false,
+   'the conversion does not strip spaces from policy_ids, so FIND_IN_SET misses every policy after the first');
+/* Three: the sort_order, the join, and the count subquery on c2. */
+ok(substr_count($mtl, 'FIND_IN_SET(TRIM(c') === 3
+   && strpos($mtl, 'FIND_IN_SET(c.policy, t.policy_ids)') === false,
+   'a FIND_IN_SET is left comparing untrimmed values, so the two halves of the rule disagree');
+/* The report resolves policies the same way, or the page would promise
+   something the statement will not do. */
+ok(strpos($mtl, "strtolower(trim(\$c['policy']))") !== false
+   && strpos($mtl, "isset(\$bypolicy[strtolower(\$pol)])") !== false,
+   'the report matches policies differently from the conversion, so the verdicts can lie');
+ok(strpos($mtl, "No collection holds:") !== false,
+   'the page says a theme is not ready without naming the policies that have no collection');
 ok(strpos($mtl, "SHOW TABLES LIKE 'monstrocity_theme_collections'") !== false,
    'the page does not check the table exists, and mysqli returns false for a missing table without throwing');
 

@@ -35,16 +35,26 @@ $msgs = array('err' => array(), 'ok' => array(), 'warn' => array());
 /* The conversion, as one statement. Everything it refuses to touch, it
    refuses in SQL -- the page and the script cannot disagree. */
 function mtl_sql() {
+	/*
+	 * REPLACE(..., ' ', '') ON EVERY SIDE. FIND_IN_SET does not trim, and
+	 * the stored CSVs have spaces after the commas -- ajax/get-nft-assets.php
+	 * has always run array_map('trim', explode(',', ...)) over them, which is
+	 * why nobody noticed. Without this, a theme written "p1, p2" matches
+	 * only its FIRST policy and the conversion reports nothing to do.
+	 * Stripping spaces does not move the commas, so FIND_IN_SET's index --
+	 * and therefore sort_order and the positional orientations -- is intact.
+	 */
+	$csv = "REPLACE(t.policy_ids, ' ', '')";
 	return "INSERT IGNORE INTO monstrocity_theme_collections (theme_id, collection_id, sort_order)\n"
-	     . "SELECT t.id, c.id, FIND_IN_SET(c.policy, t.policy_ids) - 1\n"
+	     . "SELECT t.id, c.id, FIND_IN_SET(TRIM(c.policy), $csv) - 1\n"
 	     . "  FROM monstrocity_themes t\n"
-	     . "  JOIN collections c ON FIND_IN_SET(c.policy, t.policy_ids) > 0\n"
-	     . " WHERE c.policy <> ''\n"
+	     . "  JOIN collections c ON FIND_IN_SET(TRIM(c.policy), $csv) > 0\n"
+	     . " WHERE TRIM(c.policy) <> ''\n"
 	     . "   AND NOT EXISTS (SELECT 1 FROM monstrocity_theme_collections x\n"
 	     . "                    WHERE x.theme_id = t.id)\n"
 	     . "   AND (SELECT COUNT(*) FROM collections c2\n"
-	     . "         WHERE FIND_IN_SET(c2.policy, t.policy_ids) > 0 AND c2.policy <> '')\n"
-	     . "       = (LENGTH(t.policy_ids) - LENGTH(REPLACE(t.policy_ids, ',', '')) + 1);";
+	     . "         WHERE FIND_IN_SET(TRIM(c2.policy), $csv) > 0 AND TRIM(c2.policy) <> '')\n"
+	     . "       = (LENGTH($csv) - LENGTH(REPLACE($csv, ',', '')) + 1);";
 }
 
 $have_table = false;
@@ -67,22 +77,46 @@ if ($have_table && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ??
 	}
 }
 
-/* The report. One row per theme, whatever its verdict. */
+/*
+ * THE REPORT, POLICY BY POLICY. A verdict on its own is not an answer:
+ * "nothing ready to link" reads the same whether the collections are
+ * missing, the policies are misspelled, or the matching is broken. So
+ * every policy is resolved here in PHP -- trimmed, the way
+ * ajax/get-nft-assets.php has always read these strings -- and the ones
+ * with no collection are named.
+ */
+$bypolicy = array();
+$cq = @$conn->query("SELECT id, name, policy FROM collections WHERE TRIM(policy) <> ''");
+if ($cq) while ($c = $cq->fetch_assoc()) {
+	$bypolicy[strtolower(trim($c['policy']))] = $c;
+}
+
 $rows = array();
 if ($have_table) {
 	$q = @$conn->query(
 		"SELECT t.id, t.slug, t.title, t.policy_ids, t.orientations,
-		        (SELECT COUNT(*) FROM collections c
-		          WHERE FIND_IN_SET(c.policy, t.policy_ids) > 0 AND c.policy <> '') AS matched,
 		        (SELECT COUNT(*) FROM monstrocity_theme_collections x
 		          WHERE x.theme_id = t.id) AS linked
 		   FROM monstrocity_themes t
 		  ORDER BY t.sort_order, t.title");
 	if ($q) while ($r = $q->fetch_assoc()) {
-		$r['verdict'] = monstrocity_link_verdict($r['policy_ids'], $r['matched'], $r['linked']);
+		$pols = array_values(array_filter(array_map('trim',
+			explode(',', (string)$r['policy_ids'])), 'strlen'));
+		$hit = array(); $miss = array();
+		foreach ($pols as $pol) {
+			if (isset($bypolicy[strtolower($pol)])) $hit[] = $bypolicy[strtolower($pol)];
+			else                                    $miss[] = $pol;
+		}
+		$r['policies'] = $pols;
+		$r['hit']      = $hit;
+		$r['miss']     = $miss;
+		$r['matched']  = count($hit);
+		$r['verdict']  = monstrocity_link_verdict($r['policy_ids'], count($hit), $r['linked']);
 		$rows[] = $r;
 	}
 }
+$total_missing = 0;
+foreach ($rows as $r) $total_missing += count($r['miss']);
 $counts = array();
 foreach ($rows as $r) $counts[$r['verdict']] = ($counts[$r['verdict']] ?? 0) + 1;
 $ready = (int)($counts['ready'] ?? 0);
@@ -112,6 +146,7 @@ admin_chrome('themelink');
 .mtl-v.ready { color: #00c8a0; } .mtl-v.partial, .mtl-v.ambiguous { color: #ffc800; }
 .mtl-v.none { color: #e05555; } .mtl-v.linked, .mtl-v.empty { color: rgba(255,255,255,.4); }
 .mtl-why { color: rgba(255,255,255,.5); font-size: .76rem; }
+.mtl-pol { font: .68rem/1.5 monospace; color: #ffc800; word-break: break-all; }
 .mtl-sql { background: #07141d; border: 1px solid rgba(255,255,255,.12); padding: 12px;
            overflow-x: auto; font: .74rem/1.5 monospace; white-space: pre; color: #9fd8ff; }
 .mtl-go { background: #00c8a0; color: #07111d; border: 0; padding: 12px 20px;
@@ -130,6 +165,15 @@ admin_chrome('themelink');
 	<?php foreach (array('err','warn','ok') as $k): foreach ($msgs[$k] as $m): ?>
 		<div class="mtl-msg <?php echo $k; ?>"><?php echo htmlspecialchars($m); ?></div>
 	<?php endforeach; endforeach; ?>
+
+	<?php if ($total_missing): ?>
+		<div class="mtl-msg warn">
+			<?php echo (int)$total_missing; ?> policy id<?php echo $total_missing === 1 ? '' : 's'; ?>
+			across these themes belong to no collection. Those themes cannot drive a
+			Gauntlets backdrop until the collection exists -- add it under
+			Catalogue &gt; Collections with that exact policy, then come back here.
+		</div>
+	<?php endif; ?>
 
 	<div class="mtl-sum">
 		<?php foreach (array('ready','partial','ambiguous','none','linked','empty') as $v):
@@ -156,9 +200,18 @@ admin_chrome('themelink');
 				    <span class="mtl-why"><?php echo htmlspecialchars($r['slug']); ?></span></td>
 				<td><?php echo $n; ?></td>
 				<td><?php echo (int)$r['matched']; ?><?php
-				    if ((int)$r['linked']) echo ' (' . (int)$r['linked'] . ' linked)'; ?></td>
+				    if ((int)$r['linked']) echo ' (' . (int)$r['linked'] . ' linked)'; ?>
+				    <?php foreach ($r['hit'] as $c): ?>
+				        <div class="mtl-why">&#10003; <?php echo htmlspecialchars($c['name']); ?></div>
+				    <?php endforeach; ?></td>
 				<td><span class="mtl-v <?php echo $r['verdict']; ?>"><?php echo $r['verdict']; ?></span><br>
-				    <span class="mtl-why"><?php echo htmlspecialchars(monstrocity_link_reason($r['verdict'])); ?></span></td>
+				    <span class="mtl-why"><?php echo htmlspecialchars(monstrocity_link_reason($r['verdict'])); ?></span>
+				    <?php if ($r['miss']): ?>
+				        <div class="mtl-why" style="margin-top:4px">No collection holds:</div>
+				        <?php foreach ($r['miss'] as $m): ?>
+				            <div class="mtl-pol"><?php echo htmlspecialchars($m); ?></div>
+				        <?php endforeach; ?>
+				    <?php endif; ?></td>
 			</tr>
 		<?php endforeach; ?>
 		</tbody>
