@@ -21,7 +21,7 @@ define('GF_UI_DONE', 1);
  */
 .gf-has-bg::before { content: ''; position: absolute; inset: -14px -14px 0;
                      background-image: var(--gf-bg); background-size: cover;
-                     background-position: center; opacity: .22; border-radius: 10px;
+                     background-position: center; opacity: .22;
                      pointer-events: none; z-index: 0;
                      mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
                      -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%); }
@@ -35,7 +35,7 @@ define('GF_UI_DONE', 1);
                    margin: 0 0 12px; font-size: .68rem; letter-spacing: .1em;
                    text-transform: uppercase; color: rgba(255,255,255,.45); }
 .gf-match i      { font-style: normal; font-weight: 700; letter-spacing: .04em;
-                   padding: 2px 7px; border: 1px solid currentColor; border-radius: 4px; }
+                   padding: 2px 7px; border: 1px solid currentColor; }
 .gf-match.is-good i { color: #00c8a0; }
 .gf-match.is-even i { color: rgba(255,255,255,.55); }
 .gf-match.is-bad  i { color: #ff5c5c; }
@@ -49,8 +49,7 @@ define('GF_UI_DONE', 1);
    to fill half the grid column -- on a 900px page two 420px portraits and
    nothing else, with the bars, the log and the choices all below the
    fold. A fight you have to scroll to play is not a fight you read. */
-.gf-portrait     { position: relative; border: 2px solid rgba(255,255,255,.1);
-                   border-radius: 10px; overflow: hidden; background: #002f44;
+.gf-portrait     { position: relative; border: 2px solid rgba(255,255,255,.1); overflow: hidden; background: #002f44;
                    margin: 0 auto; }
 .gf-you .gf-portrait { border-color: #00c8a0; }
 .gf-foe .gf-portrait { border-color: rgba(224,85,85,.55); }
@@ -76,7 +75,7 @@ define('GF_UI_DONE', 1);
 
 /* ── health, with the damage trail ─────────────────────────────────── */
 .gf-bar          { position: relative; height: 20px; background: #0b1b24;
-                   border: 1px solid rgba(0,0,0,.6); border-radius: 4px; overflow: hidden;
+                   border: 1px solid rgba(0,0,0,.6); overflow: hidden;
                    background-image: repeating-linear-gradient(90deg,
                        rgba(0,0,0,.30) 0 1px, rgba(0,0,0,0) 1px 10%);
                    box-shadow: inset 0 1px 3px rgba(0,0,0,.55); }
@@ -86,8 +85,7 @@ define('GF_UI_DONE', 1);
                    background: linear-gradient(180deg,#ff8a8a 0%,#c0392b 100%);
                    transition: width .55s cubic-bezier(.33,1,.68,1) .18s; }
 .gf-fill         { position: absolute; inset: 0 auto 0 0; transition: width .3s ease;
-                   background-image: linear-gradient(180deg, rgba(255,255,255,.30) 0,
-                       rgba(255,255,255,.06) 48%, rgba(0,0,0,.18) 100%); }
+                   background-image: var(--gf-fill); }
 .gf-bar.ok   .gf-fill { background-color: #00c8a0; }
 .gf-bar.warn .gf-fill { background-color: #ffc800; }
 .gf-bar.crit .gf-fill { background-color: #ff5c5c; }
@@ -111,7 +109,7 @@ define('GF_UI_DONE', 1);
 
 /* ── the exchange log ──────────────────────────────────────────────── */
 .gf-log          { list-style: none; margin: 0; padding: 10px 12px; background: #002f44;
-                   border: 1px solid rgba(255,255,255,.07); border-radius: 8px;
+                   border: 1px solid rgba(255,255,255,.07);
                    max-height: 118px; overflow-y: auto; }
 .gf-li           { font-size: .78rem; color: rgba(255,255,255,.75); margin: 3px 0; }
 .gf-who          { display: inline-block; min-width: 42px; font-weight: 700;
@@ -131,8 +129,8 @@ define('GF_UI_DONE', 1);
    a set of choices. */
 .gf-group-row    { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .gf-btn          { display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
-                   background: #123349; color: #e8eaed; border: 1px solid rgba(0,200,160,.28);
-                   border-radius: 8px; padding: 10px 13px; font: 600 .82rem/1 inherit;
+                   background: var(--gf-ghost), #123349; color: #e8eaed;
+                   border: 1px solid rgba(0,200,160,.28); padding: 10px 13px; font: 600 .82rem/1 inherit;
                    /* a tap on the label must fire the button, not start a
                       selection -- the missions button taught us that */
                    user-select: none; -webkit-user-select: none; }
@@ -142,24 +140,26 @@ define('GF_UI_DONE', 1);
    while keeping .gf-go's dark ink: black on navy, which reads as
    disabled. REPORTED exactly that way. */
 @media (hover: hover) {
-  .gf-btn:hover:not(:disabled) { background: #1a4663; border-color: #00c8a0; }
+  .gf-btn:hover:not(:disabled) { background: var(--gf-ghost), #1a4663; border-color: #00c8a0; }
 }
-.gf-btn:focus-visible { background: #1a4663; border-color: #00c8a0; }
+.gf-btn:focus-visible { background: var(--gf-ghost), #1a4663; border-color: #00c8a0; }
+.gf-btn:active:not(:disabled) { background: var(--gf-press), #1a4663; }
 .gf-btn:disabled { opacity: .35; cursor: default; }
 .gf-btn img      { width: 18px; height: 18px; object-fit: contain; }
 .gf-left         { font-style: normal; font-size: .68rem; color: #00c8a0;
-                   background: rgba(0,0,0,.35); border-radius: 4px; padding: 2px 5px; }
+                   background: rgba(0,0,0,.35); padding: 2px 5px; }
 .gf-btn.is-spent .gf-left { color: rgba(255,255,255,.4); }
 .gf-heal         { border-color: rgba(92,232,176,.4); }
 .gf-stake        { border-color: rgba(255,200,0,.4); color: #ffe08a; }
 @media (hover: hover) {
   .gf-stake:hover:not(:disabled) { border-color: #ffc800; background: #2a2a18; }
 }
-.gf-go           { background: #00c8a0; color: #07111d; border-color: #2ee3bf; }
+.gf-go           { background: var(--gf-fill), #00c8a0; color: #07111d; border-color: #2ee3bf; }
+.gf-go:active    { background: var(--gf-press), #00c8a0; }
 /* Matched to the generic hover's specificity so the primary button
    cannot be repainted by it. */
 @media (hover: hover) {
-  .gf-go:hover:not(:disabled) { background: #00e6b8; color: #07111d; }
+  .gf-go:hover:not(:disabled) { background: var(--gf-fill), #00e6b8; color: #07111d; }
 }
 /* The result is ONE control, so it is not laid out like the stack of
    grouped choices -- as a column child it stretched full width with its
@@ -170,11 +170,13 @@ define('GF_UI_DONE', 1);
                    font-size: .74rem; }
 .gf-loot         { font-style: normal; font-size: .6rem; text-transform: uppercase;
                    letter-spacing: .08em; color: #ffc800; background: rgba(255,200,0,.12);
-                   border: 1px solid rgba(255,200,0,.35); border-radius: 3px; padding: 1px 4px; }
+                   border: 1px solid rgba(255,200,0,.35); padding: 1px 4px; }
 .gf-log          { margin-top: 14px; }
-.gf-hint         { font-size: .72rem; color: rgba(255,255,255,.4); margin: 10px 0 0; }
-.gf-result       { font-size: 1.1rem; font-weight: 700; text-align: center; padding: 12px;
-                   border-radius: 8px; margin-bottom: 12px; }
+/* The Fast Forward button sits directly under this line, and at zero
+   bottom margin the two read as one block -- reported as the text being
+   too tight against the button. */
+.gf-hint         { font-size: .72rem; color: rgba(255,255,255,.4); margin: 10px 0 16px; }
+.gf-result       { font-size: 1.1rem; font-weight: 700; text-align: center; padding: 12px; margin-bottom: 12px; }
 .gf-result.win   { background: rgba(0,200,160,.14); border: 1px solid #00c8a0; color: #00c8a0; }
 .gf-result.loss  { background: rgba(224,85,85,.14); border: 1px solid #e05555; color: #e05555; }
 /* The replacement cards in the Fast Forward overlay. The bar is the
@@ -233,8 +235,7 @@ define('GF_UI_DONE', 1);
                    color: rgba(255,255,255,.45); margin: 10px 0 8px; }
 .gchest-items    { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .gchest-item     { display: inline-flex; align-items: center; gap: 7px;
-                   background: rgba(255,200,0,.1); border: 1px solid rgba(255,200,0,.35);
-                   border-radius: 6px; padding: 6px 10px; font-size: .8rem; color: #ffe08a;
+                   background: rgba(255,200,0,.1); border: 1px solid rgba(255,200,0,.35); padding: 6px 10px; font-size: .8rem; color: #ffe08a;
                    animation: gchestPop .45s cubic-bezier(.2,.8,.3,1) backwards; }
 .gchest-item img { width: 20px; height: 20px; object-fit: contain; }
 .gchest-item:nth-child(2) { animation-delay: .09s; }
@@ -249,7 +250,7 @@ define('GF_UI_DONE', 1);
   .gchest-item { animation: none; }
 }
 .gf-err          { background: rgba(224,85,85,.12); border: 1px solid rgba(224,85,85,.5);
-                   color: #ffb3b3; padding: 10px 12px; border-radius: 6px; font-size: .82rem; }
+                   color: #ffb3b3; padding: 10px 12px; font-size: .82rem; }
 
 /* ── impact ────────────────────────────────────────────────────────── */
 /* Percentage-based, so they scale to any portrait size. Lifted from

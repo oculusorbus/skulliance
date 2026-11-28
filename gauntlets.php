@@ -33,7 +33,7 @@ include 'header.php';
 }
 #gauntlet-loader.fade-out { opacity: 0; pointer-events: none; }
 @keyframes lb { to { width:90%; } }
-.loader-bar-wrap { width:200px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden; }
+.loader-bar-wrap { width:200px;height:3px;background:rgba(255,255,255,.08);overflow:hidden; }
 .loader-bar      { height:100%;background:#00c8a0;width:0%;animation:lb 9s ease-out forwards; }
 .loader-text     { font-size:.78rem;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase; }
 </style>
@@ -50,18 +50,33 @@ require __DIR__ . '/gauntlets-state.php';
 ?>
 <style>
 /* ── Gauntlet page ── */
-.gauntlet-wrap        { max-width: 900px; margin: 0 auto; padding: 20px 16px 60px; }
+.gauntlet-wrap        { max-width: 900px; margin: 0 auto; padding: 20px 16px 60px;
+  /*
+   * THE PLATFORM'S OWN BUTTON GRADIENTS. Gauntlets was flat fills on
+   * square-cornered boxes while every other screen carries the lit
+   * solid from polish.css. The literal is repeated as a var() fallback
+   * on purpose: polish.css can be switched off with ?polish=0, and a
+   * bare var() that resolves to nothing makes the WHOLE background
+   * declaration invalid, which would leave the buttons transparent
+   * rather than merely unpolished.
+   */
+  --gf-fill:  var(--msp-fill, linear-gradient(180deg, rgba(255,255,255,.26) 0,
+               rgba(255,255,255,.05) 46%, rgba(0,0,0,.16) 100%));
+  --gf-press: var(--msp-fill-in, linear-gradient(0deg, rgba(255,255,255,.2) 0,
+               rgba(255,255,255,.03) 46%, rgba(0,0,0,.2) 100%));
+  --gf-ghost: var(--msp-ghost, linear-gradient(180deg, rgba(255,255,255,.07) 0,
+               rgba(255,255,255,0) 60%)); }
 .gauntlet-title       { font-size: 2rem; font-weight: 700; color: #00c8a0; letter-spacing: .05em; margin-bottom: 4px; text-transform: uppercase; }
 .gauntlet-subtitle    { color: rgba(255,255,255,.45); font-size: .85rem; margin-bottom: 24px; }
 
 /* Run progress bar */
 .run-progress         { display: flex; gap: 10px; margin-bottom: 24px; }
-.run-pip              { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,.1); }
+.run-pip              { flex: 1; height: 6px; background: rgba(255,255,255,.1); }
 .run-pip.win          { background: #00c8a0; }
 .run-pip.loss         { background: #e05555; }
 
 /* Flash messages */
-.flash                { padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: .9rem; }
+.flash                { padding: 12px 16px; margin-bottom: 16px; font-size: .9rem; }
 .flash.win            { background: rgba(0,200,160,.15); border: 1px solid #00c8a0; color: #00c8a0; }
 .flash.loss           { background: rgba(224,85,85,.15);  border: 1px solid #e05555; color: #e05555; }
 .flash.error          { background: rgba(224,85,85,.1);   border: 1px solid rgba(224,85,85,.4); color: #e05555; }
@@ -71,7 +86,7 @@ require __DIR__ . '/gauntlets-state.php';
 .hand-grid            { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
 @media (max-width: 600px) { .hand-grid { grid-template-columns: repeat(2, 1fr); } }
 
-.nft-card             { background: #002f44; border: 2px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; cursor: pointer; transition: border-color .2s, transform .15s; position: relative; }
+.nft-card             { background: #002f44; border: 2px solid rgba(255,255,255,.08); overflow: hidden; cursor: pointer; transition: border-color .2s, transform .15s; position: relative; }
 .nft-card:hover:not(.played) { border-color: #00c8a0; transform: translateY(-3px); }
 .nft-card.played      { opacity: .35; cursor: default; pointer-events: none; }
 .nft-card.selected    { border-color: #00c8a0; box-shadow: 0 0 12px rgba(0,200,160,.35); }
@@ -80,7 +95,7 @@ require __DIR__ . '/gauntlets-state.php';
 .nft-card-info        { padding: 8px 10px; }
 .nft-card-name        { font-size: .78rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .nft-card-project     { font-size: .7rem; color: rgba(255,255,255,.4); margin-top: 2px; }
-.played-label         { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,.7); color: rgba(255,255,255,.5); font-size: .65rem; padding: 2px 6px; border-radius: 3px; }
+.played-label         { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,.7); color: rgba(255,255,255,.5); font-size: .65rem; padding: 2px 6px; }
 
 /* Encounter arena */
 .arena                { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start; margin-bottom: 24px; }
@@ -93,7 +108,7 @@ require __DIR__ . '/gauntlets-state.php';
 	.arena-card-name  { font-size: .72rem; padding: 0 6px 3px; }
 	.arena-card-project, .arena-card-user { font-size: .65rem; padding: 0 6px 6px; }
 }
-.arena-card           { background: #002f44; border: 2px solid rgba(255,255,255,.1); border-radius: 10px; overflow: hidden; }
+.arena-card           { background: #002f44; border: 2px solid rgba(255,255,255,.1); overflow: hidden; }
 .arena-card.player    { border-color: #00c8a0; }
 .arena-card img       { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
 .arena-card-label     { font-size: .65rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.4); padding: 8px 10px 2px; text-align: center; }
@@ -109,32 +124,34 @@ require __DIR__ . '/gauntlets-state.php';
 /* Resource panel */
 
 /* Action buttons */
-.btn-fight            { width: 100%; padding: 14px; font-size: 1rem; font-weight: 700; background: #00c8a0; color: #000; border: none; border-radius: 8px; cursor: pointer; letter-spacing: .05em; transition: opacity .15s; margin-bottom: 16px; }
+.btn-fight            { width: 100%; padding: 14px; font-size: 1rem; font-weight: 700; background: var(--gf-fill), #00c8a0; color: #000; border: none; cursor: pointer; letter-spacing: .05em; transition: opacity .15s; margin-bottom: 16px; }
 .btn-fight:hover      { opacity: .85; }
 /* Auto width and centred, like every other control in the fight. It
    was full-bleed, which made a run-level action look like a page
    section rather than a button. */
-.btn-ff               { display: block; margin: 0 auto 10px; width: auto; min-width: 260px; max-width: 100%; padding: 10px; font-size: .82rem; background: rgba(255,255,255,.07); color: rgba(255,255,255,.65); border: 1px solid rgba(255,255,255,.15); border-radius: 8px; cursor: pointer; transition: all .15s; }
-.btn-ff:hover         { background: rgba(255,255,255,.12); }
+.btn-ff               { display: block; margin: 0 auto 10px; width: auto; min-width: 260px; max-width: 100%; padding: 10px; font-size: .82rem; background: var(--gf-ghost), rgba(255,255,255,.07); color: rgba(255,255,255,.65); border: 1px solid rgba(255,255,255,.15); cursor: pointer; transition: all .15s; }
+.btn-ff:hover         { background: var(--gf-ghost), rgba(255,255,255,.12); }
+.btn-ff:active        { background: var(--gf-press), rgba(255,255,255,.12); }
 .btn-ff:disabled      { opacity: .3; cursor: default; }
-.btn-start            { padding: 14px 40px; font-size: 1rem; font-weight: 700; background: #00c8a0; color: #000; border: none; border-radius: 8px; cursor: pointer; letter-spacing: .05em; transition: opacity .15s; }
+.btn-fight:active, .btn-start:active { background: var(--gf-press), #00c8a0; }
+.btn-start            { padding: 14px 40px; font-size: 1rem; font-weight: 700; background: var(--gf-fill), #00c8a0; color: #000; border: none; cursor: pointer; letter-spacing: .05em; transition: opacity .15s; }
 .btn-start:hover      { opacity: .85; }
 
 /* FF card picker overlay */
-.ff-overlay           { display: none; background: rgba(0,0,0,.85); border: 1px solid rgba(255,255,255,.12); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.ff-overlay           { display: none; background: rgba(0,0,0,.85); border: 1px solid rgba(255,255,255,.12); padding: 16px; margin-bottom: 16px; }
 .ff-overlay.open      { display: block; }
 .ff-overlay-title     { font-size: .8rem; color: rgba(255,255,255,.5); margin-bottom: 12px; }
 .ff-hand-grid         { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 
 /* Run results */
-.run-results          { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 20px; margin-bottom: 24px; text-align: center; }
+.run-results          { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); padding: 20px; margin-bottom: 24px; text-align: center; }
 .run-result-icon      { font-size: 3rem; margin-bottom: 8px; }
 .run-result-title     { font-size: 1.4rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
 .run-result-sub       { font-size: .85rem; color: rgba(255,255,255,.45); }
 
 /* Encounter history */
 .history-list         { display: flex; flex-direction: column; gap: 8px; }
-.history-row          { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 8px; padding: 10px 14px; }
+.history-row          { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); padding: 10px 14px; }
 .history-badge        { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; flex-shrink: 0; }
 .history-badge.win    { background: rgba(0,200,160,.2); color: #00c8a0; }
 .history-badge.loss   { background: rgba(224,85,85,.2); color: #e05555; }
@@ -153,7 +170,7 @@ require __DIR__ . '/gauntlets-state.php';
 .section-heading      { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.3); margin: 24px 0 10px; }
 
 /* Win reward banner (pick_card state) */
-.win-reward-banner    { display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(0,200,160,.1); border: 1px solid rgba(0,200,160,.35); border-radius: 8px; padding: 14px 20px; margin-bottom: 20px; }
+.win-reward-banner    { display: flex; align-items: center; justify-content: center; gap: 10px; background: rgba(0,200,160,.1); border: 1px solid rgba(0,200,160,.35); padding: 14px 20px; margin-bottom: 20px; }
 .win-reward-amount    { font-size: 1.5rem; font-weight: 700; color: #00c8a0; line-height: 1; }
 .win-reward-banner img { width: 30px; height: 30px; object-fit: contain; }
 .win-reward-currency  { font-size: .8rem; color: rgba(255,255,255,.4); }

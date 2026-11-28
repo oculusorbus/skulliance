@@ -1092,6 +1092,49 @@ ok(strpos($REN, "\$enc['opponent_username']") !== false,
 ok(preg_match('~\.gf-owner span\s*\{[^}]*text-overflow:\s*ellipsis~s', $UI) === 1,
    'the owner name can wrap, which pushes the arena down a phone screen');
 
+echo "\nsharp edges and the platform's own button fill\n";
+/*
+ * REPORTED: "everything is rounded in Gauntlets ... the buttons also
+ * don't have gradients either". Every other screen is square-cornered
+ * and carries the lit solid from polish.css.
+ */
+$SHELL2 = (string) file_get_contents(__DIR__ . '/gauntlets.php');
+foreach (array('gauntlets.php' => $SHELL2, 'gauntlets-fight-ui.php' => $UI) as $f => $css) {
+	/* Matched then filtered, NOT a negative lookahead: \s* backtracks
+	   and hands the space back, so (?!50%) passes on " 50%". */
+	$bare = 0;
+	if (preg_match_all('~border-radius:\s*([^;}]+)~', $css, $rm))
+		foreach ($rm[1] as $v) if (trim($v) !== '50%') $bare++;
+	/* 50% is kept: an avatar is a circle on every screen here, see
+	   dist/flexbox.css. Anything else is a rounded rectangle. */
+	ok($bare === 0, "$f still rounds $bare rectangle(s)");
+}
+/* The fill comes from polish.css -- but polish.css can be turned off
+   with ?polish=0, and a var() that resolves to nothing invalidates the
+   WHOLE background, which would leave the buttons transparent rather
+   than merely unpolished. So each token carries the literal. */
+foreach (array('--gf-fill:', '--gf-press:', '--gf-ghost:') as $tok) {
+	$i = strpos($SHELL2, $tok);
+	ok($i !== false, "$tok is not defined, so the buttons have no fill");
+	if ($i === false) continue;
+	/* Scoped to this declaration only -- a 220 char window ran straight
+	   into the NEXT token and found its fallback instead. */
+	$decl = substr($SHELL2, $i, (int)strpos($SHELL2, ';', $i) - $i);
+	ok(strpos($decl, 'linear-gradient') !== false,
+		"$tok has no literal fallback, so ?polish=0 makes the buttons transparent");
+}
+/* BOTH of them: .btn-fight and .btn-start. Testing for one match
+   passes with the other still flat. */
+ok(substr_count($SHELL2, 'background: var(--gf-fill), #00c8a0;') === 2,
+   'one of the page\'s two solid buttons is a flat fill again');
+ok(strpos($UI, 'background: var(--gf-fill), #00c8a0;') !== false,
+   'Continue is a flat fill again');
+ok(strpos($UI, 'background: var(--gf-ghost), #123349;') !== false,
+   'the action buttons lost the quieter ramp an outline control gets');
+/* The Fast Forward button sits right under the hint. */
+ok(preg_match('~\.gf-hint\s*\{[^}]*margin:\s*10px 0 1[0-9]px~', $UI) === 1,
+   'the hint has no space under it, so it reads as one block with the Fast Forward button');
+
 echo "\nthe matchup is on screen, and is worth what it says\n";
 /*
  * REPORTED: "all the health is the same at 120, so I don't know if the
