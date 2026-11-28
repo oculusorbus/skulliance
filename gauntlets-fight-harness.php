@@ -665,6 +665,21 @@ echo "\nspoils are real inventory, not a separate salvage pile\n";
  */
 ok(strpos($LIB, 'if (!gaunt_grant_drop($conn, $uid, $drop)) continue;') !== false,
    'a won fight still files its spoils into the run-scoped salvage pile');
+/*
+ * AND SILENTLY. The spoils all land at the end of a round, and now
+ * that you take everything the opponent used that was up to three
+ * equip clacks stacked on the knockout. REPORTED: "don't play the
+ * equip sounds when rewarding items at the end of a round."
+ */
+ok(strpos($LIB, "\$entry = array('who' => 'you', 'kind' => 'loot',\n\t\t\t\t'text' => 'Salvaged their ' . \$word);") !== false,
+   'the spoils entry still carries a sound, so a round ends in a pile of equip clacks');
+/* The knockout keeps its cue -- that is the one sound the moment needs.
+   Driven, not matched: play a fight out and read the entry. */
+$koFight = play(GAUNT_HP_BASE, 50, kit(0), 4, function () { return weapon(9); });
+$koSfx = '';
+foreach ($koFight['log'] as $e) if (($e['kind'] ?? '') === 'down') $koSfx = $e['sfx'] ?? '';
+ok($koSfx === 'ko',
+   'the knockout lost its sound along with the spoils (got "' . $koSfx . '")');
 ok(strpos($LIB, "\$gs['loot'][] = array(") === false,
    'the run state is still being appended to, so spoils die with the run');
 ok(strpos($LIB, 'updateAmount($conn, $uid, $cid, 1);') !== false,
@@ -726,7 +741,8 @@ ok(strpos($LIB, '$fight[' . "'drop'" . '] = $word;') !== false,
 /* Saved immediately: the drop happens AFTER the turn's normal save, so
    without a second write it is lost on the next read. */
 $dropblk = substr($LIB, strpos($LIB, 'if (!empty($fight[' . "'over'" . ']) && ($fight['));
-$dropblk = substr($dropblk, 0, 1900);
+/* Wide enough for the whole win block; it has grown twice. */
+$dropblk = substr($dropblk, 0, 2600);
 ok(strpos($dropblk, 'gaunt_fight_save($conn, $e, $fight);') !== false,
    'the drop is not persisted after it is added, so it is lost on the next read');
 ok(strpos($PG, "'drop'       => " . '$gf_drop,') !== false,

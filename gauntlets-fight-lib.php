@@ -583,7 +583,11 @@ function gaunt_fight_turn($conn, $user_id, $enc_id, $kind, $item_id = 0) {
 			$got++;
 			$word = gaunt_drop_label($drop);
 			$dico = gaunt_drop_icon($drop);
-			$entry = array('who' => 'you', 'kind' => 'loot', 'sfx' => 'equip',
+			/* NO SOUND. Spoils are handed over at the END of a round,
+			   all at once -- now that you take everything they used,
+			   that was up to three equip clacks stacked on top of the
+			   knockout. The line in the log is the notification. */
+			$entry = array('who' => 'you', 'kind' => 'loot',
 				'text' => 'Salvaged their ' . $word);
 			$timeline[] = $entry;
 			/*
