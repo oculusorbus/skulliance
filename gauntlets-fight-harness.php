@@ -938,6 +938,39 @@ ok(strpos($BODY, 'gauntlets-fight-ui.php') === false,
 ok(strpos(preg_replace('~/\*.*?\*/~s', '', $BODY), '<audio') === false,
    'there is an <audio> element inside the part of the page that gets replaced');
 
+echo "\nthe matchup is on screen, and is worth what it says\n";
+/*
+ * REPORTED: "all the health is the same at 120, so I don't know if the
+ * original spread based on the projects is applying." It was applying
+ * -- as the OPPONENT's starting health, 116/120/124 against a flat
+ * 120 -- but nothing named it. Measured over 4000 mirrored fights per
+ * matchup, that health edge is worth 70.1% / 49.6% / 30.2%, which is
+ * the 70/50/30 the run history has always printed. The spread is
+ * correct; it was invisible.
+ */
+ok(strpos($REN, '$gf_wc  = (int)($fight[\'wc\'] ?? 50);') !== false,
+   'the fight screen does not read the matchup, so the spread stays invisible');
+ok(strpos($REN, 'class="gf-match is-') !== false
+   && preg_match('~\.gf-match\s*\{[^}]*justify-content:\s*center~s', $UI) === 1,
+   'the matchup is read but never drawn');
+ok(preg_match('~\.gf-match\.is-good i\s*\{~', $UI) === 1
+   && preg_match('~\.gf-match\.is-bad\s+i\s*\{~', $UI) === 1,
+   'a strong and a weak matchup look the same, so the chip says nothing at a glance');
+/* Under the arena, not inside the VS column: that column is `auto` in
+   a 1fr/auto/1fr grid, so width in there comes out of the portraits. */
+ok(strpos($REN, '<div class="gf-match') > strpos($REN, '</div>
+  </div>'),
+   'the matchup chip sits inside the arena grid, where it squeezes the portraits');
+
+/* THE NUMBERS THEMSELVES. These are tuned, not arbitrary: widening the
+   spread to 0.88/1.12 measured 96.7% / 3.6%, which is a foregone
+   conclusion rather than a matchup. Pinned so a later "make it matter
+   more" cannot quietly pass. */
+ok(abs(GAUNT_FOE_HP_GOOD - 0.97) < 0.0001 && abs(GAUNT_FOE_HP_BAD - 1.03) < 0.0001,
+   'the matchup multipliers moved; at 0.94 a strong matchup wins 82% and at 0.88 it wins 97%');
+ok(gaunt_foe_hp(70) === 116 && gaunt_foe_hp(50) === 120 && gaunt_foe_hp(30) === 124,
+   'the opponent health spread is no longer 116/120/124');
+
 echo "\nthe opened chest is lit, not a cut-out\n";
 /*
  * REPORTED: "the chest open doesn't look good because it doesn't have

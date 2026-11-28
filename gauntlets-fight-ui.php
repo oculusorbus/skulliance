@@ -28,6 +28,17 @@ define('GF_UI_DONE', 1);
 .gf-has-bg > *   { position: relative; z-index: 1; }
 .gf-arena        { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px;
                    align-items: start; margin-bottom: 14px; }
+/* Its own centred strip under the arena, NOT in the VS column: that
+   column is `auto` in a 1fr/auto/1fr grid, so anything wide in there
+   comes straight out of the two portraits on a phone. */
+.gf-match        { display: flex; align-items: center; justify-content: center; gap: 8px;
+                   margin: 0 0 12px; font-size: .68rem; letter-spacing: .1em;
+                   text-transform: uppercase; color: rgba(255,255,255,.45); }
+.gf-match i      { font-style: normal; font-weight: 700; letter-spacing: .04em;
+                   padding: 2px 7px; border: 1px solid currentColor; border-radius: 4px; }
+.gf-match.is-good i { color: #00c8a0; }
+.gf-match.is-even i { color: rgba(255,255,255,.55); }
+.gf-match.is-bad  i { color: #ff5c5c; }
 .gf-vs           { align-self: center; font-size: 1.1rem; font-weight: 800;
                    color: rgba(255,255,255,.28); letter-spacing: .08em; }
 /* The cap lives on the whole side, not just the portrait, so the bar and

@@ -165,6 +165,26 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '', 
     </div>
   </div>
 
+  <?php
+  /*
+   * THE MATCHUP, NAMED. It was already in the fight -- the project
+   * weakness chain sets the opponent's starting health, 116 / 120 /
+   * 124 against your flat 120 -- but nothing on screen said so, and
+   * every card in the deck shows the same 120, so the spread looked
+   * like it had been dropped. REPORTED as exactly that. Measured, that
+   * health edge is worth 70% / 50% / 30% over a fight, which is what
+   * the run history has always printed afterwards; this is the same
+   * number, before the fight instead of after.
+   */
+  $gf_wc  = (int)($fight['wc'] ?? 50);
+  $gf_mk  = $gf_wc >= 70 ? array('good', 'Strong') :
+           ($gf_wc <= 30 ? array('bad',  'Weak')   : array('even', 'Even'));
+  ?>
+  <div class="gf-match is-<?php echo $gf_mk[0]; ?>"
+       title="Your project against theirs. It sets how much health the opponent starts with.">
+    <span class="gf-match-k"><?php echo $gf_mk[1]; ?> matchup</span>
+    <i><?php echo $gf_wc; ?>%</i>
+  </div>
 
   <?php if ($over): ?>
     <div class="gf-result <?php echo $won ? 'win' : 'loss'; ?>">
