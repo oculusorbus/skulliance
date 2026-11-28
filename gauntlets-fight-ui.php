@@ -219,14 +219,23 @@ define('GF_UI_DONE', 1);
  */
 .gchest-art      { position: relative; width: 150px; max-width: 46vw;
                    aspect-ratio: 480 / 497; margin: 0 auto; }
+/*
+ * THE MODAL'S OWN PROPORTIONS. missions-claim-modal.php puts a 320x118
+ * pool under a 210x217 chest -- 152% of its width and 54% of its
+ * height -- and those numbers were tuned by eye. I first wrote this at
+ * 108% x 24%, which is barely wider than the chest itself, so the
+ * gradient had nowhere to fade and its own box edge was visible as a
+ * hard line to the left, right and below. Reported exactly that way.
+ * The last stop reaches full transparency well inside the box now.
+ */
 .gchest-art::before { content: ""; position: absolute; z-index: 0;
-                   left: 50%; bottom: 2%; width: 108%; height: 24%;
+                   left: 50%; bottom: 2%; width: 152%; height: 54%;
                    transform: translateX(-50%) rotate(-1.8deg);
                    pointer-events: none;
                    background: radial-gradient(ellipse at 50% 50%,
-                       rgba(0,200,160,.46) 0%, rgba(0,200,160,.26) 32%,
-                       rgba(0,200,160,.12) 52%, rgba(0,200,160,.04) 72%,
-                       rgba(0,200,160,0) 100%); }
+                       rgba(0,200,160,.58) 0%, rgba(0,200,160,.34) 24%,
+                       rgba(0,200,160,.16) 42%, rgba(0,200,160,.05) 62%,
+                       rgba(0,200,160,0) 80%); }
 .gchest-l        { position: absolute; inset: 0; width: 100%; height: 100%;
                    object-fit: contain; pointer-events: none; z-index: 1;
                    filter: drop-shadow(0 6px 18px rgba(0,0,0,.55)); }

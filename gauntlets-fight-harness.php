@@ -1252,8 +1252,25 @@ ok(strpos($UI, 'aspect-ratio: 480 / 497') !== false,
 /* The pool must be its OWN sized box: a full-bleed layer gets clipped
    to the block and reads as a hard edge. missions-claim-modal.php has
    the same note for the same reason. */
-ok(preg_match('~\.gchest-art::before\s*\{[^}]*width:\s*\d+%~s', $UI) === 1,
-   'the floor pool is not sized to the chest, so it clips at a hard edge');
+/*
+ * AND IT NEEDS ROOM TO FADE. missions-claim-modal.php puts a 320x118
+ * pool under a 210x217 chest -- 152% of its width, 54% of its height,
+ * and those numbers were tuned by eye. I first shipped 108% x 24%,
+ * barely wider than the chest, so the gradient had nowhere to fall off
+ * and its own box edge read as a hard line left, right and below.
+ */
+$pool = preg_match('~\.gchest-art::before\s*\{([^}]*)\}~s', $UI, $pm) ? $pm[1] : '';
+ok($pool !== '', 'the floor pool is gone');
+preg_match('~width:\s*(\d+)%~', $pool, $pw);
+preg_match('~height:\s*(\d+)%~', $pool, $ph);
+ok(!empty($pw[1]) && (int)$pw[1] >= 140,
+   'the floor pool is only ' . (empty($pw[1]) ? '?' : $pw[1]) . '% as wide as the chest; it needs room to fade');
+ok(!empty($ph[1]) && (int)$ph[1] >= 45,
+   'the floor pool is only ' . (empty($ph[1]) ? '?' : $ph[1]) . '% as tall as the chest; it needs room to fade');
+/* The last stop must be transparent AND land inside the box, or the
+   gradient is still going when the element ends. */
+ok(preg_match('~rgba\(0,200,160,0\)\s*(\d+)%\)~', $pool, $ps) === 1 && (int)$ps[1] <= 85,
+   'the pool gradient is not fully transparent before its own edge, so the box shows as a line');
 ok(strpos($UI, '.gchest-glow { animation: none; }') !== false,
    'the chest glow keeps pulsing for a player who asked for reduced motion');
 
