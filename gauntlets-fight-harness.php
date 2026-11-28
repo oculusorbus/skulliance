@@ -1271,6 +1271,15 @@ ok(!empty($ph[1]) && (int)$ph[1] >= 45,
    gradient is still going when the element ends. */
 ok(preg_match('~rgba\(0,200,160,0\)\s*(\d+)%\)~', $pool, $ps) === 1 && (int)$ps[1] <= 85,
    'the pool gradient is not fully transparent before its own edge, so the box shows as a line');
+/*
+ * AND BLURRED, WHICH IS WHAT ACTUALLY SETTLES IT. Widening the box and
+ * ending the gradient inside it was still reported as hard on the left
+ * and right, and I could not reproduce that from here at any size --
+ * so the fix stopped being a number to tune. A blurred layer has no
+ * boundary to find whatever the stops say.
+ */
+ok(preg_match('~filter:\s*blur\((\d+)px\)~', $pool, $pb) === 1 && (int)$pb[1] >= 8,
+   'the floor pool is not blurred, so its own box edge can show as a line again');
 ok(strpos($UI, '.gchest-glow { animation: none; }') !== false,
    'the chest glow keeps pulsing for a player who asked for reduced motion');
 

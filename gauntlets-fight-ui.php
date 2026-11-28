@@ -232,6 +232,15 @@ define('GF_UI_DONE', 1);
                    left: 50%; bottom: 2%; width: 152%; height: 54%;
                    transform: translateX(-50%) rotate(-1.8deg);
                    pointer-events: none;
+                   /*
+                    * BLURRED, SO AN EDGE CANNOT EXIST. Widening the box
+                    * and ending the gradient inside it was not enough --
+                    * still reported as hard on the left and right. A
+                    * blurred layer has no boundary to find, whatever the
+                    * stops do, so this stops being a question of tuning
+                    * numbers I cannot reproduce from here.
+                    */
+                   filter: blur(12px);
                    background: radial-gradient(ellipse at 50% 50%,
                        rgba(0,200,160,.58) 0%, rgba(0,200,160,.34) 24%,
                        rgba(0,200,160,.16) 42%, rgba(0,200,160,.05) 62%,
