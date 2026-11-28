@@ -112,8 +112,12 @@ if (!defined('GAUNTLET_BODY_OK')) { http_response_code(404); exit; }
 	?>
 	<div class="run-results">
 		<div class="run-result-icon"><?php echo $swept ? '&#x1F3C6;' : '<img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="35" height="48">'; ?></div>
-		<div class="run-result-title"><?php echo $swept ? 'Gauntlet Swept!' : 'Run Over'; ?></div>
-		<div class="run-result-sub"><?php echo $wins; ?> win<?php echo $wins !== 1 ? 's' : ''; ?> &middot; <?php echo $losses; ?> loss</div>
+		<div class="run-result-title"><?php echo $swept ? 'Gauntlet Swept!' : 'Out of Fighters'; ?></div>
+		<?php /* "Run Over" was accurate when one loss ended it. A run now
+		         ends because the deck is spent, so the screen says which
+		         of the two happened. */ ?>
+		<div class="run-result-sub"><?php echo $wins; ?> win<?php echo $wins !== 1 ? 's' : ''; ?>
+			&middot; <?php echo $losses; ?> loss<?php echo $losses !== 1 ? 'es' : ''; ?></div>
 	</div>
 
 	<?php

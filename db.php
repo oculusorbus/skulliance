@@ -13195,13 +13195,43 @@ function gauntletGetUsedNFTIds($conn, $user_id) {
 }
 
 // True if run has a resolved loss OR 3 resolved wins
+/*
+ * A RUN ENDS ON A SWEEP OR WHEN THERE IS NOBODY LEFT TO SEND.
+ *
+ * It used to end on the FIRST loss, which is what made a bad third
+ * encounter cost the whole ten minutes -- and the rest of the game was
+ * already built for this rule: the deck marks a spent card, labels a
+ * dead one "Down", refuses to Fast Forward into one, and carries each
+ * card's health between rounds. Only this function was never changed.
+ *
+ * A card is spent by FIGHTING, win or lose, so six cards and three
+ * wins means you can afford exactly three losses. Measured: it takes a
+ * player winning 30% of fights from a 2.7% sweep rate to 25.6%, and a
+ * player winning 100% from 100% to 100% -- it gives everything to
+ * whoever is struggling and nothing to whoever is not.
+ *
+ * THE hp TEST HAS A TRAP. hp is seeded to GAUNT_HP_BASE when a run
+ * starts, so hp <= 0 means dead -- but a run that started BEFORE that
+ * column existed has 0 for every card, and reading those as corpses
+ * would end a live run the moment this deploys. So hp is only trusted
+ * when the run has at least one card carrying health.
+ */
 function gauntletIsRunOver($conn, $run_id) {
 	$rid = intval($run_id);
-	$r = $conn->query("SELECT id FROM gauntlets_encounters WHERE run_id=$rid AND outcome='loss' AND resolved_date IS NOT NULL LIMIT 1");
-	if ($r && $r->num_rows) return true;
 	$r = $conn->query("SELECT COUNT(*) AS w FROM gauntlets_encounters WHERE run_id=$rid AND outcome='win' AND resolved_date IS NOT NULL");
 	if ($r && intval($r->fetch_assoc()['w']) >= GAUNTLET_MAX_WINS) return true;
-	return false;
+
+	$r = $conn->query(
+		"SELECT COUNT(*) AS n FROM gauntlets_nfts gn
+		  WHERE gn.run_id = $rid
+		    AND gn.nft_id NOT IN (SELECT e.player_nft_id FROM gauntlets_encounters e
+		                           WHERE e.run_id = $rid)
+		    AND (gn.hp > 0
+		         OR NOT EXISTS (SELECT 1 FROM gauntlets_nfts z
+		                         WHERE z.run_id = $rid AND z.hp > 0))");
+	if ($r && $r->num_rows) return intval($r->fetch_assoc()['n']) < 1;
+	/* No hand rows at all is not a reason to keep a run open forever. */
+	return true;
 }
 
 // Most recent run for user regardless of state (for results display)

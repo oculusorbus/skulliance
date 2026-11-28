@@ -146,7 +146,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				}
 			} elseif ($outcome === 'loss') {
 				$_SESSION['gauntlet_last_result'] = ['outcome' => 'loss'];
-				gauntletFlash('Defeat. Your run ends here.', 'loss');
+				/* A loss costs that fighter, not the run -- unless it was
+				   the last body. Asked AFTER resolving, so it reads the
+				   state the player is about to be shown.
+				   FROM THE ENCOUNTER, not $run: that variable is only
+				   assigned inside the win branch above. */
+				$lr = $conn->query("SELECT run_id FROM gauntlets_encounters WHERE id=$enc_id LIMIT 1");
+				$lrid = ($lr && $lr->num_rows) ? intval($lr->fetch_assoc()['run_id']) : 0;
+				if ($lrid < 1 || gauntletIsRunOver($conn, $lrid))
+					gauntletFlash('Your last fighter is down. The run ends here.', 'loss');
+				else
+					gauntletFlash('Your fighter is down and out for this run. Send another.', 'loss');
 			} else {
 				gauntletFlash('Something went wrong. Please try again.', 'error');
 			}

@@ -628,6 +628,43 @@ ok(strpos($UI, ".gf-side.is-down .gf-portrait img") !== false,
 ok(preg_match("~e\\.kind === 'down'[\\s\\S]{0,420}return;~", $UI) === 1,
    'the down entry does not short-circuit, so the death animates on the wrong side');
 
+echo "\na loss costs a fighter, not the run\n";
+/*
+ * It used to end on the FIRST loss, which is what made a bad third
+ * encounter cost the whole run. The rest of the game was already
+ * built for this: the deck marks a spent card, labels a dead one
+ * "Down", refuses to Fast Forward into one, and carries health
+ * between rounds. Only gauntletIsRunOver() was never changed, and
+ * gauntlets-redesign.md described the new rule as though it had been.
+ */
+$over = substr($DB, (int)strpos($DB, 'function gauntletIsRunOver'), 1800);
+$over = substr($over, 0, (int)strpos($over, "\n}"));
+ok(strpos($over, "outcome='loss'") === false,
+   'a single loss ends the run again, so a bad encounter still costs the whole thing');
+ok(strpos($over, 'GAUNTLET_MAX_WINS') !== false,
+   'a swept run no longer ends, so three wins does not finish it');
+ok(strpos($over, 'gn.nft_id NOT IN (SELECT e.player_nft_id') !== false
+   && strpos($over, 'FROM gauntlets_nfts gn') !== false,
+   'the run does not end on running out of fighters, so it can never end on a loss at all');
+/*
+ * THE LEGACY ZERO. hp is seeded to GAUNT_HP_BASE at run start, so
+ * hp <= 0 means dead -- but a run started before that column existed
+ * carries 0 for every card, and reading those as corpses would kill a
+ * live run the moment this deploys.
+ */
+ok(strpos($over, 'OR NOT EXISTS (SELECT 1 FROM gauntlets_nfts z') !== false,
+   'hp is trusted even on a run that predates the column, which ends live runs on deploy');
+/* And the player has to be told which of the two happened. */
+ok(strpos($PG, 'Your fighter is down and out for this run. Send another.') !== false,
+   'a loss still tells the player their run is over when it is not');
+ok(strpos($PG, 'Your last fighter is down. The run ends here.') !== false,
+   'the final loss does not say the run is over');
+ok(strpos($PG, "\$swept ? 'Gauntlet Swept!' : 'Out of Fighters'") !== false,
+   'the end screen does not say whether the deck ran out or the run was swept');
+/* $run is only assigned in the win branch above it. */
+ok(strpos($PG, "\$lr = \$conn->query(\"SELECT run_id FROM gauntlets_encounters WHERE id=\$enc_id LIMIT 1\");") !== false,
+   'the loss branch reads $run, which is only set inside the win branch');
+
 echo "\nonly a swept run opens a chest at all\n";
 /*
  * THE GATE AND THE CONTENTS HAVE TO AGREE. gaunt_chest_contents()

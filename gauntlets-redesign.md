@@ -121,14 +121,17 @@ chased, and it uses the three-encounter structure already in place.
 Today one loss ends the run. With long fights that is brutal -- ten minutes
 lost to a bad third encounter.
 
-> **NOT BUILT. The code still ends a run on the first loss.**
-> gauntletIsRunOver() returns true on the first resolved `outcome='loss'`
-> and always has -- nothing in the rebuild touched it. Everything below is
-> the proposal, not the behaviour, and reading it as shipped is a mistake
-> that has already been made: it produced a line of announcement copy
-> telling players they could lose a fight and carry on. The chest's tiers
-> for one and two wins exist for this world too, and are unreachable until
-> it is built. See the CONSEQUENCE note below before building it.
+> **BUILT.** gauntletIsRunOver() now ends a run on a sweep or when no
+> unplayed card is left, not on the first loss. A card is spent by
+> fighting either way, so six cards and three wins means three losses
+> are affordable. Measured before shipping: a player winning 30% of
+> fights goes from a 2.7% sweep rate to 25.6%, and a player winning
+> 100% stays at 100% -- it gives everything to whoever is struggling
+> and nothing to whoever is not, which is why the economy consequence
+> below turned out smaller than feared. THAT HOLDS ONLY WHILE THE HEAL
+> CLIFF DOES: two heals currently win any fight, so the top end cannot
+> gain. Fix that and this multiplier starts applying to everyone, and
+> the rates need the retune described below.
 
 Instead: **a downed NFT is out for the run, and the run ends when the squad
 is wiped.** Three wins still sweeps. You may lose a fight and continue while
