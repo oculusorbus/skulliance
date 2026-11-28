@@ -1127,8 +1127,22 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         opacity: 0;
       }
       
-      #restart, #change-character {
+      /*
+       * THREE BUTTONS, NOT TWO. #refresh-board was never in this list,
+       * so on a phone it stayed visible while its two siblings did not
+       * -- and the mobile layout pulls the board up 225px, which leaves
+       * anything still in flow here painted across the character panel.
+       * Reported as the button sitting on top of the portrait.
+       *
+       * opacity, not display: these keep the space their boxes reserve,
+       * which the rest of the mobile layout is tuned around. The
+       * pointer-events is the other half of hiding something that is
+       * still in the page -- without it all three are invisible targets
+       * sitting over the stats, and #refresh-board restarts the board.
+       */
+      #restart, #change-character, #refresh-board {
         opacity: 0;
+        pointer-events: none;
       }
 
       .battlefield {

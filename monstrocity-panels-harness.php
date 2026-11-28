@@ -238,5 +238,29 @@ ok(preg_match('~(^|[;\s])align-self:\s*flex-start~', (string) $gc) === 1,
 ok(preg_match('~(^|\n)\s*body\s*\{[^}]*align-items:\s*center~s', $code) === 1,
    "body no longer centres its children -- the select containers rely on that");
 
+/*
+ * THE THREE LOOSE BUTTONS. They sit in flow above the board, and the
+ * narrow layout pulls the board up 225px over that flow position --
+ * so any of them left showing is painted across the character panel.
+ * #refresh-board was missing from the rule that hides the other two
+ * and did exactly that; reported from a phone. Derived from the
+ * markup so a FOURTH button added up there is caught too.
+ */
+echo "\nno loose button is left showing over the narrow layout\n";
+$btns = array();
+if (preg_match_all('~<button id="([a-z-]+)" class="game-button"~', $src, $bm)) $btns = $bm[1];
+ok(count($btns) >= 3, 'the game-button markup could not be read (' . count($btns) . ' found)');
+$hidden = rule($code, '#restart, #change-character, #refresh-board');
+ok($hidden !== null, 'the rule hiding the loose buttons on a phone is gone');
+foreach ($btns as $b)
+	ok(strpos('#restart, #change-character, #refresh-board', '#' . $b) !== false,
+	   "#$b is not hidden on a phone, so it paints over the character panel");
+ok(preg_match('~opacity:\s*0~', (string) $hidden) === 1,
+   'the buttons are hidden with something other than opacity, which changes the space they reserve');
+/* Invisible is not the same as gone: without this they are untappable
+   targets sitting over the stats, and one of them restarts the board. */
+ok(preg_match('~pointer-events:\s*none~', (string) $hidden) === 1,
+   'the hidden buttons are still tappable, so a tap on the stats can restart the board');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all panel checks passed\n");
 exit($fail ? 1 : 0);
