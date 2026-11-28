@@ -628,6 +628,31 @@ ok(strpos($UI, ".gf-side.is-down .gf-portrait img") !== false,
 ok(preg_match("~e\\.kind === 'down'[\\s\\S]{0,420}return;~", $UI) === 1,
    'the down entry does not short-circuit, so the death animates on the wrong side');
 
+echo "\nonly a swept run opens a chest at all\n";
+/*
+ * THE GATE AND THE CONTENTS HAVE TO AGREE. gaunt_chest_contents()
+ * tiers its pool by wins, which reads as though one and two win runs
+ * pay something -- and that tier table was described to the owner as
+ * live when it is not. The gate is a sweep, so $wins at the only call
+ * site is always GAUNTLET_MAX_WINS and the lower tiers are unreachable.
+ * Reported as "are you implying that a defeat after 1 round yields a
+ * chest?". No, and this is what keeps the answer true.
+ */
+$libNoC  = preg_replace('~/\*.*?\*/~s', '', $LIB);
+$pendSrc = substr($libNoC, (int)strpos($libNoC, 'function gaunt_chest_pending'), 320);
+ok(strpos($pendSrc, '>= GAUNTLET_MAX_WINS') !== false,
+   'the chest opens on fewer than three wins, so a wiped run is rewarded');
+/* Claim refuses before contents is ever reached. */
+$claimSrc = substr($libNoC, (int)strpos($libNoC, 'function gaunt_chest_claim'), 900);
+ok(strpos($claimSrc, 'if (!gaunt_chest_pending($conn, $rid)) return array();') !== false,
+   'the claim does not re-check the gate, so a direct post could open a chest on a loss');
+ok(strpos($claimSrc, 'gaunt_chest_contents(gaunt_run_wins($conn, $rid)') !== false,
+   'the claim passes something other than the run wins, so the tiering cannot be reasoned about');
+/* And the docblock must not claim otherwise -- that is what went wrong. */
+$cdoc = substr($ENGSRC, (int)strpos($ENGSRC, "What a SWEPT run's chest holds") - 40, 900);
+ok(strpos($cdoc, 'ONLY A SWEEP OPENS ONE') !== false,
+   'the chest docblock no longer says a sweep is required, which is how the tiers got described as live');
+
 echo "\nthe chest scales with wins and only opens once\n";
 ok(gaunt_chest_contents(0, 0, 1) === array(), 'a run with no wins still pays a chest');
 /* WITH A HAUL, which is the case the guard actually exists for: at

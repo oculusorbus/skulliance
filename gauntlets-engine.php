@@ -581,15 +581,24 @@ function gaunt_take_spoils($fight) {
  * ===================================================================== */
 
 /**
- * What a finished run's chest holds.
+ * What a SWEPT run's chest holds.
  *
- * SCALED TO WINS BANKED, NOT TO SWEEPING. Paying only on three wins is
- * a closed loop for the under-equipped: no items, so no win; no win, so
- * no chest; no chest, so no items. The run ends on a squad wipe rather
- * than a first loss, so partial success is already something the system
- * understands -- the chest just has to honour it. It also turns the
- * three-win target from a cliff into a gradient, so a two-win run reads
- * as progress.
+ * ONLY A SWEEP OPENS ONE. gaunt_chest_pending() requires
+ * `wins >= GAUNTLET_MAX_WINS`, and gaunt_chest_claim() refuses before
+ * it ever reaches here, so a run that took one opponent down and was
+ * then wiped pays nothing. It used to pay on any single win, which put
+ * a chest on the defeat screen -- a reward for losing -- and that was
+ * reported and fixed.
+ *
+ * THE TIERS BELOW THEREFORE NEVER FIRE TODAY. $wins is always
+ * GAUNTLET_MAX_WINS at the only call site. They are kept because they
+ * are the whole mechanism for paying partial runs, which is a real
+ * option -- the closed loop for the under-equipped is real (no items,
+ * no win; no win, no chest; no chest, no items) -- but it is NOT what
+ * ships. This comment used to argue for it as though it did, which is
+ * how a tier table for one and two wins ended up being described to
+ * the owner as live. The harness pins the gate against this function
+ * so the two cannot drift again.
  *
  * AND WHAT YOU TOOK OFF OPPONENTS COUNTS. Salvage itself dies with the
  * run; the fact that you took it does not. A run spent beating armed
