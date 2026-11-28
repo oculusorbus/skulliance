@@ -150,8 +150,24 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '', 
      data-hp="<?php echo (int)$fight['you']['hp']; ?>"
      data-hpmax="<?php echo (int)$fight['you']['max']; ?>">
 
+  <?php
+  /*
+   * FACE EACH OTHER. A Monstrocity theme records which way its art
+   * looks, so once a collection is attached to one (see
+   * admin-monstrocity-themelink.php) the arena can infer it: the left
+   * fighter should look right and the right fighter should look left.
+   * The rule and the flip are Monstrocity's own, not a new convention.
+   *
+   * As a CSS VARIABLE, not transform: the downed state sets its own
+   * transform (scale and rotate) and would otherwise un-flip a fallen
+   * fighter; this composes into both.
+   */
+  $gf_you_flip = gaunt_flip_for(gaunt_nft_facing($conn, (int)($enc['player_collection_id'] ?? 0)), 'you');
+  $gf_foe_flip = gaunt_flip_for(gaunt_nft_facing($conn, (int)($enc['opponent_collection_id'] ?? 0)), 'foe');
+  ?>
   <div class="gf-arena">
-    <div class="gf-side gf-you<?php echo (int)$fight['you']['hp'] <= 0 ? ' is-down' : ''; ?>">
+    <div class="gf-side gf-you<?php echo (int)$fight['you']['hp'] <= 0 ? ' is-down' : ''; ?>"
+         <?php if ($gf_you_flip) echo 'style="--gf-flip:-1"'; ?>>
       <div class="gf-portrait">
         <img src="<?php echo htmlspecialchars($enc['player_img']); ?>" alt=""
              onerror="this.src='icons/skull.png'">
@@ -171,7 +187,8 @@ function gauntletRenderFight($enc, $fight, $loadout, $just = array(), $bg = '', 
 
     <div class="gf-vs">VS</div>
 
-    <div class="gf-side gf-foe<?php echo (int)$fight['foe']['hp'] <= 0 ? ' is-down' : ''; ?>">
+    <div class="gf-side gf-foe<?php echo (int)$fight['foe']['hp'] <= 0 ? ' is-down' : ''; ?>"
+         <?php if ($gf_foe_flip) echo 'style="--gf-flip:-1"'; ?>>
       <div class="gf-portrait">
         <img src="<?php echo htmlspecialchars($enc['opponent_img']); ?>" alt=""
              onerror="this.src='icons/skull.png'">

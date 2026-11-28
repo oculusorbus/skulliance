@@ -53,7 +53,11 @@ define('GF_UI_DONE', 1);
                    margin: 0 auto; }
 .gf-you .gf-portrait { border-color: #00c8a0; }
 .gf-foe .gf-portrait { border-color: rgba(224,85,85,.55); }
+/* --gf-flip is -1 on a side whose art faces the wrong way. A variable
+   rather than a transform of its own, so the downed state below can
+   compose with it instead of replacing it. */
 .gf-portrait img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block;
+                   transform: scaleX(var(--gf-flip, 1));
                    filter: drop-shadow(0 3px 8px rgba(0,0,0,.5)); }
 /* The glow layer. Colour says WHAT happened, which is how a player reads
    an exchange without looking at the log. */
@@ -281,12 +285,14 @@ define('GF_UI_DONE', 1);
 .gf-side .gf-portrait img { transition: filter .7s ease, opacity .7s ease, transform .7s ease; }
 .gf-side.is-down .gf-portrait img { filter: grayscale(1) brightness(.42)
                                             drop-shadow(0 3px 8px rgba(0,0,0,.5));
-                                    opacity: .55; transform: scale(.96) rotate(-2deg); }
+                                    opacity: .55;
+                                    transform: scale(.96) rotate(-2deg) scaleX(var(--gf-flip, 1)); }
 .gf-side.is-down .gf-portrait { border-color: rgba(255,255,255,.12) !important; }
 .gf-side.is-down .gf-name { color: rgba(255,255,255,.4); }
 .gf-side.is-down .gf-portrait::after {
   content: ''; position: absolute; inset: 0; background: rgba(7,17,29,.35); pointer-events: none; }
-@keyframes gfSlump { 0% { transform: none; } 100% { transform: scale(.96) rotate(-2deg); } }
+@keyframes gfSlump { 0%   { transform: scaleX(var(--gf-flip, 1)); }
+                     100% { transform: scale(.96) rotate(-2deg) scaleX(var(--gf-flip, 1)); } }
 .gf-k-down strong { color: #ff2b2b; }
 /* The number, out of flow so it cannot push the card around. */
 .gf-float        { position: absolute; left: 50%; top: 36%; transform: translate(-50%,0);

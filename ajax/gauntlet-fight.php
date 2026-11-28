@@ -55,6 +55,13 @@ $q = $conn->query("
 	SELECT ge.id, ge.run_id, ge.player_nft_id, ge.opponent_nft_id,
 	       pn.name AS player_nft_name,   pn.ipfs AS player_ipfs,   pn.collection_id AS player_cid,
 	       on2.name AS opponent_nft_name, on2.ipfs AS opponent_ipfs, on2.collection_id AS opponent_cid,
+	       /* UNDER THE RENDERER'S OWN NAMES TOO. It reads the long
+	          collection_id keys to work out which way each fighter
+	          faces; the short aliases above are this file's. (No
+	          dollar-brackets in here: this is a double-quoted string
+	          and PHP would try to interpolate them.) */
+	       pn.collection_id  AS player_collection_id,
+	       on2.collection_id AS opponent_collection_id,
 	       pc.project_id AS player_pid,  oc.project_id AS opponent_pid,
 	       op.name AS opponent_project_name,
 	       /* THE SAME COLUMNS THE PAGE'S OWN QUERY CARRIES. This one is

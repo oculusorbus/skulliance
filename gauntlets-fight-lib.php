@@ -665,6 +665,62 @@ function gauntletResolveFight($conn, $user_id, $enc_id) {
  * is what says the image is actually there. No flag, no backdrop,
  * rather than a 404 behind the fight.
  */
+/**
+ * Which way a collection's art faces: '', 'Left', 'Right' or 'Random'.
+ *
+ * PURE. `orientations` on a Monstrocity theme is POSITIONAL against that
+ * theme's collection list, in sort_order -- the same order
+ * monstrocity_theme_policies() derives. One value is the special case
+ * the Monstrocity client already makes: it applies to every collection
+ * in the theme rather than only the first.
+ */
+function gaunt_facing_at($orientations, $index) {
+	$list = array_map('trim', explode(',', (string)$orientations));
+	if (count($list) === 1) return $list[0];
+	return isset($list[(int)$index]) ? $list[(int)$index] : '';
+}
+
+/**
+ * Should this side be mirrored so the two fighters face each other?
+ *
+ * THE RULE IS MONSTROCITY'S, NOT A NEW ONE. It flips player one when its
+ * art faces Left and player two when its art faces Right, because the
+ * left fighter should look right and the right fighter should look left.
+ * Unknown ('') and 'Random' are left alone: a fight is seeded and
+ * replayable, so guessing would make the same encounter face two ways on
+ * two loads.
+ */
+function gaunt_flip_for($facing, $side) {
+	if ($side === 'you') return $facing === 'Left';
+	return $facing === 'Right';
+}
+
+/**
+ * The facing recorded for a collection, or '' when nothing knows.
+ *
+ * Reads the link table the Gauntlet backdrop already depends on, so a
+ * collection only has a facing once it has been attached to a theme --
+ * see admin-monstrocity-themelink.php. NOT filtered on background = 1:
+ * a theme with no battlefield art still knows which way its NFTs look.
+ */
+function gaunt_nft_facing($conn, $collection_id) {
+	$cid = (int)$collection_id;
+	static $memo = array();
+	if (isset($memo[$cid])) return $memo[$cid];
+	$memo[$cid] = '';
+	if ($cid < 1) return '';
+	$r = @$conn->query("SELECT t.orientations, tc.sort_order
+	                      FROM monstrocity_theme_collections tc
+	                      INNER JOIN monstrocity_themes t ON t.id = tc.theme_id
+	                     WHERE tc.collection_id = $cid AND t.active = 1
+	                     ORDER BY tc.sort_order ASC LIMIT 1");
+	if ($r && $r->num_rows) {
+		$row = $r->fetch_assoc();
+		$memo[$cid] = gaunt_facing_at($row['orientations'], (int)$row['sort_order']);
+	}
+	return $memo[$cid];
+}
+
 function gaunt_theme_bg($conn, $project_name, $project_id = 0, $collection_id = 0) {
 	$key = (int)$collection_id . ':' . (int)$project_id;
 	static $memo = array();

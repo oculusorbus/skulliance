@@ -528,7 +528,7 @@ ok(strpos($tb, '/staking/images/themes/\' . $pid . \'.jpg') !== false,
    'a project with no Monstrocity background falls through to no backdrop at all');
 /* The flag is what says the image exists -- without it the fight would
    point at a 404 and show nothing, which is worse than no backdrop. */
-ok(substr_count($LIB, 'background = 1') === 1,
+ok(substr_count(preg_replace('~/\*.*?\*/~s', '', $LIB), 'background = 1') === 1,
    'the one backdrop lookup skips the background flag, which is what says the image exists');
 /*
  * ONE LOOKUP, AND IT IS THE COLLECTION'S. Monstrocity backgrounds are
@@ -1091,6 +1091,60 @@ ok(strpos($REN, "\$enc['opponent_username']") !== false,
    'the opponent owner is not read from the encounter');
 ok(preg_match('~\.gf-owner span\s*\{[^}]*text-overflow:\s*ellipsis~s', $UI) === 1,
    'the owner name can wrap, which pushes the arena down a phone screen');
+
+echo "\nthe fighters face each other where the theme says which way they look\n";
+/*
+ * A Monstrocity theme records its art's facing, positionally against
+ * its collection list. Now that collections are attached to themes,
+ * the arena can infer it. THE RULE IS MONSTROCITY'S OWN
+ * (monstrocity.php): flip player one when its art faces Left, player
+ * two when its art faces Right -- the left fighter looks right, the
+ * right fighter looks left.
+ */
+ok(gaunt_facing_at('Left', 0) === 'Left', 'a single orientation is not read');
+/* ONE VALUE APPLIES TO EVERY COLLECTION, which is the special case the
+   Monstrocity client already makes -- not just the first one. */
+ok(gaunt_facing_at('Right', 3) === 'Right',
+   'a single orientation stops applying past the first collection');
+ok(gaunt_facing_at('Left,Right', 1) === 'Right', 'the list is not read positionally');
+ok(gaunt_facing_at('Left,Right', 9) === '', 'an index past the list invents a facing');
+ok(gaunt_facing_at('', 0) === '', 'an empty orientations string invents a facing');
+
+ok(gaunt_flip_for('Left',  'you') === true,  'a left-facing player is not turned to face the opponent');
+ok(gaunt_flip_for('Right', 'you') === false, 'a right-facing player is flipped away from the opponent');
+ok(gaunt_flip_for('Right', 'foe') === true,  'a right-facing opponent is not turned to face the player');
+ok(gaunt_flip_for('Left',  'foe') === false, 'a left-facing opponent is flipped away from the player');
+/* Seeded, replayable fights: guessing would face the same encounter two
+   ways on two loads. */
+foreach (array('', 'Random') as $unknown)
+	foreach (array('you', 'foe') as $side)
+		ok(gaunt_flip_for($unknown, $side) === false,
+		   "a '$unknown' facing is guessed at on the $side side instead of being left alone");
+
+/* THE DOWNED STATE SETS ITS OWN TRANSFORM, so the flip has to compose
+   with it rather than be replaced by it -- hence a variable. */
+/* On the PORTRAIT rule specifically -- the slump keyframes contain the
+   same string, so a loose search passes with the base rule deleted. */
+ok(preg_match('~\.gf-portrait img \{[^}]*transform: scaleX\(var\(--gf-flip, 1\)\)~s', $UI) === 1,
+   'the flip is not applied to the portrait');
+/* The is-down RULE, not the keyframes -- both end in the same string. */
+ok(preg_match('~\.gf-side\.is-down \.gf-portrait img \{[^}]*scaleX\(var\(--gf-flip, 1\)\)~s', $UI) === 1,
+   'the downed transform drops the flip, so a fallen fighter turns back around');
+ok(strpos($UI, '100% { transform: scale(.96) rotate(-2deg) scaleX(var(--gf-flip, 1)); } }') !== false,
+   'the slump keyframes drop the flip, so a fighter spins as it falls');
+ok(substr_count($REN, "echo 'style=\"--gf-flip:-1\"'") === 2,
+   'only one side of the arena can be flipped');
+/* Both have to be WORKED OUT, not just printed: hard-coding either to
+   false leaves the echoes in place and the check above passing. */
+ok(strpos($REN, "gaunt_flip_for(gaunt_nft_facing(\$conn, (int)(\$enc['player_collection_id'] ?? 0)), 'you')") !== false,
+   'the player side does not look up its own facing');
+ok(strpos($REN, "gaunt_flip_for(gaunt_nft_facing(\$conn, (int)(\$enc['opponent_collection_id'] ?? 0)), 'foe')") !== false,
+   'the opponent side does not look up its own facing');
+/* Not filtered on background: a theme with no battlefield art still
+   knows which way its NFTs look. */
+$facing = substr($LIB, (int)strpos($LIB, 'function gaunt_nft_facing'), 900);
+ok(strpos($facing, 'background = 1') === false,
+   'the facing lookup requires a battlefield background, so themed art with no backdrop never turns');
 
 echo "\nsharp edges and the platform's own button fill\n";
 /*
